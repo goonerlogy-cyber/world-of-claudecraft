@@ -80,7 +80,7 @@ describe('unit frame visual identity', () => {
     );
     expect(hudCss).toMatch(/body\.show-actionbar2 #target-frame \{\s*bottom: 134px;/);
     expect(hudCss).toMatch(
-      /#player-frame #stancebar \{[\s\S]*?position: absolute;[\s\S]*?top: -8px;[\s\S]*?left: 50%;[\s\S]*?padding: 1px;/,
+      /#player-frame #stancebar \{[\s\S]*?position: absolute;[\s\S]*?bottom: calc\(100% \+ 4px\);[\s\S]*?left: 50%;[\s\S]*?padding: 1px;/,
     );
     expect(hudCss).toMatch(/\.stance-btn \{[\s\S]*?width: 20px;[\s\S]*?height: 20px;/);
     expect(hudTs).not.toContain("document.body.classList.toggle('show-stancebar'");

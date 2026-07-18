@@ -2641,7 +2641,8 @@
   #player-frame #stancebar {
     display: none;
     position: absolute;
-    top: -8px;
+    top: auto;
+    bottom: calc(100% + 4px);
     left: 50%;
     z-index: 7;
     margin: 0;
