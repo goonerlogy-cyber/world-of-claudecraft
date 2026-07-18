@@ -439,7 +439,8 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
     allow: { '.className': 14, '.setAttribute': 3 },
     reflowAllow: {},
   },
-  { file: 'auras_painter.ts', allow: { '.className': 3 }, reflowAllow: {} },
+  // Three pooled aura-node construction writes plus one lazy overflow chip.
+  { file: 'auras_painter.ts', allow: { '.className': 4 }, reflowAllow: {} },
   {
     file: 'fct_painter.ts',
     allow: { '.className': 1, '.setAttribute': 1 },
@@ -1413,6 +1414,7 @@ function buildHarnesses(shape: WorldShape, facet: PainterHostWriters): PainterHa
       fill: 0.8,
       label: 'fireball',
       fishing: false,
+      interruptible: true,
     };
     const input: CastBarPaintInput = { cast, castRemaining: 0.5 };
     harnesses.push({ name: 'cast_bar', drive: () => painter.paint(input) });

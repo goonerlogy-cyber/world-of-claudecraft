@@ -20,7 +20,9 @@ import { PartyFramesPainter } from '../src/ui/party_frames_painter';
 // The crest icon's procedural path needs a canvas; the pool only needs a string. A
 // hoisted spy returning a key-derived stub so a test can assert the portrait gate
 // repaints the crest with the recycled member's class (the live-slot crest gate).
-const iconDataUrlSpy = vi.hoisted(() => vi.fn((_kind: string, key: string) => `data:${key}`));
+const iconDataUrlSpy = vi.hoisted(() =>
+  vi.fn((_kind: string, key: string, _size?: number) => `data:${key}`),
+);
 vi.mock('../src/ui/icons', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../src/ui/icons')>()),
   iconDataUrl: iconDataUrlSpy,
@@ -542,6 +544,7 @@ describe('PartyFramesPainter: keyed pool over the elided writers', () => {
     // A mage joins: the gate fires once for class_mage on the first paint.
     painter.sync([member({ pid: 2, name: 'Mage', cls: 'mage' })], 1, false);
     expect(iconDataUrlSpy.mock.calls.some((c) => c[1] === 'class_mage')).toBe(true);
+    expect(iconDataUrlSpy.mock.calls.some((c) => c[1] === 'class_mage' && c[2] === 52)).toBe(true);
     // Re-sync the SAME mage (a stat changed): the class key is unchanged, so the gate
     // skips the crest repaint.
     iconDataUrlSpy.mockClear();
@@ -598,11 +601,15 @@ describe('PartyFramesPainter: keyed pool over the elided writers', () => {
     // A combat member is NOT also dead (dead wins), so its combat is on but dead off.
     // The hp bar keeps the inline .toFixed(3) precision via formatScaleX.
     expect(has('setTransform', (c) => /^scaleX\(\d\.\d{3}\)$/.test(String(c.args[0])))).toBe(true);
-    // Party frames reuse the shared UnitFramePainter's classic absorb overlay (a
-    // left-origin scaleX to (hp + absorb) / maxHp), matching the player and target
-    // frames, so there is no positioned --absorb-start segment here.
-    expect(has('setStyleProp', (c) => c.args[0] === '--absorb-start')).toBe(false);
-    expect(has('setTransform', (c) => c.args[0] === 'scaleX(0.750)')).toBe(true);
+    // Party frames reuse the shared UnitFramePainter's positioned absorb segment:
+    // the hatch starts at current health and spans only the actual shield amount.
+    expect(
+      has(
+        'setStyleProp',
+        (c) => c.args[0] === '--absorb-start' && c.args[1] === '50.0%',
+      ),
+    ).toBe(true);
+    expect(has('setTransform', (c) => c.args[0] === 'scaleX(0.250)')).toBe(true);
     // The compact party row never appends the absorb total to the HP text (that is a
     // player/target-frame affordance), so "(25)" must not appear.
     expect(has('setText', (c) => String(c.args[0]).includes('(25)'))).toBe(false);

@@ -860,6 +860,10 @@ export const hudChromeStrings = {
     // (wordy, M16: the five non-Latin fills land in the same change as each).
     playerFrameScale: 'Player Frame Scale',
     targetFrameScale: 'Target Frame Scale',
+    unitFrameHealthText: 'Unit Frame Health Text',
+    unitFrameDamageTrail: 'Delayed Damage Trail',
+    unitFramePortraitEffects: 'Portrait Reactions',
+    showTargetOfTarget: 'Show Target of Target',
     // Interface panel toggle: anchor the player's own buff row to the movable
     // player frame (the debuff row then slides up beside the minimap) instead
     // of the classic two-row top-right corner (wordy, M16: the five non-Latin
@@ -889,10 +893,6 @@ export const hudChromeStrings = {
     // Enabled only while the secondary row is visible. Slots remain reachable
     // through keybinds and the mobile action-ring pages while this row is hidden.
     showThirdActionBar: 'Show Third Action Bar',
-    // Interface panel toggle for the classic "target of target" mini-frame (off by
-    // default): a small unit frame under the target frame showing who your target
-    // is targeting.
-    showTargetOfTarget: 'Show Target of Target',
     // Interface panel toggle for the fixed Attack button in the first action-bar
     // slot (on by default). Off frees that slot for a normal action (drag one in;
     // its key then casts it). Right-clicking the Attack button flips this off too.

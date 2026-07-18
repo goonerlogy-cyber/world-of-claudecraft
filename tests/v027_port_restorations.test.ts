@@ -415,9 +415,9 @@ function bareClient(pid: number): ClientWorld {
 }
 
 describe('mouseover cast settings + server target routing (game.ts case cast)', () => {
-  it('defaults mouseoverCast on and showTargetOfTarget off', () => {
+  it('defaults mouseoverCast and the premium target-of-target satellite on', () => {
     expect(BOOL_SETTINGS.mouseoverCast.def).toBe(true);
-    expect(BOOL_SETTINGS.showTargetOfTarget.def).toBe(false);
+    expect(BOOL_SETTINGS.showTargetOfTarget.def).toBe(true);
   });
 
   it('routes a numeric msg.target to castAbilityOn and falls back without one', () => {

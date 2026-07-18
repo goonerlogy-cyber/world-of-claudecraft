@@ -328,6 +328,9 @@ const GENERAL_KEYS = [
 const FRAMES_KEYS = [
   'playerFrameScale',
   'targetFrameScale',
+  'unitFrameHealthText',
+  'unitFrameDamageTrail',
+  'unitFramePortraitEffects',
   'partyFrameStyle',
   'partyFrameScale',
   'partyFrameWidth',

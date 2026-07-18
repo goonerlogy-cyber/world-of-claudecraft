@@ -1,14 +1,19 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
-  portraitBackingPx,
-  overscanRect,
-  crestIdForEntity,
-  PORTRAIT_CSS_SIZE,
   CREST_OVERSCAN,
+  crestIdForEntity,
   MAX_PORTRAIT_DPR,
+  overscanRect,
+  PORTRAIT_CSS_SIZE,
+  portraitBackingPx,
+  unitPortraitPlan,
 } from '../src/ui/unit_portrait';
 
 describe('portraitBackingPx', () => {
+  it('pins the larger AAA unit-frame portrait content box', () => {
+    expect(PORTRAIT_CSS_SIZE).toBe(58);
+  });
+
   it('matches the CSS size at dpr 1', () => {
     expect(portraitBackingPx(54, 1)).toBe(54);
   });
@@ -87,5 +92,63 @@ describe('crestIdForEntity', () => {
 
   it('falls back to humanoid when a mob family is unknown', () => {
     expect(crestIdForEntity('mob', undefined)).toBe('family_humanoid');
+  });
+});
+
+describe('unitPortraitPlan: contextual player portraits', () => {
+  const player = (over: Partial<Parameters<typeof unitPortraitPlan>[0]> = {}) => ({
+    kind: 'player',
+    templateId: 'druid',
+    skin: 2,
+    skinCatalog: 'class',
+    dead: false,
+    ghost: false,
+    auras: [] as { id: string; kind: string }[],
+    ...over,
+  });
+
+  it('uses the equipped class or mech body and includes it in the repaint identity', () => {
+    expect(unitPortraitPlan(player())).toMatchObject({
+      visualKey: 'player_druid',
+      skin: 2,
+      context: 'normal',
+      identityKey: 'player_druid:2:normal',
+    });
+    expect(unitPortraitPlan(player({ skinCatalog: 'mech', skin: 4 }))).toMatchObject({
+      visualKey: 'player_mech',
+      skin: 4,
+      context: 'mech',
+    });
+  });
+
+  it('matches renderer form precedence and exposes ghost/dead material states', () => {
+    expect(unitPortraitPlan(player({ auras: [{ id: 'bear', kind: 'form_bear' }] }))).toMatchObject({
+      visualKey: 'form_bear',
+      context: 'form',
+    });
+    expect(
+      unitPortraitPlan(
+        player({
+          auras: [
+            { id: 'bear', kind: 'form_bear' },
+            { id: 'sheep', kind: 'polymorph' },
+          ],
+        }),
+      ),
+    ).toMatchObject({ visualKey: 'form_sheep', context: 'polymorph' });
+    expect(unitPortraitPlan(player({ dead: true }))).toMatchObject({ context: 'dead' });
+    expect(unitPortraitPlan(player({ dead: true, ghost: true }))).toMatchObject({
+      context: 'ghost',
+    });
+  });
+
+  it('marks shader-only transformations without replacing the class model', () => {
+    expect(
+      unitPortraitPlan(player({ auras: [{ id: 'meta', kind: 'form_metamorph' }] })),
+    ).toMatchObject({ visualKey: 'player_druid', context: 'transformed' });
+  });
+
+  it('returns null for non-player subjects', () => {
+    expect(unitPortraitPlan(player({ kind: 'mob' }))).toBeNull();
   });
 });

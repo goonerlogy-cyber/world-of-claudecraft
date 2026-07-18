@@ -17,3 +17,11 @@ export function targetOfTargetId(
 ): number | null {
   return target.kind === 'player' ? target.targetId : target.aggroTargetId;
 }
+
+/** Nullable, world-object-safe adapter used by the compact HUD satellite. */
+export function targetOfTargetEntityId(
+  target: Pick<Entity, 'kind' | 'targetId' | 'aggroTargetId'> | null | undefined,
+): number | null {
+  if (!target || target.kind === 'object') return null;
+  return targetOfTargetId(target);
+}

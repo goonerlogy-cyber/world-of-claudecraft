@@ -91,6 +91,7 @@ import {
   Settings,
 } from './game/settings';
 import { sfx } from './game/sfx';
+import { applyHudVisualQaScenario, hudVisualQaPartySize } from './game/hud_visual_qa';
 import { initSoftwareRenderNotice } from './game/software_render_notice';
 import {
   decideSpawnCinematic,
@@ -591,7 +592,14 @@ function syncCommunityMenuMode(): void {
 
 // Honor a persisted Interface Mode override before the first layout paint, so a
 // tablet+keyboard player who chose Desktop never flashes the touch UI on load.
-setInterfaceMode(interfaceModeFromSetting(new Settings().get('interfaceMode')));
+const hudQaPartySizeAtBoot = import.meta.env.DEV
+  ? hudVisualQaPartySize(window.location.search)
+  : null;
+const hudQaDesktopAtBoot = new URLSearchParams(window.location.search).has('hudqaDesktop');
+const hudQaForcesTouch = hudQaPartySizeAtBoot !== null && !hudQaDesktopAtBoot;
+setInterfaceMode(
+  hudQaForcesTouch ? 'touch' : interfaceModeFromSetting(new Settings().get('interfaceMode')),
+);
 syncAppViewport();
 syncBuildInfo();
 scheduleNativeUpdateCheck(__APP_VERSION__);
@@ -1219,6 +1227,15 @@ async function startGame(
   // through IWorld). Private instanced practice works online AND offline, so the
   // button is always available.
   hud.setVcupPracticeAvailable(true);
+
+  // Dev-only visual matrix: real responsive HUD screenshots for 3/5-player
+  // parties and a 10-player raid. Inert in production and in normal dev play.
+  if (offlineSim && hudQaPartySizeAtBoot !== null) {
+    console.info(
+      '[hud-qa]',
+      applyHudVisualQaScenario(offlineSim, hud, hudQaPartySizeAtBoot),
+    );
+  }
 
   const chatInput = $('#chat-input') as unknown as HTMLTextAreaElement;
   const clickMoveMarker = $('#click-move-marker') as HTMLDivElement;
@@ -2048,7 +2065,7 @@ async function startGame(
         // Desktop/touch override: update the resolver, then re-apply the layout
         // (body class, stable viewport) and the on-screen controls live so the
         // switch takes effect without a reload.
-        setInterfaceMode(interfaceModeFromSetting(v));
+        setInterfaceMode(hudQaForcesTouch ? 'touch' : interfaceModeFromSetting(v));
         syncPhoneTouchClass();
         syncAppViewport();
         mobileControls.refreshInterfaceMode();
@@ -2088,6 +2105,15 @@ async function startGame(
         break;
       case 'targetFrameScale':
         document.documentElement.style.setProperty('--target-frame-scale', String(v));
+        break;
+      case 'unitFrameHealthText':
+        // Read live by Hud.update; persistence above is the only page-level work needed.
+        break;
+      case 'unitFrameDamageTrail':
+        document.body.classList.toggle('unit-frame-damage-trail-off', !v);
+        break;
+      case 'unitFramePortraitEffects':
+        document.body.classList.toggle('unit-frame-portrait-effects-off', !v);
         break;
       case 'partyFrameScale':
         document.documentElement.style.setProperty('--party-frame-scale', String(v));

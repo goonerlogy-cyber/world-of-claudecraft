@@ -37,11 +37,11 @@ describe('AurasPainter: no raw DOM writes, no magic values', () => {
     // No listener churn in the hot painter: the tooltip attaches once in createNode via
     // the injected helper, never addEventListener directly + never per frame.
     expect(code).not.toMatch(/addEventListener/);
-    // .className is set EXACTLY 3 times, all in createNode (the pooled node + its .dur /
-    // .stacks children, set once at build). Pinning the count gives the guard teeth: the
+    // .className is set EXACTLY 4 times, all in one-time construction (the pooled node,
+    // its .dur / .stacks children, and the overflow marker). Pinning the count gives the guard teeth: the
     // debuff state must flow through toggleClass, so any per-frame raw `rec.el.className =`
-    // write (the shape the old inline code used) would push this above 3 and fail here.
-    expect(code.match(/\.className\b/g) ?? []).toHaveLength(3);
+    // write (the shape the old inline code used) would push this above 4 and fail here.
+    expect(code.match(/\.className\b/g) ?? []).toHaveLength(4);
   });
 
   it('carries no literal hex / rgb / px value', () => {
@@ -150,8 +150,9 @@ function slot(over: Partial<AuraSlotState> & { key: string }): AuraSlotState {
     isDebuff: false,
     school: '',
     own: false,
-    expiring: false,
     durationText: '',
+    durationProgress: 1,
+    expiring: false,
     stacksText: '',
     name: over.key,
     remaining: 0,
@@ -321,8 +322,9 @@ describe('AurasPainter: keyed pool over the elided writers', () => {
           isDebuff: true,
           school: 'nature',
           durationText: '5s',
-          stacksText: '3',
+          durationProgress: 0.42,
           expiring: true,
+          stacksText: '3',
         }),
       ]),
     );
@@ -334,8 +336,11 @@ describe('AurasPainter: keyed pool over the elided writers', () => {
     ).toBe(true);
     // debuff via toggleClass (a structural class, not a color).
     expect(has('toggleClass', (c) => c.args[0] === 'debuff' && c.args[1] === true)).toBe(true);
-    // the expiring blink via toggleClass too (the stylesheet owns the animation).
+    expect(has('toggleClass', (c) => c.args[0] === 'timed' && c.args[1] === true)).toBe(true);
     expect(has('toggleClass', (c) => c.args[0] === 'expiring' && c.args[1] === true)).toBe(true);
+    expect(
+      has('setStyleProp', (c) => c.args[0] === '--aura-progress' && c.args[1] === '0.42'),
+    ).toBe(true);
     // the school border tint via setAttr(data-school), a structural attribute the
     // stylesheet maps to a --color-debuff-* token.
     expect(has('setAttr', (c) => c.args[0] === 'data-school' && c.args[1] === 'nature')).toBe(true);
@@ -413,17 +418,26 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     expect(nodes()).toHaveLength(over);
   });
 
-  it('low caps the rendered BUFF count at AURA_VISIBLE_CAP_LOW, dropping buff overflow', () => {
-    // A buff-only bar (the common case): low keeps the first cap buffs, drops the rest.
+  it('low caps visible buffs and replaces the omitted tail with a +N marker', () => {
+    // A buff-only bar (the common case): low keeps the first cap buffs and summarizes the rest.
     const over = AURA_VISIBLE_CAP_LOW + 5;
     tierPainter('low').paint(manyBuffs(over));
-    expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW);
+    expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
     expect(nodes().length).toBeLessThan(over);
+    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+5')).toBe(true);
   });
 
   it('low under the cap renders every aura (the cap only bites past the limit)', () => {
     tierPainter('low').paint(manyBuffs(AURA_VISIBLE_CAP_LOW - 2));
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW - 2);
+  });
+
+  it('removes the overflow marker as soon as the hidden count returns to zero', () => {
+    const painter = tierPainter('low');
+    painter.paint(manyBuffs(AURA_VISIBLE_CAP_LOW + 3));
+    expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
+    painter.paint(manyBuffs(2));
+    expect(nodes()).toHaveLength(2);
   });
 
   it('FAIRNESS: low NEVER culls a debuff -- a debuff past the buff cap still renders', () => {
@@ -437,8 +451,9 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     );
     slots.push(slot({ key: 'boss_curse', isDebuff: true, name: 'Boss Curse', remaining: 9 }));
     tierPainter('low').paint(state(slots));
-    // cap buffs + the never-culled debuff = cap + 1 nodes; the 2 trailing buffs are shed.
-    expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
+    // cap buffs + the never-culled debuff + the +2 marker.
+    expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 2);
+    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+2')).toBe(true);
     expect(aDebuffRendered()).toBe(true);
   });
 
@@ -481,7 +496,7 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     clientPainter.paint(build());
 
     expect(nodes().length).toBe(simCount);
-    expect(nodes().length).toBe(AURA_VISIBLE_CAP_LOW + 1); // cap buffs + the kept debuff
+    expect(nodes().length).toBe(AURA_VISIBLE_CAP_LOW + 2); // cap buffs + debuff + overflow marker
     expect(sig(calls)).toEqual(simSig); // identical painted output, value for value
   });
 });
@@ -533,8 +548,8 @@ describe('AurasPainter: a wire-faithful buff_* stat-sap survives the low cap (vi
 
     painter.paint(view.tick({ auras }));
 
-    // cap buffs + the never-culled sap = cap + 1 nodes; the 2 trailing buffs are shed.
-    expect(container.childNodes).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
+    // cap buffs + the never-culled sap + the +2 overflow marker.
+    expect(container.childNodes).toHaveLength(AURA_VISIBLE_CAP_LOW + 2);
     // the sap actually rendered: its debuff class toggled on for a rendered node.
     expect(
       facet.calls.some(

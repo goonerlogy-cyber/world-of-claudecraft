@@ -44,6 +44,7 @@ function aura(over: Partial<AuraInput> & { id: string }): AuraInput {
     name: over.id,
     kind: 'buff_ap',
     remaining: 10,
+    duration: 10,
     value: 1,
     ...over,
   };
@@ -164,7 +165,7 @@ describe('createAurasView: derivation per mode', () => {
     expect(state.slots.slice(0, 2).map((s) => s.name)).toEqual(['name:A', 'name:B']);
   });
 
-  it('derives icon key, debuff flag, duration text, stacks text, name, and remaining', () => {
+  it('derives icon key, debuff flag, duration sweep, expiry state, stacks, name, and remaining', () => {
     const state = createAurasView('all', deps()).tick(
       entity([
         aura({
@@ -172,6 +173,7 @@ describe('createAurasView: derivation per mode', () => {
           name: 'Gaping Wounds',
           kind: 'dot',
           remaining: 4.2,
+          duration: 10,
           value: 5,
           stacks: 5,
         }),
@@ -182,6 +184,8 @@ describe('createAurasView: derivation per mode', () => {
     expect(s.iconKey).toBe('deep_wounds');
     expect(s.isDebuff).toBe(true);
     expect(s.durationText).toBe('5s'); // ceil(4.2) = 5
+    expect(s.durationProgress).toBeCloseTo(0.42);
+    expect(s.expiring).toBe(true);
     expect(s.stacksText).toBe('5');
     expect(s.name).toBe('name:Gaping Wounds');
     expect(s.remaining).toBe(4.2);
@@ -220,6 +224,23 @@ describe('createAurasView: derivation per mode', () => {
 
     const slot = createAurasView('buffs', viewDeps).tick(entity([primed])).slots[0];
     expect(slot.effectHtml).toBe('hudChrome.auraEffect.elementalConvergencePrimed');
+  });
+
+  it('pulses only timed auras at five seconds or less and keeps toggles quiet', () => {
+    const v = createAurasView('all', deps());
+    expect(
+      v.tick(entity([aura({ id: 'steady', remaining: 5.01, duration: 10 })])).slots[0]
+        .expiring,
+    ).toBe(false);
+    expect(
+      v.tick(entity([aura({ id: 'urgent', remaining: 5, duration: 10 })])).slots[0].expiring,
+    ).toBe(true);
+    const toggle = v.tick(
+      entity([aura({ id: 'stealth', kind: 'stealth', remaining: 4, duration: 3600 })]),
+    ).slots[0];
+    expect(toggle.durationText).toBe('');
+    expect(toggle.durationProgress).toBe(1);
+    expect(toggle.expiring).toBe(false);
   });
 
   it('derives the debuff school for the border tint (physical fallback; buffs carry none)', () => {

@@ -376,6 +376,7 @@ export class PartyFramesPainter {
         hpText: partyFrameHealthText(m.hp, m.mhp, config?.healthText ?? 1, (value, percent) =>
           formatNumber(value, percent ? { style: 'percent', maximumFractionDigits: 0 } : undefined),
         ),
+        incomingHealFrac: (m.incomingHeal ?? 0) / Math.max(1, m.mhp),
         resourceKind: m.rtype,
         resFrac: m.res / Math.max(1, m.mres),
         resText: '',
@@ -392,12 +393,6 @@ export class PartyFramesPainter {
     const rewindFrac = Math.max(0, Math.min(1 - hpFrac, (m.rewind ?? 0) / Math.max(1, m.mhp)));
     this.writers.setStyleProp(row.rewind, '--rewind-start', `${(hpFrac * 100).toFixed(1)}%`);
     this.writers.setWidth(row.rewind, `${(rewindFrac * 100).toFixed(1)}%`);
-    const incomingFrac = Math.max(
-      0,
-      Math.min(1 - hpFrac, (m.incomingHeal ?? 0) / Math.max(1, m.mhp)),
-    );
-    this.writers.setStyleProp(row.incoming, '--incoming-start', `${(hpFrac * 100).toFixed(1)}%`);
-    this.writers.setWidth(row.incoming, `${(incomingFrac * 100).toFixed(1)}%`);
     // The leader star (aria-hidden, decorative) and the visually-hidden raid-group label,
     // both per-frame text routed through the elided writer (no raw write on the hot path);
     // each is cached, so a steady-state tick re-writes neither.

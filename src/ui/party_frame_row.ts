@@ -32,8 +32,9 @@ import { UnitFramePainter } from './unit_frame_painter';
 // party instance quantizes to three decimals (keeping the rendered transform AND its
 // write-elision cache key byte-identical to the old markup).
 export const PARTY_BAR_SCALE_PRECISION = 3;
-// The crest icon edge in px (the inline block passed 20 to iconDataUrl).
-const CREST_ICON_SIZE = 20;
+// Raid presentation uses the class crest as a full tile. Render enough source
+// pixels for that larger use while classic party frames still display it small.
+const CREST_ICON_SIZE = 52;
 // The portrait-gate key prefix: the crest repaints only when the member's class
 // changes (a row recycled to a same-class member keeps its crest).
 export const PARTY_CREST_KEY_PREFIX = 'crest:';
@@ -74,7 +75,6 @@ export interface PartyRow {
   leadStar: HTMLElement;
   group: HTMLElement;
   rewind: HTMLElement;
-  incoming: HTMLElement;
   relocalize: () => void;
   /** Repaint the member's mini aura strip (its own keyed AurasPainter pool per row).
    *  Called by the pool on each signature-gated sync, never per frame. */
@@ -284,6 +284,7 @@ export function createPartyRow(
       // a clean number in the accessible name.
       level: leadNum,
       hpFill,
+      hpPrediction: incoming,
       hpText,
       absorb: hpAbsorb,
       resource: { container: resBar, fill: resFill },
@@ -308,7 +309,6 @@ export function createPartyRow(
     leadStar,
     group,
     rewind,
-    incoming,
     paintAuras,
   };
 }
