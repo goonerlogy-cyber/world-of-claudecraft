@@ -755,13 +755,16 @@ export const en_XA: EnTranslations = {
       "targetLabel": "[Ýóúŕ Ɱáŕķ]",
       "targetAnnounce": "[Ɱáŕķ {name}]",
       "targetOfTargetLabel": "[Ɱáŕķ'š Ɱáŕķ]",
+      "targetOfTargetNamedLabel": "[Ɱáŕķ'š Ɱáŕķ: {name}]",
       "partyLabel": "[Ýóúŕ Ɓáñð]",
       "partyChip": "[Þáŕţý]",
       "partyGroup": "[Ĝŕóúþ {n}]",
       "durationUnitSeconds": "[š]",
       "durationUnitMinutes": "[ɱ]",
       "durationUnitHours": "[ĥ]",
-      "durationUnitDays": "[ð]"
+      "durationUnitDays": "[ð]",
+      "auraOverflowShort": "[+{count}]",
+      "auraOverflowLabel": "[Áððíţíóñáļ ƀúƒƒš: {count}]"
     },
     "character": {
       "modelPreview": "[Çĥáŕáçţéŕ Ɱóðéļ Þŕéʋíéŵ]"
@@ -1060,7 +1063,6 @@ export const en_XA: EnTranslations = {
       "unitFrameDamageTrail": "[Ðéļáýéð Ðáɱáĝé Ţŕáíļ]",
       "unitFramePortraitEffects": "[Þóŕţŕáíţ Ŕéáçţíóñš]",
       "showTargetOfTarget": "[Šĥóŵ Ţáŕĝéţ óƒ Ţáŕĝéţ]",
-      "aurasOnPlayerFrame": "[Ɓúƒƒš óñ ţĥé Þļáýéŕ Ƒŕáɱé]",
       "highContrastBackground": "[Ĥíĝĥ-Çóñţŕášţ Ɓáçķĝŕóúñð]",
       "startAttackOnAbility": "[Áúţó-Áţţáçķ óñ Áƀíļíţý Úšé]",
       "walkByAutoloot": "[Ŵáļķ-ƀý Áúţóļóóţ]",

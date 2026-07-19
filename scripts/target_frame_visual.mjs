@@ -93,13 +93,16 @@ await new Promise((r) => setTimeout(r, 300));
 
 // No-target contract: the docked player frame owns the true screen centre instead
 // of remaining stranded in the left half of the paired layout.
-await page.evaluate(({ xpCurrent, restedXp }) => {
-  const { sim, hud } = window.__game;
-  sim.xp = Math.max(0, xpCurrent);
-  sim.restedXp = Math.max(0, restedXp);
-  sim.targetEntity(null);
-  hud.update();
-}, { xpCurrent: XP_CURRENT, restedXp: RESTED_XP });
+await page.evaluate(
+  ({ xpCurrent, restedXp }) => {
+    const { sim, hud } = window.__game;
+    sim.xp = Math.max(0, xpCurrent);
+    sim.restedXp = Math.max(0, restedXp);
+    sim.targetEntity(null);
+    hud.update();
+  },
+  { xpCurrent: XP_CURRENT, restedXp: RESTED_XP },
+);
 await new Promise((r) => setTimeout(r, 220));
 const soloLayout = await page.evaluate(() => {
   const r = document.querySelector('#player-frame').getBoundingClientRect();
@@ -161,7 +164,17 @@ const auraDemo = await page.evaluate(() => {
   const player = sim.player;
   const target = player.targetId === null ? null : sim.entities.get(player.targetId);
   if (!target) return { ok: false };
-  const aura = (id, name, kind, remaining, duration, value, sourceId, school = 'physical', extra = {}) => ({
+  const aura = (
+    id,
+    name,
+    kind,
+    remaining,
+    duration,
+    value,
+    sourceId,
+    school = 'physical',
+    extra = {},
+  ) => ({
     id,
     name,
     kind,
@@ -231,7 +244,9 @@ const layout = await page.evaluate(() => {
   return {
     targetId: window.__game.sim.player.targetId,
     targetClass: document.querySelector('#target-frame').className,
-    targetAbsentMatch: document.querySelector('#ui').matches(':has(#target-frame.unitframe-absent)'),
+    targetAbsentMatch: document
+      .querySelector('#ui')
+      .matches(':has(#target-frame.unitframe-absent)'),
     targetDisplay: getComputedStyle(document.querySelector('#target-frame')).display,
     playerClass: document.querySelector('#player-frame').className,
     playerInlineStyle: document.querySelector('#player-frame').getAttribute('style'),
@@ -325,7 +340,15 @@ await page.screenshot({ path: `tmp/tf_${LABEL}_full.png` });
 await page.screenshot({
   path: `tmp/tf_${LABEL}_auras.png`,
   clip: await unionBounds(
-    ['#player-frame', '#target-frame', '#buff-bar', '#debuff-bar', '#tf-buffs', '#tf-debuffs'],
+    [
+      '#player-frame',
+      '#target-frame',
+      '#tf-target-target',
+      '#buff-bar',
+      '#debuff-bar',
+      '#tf-buffs',
+      '#tf-debuffs',
+    ],
     14,
   ),
 });

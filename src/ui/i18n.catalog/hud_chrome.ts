@@ -353,6 +353,7 @@ export const hudChromeStrings = {
     // locale does not trip the M16 untranslated-leak guard, reusing the frame's own
     // term for the target ("Mark", from targetLabel): your mark's mark.
     targetOfTargetLabel: "Mark's Mark",
+    targetOfTargetNamedLabel: "Mark's Mark: {name}",
     // partyLabel names the #party-frames region (a group of tappable / focusable
     // party member buttons, each named by its visible member name). Kept short and
     // non-wordy (no run of four+ lowercase) so an English-filled non-Latin locale
@@ -387,6 +388,8 @@ export const hudChromeStrings = {
     durationUnitMinutes: 'm',
     durationUnitHours: 'h',
     durationUnitDays: 'd',
+    auraOverflowShort: '+{count}',
+    auraOverflowLabel: 'Additional buffs: {count}',
   },
   // Character sheet (#char-window) accessible names. modelPreview names the role=img 3D
   // turntable HOST distinctly from the title's level/class subtitle (the canvas pixels
@@ -864,11 +867,6 @@ export const hudChromeStrings = {
     unitFrameDamageTrail: 'Delayed Damage Trail',
     unitFramePortraitEffects: 'Portrait Reactions',
     showTargetOfTarget: 'Show Target of Target',
-    // Interface panel toggle: anchor the player's own buff row to the movable
-    // player frame (the debuff row then slides up beside the minimap) instead
-    // of the classic two-row top-right corner (wordy, M16: the five non-Latin
-    // fills land in this same change).
-    aurasOnPlayerFrame: 'Buffs on the Player Frame',
     highContrastBackground: 'High-Contrast Background',
     // Interface panel toggle: also engage auto-attack when using an offensive
     // ability, so white swings start without a separate Attack press (on by default).

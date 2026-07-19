@@ -182,6 +182,8 @@ describe('AurasPainter: keyed pool over the elided writers', () => {
     const deps: AurasPainterDeps = {
       resolveIconUrl: (key) => iconUrl(key),
       renderTooltip: (name, remaining) => `${name}|${Math.ceil(remaining)}`,
+      overflowText: (count) => `+formatted-${count}`,
+      overflowLabel: (count) => `${count} additional buffs`,
       attachTooltip: tooltips.attachTooltip,
       attachCancel: () => {},
     };
@@ -392,6 +394,8 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     const deps: AurasPainterDeps = {
       resolveIconUrl: (key) => `url(${key})`,
       renderTooltip: (name, remaining) => `${name}|${Math.ceil(remaining)}`,
+      overflowText: (count) => `+formatted-${count}`,
+      overflowLabel: (count) => `${count} additional buffs`,
       attachTooltip: tooltips.attachTooltip,
       attachCancel: () => {},
     };
@@ -424,7 +428,13 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     tierPainter('low').paint(manyBuffs(over));
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
     expect(nodes().length).toBeLessThan(over);
-    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+5')).toBe(true);
+    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+formatted-5')).toBe(true);
+    expect(
+      calls.some(
+        (c) =>
+          c.m === 'setAttr' && c.args[0] === 'aria-label' && c.args[1] === '5 additional buffs',
+      ),
+    ).toBe(true);
   });
 
   it('low under the cap renders every aura (the cap only bites past the limit)', () => {
@@ -432,12 +442,17 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW - 2);
   });
 
-  it('removes the overflow marker as soon as the hidden count returns to zero', () => {
+  it('keeps one reconciled overflow node and hides it when the hidden count returns to zero', () => {
     const painter = tierPainter('low');
     painter.paint(manyBuffs(AURA_VISIBLE_CAP_LOW + 3));
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 1);
+    const overflow = nodes().at(-1);
     painter.paint(manyBuffs(2));
-    expect(nodes()).toHaveLength(2);
+    expect(nodes()).toHaveLength(3);
+    expect(nodes().at(-1)).toBe(overflow);
+    expect(
+      calls.some((c) => c.m === 'setDisplay' && c.el === overflow && c.args[0] === 'none'),
+    ).toBe(true);
   });
 
   it('FAIRNESS: low NEVER culls a debuff -- a debuff past the buff cap still renders', () => {
@@ -453,7 +468,7 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     tierPainter('low').paint(state(slots));
     // cap buffs + the never-culled debuff + the +2 marker.
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW + 2);
-    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+2')).toBe(true);
+    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+formatted-2')).toBe(true);
     expect(aDebuffRendered()).toBe(true);
   });
 
@@ -517,6 +532,8 @@ describe('AurasPainter: a wire-faithful buff_* stat-sap survives the low cap (vi
     const painterDeps: AurasPainterDeps = {
       resolveIconUrl: (key) => `url(${key})`,
       renderTooltip: (name, remaining) => `${name}|${Math.ceil(remaining)}`,
+      overflowText: (count) => `+formatted-${count}`,
+      overflowLabel: (count) => `${count} additional buffs`,
       attachTooltip: tips.attachTooltip,
       attachCancel: () => {},
     };

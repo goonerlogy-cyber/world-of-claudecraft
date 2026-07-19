@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  BOOL_SETTINGS,
   clickMoveButtonLabel,
   normalizeClickMoveButton,
   SETTING_RANGES,
@@ -87,8 +88,8 @@ describe('Settings', () => {
     expect(s.get('unitFrameDamageTrail')).toBe(true);
     expect(s.get('unitFramePortraitEffects')).toBe(true);
     expect(s.get('showTargetOfTarget')).toBe(true);
-    // the premium frame-attached buff/debuff hierarchy ships as the default.
-    expect(s.get('aurasOnPlayerFrame')).toBe(true);
+    // Aura placement is structural, not a persisted preference that can silently no-op.
+    expect('aurasOnPlayerFrame' in BOOL_SETTINGS).toBe(false);
     expect(s.get('joystickDeadzone')).toBe(SETTING_RANGES.joystickDeadzone.def);
     // Interface Mode defaults to Auto (0): detect desktop vs touch from the device.
     expect(s.get('interfaceMode')).toBe(SETTING_RANGES.interfaceMode.def);

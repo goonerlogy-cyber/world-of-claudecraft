@@ -17,6 +17,14 @@ const hudTs = readFileSync(new URL('../src/ui/hud.ts', import.meta.url), 'utf8')
   /\r\n/g,
   '\n',
 );
+const indexHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8').replace(
+  /\r\n/g,
+  '\n',
+);
+const playHtml = readFileSync(new URL('../play.html', import.meta.url), 'utf8').replace(
+  /\r\n/g,
+  '\n',
+);
 
 describe('unit frame visual identity', () => {
   it('uses the hostile palette for a healthy enemy target instead of player green', () => {
@@ -49,7 +57,8 @@ describe('unit frame visual identity', () => {
   });
 
   it('presents target-of-target as a compact clickable satellite with a self cue', () => {
-    expect(hudTs).toContain('targetOfTargetEntityId(target)');
+    expect(hudTs).toContain('targetOfTargetSubject(target');
+    expect(hudTs).toContain('this.targetOfTargetPainter.paint(');
     expect(hudTs).toContain('this.sim.targetEntity(this.targetOfTargetEntityId);');
     expect(hudCss).toMatch(/\.tf-target-target \{[\s\S]*?left: calc\(100% \+ 7px\)/);
     expect(hudCss).toContain('.tf-target-target.is-self {');
@@ -118,10 +127,11 @@ describe('unit frame visual identity', () => {
   });
 
   it('keeps player buffs and debuffs anchored to the HP frame on touch layouts', () => {
-    expect(hudTs).toContain("document.body.classList.add('auras-on-frame');");
-    expect(hudTs).toContain('frame.appendChild(this.buffBarEl);');
-    expect(hudTs).toContain('frame.appendChild(this.debuffBarEl);');
-    expect(hudTs).not.toContain("classList.toggle('auras-on-frame'");
+    const structuralAuraRows =
+      /<div id="buff-bar"><\/div>\n\s*<div id="debuff-bar"><\/div>\n\s*<\/div>\n\s*<div id="petbar"/;
+    expect(indexHtml).toMatch(structuralAuraRows);
+    expect(playHtml).toMatch(structuralAuraRows);
+    expect(hudTs).not.toContain('setAurasOnPlayerFrame');
     expect(hudMobileCss).toContain('body.mobile-touch #player-frame > #buff-bar,');
     expect(hudMobileCss).toMatch(
       /body\.mobile-touch #player-frame > #debuff-bar \{[\s\S]*?transform: none;/,

@@ -1766,7 +1766,7 @@
   /* Ten-player raids use the same five-across icon grid as desktop. At 44px the
      tiles preserve the mobile touch floor while all nine allies fit in two rows. */
   body.mobile-touch #party-frames.party-style-raid {
-    --party-raid-tile-size: calc(44px * var(--mobile-chrome-scale, 1));
+    --party-raid-tile-size: max(40px, calc(44px * var(--mobile-chrome-scale, 1)));
   }
   body.mobile-touch #party-frames.party-style-raid .party-rows {
     grid-auto-flow: row;

@@ -47,6 +47,7 @@ import { GamepadManager } from './game/gamepad';
 import { GamepadBindings } from './game/gamepad_bindings';
 import { handleGatherNodeInteract } from './game/gather_node_interact';
 import { gatherToolProfessionFor, nearestGatherNodeForProfession } from './game/gather_tool_use';
+import { applyHudVisualQaScenario, hudVisualQaPartySize } from './game/hud_visual_qa';
 import { Input } from './game/input';
 import { InputActivityMeter, installInputActivityTracking } from './game/input_activity';
 import { stopAutorunForInteraction } from './game/interaction_autorun';
@@ -91,7 +92,6 @@ import {
   Settings,
 } from './game/settings';
 import { sfx } from './game/sfx';
-import { applyHudVisualQaScenario, hudVisualQaPartySize } from './game/hud_visual_qa';
 import { initSoftwareRenderNotice } from './game/software_render_notice';
 import {
   decideSpawnCinematic,
@@ -1231,10 +1231,7 @@ async function startGame(
   // Dev-only visual matrix: real responsive HUD screenshots for 3/5-player
   // parties and a 10-player raid. Inert in production and in normal dev play.
   if (offlineSim && hudQaPartySizeAtBoot !== null) {
-    console.info(
-      '[hud-qa]',
-      applyHudVisualQaScenario(offlineSim, hud, hudQaPartySizeAtBoot),
-    );
+    console.info('[hud-qa]', applyHudVisualQaScenario(offlineSim, hud, hudQaPartySizeAtBoot));
   }
 
   const chatInput = $('#chat-input') as unknown as HTMLTextAreaElement;
@@ -2135,9 +2132,6 @@ async function startGame(
       case 'partyFrameStyle':
         // Read live by Hud.updatePartyFrames; persistence above is the only
         // page-level work needed.
-        break;
-      case 'aurasOnPlayerFrame':
-        hud.setAurasOnPlayerFrame(!!v);
         break;
       // Graphics-tier HUD effects follow the STATIC preset + the advanced
       // effectsQuality slider. The 3D renderer tier is resolved at renderer

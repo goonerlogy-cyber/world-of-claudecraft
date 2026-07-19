@@ -229,8 +229,7 @@ describe('createAurasView: derivation per mode', () => {
   it('pulses only timed auras at five seconds or less and keeps toggles quiet', () => {
     const v = createAurasView('all', deps());
     expect(
-      v.tick(entity([aura({ id: 'steady', remaining: 5.01, duration: 10 })])).slots[0]
-        .expiring,
+      v.tick(entity([aura({ id: 'steady', remaining: 5.01, duration: 10 })])).slots[0].expiring,
     ).toBe(false);
     expect(
       v.tick(entity([aura({ id: 'urgent', remaining: 5, duration: 10 })])).slots[0].expiring,

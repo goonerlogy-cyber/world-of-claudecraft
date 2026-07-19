@@ -498,7 +498,8 @@ import { swingTimerState } from './swing_timer';
 import { SwingTimerPainter } from './swing_timer_painter';
 import { roleLabel, tTalent } from './talent_i18n';
 import { TalentsWindow } from './talents_window';
-import { targetOfTargetEntityId } from './target_of_target';
+import { TargetOfTargetPainter } from './target_of_target_painter';
+import { targetOfTargetSubject, targetOfTargetView } from './target_of_target_view';
 import { targetPortraitUrl } from './target_portrait_view';
 import { targetRankView, targetUsesEliteFrame } from './target_rank_view';
 import type { PresetId, ThemeKnob, ThemeState } from './theme';
@@ -511,7 +512,6 @@ import { TutorialOverlay } from './tutorial';
 import { svgIcon } from './ui_icons';
 import { getUiScale } from './ui_scale';
 import {
-  UNIT_FRAME_DANGER_FRAC,
   type UnitFrameDescriptor,
   type UnitFrameHealthTextMode,
   unitFrameHealthText,
@@ -1209,7 +1209,7 @@ export class Hud {
   private targetOfTargetHpEl = $('#tf-tot-hp');
   private targetOfTargetPortraitEl = $('#tf-tot-portrait') as unknown as HTMLCanvasElement;
   private targetOfTargetEntityId: number | null = null;
-  private lastTargetOfTargetPortraitId: string | null = null;
+  private targetOfTargetPortraitSubject: Entity | null = null;
   // Cached fallback for hosts without settings hooks. main.ts also updates this
   // immediately when the display option changes.
   private showTargetOfTarget = true;
@@ -1805,7 +1805,7 @@ export class Hud {
     onPortraitsReady(() => {
       this.drawPlayerFramePortrait();
       this.targetFramePainter.invalidatePortrait();
-      this.lastTargetOfTargetPortraitId = null;
+      this.targetOfTargetPainter.invalidatePortrait();
     });
     const mm = $('#minimap') as unknown as HTMLCanvasElement;
     this.minimapCtx = require2dContext(mm);
@@ -2873,7 +2873,7 @@ export class Hud {
     if (this.playerFrameEl) {
       // Classic self-target: clicking the player frame body targets yourself.
       // The corner move button stops its own propagation; buttons inside the
-      // frame and the anchored aura rows (aurasOnPlayerFrame) never self-target,
+      // frame and the anchored aura rows never self-target,
       // so a buff right-click-cancel or a stray icon click stays what it was.
       this.playerFrameEl.addEventListener('click', (ev) => {
         const clicked = ev.target as HTMLElement | null;
@@ -2935,20 +2935,6 @@ export class Hud {
       const stack = $('#actionbar-stack');
       if (frame.parentElement !== stack) stack.insertBefore(frame, stack.firstChild);
     }
-  }
-
-  // Both player aura rows are structural children of the player frame. The
-  // retained setter accepts the legacy setting callback, but placement is no
-  // longer optional: buffs and debuffs must follow the HP frame on every layout.
-  setAurasOnPlayerFrame(_on: boolean): void {
-    this.applyAuraAnchor();
-  }
-
-  private applyAuraAnchor(): void {
-    document.body.classList.add('auras-on-frame');
-    const frame = this.playerFrameEl;
-    if (this.buffBarEl.parentElement !== frame) frame.appendChild(this.buffBarEl);
-    if (this.debuffBarEl.parentElement !== frame) frame.appendChild(this.debuffBarEl);
   }
 
   syncChatTabsForInput(typed: string): void {
@@ -3415,6 +3401,33 @@ export class Hud {
       repaintPortrait: () => this.drawTargetPortrait(),
     },
   );
+  // The compact target-of-target satellite is another member of the shared
+  // unit-frame family. Its adapter owns only the accent and interactive label;
+  // presence, health state, and portrait invalidation stay in UnitFramePainter.
+  private readonly targetOfTargetPainter = new TargetOfTargetPainter(
+    this.writerFacet,
+    {
+      frame: this.targetOfTargetEl,
+      name: this.targetOfTargetNameEl,
+      hpFill: this.targetOfTargetHpEl,
+    },
+    {
+      resolveAccent: (accent, classId) =>
+        accent === 'self'
+          ? 'var(--gold)'
+          : accent === 'hostile'
+            ? 'var(--color-hostile)'
+            : accent === 'player'
+              ? classCss(classId)
+              : 'var(--color-friendly)',
+      repaintPortrait: (entityId) => {
+        const subject = this.targetOfTargetPortraitSubject;
+        if (subject?.id === entityId) {
+          this.drawUnitPortrait(this.targetOfTargetPortraitEl, subject);
+        }
+      },
+    },
+  );
   // Deferred "Auto-Attack on Ability Use" for TIMED casts: set by castSlot when
   // the QoL would engage but the ability has a cast time, consumed by the
   // castStop event (engage on success, drop on interrupt), so starting a Smite
@@ -3441,6 +3454,14 @@ export class Hud {
     painter: {
       resolveIconUrl: (iconKey) => `url(${iconDataUrl('aura', iconKey)})`,
       renderTooltip: (name) => `<div class="tt-title">${esc(name)}</div>`,
+      overflowText: (count) =>
+        t('hudChrome.unitFrame.auraOverflowShort', {
+          count: formatNumber(count, { maximumFractionDigits: 0 }),
+        }),
+      overflowLabel: (count) =>
+        t('hudChrome.unitFrame.auraOverflowLabel', {
+          count: formatNumber(count, { maximumFractionDigits: 0 }),
+        }),
       attachTooltip: (el, html) => this.attachTooltip(el, html),
     },
   };
@@ -3526,6 +3547,14 @@ export class Hud {
     resolveIconUrl: (iconKey) => `url(${iconDataUrl('aura', iconKey)})`,
     renderTooltip: (name, remaining, effectHtml) =>
       `<div class="tt-title">${esc(name)}</div>${effectHtml}<div class="tt-sub">${esc(tPlural('hudChrome.plurals.secondsRemaining', Math.ceil(remaining)))}</div>`,
+    overflowText: (count) =>
+      t('hudChrome.unitFrame.auraOverflowShort', {
+        count: formatNumber(count, { maximumFractionDigits: 0 }),
+      }),
+    overflowLabel: (count) =>
+      t('hudChrome.unitFrame.auraOverflowLabel', {
+        count: formatNumber(count, { maximumFractionDigits: 0 }),
+      }),
     attachTooltip: (el, html) => this.attachTooltip(el, html),
   };
   // Player auras split across two rows (classic layout): buffs in #buff-bar, debuffs in
@@ -4223,61 +4252,27 @@ export class Hud {
   }
 
   private paintTargetOfTarget(target: Entity | null, playerId: number): void {
-    if (!(this.optionsHooks?.settings.get('showTargetOfTarget') ?? this.showTargetOfTarget)) {
-      this.hideTargetOfTarget();
-      return;
-    }
-    const entityId = targetOfTargetEntityId(target);
-    const subject = entityId === null ? null : this.sim.entities.get(entityId);
-    if (!subject || subject.kind === 'object') {
-      this.hideTargetOfTarget();
-      return;
-    }
-
-    const hpFrac = Math.max(0, Math.min(1, subject.hp / Math.max(1, subject.maxHp)));
-    const name = entityDisplayName(subject);
-    const isSelf = subject.id === playerId;
-    this.targetOfTargetEntityId = subject.id;
-    this.setText(this.targetOfTargetNameEl, name);
-    this.writerFacet.setTransform(this.targetOfTargetHpEl, `scaleX(${hpFrac})`);
-    this.setStyleProp(
-      this.targetOfTargetEl,
-      '--tot-accent',
-      isSelf
-        ? 'var(--gold)'
-        : subject.hostile
-          ? 'var(--color-hostile)'
-          : subject.kind === 'player'
-            ? classCss(subject.templateId)
-            : 'var(--color-friendly)',
+    const shown = this.optionsHooks?.settings.get('showTargetOfTarget') ?? this.showTargetOfTarget;
+    const subject = shown
+      ? targetOfTargetSubject(target, (entityId) => this.sim.entities.get(entityId))
+      : null;
+    this.targetOfTargetEntityId = subject?.id ?? null;
+    this.targetOfTargetPortraitSubject = subject;
+    const portrait = subject ? unitPortraitPlan(subject) : null;
+    const name = subject ? entityDisplayName(subject) : '';
+    this.targetOfTargetPainter.paint(
+      targetOfTargetView(
+        subject,
+        playerId,
+        subject
+          ? {
+              name,
+              accessibleLabel: t('hudChrome.unitFrame.targetOfTargetNamedLabel', { name }),
+              portraitKey: `${subject.id}:${portrait?.identityKey ?? 'base'}`,
+            }
+          : null,
+      ),
     );
-    this.toggleClass(this.targetOfTargetEl, 'is-self', isSelf);
-    this.toggleClass(
-      this.targetOfTargetEl,
-      'health-danger',
-      !subject.dead && hpFrac > 0 && hpFrac <= UNIT_FRAME_DANGER_FRAC,
-    );
-    this.toggleClass(this.targetOfTargetEl, 'is-dead', subject.dead || hpFrac <= 0);
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'aria-label', name);
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'title', name);
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'aria-hidden', 'false');
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'tabindex', '0');
-    this.setDisplay(this.targetOfTargetEl, 'flex');
-
-    const subjectPortrait = unitPortraitPlan(subject);
-    const subjectPortraitKey = `${subject.id}:${subjectPortrait?.identityKey ?? 'base'}`;
-    if (subjectPortraitKey !== this.lastTargetOfTargetPortraitId) {
-      this.lastTargetOfTargetPortraitId = subjectPortraitKey;
-      this.drawUnitPortrait(this.targetOfTargetPortraitEl, subject);
-    }
-  }
-
-  private hideTargetOfTarget(): void {
-    this.targetOfTargetEntityId = null;
-    this.lastTargetOfTargetPortraitId = null;
-    this.setDisplay(this.targetOfTargetEl, 'none');
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'aria-hidden', 'true');
-    this.writerFacet.setAttr(this.targetOfTargetEl, 'tabindex', '-1');
   }
 
   private drawUnitPortrait(canvas: HTMLCanvasElement, target: Entity): void {
@@ -4318,7 +4313,7 @@ export class Hud {
   // Toggle the compact target-of-target satellite, driven from main.ts applySetting.
   setShowTargetOfTarget(on: boolean): void {
     this.showTargetOfTarget = on;
-    if (!on) this.hideTargetOfTarget();
+    if (!on) this.paintTargetOfTarget(null, this.sim.playerId);
   }
 
   private itemIcon(item: ItemDef): string {

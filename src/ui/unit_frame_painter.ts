@@ -79,8 +79,8 @@ export interface UnitFrameResourceElements {
 export interface UnitFrameElements {
   /** The `.unitframe` container (present + dead/out-of-range state). */
   frame: HTMLElement;
-  /** The level chip. */
-  level: HTMLElement;
+  /** The level chip, omitted by compact satellites. */
+  level?: HTMLElement;
   /** The hp fill (scaleX transform). */
   hpFill: HTMLElement;
   /** The semantic health rail that owns recent-change feedback classes. */
@@ -184,7 +184,7 @@ export class UnitFramePainter {
         this.writers.toggleClass(this.el.frame, cls, cls === `portrait-${view.portraitState}`);
       }
     }
-    this.writers.setText(this.el.level, view.levelText ?? '');
+    if (this.el.level) this.writers.setText(this.el.level, view.levelText ?? '');
     this.paintHealth(view);
     if (this.el.hpText) this.writers.setText(this.el.hpText, view.hpText);
     if (this.el.hpPercent) this.writers.setText(this.el.hpPercent, view.hpPercentText);

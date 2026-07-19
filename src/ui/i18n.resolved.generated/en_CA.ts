@@ -755,13 +755,16 @@ export const en_CA: EnTranslations = {
       "targetLabel": "Your Mark",
       "targetAnnounce": "Mark {name}",
       "targetOfTargetLabel": "Mark's Mark",
+      "targetOfTargetNamedLabel": "Mark's Mark: {name}",
       "partyLabel": "Your Band",
       "partyChip": "Party",
       "partyGroup": "Group {n}",
       "durationUnitSeconds": "s",
       "durationUnitMinutes": "m",
       "durationUnitHours": "h",
-      "durationUnitDays": "d"
+      "durationUnitDays": "d",
+      "auraOverflowShort": "+{count}",
+      "auraOverflowLabel": "Additional buffs: {count}"
     },
     "character": {
       "modelPreview": "Character Model Preview"
@@ -1060,7 +1063,6 @@ export const en_CA: EnTranslations = {
       "unitFrameDamageTrail": "Delayed Damage Trail",
       "unitFramePortraitEffects": "Portrait Reactions",
       "showTargetOfTarget": "Show Target of Target",
-      "aurasOnPlayerFrame": "Buffs on the Player Frame",
       "highContrastBackground": "High-Contrast Background",
       "startAttackOnAbility": "Auto-Attack on Ability Use",
       "walkByAutoloot": "Walk-by Autoloot",

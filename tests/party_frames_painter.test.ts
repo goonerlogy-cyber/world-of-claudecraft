@@ -248,6 +248,8 @@ const auraDeps: PartyRowAuraDeps = {
   painter: {
     resolveIconUrl: (k) => `url(${k})`,
     renderTooltip: (name) => name,
+    overflowText: (count) => `+${count}`,
+    overflowLabel: (count) => `${count} additional buffs`,
     attachTooltip: () => {},
   },
 };
@@ -604,10 +606,7 @@ describe('PartyFramesPainter: keyed pool over the elided writers', () => {
     // Party frames reuse the shared UnitFramePainter's positioned absorb segment:
     // the hatch starts at current health and spans only the actual shield amount.
     expect(
-      has(
-        'setStyleProp',
-        (c) => c.args[0] === '--absorb-start' && c.args[1] === '50.0%',
-      ),
+      has('setStyleProp', (c) => c.args[0] === '--absorb-start' && c.args[1] === '50.0%'),
     ).toBe(true);
     expect(has('setTransform', (c) => c.args[0] === 'scaleX(0.250)')).toBe(true);
     // The compact party row never appends the absorb total to the HP text (that is a

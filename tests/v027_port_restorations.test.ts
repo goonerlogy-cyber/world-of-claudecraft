@@ -35,7 +35,7 @@ import { directHealBonus } from '../src/sim/spell_scaling';
 import { stunDrCategory } from '../src/sim/stun_dr';
 import type { Aura } from '../src/sim/types';
 import { AVATAR_SCALE, SPELL_AOE_COEFF_MULT } from '../src/sim/types';
-import { targetOfTargetId } from '../src/ui/target_of_target';
+import { targetOfTargetId } from '../src/ui/target_of_target_view';
 
 describe('rogue starting dual wield (classes.ts startOffhand)', () => {
   it('starts rogues with a rusty dagger in BOTH hands', () => {

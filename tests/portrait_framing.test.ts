@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  portraitAimPoint,
-  portraitFrameParams,
-} from '../src/render/characters/portrait_framing';
+import { portraitAimPoint, portraitFrameParams } from '../src/render/characters/portrait_framing';
 
 describe('portraitFrameParams', () => {
   it('defaults to a tight head-and-shoulders crop for headshot framing', () => {

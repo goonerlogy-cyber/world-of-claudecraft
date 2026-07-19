@@ -321,9 +321,7 @@ export function createAurasView(
           Number.isFinite(a.duration) && (a.duration ?? 0) > 0
             ? (a.duration as number)
             : Math.max(1, a.remaining);
-        slot.durationProgress = timed
-          ? Math.max(0, Math.min(1, a.remaining / duration))
-          : 1;
+        slot.durationProgress = timed ? Math.max(0, Math.min(1, a.remaining / duration)) : 1;
         slot.expiring = timed && a.remaining > 0 && a.remaining <= 5;
         // A charge-limited aura badges its remaining charges (shown even at 1); otherwise the
         // badge shows a stack count, and only when it stacks past 1.

@@ -78,6 +78,10 @@ export interface AurasPainterDeps {
    *  tt-title/tt-sub markup with esc + tPlural). Called lazily on hover, reading the
    *  pooled record's current fields. */
   renderTooltip(name: string, remaining: number, effectHtml: string): string;
+  /** Format the compact visible overflow marker through the active locale. */
+  overflowText(count: number): string;
+  /** Localized accessible description for the buffs summarized by the marker. */
+  overflowLabel(count: number): string;
   /** Attach a lazily-built tooltip to a node (host: Hud.attachTooltip). Called ONCE per
    *  pooled node; the closure reads the live record. */
   attachTooltip(el: HTMLElement, html: () => string): void;
@@ -130,9 +134,10 @@ export class AurasPainter {
   // Monotonic frame stamp for the detach sweep (cheaper than building a key Set each
   // frame). Wraps harmlessly: a record's stamp is rewritten every frame it is active.
   private frame = 0;
-  // Lazily built because full tiers usually have no omitted auras. It is a sibling of
-  // the pooled aura nodes, kept outside the keyed pool and always reconciled last.
-  private overflowEl: HTMLElement | null = null;
+  // One persistent sibling outside the keyed pool. It is inserted on first use,
+  // reconciled last, and hidden rather than destroyed when overflow clears.
+  private readonly overflowEl: HTMLElement;
+  private overflowAttached = false;
 
   constructor(
     private readonly writers: PainterHostWriters,
@@ -144,7 +149,10 @@ export class AurasPainter {
     // governor). Read per paint to cap the visible aura count on low. Defaults to the
     // full tier so a painter built without it is untiered (uncapped, byte-faithful).
     private readonly getFxTier: () => UiEffectsTier = () => 'ultra',
-  ) {}
+  ) {
+    this.overflowEl = this.doc.createElement('div');
+    this.overflowEl.className = OVERFLOW_CLASS;
+  }
 
   /** Reconcile the pool to this frame's active auras and repaint each in place. Runs
    *  every frame; the elided writers make an unchanged frame cost no DOM mutation. */
@@ -251,25 +259,21 @@ export class AurasPainter {
         this.pool.delete(rec.key);
       }
     }
-    this.reconcileOrder();
     this.paintOverflow(omitted);
+    this.reconcileOrder();
   }
 
   /** Summarize only the buffs hidden by the low-tier cap. Debuffs are never omitted,
    *  so +N always means “N additional beneficial effects”, not missing danger. */
   private paintOverflow(omitted: number): void {
     if (omitted <= 0) {
-      this.overflowEl?.remove();
+      if (this.overflowAttached) this.writers.setDisplay(this.overflowEl, STACKS_HIDDEN);
       return;
     }
-    if (!this.overflowEl) {
-      this.overflowEl = this.doc.createElement('div');
-      this.overflowEl.className = OVERFLOW_CLASS;
-    }
-    this.writers.setText(this.overflowEl, `+${omitted}`);
-    if (this.overflowEl.parentNode !== this.container) {
-      this.container.appendChild(this.overflowEl);
-    }
+    this.writers.setText(this.overflowEl, this.deps.overflowText(omitted));
+    this.writers.setAttr(this.overflowEl, 'aria-label', this.deps.overflowLabel(omitted));
+    this.writers.setDisplay(this.overflowEl, STACKS_SHOWN);
+    this.overflowAttached = true;
   }
 
   /** Build one aura node (.buff > .dur + .stacks) and attach its tooltip ONCE. The
@@ -322,6 +326,12 @@ export class AurasPainter {
       } else {
         this.container.insertBefore(rec.el, ref);
       }
+    }
+    if (!this.overflowAttached) return;
+    if (this.overflowEl === ref) {
+      ref = ref.nextSibling;
+    } else {
+      this.container.insertBefore(this.overflowEl, ref);
     }
   }
 }

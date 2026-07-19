@@ -755,13 +755,16 @@ export const ru_RU: EnTranslations = {
       "targetLabel": "Ваша цель",
       "targetAnnounce": "Цель: {name}",
       "targetOfTargetLabel": "Цель цели",
+      "targetOfTargetNamedLabel": "Цель цели: {name}",
       "partyLabel": "Ваша группа",
       "partyChip": "Группа",
       "partyGroup": "Группа {n}",
       "durationUnitSeconds": "с",
       "durationUnitMinutes": "м",
       "durationUnitHours": "ч",
-      "durationUnitDays": "д"
+      "durationUnitDays": "д",
+      "auraOverflowShort": "+{count}",
+      "auraOverflowLabel": "Дополнительных усилений: {count}"
     },
     "character": {
       "modelPreview": "Предпросмотр модели персонажа"
@@ -1056,11 +1059,10 @@ export const ru_RU: EnTranslations = {
       "uiScale": "Масштаб интерфейса",
       "playerFrameScale": "Размер рамки игрока",
       "targetFrameScale": "Размер рамки цели",
-      "unitFrameHealthText": "Unit Frame Health Text",
-      "unitFrameDamageTrail": "Delayed Damage Trail",
-      "unitFramePortraitEffects": "Portrait Reactions",
+      "unitFrameHealthText": "Текст здоровья рамки",
+      "unitFrameDamageTrail": "Отложенный след урона",
+      "unitFramePortraitEffects": "Реакции портрета",
       "showTargetOfTarget": "Показывать цель цели",
-      "aurasOnPlayerFrame": "Баффы у рамки игрока",
       "highContrastBackground": "Фон высокой контрастности",
       "startAttackOnAbility": "Автоатака при использовании способности",
       "walkByAutoloot": "Автосбор добычи при проходе",

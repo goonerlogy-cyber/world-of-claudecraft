@@ -119,6 +119,9 @@ describe('mobile target-size: in-game touch controls are >=40x40 in landscape', 
   });
 
   it('keeps a full raid roster reachable inside the landscape viewport', () => {
+    // The compact HUD applies --mobile-chrome-scale: 0.85. Raid tiles must clamp
+    // after that scale so their interactive row never falls below the touch floor.
+    document.body.className = 'mobile-touch game-active hud-mobile-compact';
     const frames = el('div', {
       id: 'party-frames',
       class: 'party-expanded party-style-raid',
@@ -133,6 +136,8 @@ describe('mobile target-size: in-game touch controls are >=40x40 in landscape', 
     }
     frames.append(chip, rows);
     document.body.appendChild(frames);
+
+    expectAtLeastFloor(rows.firstElementChild as HTMLElement, 'compact raid party-frame');
 
     const rect = rows.getBoundingClientRect();
     expect(rect.right).toBeLessThanOrEqual(window.innerWidth + EPSILON);

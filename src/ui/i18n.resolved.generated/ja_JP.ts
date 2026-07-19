@@ -755,13 +755,16 @@ export const ja_JP: EnTranslations = {
       "targetLabel": "あなたのターゲット",
       "targetAnnounce": "ターゲット：{name}",
       "targetOfTargetLabel": "ターゲットのターゲット",
+      "targetOfTargetNamedLabel": "ターゲットのターゲット：{name}",
       "partyLabel": "あなたのパーティ",
       "partyChip": "パーティ",
       "partyGroup": "グループ {n}",
       "durationUnitSeconds": "秒",
       "durationUnitMinutes": "分",
       "durationUnitHours": "時",
-      "durationUnitDays": "日"
+      "durationUnitDays": "日",
+      "auraOverflowShort": "+{count}",
+      "auraOverflowLabel": "追加のバフ {count} 件"
     },
     "character": {
       "modelPreview": "キャラクターモデルプレビュー"
@@ -1056,11 +1059,10 @@ export const ja_JP: EnTranslations = {
       "uiScale": "UIスケール",
       "playerFrameScale": "プレイヤーフレームの大きさ",
       "targetFrameScale": "ターゲットフレームの大きさ",
-      "unitFrameHealthText": "Unit Frame Health Text",
-      "unitFrameDamageTrail": "Delayed Damage Trail",
-      "unitFramePortraitEffects": "Portrait Reactions",
+      "unitFrameHealthText": "ユニットフレームの体力表示",
+      "unitFrameDamageTrail": "遅延ダメージ表示",
+      "unitFramePortraitEffects": "ポートレートの反応",
       "showTargetOfTarget": "ターゲットのターゲットを表示",
-      "aurasOnPlayerFrame": "バフをプレイヤーフレームに表示",
       "highContrastBackground": "高コントラスト背景",
       "startAttackOnAbility": "アビリティ使用時に自動攻撃",
       "walkByAutoloot": "通りがかり自動ルート",

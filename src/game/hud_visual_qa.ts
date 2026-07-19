@@ -3,7 +3,7 @@
 // Sim -> Hud -> painter path instead of hand-built mock markup.
 
 import type { Sim } from '../sim/sim';
-import { xpForLevel, type Aura, type Entity } from '../sim/types';
+import { type Aura, type Entity, xpForLevel } from '../sim/types';
 
 export interface HudVisualQaHost {
   update(dt?: number): void;
