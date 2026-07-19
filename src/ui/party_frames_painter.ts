@@ -73,6 +73,9 @@ const ARIA_FALSE = 'false';
 // forced-colors (where the combat box-shadow is dropped).
 const BADGE_SHOWN = '';
 const BADGE_HIDDEN = 'none';
+// A raid tile has room for two quiet beneficial icons. The aura painter never
+// culls a debuff and summarizes additional buffs with its localized +N marker.
+const PARTY_RAID_BUFF_VISIBLE_CAP = 2;
 
 /** What the pool needs from the Hud: the class-color resolver and the row actions. */
 export interface PartyFramesPainterDeps {
@@ -406,7 +409,10 @@ export class PartyFramesPainter {
     this.writers.setDisplay(row.badges.offline, m.connected === 0 ? BADGE_SHOWN : BADGE_HIDDEN);
     // The member's mini aura strip: the row's own keyed aura pool (writes elided
     // inside it). Signature-gated like the rest of this sync, never per frame.
-    row.paintAuras(config?.showAuras === false ? [] : (m.auras ?? []));
+    row.paintAuras(
+      config?.showAuras === false ? [] : (m.auras ?? []),
+      raid ? PARTY_RAID_BUFF_VISIBLE_CAP : Number.POSITIVE_INFINITY,
+    );
   }
 
   /** The localized "Group n" raid cue for a member, or '' outside raid. The group number

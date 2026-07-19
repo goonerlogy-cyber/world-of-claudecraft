@@ -47,7 +47,11 @@ import { GamepadManager } from './game/gamepad';
 import { GamepadBindings } from './game/gamepad_bindings';
 import { handleGatherNodeInteract } from './game/gather_node_interact';
 import { gatherToolProfessionFor, nearestGatherNodeForProfession } from './game/gather_tool_use';
-import { applyHudVisualQaScenario, hudVisualQaPartySize } from './game/hud_visual_qa';
+import {
+  applyHudVisualQaScenario,
+  hudVisualQaDesktop,
+  hudVisualQaPartySize,
+} from './game/hud_visual_qa';
 import { Input } from './game/input';
 import { InputActivityMeter, installInputActivityTracking } from './game/input_activity';
 import { stopAutorunForInteraction } from './game/interaction_autorun';
@@ -595,7 +599,7 @@ function syncCommunityMenuMode(): void {
 const hudQaPartySizeAtBoot = import.meta.env.DEV
   ? hudVisualQaPartySize(window.location.search)
   : null;
-const hudQaDesktopAtBoot = new URLSearchParams(window.location.search).has('hudqaDesktop');
+const hudQaDesktopAtBoot = import.meta.env.DEV ? hudVisualQaDesktop(window.location.search) : false;
 const hudQaForcesTouch = hudQaPartySizeAtBoot !== null && !hudQaDesktopAtBoot;
 setInterfaceMode(
   hudQaForcesTouch ? 'touch' : interfaceModeFromSetting(new Settings().get('interfaceMode')),

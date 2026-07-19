@@ -442,6 +442,12 @@ describe('AurasPainter: static-preset visible-count cap', () => {
     expect(nodes()).toHaveLength(AURA_VISIBLE_CAP_LOW - 2);
   });
 
+  it('accepts a stricter component cap while preserving the localized overflow marker', () => {
+    tierPainter('ultra').paint(manyBuffs(5), 2);
+    expect(nodes()).toHaveLength(3); // two icons plus the persistent overflow marker
+    expect(calls.some((c) => c.m === 'setText' && c.args[0] === '+formatted-3')).toBe(true);
+  });
+
   it('keeps one reconciled overflow node and hides it when the hidden count returns to zero', () => {
     const painter = tierPainter('low');
     painter.paint(manyBuffs(AURA_VISIBLE_CAP_LOW + 3));

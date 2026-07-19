@@ -148,7 +148,8 @@ describe('unit frame visual identity', () => {
   });
 
   it('supports contextual portrait materials and capped heavy-hit reactions', () => {
-    expect(hudTs).toContain('const playerPortrait = unitPortraitPlan(p);');
+    expect(hudTs).toContain('private readonly portraitPlans = new UnitPortraitPlanCache();');
+    expect(hudTs).toContain('const playerPortrait = this.portraitPlans.plan(p);');
     expect(hudCss).toContain('.unitframe.portrait-ghost .portrait canvas {');
     expect(hudCss).toContain('.hp.health-damage-heavy-a::after {');
     expect(hudCss).toContain('body.unit-frame-portrait-effects-off .unitframe .portrait');

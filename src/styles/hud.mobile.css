@@ -1882,18 +1882,21 @@
     height: 5px;
     margin-top: 1px;
   }
-  /* The desktop .pfm-auras is an absolute bottom-right corner overlay (right:2px,
-     bottom:2px, overflow:hidden). On the compact ~40px mobile member row the 16px
-     desktop icons crowd the name/HP, so shrink them and cap the strip to a small
-     corner cluster that stays clear of the member name. Overflow:hidden and the
-     absolute positioning are inherited from the desktop rule. */
+  /* The desktop .pfm-auras is an absolute bottom-right overlay. On a compact
+     mobile member row the 16px desktop icons crowd the name/HP, so shrink them
+     while keeping the exact duration capsule readable. */
   body.mobile-touch #party-frames .party-frame .pfm-auras {
     max-width: 60%;
     gap: 1px;
   }
   body.mobile-touch #party-frames .pfm-auras .buff {
+    flex-basis: 13px;
     width: 13px;
     height: 13px;
+  }
+  body.mobile-touch #party-frames.party-style-raid .party-frame .pfm-auras {
+    max-width: calc(100% - 8px);
+    gap: 5px;
   }
   body.mobile-touch #party-frames.party-style-raid .party-frame {
     width: var(--party-raid-tile-size);

@@ -520,7 +520,7 @@ import {
   unitThreatState,
 } from './unit_frame';
 import { UnitFramePainter } from './unit_frame_painter';
-import { crestIdForEntity, unitPortraitPlan } from './unit_portrait';
+import { crestIdForEntity, UnitPortraitPlanCache } from './unit_portrait';
 import { UnitPortraitPainter } from './unit_portrait_painter';
 import { ValeCupBetting } from './vale_cup_betting';
 import { buildVcupBettingView } from './vale_cup_betting_view';
@@ -3223,6 +3223,7 @@ export class Hud {
   // crest overscan live in UnitPortraitPainter (unit_portrait_painter.ts); the
   // HUD just routes the framed unit (class headshot vs mob/NPC crest) to it.
   private readonly portraits = new UnitPortraitPainter();
+  private readonly portraitPlans = new UnitPortraitPlanCache();
 
   // PainterHost facets (painter_host.ts). The write-elision facet binds the six
   // private hot writers as closures over the SAME caches + counters (no visibility
@@ -4258,7 +4259,7 @@ export class Hud {
       : null;
     this.targetOfTargetEntityId = subject?.id ?? null;
     this.targetOfTargetPortraitSubject = subject;
-    const portrait = subject ? unitPortraitPlan(subject) : null;
+    const portrait = subject ? this.portraitPlans.plan(subject) : null;
     const name = subject ? entityDisplayName(subject) : '';
     this.targetOfTargetPainter.paint(
       targetOfTargetView(
@@ -4277,7 +4278,7 @@ export class Hud {
 
   private drawUnitPortrait(canvas: HTMLCanvasElement, target: Entity): void {
     if (target.kind === 'player') {
-      const plan = unitPortraitPlan(target);
+      const plan = this.portraitPlans.plan(target);
       if (plan) {
         this.portraits.drawVisual(
           canvas,
@@ -7246,7 +7247,7 @@ export class Hud {
       null,
       unitFrameTextMode,
     );
-    const playerPortrait = unitPortraitPlan(p);
+    const playerPortrait = this.portraitPlans.plan(p);
     this.playerFramePainter.paint(
       unitFrameView({
         present: true,
@@ -7373,7 +7374,7 @@ export class Hud {
           target.dead ? t('hud.core.dead') : null,
           unitFrameTextMode,
         );
-        const targetPortrait = unitPortraitPlan(target);
+        const targetPortrait = this.portraitPlans.plan(target);
         this.targetFramePainter.paint(
           unitFrameView({
             present: true,

@@ -84,31 +84,36 @@ export interface UnitPortraitPlan {
   identityKey: string;
 }
 
-/**
- * Resolve the same form precedence as the world renderer for player portraits.
- * Shader-only transformations retain the base model but receive their own rim
- * treatment and identity key so the frame updates as the aura changes.
- */
-export function unitPortraitPlan(subject: UnitPortraitSubject): UnitPortraitPlan | null {
-  if (subject.kind !== 'player') return null;
-  let polymorph = false;
-  let bear = false;
-  let cat = false;
-  let travel = false;
-  let transformed = false;
-  for (const aura of subject.auras) {
-    if (aura.kind === 'polymorph') polymorph = true;
-    else if (aura.kind === 'form_bear') bear = true;
-    else if (aura.kind === 'form_cat' || aura.id === 'ghost_wolf') cat = true;
-    else if (aura.kind === 'form_travel') travel = true;
+const PORTRAIT_AURA_POLYMORPH = 1 << 0;
+const PORTRAIT_AURA_BEAR = 1 << 1;
+const PORTRAIT_AURA_CAT = 1 << 2;
+const PORTRAIT_AURA_TRAVEL = 1 << 3;
+const PORTRAIT_AURA_TRANSFORMED = 1 << 4;
+
+function portraitAuraMask(auras: UnitPortraitSubject['auras']): number {
+  let mask = 0;
+  for (const aura of auras) {
+    if (aura.kind === 'polymorph') mask |= PORTRAIT_AURA_POLYMORPH;
+    else if (aura.kind === 'form_bear') mask |= PORTRAIT_AURA_BEAR;
+    else if (aura.kind === 'form_cat' || aura.id === 'ghost_wolf') mask |= PORTRAIT_AURA_CAT;
+    else if (aura.kind === 'form_travel') mask |= PORTRAIT_AURA_TRAVEL;
     else if (
       aura.kind === 'form_shadow' ||
       aura.kind === 'form_moonkin' ||
       aura.kind === 'form_metamorph'
     ) {
-      transformed = true;
+      mask |= PORTRAIT_AURA_TRANSFORMED;
     }
   }
+  return mask;
+}
+
+function portraitPlanFromMask(subject: UnitPortraitSubject, auraMask: number): UnitPortraitPlan {
+  const polymorph = (auraMask & PORTRAIT_AURA_POLYMORPH) !== 0;
+  const bear = (auraMask & PORTRAIT_AURA_BEAR) !== 0;
+  const cat = (auraMask & PORTRAIT_AURA_CAT) !== 0;
+  const travel = (auraMask & PORTRAIT_AURA_TRAVEL) !== 0;
+  const transformed = (auraMask & PORTRAIT_AURA_TRANSFORMED) !== 0;
 
   const visualKey = polymorph
     ? 'form_sheep'
@@ -141,4 +146,63 @@ export function unitPortraitPlan(subject: UnitPortraitSubject): UnitPortraitPlan
     context,
     identityKey: `${visualKey}:${skin}:${context}`,
   };
+}
+
+/**
+ * Resolve the same form precedence as the world renderer for player portraits.
+ * Shader-only transformations retain the base model but receive their own rim
+ * treatment and identity key so the frame updates as the aura changes.
+ */
+export function unitPortraitPlan(subject: UnitPortraitSubject): UnitPortraitPlan | null {
+  if (subject.kind !== 'player') return null;
+  return portraitPlanFromMask(subject, portraitAuraMask(subject.auras));
+}
+
+interface UnitPortraitPlanCacheEntry {
+  templateId: string;
+  skin: number;
+  skinCatalog: string | undefined;
+  dead: boolean;
+  ghost: boolean;
+  auraMask: number;
+  plan: UnitPortraitPlan;
+}
+
+/**
+ * Per-subject portrait-plan cache for the HUD hot path. The relevant aura bitmask
+ * is allocation-free, and unchanged frames reuse both the plan and identity string.
+ */
+export class UnitPortraitPlanCache {
+  private readonly entries = new WeakMap<UnitPortraitSubject, UnitPortraitPlanCacheEntry>();
+
+  plan(subject: UnitPortraitSubject): UnitPortraitPlan | null {
+    if (subject.kind !== 'player') return null;
+    const skin = subject.skin ?? 0;
+    const ghost = !!subject.ghost;
+    const auraMask = portraitAuraMask(subject.auras);
+    const cached = this.entries.get(subject);
+    if (
+      cached &&
+      cached.templateId === subject.templateId &&
+      cached.skin === skin &&
+      cached.skinCatalog === subject.skinCatalog &&
+      cached.dead === subject.dead &&
+      cached.ghost === ghost &&
+      cached.auraMask === auraMask
+    ) {
+      return cached.plan;
+    }
+
+    const plan = portraitPlanFromMask(subject, auraMask);
+    this.entries.set(subject, {
+      templateId: subject.templateId,
+      skin,
+      skinCatalog: subject.skinCatalog,
+      dead: subject.dead,
+      ghost,
+      auraMask,
+      plan,
+    });
+    return plan;
+  }
 }

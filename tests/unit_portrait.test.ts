@@ -6,6 +6,7 @@ import {
   overscanRect,
   PORTRAIT_CSS_SIZE,
   portraitBackingPx,
+  UnitPortraitPlanCache,
   unitPortraitPlan,
 } from '../src/ui/unit_portrait';
 
@@ -150,5 +151,24 @@ describe('unitPortraitPlan: contextual player portraits', () => {
 
   it('returns null for non-player subjects', () => {
     expect(unitPortraitPlan(player({ kind: 'mob' }))).toBeNull();
+  });
+
+  it('reuses a cached plan until a portrait-relevant field changes', () => {
+    const cache = new UnitPortraitPlanCache();
+    const auras: { id: string; kind: string }[] = [];
+    const subject = player({ auras });
+    const first = cache.plan(subject);
+    expect(cache.plan(subject)).toBe(first);
+
+    subject.dead = true;
+    const dead = cache.plan(subject);
+    expect(dead).not.toBe(first);
+    expect(dead).toMatchObject({ context: 'dead' });
+
+    auras.push({ id: 'bear', kind: 'form_bear' });
+    const bear = cache.plan(subject);
+    expect(bear).not.toBe(dead);
+    expect(bear).toMatchObject({ visualKey: 'form_bear' });
+    expect(cache.plan(subject)).toBe(bear);
   });
 });

@@ -2107,13 +2107,30 @@
     pointer-events: auto;
   }
   .pfm-auras .buff {
+    flex: 0 0 16px;
     width: 16px;
     height: 16px;
   }
   .pfm-auras .buff .dur {
     display: block;
-    font-size: 8px;
-    line-height: 1;
+    right: auto;
+    left: 50%;
+    box-sizing: border-box;
+    width: max-content;
+    min-width: calc(100% + 2px);
+    padding: 0 1px;
+    transform: translateX(-50%);
+    font-size: 7px;
+    line-height: 8px;
+    letter-spacing: -0.35px;
+    white-space: nowrap;
+  }
+  .pfm-auras .aura-overflow {
+    flex: 0 0 14px;
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    font-size: 7px;
   }
   .pfm-auras .buff .stacks {
     display: none;
@@ -5958,11 +5975,13 @@
   }
   #party-frames.party-style-raid .party-frame .pfm-auras {
     left: auto;
-    right: 2px;
+    right: 4px;
     top: auto;
     bottom: 13px;
     translate: none;
     align-items: flex-end;
+    overflow: visible;
+    gap: 5px;
   }
   /* Helpful effects stay small and green while harmful effects retain a larger
      red silhouette. Keep both immediately above the HP rail so the icons read
@@ -5980,6 +5999,15 @@
     box-shadow:
       0 1px 3px #000,
       0 0 4px color-mix(in srgb, var(--color-debuff) 28%, transparent);
+  }
+  #party-frames.party-style-raid .party-frame .pfm-auras .aura-overflow {
+    position: absolute;
+    top: -10px;
+    right: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 3px;
+    font-size: 6px;
   }
   .party-loot {
     width: 170px;

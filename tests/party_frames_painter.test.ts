@@ -429,6 +429,34 @@ describe('PartyFramesPainter: keyed pool over the elided writers', () => {
     expect(icons()).toHaveLength(0);
   });
 
+  it('caps raid-tile buffs to two icons and summarizes the rest instead of clipping them', () => {
+    painter.sync(
+      [
+        member({
+          pid: 2,
+          auras: Array.from({ length: 5 }, (_, i) => ({
+            id: `shield_${i}`,
+            kind: 'absorb' as const,
+            remaining: 90,
+          })),
+        }),
+      ],
+      1,
+      true,
+    );
+    const strip = rows()[0].childNodes.find((child: FakeEl) =>
+      String(child.className).includes('pfm-auras'),
+    ) as FakeEl;
+    const icons = strip.childNodes.filter((child: FakeEl) =>
+      String(child.className).includes('buff'),
+    );
+    const overflow = strip.childNodes.find((child: FakeEl) =>
+      String(child.className).includes('aura-overflow'),
+    );
+    expect(icons).toHaveLength(2);
+    expect(overflow).toBeTruthy();
+  });
+
   it('orders rows without a fixed leave button beneath the frames', () => {
     painter.sync([member({ pid: 2 }), member({ pid: 3 }), member({ pid: 4 })], 1, false);
     const kids = container.childNodes;

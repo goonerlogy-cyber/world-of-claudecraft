@@ -156,7 +156,7 @@ export class AurasPainter {
 
   /** Reconcile the pool to this frame's active auras and repaint each in place. Runs
    *  every frame; the elided writers make an unchanged frame cost no DOM mutation. */
-  paint(state: AurasState): void {
+  paint(state: AurasState, componentVisibleCap = Number.POSITIVE_INFINITY): void {
     this.frame++;
     const { slots, count } = state;
     // On low, cap the number of rendered auras; auras beyond the cap are
@@ -180,7 +180,10 @@ export class AurasPainter {
     // because the wire carries its negative value (server/game.ts sends it sparsely,
     // src/net/online.ts decodes it), so no sap can ride the low buff budget on either host.
     // See auras_view.isAuraDebuff.)
-    const cap = auraVisibleCap(this.getFxTier());
+    const normalizedComponentCap = Number.isNaN(componentVisibleCap)
+      ? Number.POSITIVE_INFINITY
+      : Math.max(0, Math.trunc(componentVisibleCap));
+    const cap = Math.min(auraVisibleCap(this.getFxTier()), normalizedComponentCap);
     this.ordered.length = 0;
     let rendered = 0;
     let omitted = 0;

@@ -1,4 +1,4 @@
-// Target-frame portrait screenshots: target a Wild Boar (family beast → paw
+// Target-frame portrait screenshots: target a Wild Boar (family beast to paw
 // crest) so we can eyeball the portrait fill/crispness + the portrait/bar
 // overlap. LABEL=<name> names the output; TEMPLATE=<mobId> targets a different
 // mob (e.g. an elite like elder_bristleback). Runs offline (needs `npm run dev`).
@@ -13,6 +13,7 @@ const MOBILE = process.env.MOBILE === '1';
 const SECOND_BAR = process.env.SECOND_BAR === '1';
 const XP_CURRENT = Number(process.env.XP_CURRENT ?? 250);
 const RESTED_XP = Number(process.env.RESTED_XP ?? 50);
+const PARTY_SHOT = process.env.PARTY_SHOT;
 fs.mkdirSync('tmp', { recursive: true });
 
 const browser = await puppeteer.launch({
@@ -90,6 +91,30 @@ await page.evaluate(() => {
 });
 if (SECOND_BAR) await page.evaluate(() => document.body.classList.add('show-actionbar2'));
 await new Promise((r) => setTimeout(r, 300));
+
+// The PR party matrix uses the development-only ?hudqa scenario already applied
+// during boot. Capture its stable populated party region before the target-frame
+// harness below changes the scenario.
+if (PARTY_SHOT) {
+  await page.waitForFunction(
+    () => document.querySelectorAll('#party-frames .party-frame').length > 0,
+    { timeout: 30000, polling: 100 },
+  );
+  await page.evaluate(() => {
+    const firstFrame = document.querySelector('#party-frames .party-frame');
+    if (firstFrame && getComputedStyle(firstFrame).display === 'none') {
+      document.querySelector('#party-chip')?.click();
+    }
+  });
+  await new Promise((r) => setTimeout(r, 500));
+  await page.screenshot({
+    path: PARTY_SHOT,
+    clip: await paddedBounds('#party-frames', 8),
+  });
+  console.log(errors.length ? `ERRORS:\n${errors.slice(0, 15).join('\n')}` : 'no page errors');
+  await browser.close();
+  process.exit(0);
+}
 
 // No-target contract: the docked player frame owns the true screen centre instead
 // of remaining stranded in the left half of the paired layout.

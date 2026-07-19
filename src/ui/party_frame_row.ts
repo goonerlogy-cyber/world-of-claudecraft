@@ -78,7 +78,7 @@ export interface PartyRow {
   relocalize: () => void;
   /** Repaint the member's mini aura strip (its own keyed AurasPainter pool per row).
    *  Called by the pool on each signature-gated sync, never per frame. */
-  paintAuras: (auras: readonly PartyMemberAura[]) => void;
+  paintAuras: (auras: readonly PartyMemberAura[], visibleCap?: number) => void;
 }
 
 /** The aura view/painter deps a row's mini aura strip needs from the Hud (the icon
@@ -241,16 +241,19 @@ export function createPartyRow(
   resBar.append(resFill);
 
   // The member's mini aura strip (their buffs/debuffs), a per-row instance of the
-  // keyed aura pool under the bars. paintAuras converts the compact wire summaries
-  // into the aura core's input shape (no countdown: remaining rides as Infinity, so
-  // the duration label stays blank and the icons only change when the set changes).
+  // keyed aura pool above the HP rail. paintAuras converts the compact wire summaries
+  // into the aura core's input shape, including exact short countdowns when the current
+  // server snapshot carries remaining seconds.
   const aurasEl = doc.createElement('div');
   aurasEl.className = 'pfm-auras';
   const aurasView = createAurasView('all', auraDeps.view);
   const aurasPainter = new AurasPainter(writers, aurasEl, auraDeps.painter, doc);
   const auraInputs: AuraInput[] = [];
   const aurasEntity = { auras: auraInputs };
-  const paintAuras = (auras: readonly PartyMemberAura[]): void => {
+  const paintAuras = (
+    auras: readonly PartyMemberAura[],
+    visibleCap = Number.POSITIVE_INFINITY,
+  ): void => {
     auraInputs.length = 0;
     for (const a of auras) {
       if (!partyFrameAuraIsRelevant(a)) continue;
@@ -262,7 +265,7 @@ export function createPartyRow(
         value: a.neg ? -1 : 1,
       });
     }
-    aurasPainter.paint(aurasView.tick(aurasEntity));
+    aurasPainter.paint(aurasView.tick(aurasEntity), visibleCap);
   };
 
   row.append(nameRow, hpBar, resBar, aurasEl);

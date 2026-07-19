@@ -22,6 +22,11 @@ export function hudVisualQaPartySize(search: string): 3 | 5 | 10 | null {
   return raw === '3' ? 3 : raw === '5' ? 5 : raw === '10' ? 10 : null;
 }
 
+/** Whether a visual-QA capture should retain the desktop HUD at a touch viewport. */
+export function hudVisualQaDesktop(search: string): boolean {
+  return new URLSearchParams(search).has('hudqaDesktop');
+}
+
 /** Seed a stable, populated mobile HUD state for human screenshot review. */
 export function applyHudVisualQaScenario(
   sim: Sim,
