@@ -1882,11 +1882,12 @@
     height: 5px;
     margin-top: 1px;
   }
-  /* The desktop .pfm-auras is an absolute bottom-right overlay. On a compact
-     mobile member row the 16px desktop icons crowd the name/HP, so shrink them
-     while keeping the exact duration capsule readable. */
+  /* Classic mobile party auras retain their dedicated lane above HP. Shrink the
+     desktop icons without collapsing that separation or the exact timer label. */
   body.mobile-touch #party-frames .party-frame .pfm-auras {
+    min-height: 13px;
     max-width: 60%;
+    margin-left: auto;
     gap: 1px;
   }
   body.mobile-touch #party-frames .pfm-auras .buff {

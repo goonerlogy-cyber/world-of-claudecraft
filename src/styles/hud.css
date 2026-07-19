@@ -2091,19 +2091,20 @@
     width: 38px;
     height: 38px;
   }
-  /* Party member mini aura strip: overlay the compact icons so gaining or losing
-     an aura never changes frame height or shifts the surrounding raid grid. */
+  /* Classic party member auras own a compact lane above the HP rail. Keep the
+     lane reserved so effects never cover health/resource information and rows
+     do not jump as effects appear. Raid tiles override this into an overlay. */
   .party-frame .pfm-auras {
-    position: absolute;
-    right: 2px;
-    bottom: 2px;
+    position: relative;
     z-index: 5;
     display: flex;
     flex-wrap: nowrap;
-    max-width: calc(100% - 4px);
-    overflow: hidden;
+    justify-content: flex-end;
+    width: 100%;
+    min-height: 16px;
+    overflow: visible;
     gap: 2px;
-    margin: 0;
+    margin: 2px 0 0;
     pointer-events: auto;
   }
   .pfm-auras .buff {
@@ -5974,12 +5975,17 @@
     border-radius: 2px;
   }
   #party-frames.party-style-raid .party-frame .pfm-auras {
+    position: absolute;
     left: auto;
     right: 4px;
     top: auto;
     bottom: 13px;
+    width: auto;
+    min-height: 0;
+    margin: 0;
     translate: none;
     align-items: flex-end;
+    justify-content: flex-start;
     overflow: visible;
     gap: 5px;
   }

@@ -268,7 +268,10 @@ export function createPartyRow(
     aurasPainter.paint(aurasView.tick(aurasEntity), visibleCap);
   };
 
-  row.append(nameRow, hpBar, resBar, aurasEl);
+  // Classic party frames keep this lane in flow between identity and health so
+  // effects can never cover either status rail. Raid CSS takes the same pooled
+  // strip out of flow and anchors it over the compact portrait tile.
+  row.append(nameRow, aurasEl, hpBar, resBar);
 
   const handlers = partyRowHandlers(slot, deps);
   row.addEventListener('click', handlers.click);

@@ -55,4 +55,35 @@ describe('compact raid aura timing', () => {
       labels[1].getBoundingClientRect().left + EPSILON,
     );
   });
+
+  it('keeps classic party auras in a dedicated lane above both status rails', () => {
+    const frames = document.createElement('div');
+    frames.id = 'party-frames';
+    frames.className = 'party-expanded';
+    const rows = document.createElement('div');
+    rows.className = 'party-rows';
+    const row = document.createElement('div');
+    row.className = 'party-frame';
+    const name = document.createElement('div');
+    name.className = 'pfm-name';
+    name.textContent = 'Brightoak';
+    const strip = document.createElement('div');
+    strip.className = 'pfm-auras';
+    strip.append(aura('buff timed debuff', '1:30'), aura('buff timed', '1:30'));
+    const hp = document.createElement('div');
+    hp.className = 'bar hp';
+    const resource = document.createElement('div');
+    resource.className = 'bar';
+    row.append(name, strip, hp, resource);
+    rows.appendChild(row);
+    frames.appendChild(rows);
+    document.body.appendChild(frames);
+
+    const stripRect = strip.getBoundingClientRect();
+    const hpRect = hp.getBoundingClientRect();
+    const resourceRect = resource.getBoundingClientRect();
+    expect(stripRect.bottom).toBeLessThanOrEqual(hpRect.top + EPSILON);
+    expect(stripRect.bottom).toBeLessThanOrEqual(resourceRect.top + EPSILON);
+    expect(hpRect.bottom).toBeLessThanOrEqual(resourceRect.top + EPSILON);
+  });
 });
