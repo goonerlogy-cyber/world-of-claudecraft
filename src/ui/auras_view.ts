@@ -38,8 +38,8 @@ export { DEBUFF_AURA_KINDS };
 // Toggle auras (cast again to cancel: stealth, the druid forms, stances, Ghost
 // Wolf) read as MODES, not timed effects: WoW shows no countdown under them, so
 // neither do we, even though the sim backs each with a long finite duration
-// (3600s). Every other aura shows a compact WoW-style remaining label (20s /
-// 5m / 1h / 2d) via compactAuraDuration below.
+// (3600s). Every other aura shows a compact remaining label (20s / 1:39 /
+// 10m / 1h / 2d) via compactAuraDuration below.
 const TOGGLE_KINDS: ReadonlySet<AuraKind> = new Set([
   'stealth',
   'form_bear',
@@ -69,14 +69,20 @@ export interface DurationUnits {
   d: string;
 }
 
-/** WoW-style compact remaining-duration label: seconds round UP (a dot about to
- *  fall still reads 1s, never 0s), minutes/hours/days round to nearest, and a
- *  rounded value that would print a full next unit promotes instead (3599s is
- *  "1h", never "60m"). A non-finite remaining reads as permanent (no label).
- *  Pure; exported for tests. */
+/** Compact remaining-duration label: seconds round UP (a dot about to fall still
+ *  reads 1s, never 0s), the first ten minutes use an exact m:ss countdown, and
+ *  longer minutes/hours/days round to nearest. A rounded value that would print
+ *  a full next unit promotes instead (3599s is "1h", never "60m"). A non-finite
+ *  remaining reads as permanent (no label). Pure; exported for tests. */
 export function compactAuraDuration(remaining: number, units: DurationUnits): string {
   if (!Number.isFinite(remaining)) return '';
-  if (remaining < 60) return `${Math.ceil(remaining)}${units.s}`;
+  const totalSeconds = Math.ceil(remaining);
+  if (totalSeconds < 60) return `${totalSeconds}${units.s}`;
+  if (totalSeconds < 600) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, '0')}`;
+  }
   const m = Math.round(remaining / 60);
   if (m < 60) return `${m}${units.m}`;
   const h = Math.round(remaining / 3600);

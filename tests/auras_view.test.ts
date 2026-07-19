@@ -265,16 +265,23 @@ describe('createAurasView: derivation per mode', () => {
     expect(v.tick(entity([aura({ id: 'a', remaining: 4.2 })])).slots[0].durationText).toBe(
       '5 sec', // ceil(4.2)=5 + injected suffix
     );
-    expect(v.tick(entity([aura({ id: 'a', remaining: 300 })])).slots[0].durationText).toBe('5 min');
+    expect(v.tick(entity([aura({ id: 'a', remaining: 99 })])).slots[0].durationText).toBe('1:39');
+    expect(v.tick(entity([aura({ id: 'a', remaining: 600 })])).slots[0].durationText).toBe(
+      '10 min',
+    );
   });
 
-  it('renders the WoW-style compact duration per magnitude (20s / 5m / 1h / 2d)', () => {
+  it('renders exact m:ss below ten minutes and compact units for longer durations', () => {
     const v = createAurasView('all', deps());
     const text = (remaining: number) =>
       v.tick(entity([aura({ id: 'a', remaining })])).slots[0].durationText;
     expect(text(20)).toBe('20s');
     expect(text(4.2)).toBe('5s'); // seconds round UP: never a premature 0s
-    expect(text(300)).toBe('5m');
+    expect(text(60)).toBe('1:00');
+    expect(text(99)).toBe('1:39');
+    expect(text(307)).toBe('5:07');
+    expect(text(599)).toBe('9:59');
+    expect(text(600)).toBe('10m');
     expect(text(1800)).toBe('30m'); // a long food/scroll buff finally reads its minutes
     expect(text(3600)).toBe('1h'); // Devotion Aura reads 1h, never 3600s
     expect(text(2 * 86400)).toBe('2d');
@@ -319,11 +326,14 @@ describe('createAurasView: derivation per mode', () => {
     ).toBe('20s');
   });
 
-  it('compactAuraDuration boundaries: seconds round UP, larger units to nearest', () => {
+  it('compactAuraDuration boundaries: seconds round up, short minutes stay exact', () => {
     const U = { s: 's', m: 'm', h: 'h', d: 'd' };
-    expect(compactAuraDuration(59.9, U)).toBe('60s');
-    expect(compactAuraDuration(60, U)).toBe('1m');
-    expect(compactAuraDuration(90, U)).toBe('2m'); // nearest, so half rounds up
+    expect(compactAuraDuration(59, U)).toBe('59s');
+    expect(compactAuraDuration(59.9, U)).toBe('1:00');
+    expect(compactAuraDuration(60, U)).toBe('1:00');
+    expect(compactAuraDuration(90, U)).toBe('1:30');
+    expect(compactAuraDuration(599, U)).toBe('9:59');
+    expect(compactAuraDuration(599.1, U)).toBe('10m');
     expect(compactAuraDuration(3599, U)).toBe('1h'); // 60m promotes, never prints
     expect(compactAuraDuration(5400, U)).toBe('2h');
     expect(compactAuraDuration(86399, U)).toBe('1d'); // 24h promotes the same way

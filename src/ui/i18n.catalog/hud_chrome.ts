@@ -379,7 +379,7 @@ export const hudChromeStrings = {
     // (M16 is per-word consecutive-lowercase, not word count).
     partyGroup: 'Group {n}',
     // The unit suffixes appended to an aura's compact remaining-duration label on the
-    // buff/debuff strips (e.g. "20s", "5m", "1h", "2d"). The auras core (auras_view.ts)
+    // buff/debuff strips (e.g. "20s", "1:39", "10m", "1h", "2d"). The auras core (auras_view.ts)
     // renders them via the injected durationUnits() dep so an in-game language switch
     // lands next tick. Single chars (non-wordy: no four-plus consecutive-lowercase run),
     // so an English-filled non-Latin overlay does not trip the M16 untranslated-leak
