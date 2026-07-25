@@ -27,6 +27,7 @@ import {
 } from './bags';
 import * as bankMod from './bank';
 import { type BankState, clampBonusSlots, sanitizeBankState } from './bank';
+import { advanceClimb, tryStartClimb } from './climb';
 import {
   lineOfSightClear,
   moverHeight,
@@ -4962,6 +4963,12 @@ export class Sim {
       clearAfkOnMove(this.ctx, meta, p);
     }
     if (advanceHeroicLeap(this.ctx, p)) return;
+    // A ledge climb owns movement while it runs, and an airborne body that
+    // gets its hands on a reachable ledge starts one. Sits after the leap arc
+    // (a leap has its own landing contract) and before charge/follow/fear so
+    // those cannot fight a pull-up already in progress.
+    if (advanceClimb(p)) return;
+    if (meta.moveInput.jump && tryStartClimb(p, this.cfg.seed) && advanceClimb(p)) return;
     if (this.updateChargeMovement(p)) return;
     if (this.updateFollowMovement(p, meta)) return;
     if (this.updateFearMovement(p)) return;

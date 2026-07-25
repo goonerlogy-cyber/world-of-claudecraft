@@ -2561,6 +2561,20 @@ export function isConsuming(e: { eating: Consuming | null; drinking: Consuming |
   return e.eating !== null || e.drinking !== null;
 }
 
+/**
+ * An in-progress ledge climb (see `src/sim/climb.ts`). While present it OWNS
+ * the body's position: the destination was validated as a surface the body
+ * fits on before the climb started, so nothing re-resolves it mid-pull.
+ * Absent until first use, so unrelated entity snapshots and deterministic
+ * traces gain no inert state.
+ */
+export interface LedgeClimb {
+  from: Vec3;
+  to: Vec3;
+  elapsed: number;
+  duration: number;
+}
+
 export interface HeroicLeapFlight {
   from: Vec3;
   to: Vec3;
@@ -2811,6 +2825,13 @@ export interface Entity {
   // landing area hit until touchdown. Absent until first use so unrelated entity
   // snapshots and deterministic traces do not gain inert state.
   leap?: HeroicLeapFlight | null;
+  // Authoritative ledge-climb pull-up. Like `leap`, it owns movement while it
+  // runs; see `src/sim/climb.ts`.
+  climb?: LedgeClimb | null;
+  // CLIENT MIRROR of the above: the wire carries a boolean, not the arc, so
+  // the online renderer can pose a climb it does not simulate. Never set by
+  // the sim (which has the real `climb`), so it stays out of golden traces.
+  climbing?: boolean;
   followTargetId: number | null; // /follow: auto-walk after another player until interrupted
   savedMana: number; // druid forms: mana put aside while running on rage/energy
   sitting: boolean;

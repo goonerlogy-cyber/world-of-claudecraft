@@ -5517,6 +5517,9 @@ export class Renderer {
         );
         v.visual.setGroundTilt(v.groundTilt.pitch, v.groundTilt.roll);
       }
+      // Ledge climb: the sim owns the move (Entity.climb offline, the mirrored
+      // `climbing` flag online); the visual poses it by hand.
+      if (v.visual) v.visual.setClimbing(!!e.climb || e.climbing === true);
       const st = this.animScratch;
       st.speed = loco.speed;
       st.moving = moving;

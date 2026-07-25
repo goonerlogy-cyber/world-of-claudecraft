@@ -96,6 +96,23 @@ const STOW_SWAP_FRACTION = 0.28;
 // the whole arm from the chase camera, so -0.85 is the readable peak.
 const STOW_ARM_BONE = 'upperarmr';
 const STOW_ARM_LIFT_RAD = -0.85;
+// Ledge climb, posed by hand: the KayKit rigs ship no climb clip, so the pull
+// up is built from the airborne base pose plus additive bone work. Both upper
+// arms swing overhead to plant on the lip, the torso pitches into the wall,
+// and the body ducks slightly before rising, which is what sells a mantle as
+// effort rather than a lift. Negative X raises an arm on this rig (see the
+// stow lift above); the arm bones are the shared Rig_Medium joint names with
+// GLTF's dot-stripping applied.
+const CLIMB_ARM_BONES = ['upperarml', 'upperarmr'] as const;
+const CLIMB_ARM_RAISE_RAD = -1.15;
+const CLIMB_TORSO_BONE = 'chest';
+const CLIMB_TORSO_CURL_RAD = 0.45;
+const CLIMB_BODY_PITCH = 0.3;
+const CLIMB_BODY_DUCK = -0.18;
+/** Blend in/out rate for the whole climb pose (1/s). */
+const CLIMB_BLEND_RATE = 14;
+/** Local clock for the pose envelope; matches the sim's CLIMB_DURATION. */
+const CLIMB_POSE_DURATION = 0.42;
 const HIT_REACT_COOLDOWN = 0.9;
 
 // Lie_Idle already lays the rig flat — a touch of extra pitch reads as a
@@ -213,6 +230,13 @@ export class CharacterVisual {
   private hitCooldown = 0;
   private pendingDt = 0;
   private swimPitch = 0;
+  // Ledge-climb pose: `blend` fades the whole gesture, `phase` runs 0..1 over
+  // the pull so the arms plant early and the body clears late.
+  private climbOn = false;
+  private climbBlend = 0;
+  private climbPhase = 0;
+  private climbArmBones: (THREE.Object3D | null)[] | undefined;
+  private climbTorsoBone: THREE.Object3D | null | undefined;
   private spinAngle = 0;
   private spinOnceTimer = 0;
 
@@ -395,12 +419,19 @@ export class CharacterVisual {
     const proneAngle = this.action(this.def.clips.swim) ? SWIM_PITCH_CLIP : SWIM_PITCH_PROCEDURAL;
     const wantPitch = s.swimming && !s.dead ? proneAngle : 0;
     this.swimPitch += (wantPitch - this.swimPitch) * Math.min(1, dt * 8);
-    this.poseWrap.rotation.x = this.swimPitch;
+    // Ledge climb rides the SAME pose channels rather than fighting them:
+    // these three lines are rewritten every frame, so a climb pose written
+    // anywhere else would be stomped. Blend and phase are advanced here too.
+    this.advanceClimbPose(dt, s.dead);
+    const climb = this.climbBlend;
+    this.poseWrap.rotation.x = this.swimPitch + CLIMB_BODY_PITCH * climb;
     this.poseWrap.rotation.z = 0;
     this.poseWrap.position.y =
-      s.swimming && !s.dead
+      (s.swimming && !s.dead
         ? SWIM_RISE + Math.sin(performance.now() / 500 + this.bobPhase) * 0.08
-        : 0;
+        : 0) +
+      // Duck at the start of the pull, back to neutral as the body clears.
+      CLIMB_BODY_DUCK * climb * (1 - this.climbPhase);
 
     // distant corpses show the static idle far mesh — tip it over
     if (this.farMesh && this.farMesh.visible) {
@@ -420,7 +451,61 @@ export class CharacterVisual {
       // AFTER the mixer wrote the sampled pose: the sheathe gesture's additive
       // arm raise (never applied on skipped-mixer frames, so it cannot accumulate).
       this.applyStowArmLift(dt);
+      // Same rule for the climb's overhead reach.
+      this.applyClimbPose();
     }
+  }
+
+  /**
+   * Advance the climb blend and phase. Kept next to the pose block that reads
+   * them so the two can never drift out of step.
+   */
+  private advanceClimbPose(dt: number, dead: boolean): void {
+    const want = this.climbOn && !dead ? 1 : 0;
+    this.climbBlend += (want - this.climbBlend) * Math.min(1, dt * CLIMB_BLEND_RATE);
+    if (this.climbBlend < 1e-3 && want === 0) {
+      this.climbBlend = 0;
+      this.climbPhase = 0;
+      return;
+    }
+    if (this.climbOn) this.climbPhase = Math.min(1, this.climbPhase + dt / CLIMB_POSE_DURATION);
+  }
+
+  /**
+   * The hand-authored half of the climb: both arms swing overhead to plant on
+   * the lip and come down as the body clears it, with the torso curling in
+   * behind them. Additive on top of whatever the mixer produced, applied ONLY
+   * on frames the mixer actually ran, exactly like the stow lift, so it can
+   * never accumulate into a permanent deformation.
+   */
+  private applyClimbPose(): void {
+    if (this.climbBlend <= 1e-3) return;
+    if (this.climbArmBones === undefined) {
+      this.climbArmBones = CLIMB_ARM_BONES.map((n) => this.model.getObjectByName(n) ?? null);
+    }
+    if (this.climbTorsoBone === undefined) {
+      this.climbTorsoBone = this.model.getObjectByName(CLIMB_TORSO_BONE) ?? null;
+    }
+    // Arms are highest as the hands reach the lip and lower as the body rises
+    // over it: a half sine peaking early, not a symmetric swing.
+    const reach = Math.sin(Math.PI * Math.min(1, this.climbPhase * 0.85 + 0.08));
+    const amount = CLIMB_ARM_RAISE_RAD * reach * this.climbBlend;
+    for (const bone of this.climbArmBones) {
+      if (bone) bone.rotation.x += amount;
+    }
+    if (this.climbTorsoBone) {
+      this.climbTorsoBone.rotation.x += CLIMB_TORSO_CURL_RAD * reach * this.climbBlend;
+    }
+  }
+
+  /**
+   * Drive the ledge-climb pose. The sim owns the move; this only says whether
+   * it is running, and the phase is timed locally so the online mirror (which
+   * carries a boolean, not the arc) poses identically to the offline world.
+   */
+  setClimbing(on: boolean): void {
+    if (on && !this.climbOn) this.climbPhase = 0;
+    this.climbOn = on;
   }
 
   /** Ease the extra arm raise in toward the swap moment and back out after it;

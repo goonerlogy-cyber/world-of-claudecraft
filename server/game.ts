@@ -1022,6 +1022,10 @@ function dynamicFields(e: Entity, includeAuras = true): Record<string, unknown> 
     if (e.channeling) out.chan = 1;
   }
   if (e.sitting || e.eating || e.drinking) out.sit = 1;
+  // Ledge climb: a boolean, not the arc. The client never re-simulates the
+  // pull (the server owns it and streams the resulting positions); it only
+  // needs to know to pose the climb and to stop predicting a fall.
+  if (e.climb) out.cl = 1;
   if (e.weaponStowed) out.ws = 1; // Z-key sheathe: weapons render on the back
   if (e.aggroTargetId !== null) out.aggro = e.aggroTargetId;
   // A player's/bot's SELECTED target (mobs use aggroTargetId above): rides so the
