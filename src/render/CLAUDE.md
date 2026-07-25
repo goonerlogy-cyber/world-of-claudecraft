@@ -34,6 +34,16 @@ Everything else is a sibling module in one of these families:
 - `self_motion.ts`/`facing_smooth.ts`: pure display-only self layers (bounded
   online pose extrapolation + rate-limited self yaw; never touch world state,
   see `src/net/CLAUDE.md`).
+- `step_smooth_core.ts`/`ground_tilt_core.ts`: the grounded-presentation pair
+  the entity loop drives per body. The first eases the vertical step the
+  physics solver takes inside one tick (leashed to a step, exact while
+  airborne so jumps and landings keep their impact); the second leans a body
+  toward the surface under it, in the body's own frame, partial and clamped
+  and damped. Both display-only: collision keeps using the physical pose.
+  Terrain gradients resample on a per-body TIME budget, never a frame count
+  (a frame cadence starves on a slow client). Landing dust rides the same
+  loop through `Vfx.groundPuff`, scaled by the display-derived fall speed
+  because the wire carries no vy for remote bodies.
 - `voxel_terrain.ts`: verification-only prototype (proposal #1611, driven by
   `scripts/`, NOT the live path); live terrain is `terrain.ts` sampling sim heights.
 

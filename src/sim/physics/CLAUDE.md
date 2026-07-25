@@ -75,6 +75,28 @@ heights come from `src/sim/decoration_dims.ts`, which is derived from the
 shipped GLB bounds. Changing either one without the other re-opens the bug this
 engine was built to fix (a collider top that does not match the silhouette).
 
+## Efficiency: what the hot path may cost
+This runs for every player, every tick, on the authoritative server, so the
+budget is real. Three properties hold it:
+- **Allocation-free broadphase.** Grid cells are keyed by a packed integer
+  (`colliders.ts` `cellKey`), never a template string: string keys were the
+  single largest source of per-tick garbage, and every movement, camera, and
+  line-of-sight query built one. Multi-cell dedupe uses a stamp buffer owned by
+  the grid.
+- **Prune once, then iterate.** `pruneCandidates` drops everything the swept
+  body cannot reach BEFORE any slide iteration, so the inner loops scale with
+  obstacles in range rather than with cell population, and step-up resolves
+  support from that same list instead of re-entering the broadphase.
+- **Pinned by counted WORK, not wall clock.** `physicsStats` (solves,
+  candidates, sweeps, overlaps) is asserted in
+  `tests/physics_character.test.ts`; a timing budget would rot across machines.
+  Open ground must cost zero sweeps and zero overlap tests.
+
+The presentation half lives in `src/render/` (`step_smooth_core.ts`,
+`ground_tilt_core.ts`): the solver may move a body a full step inside one tick
+because that is correct simulation, and the renderer is what makes it read as a
+stride. Never "fix" a visual pop by slowing the solver.
+
 ## Tests
 `tests/physics_character.test.ts` pins the solver directly (sweeps, sliding,
 no-tunnelling, depenetration, step-up and its refusals, the terrain gate, the
