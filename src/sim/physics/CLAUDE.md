@@ -27,7 +27,8 @@ general 3D solver and exact rather than approximate for this content.
 - `character.ts`: the solver. Depenetrate, then up to four sweep-and-slide
   passes, with STEP UP when a blocking obstacle is standable and its top is
   within `MAX_STEP_HEIGHT`, then the terrain wall gate with contour sliding.
-  Also `floorHeightAt`, the support query the kernel's vertical pass lands on.
+  Also `floorHeightAt` (terrain maxed with the standable prop top), which IS
+  what the kernel's vertical pass lands and snaps against.
 
 `index.ts` is the barrel; import from it, never from the files directly.
 
@@ -37,6 +38,18 @@ general 3D solver and exact rather than approximate for this content.
   per tick, so a step-height rise every tick would raise the effective climb limit to
   `stepHeight / 0.35` and defeat `PLAYER_MAX_CLIMB_SLOPE`. Terrain keeps the
   original wall rule; the contour retry is height-neutral and therefore safe.
+- **A step must COMMIT, not just raise.** Contact happens at
+  `collider.r + bodyRadius`, but `supportHeightAt` only holds a body up well
+  inside that, so raising the feet at the contact point alone leaves them
+  unsupported: the vertical pass drops them and depenetration pushes back out,
+  which locks anyone moving slower than about three quarters of run speed
+  (backpedalling, snared, diagonal). `moveCharacter` therefore advances the
+  body onto the surface until the floor query agrees, and abandons the step if
+  no clear supported spot exists (the body then slides, never sticks).
+- **The terrain gate has three exemptions and all of them matter.** A swimmer
+  is never gated; an airborne body is gated only by ground above its feet (or
+  jumps onto banks die mid-arc); and the slope ratio uses the REQUESTED step,
+  not the collision-shortened one.
 - **Grounded bodies step; airborne bodies mantle.** `blocksAt` grants the
   `MANTLE_REACH` lift only when airborne over a standable top, mirroring
   `colliders.ts` `passesOver`, so a jump that falls just short of a rim still
@@ -47,9 +60,12 @@ general 3D solver and exact rather than approximate for this content.
   keep the long-standing `resolveMove` path in `player_motion.ts`; they are flat
   rooms of full-height walls where step-up has nothing to act on, and their
   delve bounds/door clamps live on that path.
-- **Allocation-free steady state.** Module scratch (`candidates`, `hit`, `push`)
-  is reused; `moveCharacter` fills a caller-owned result. The kernel owns one
-  params/result pair (`player_motion.ts`).
+- **Allocation-light steady state.** Module scratch (`candidates`, `hit`,
+  `push`) is reused and `moveCharacter` fills a caller-owned result, so no
+  per-call lists or poses are minted; the kernel owns one params/result pair
+  (`player_motion.ts`). Small vector literals do still escape from `rotY` in
+  the OBB path, which is the next thing to squeeze if this ever shows up in a
+  profile.
 - **No rng, no wall clock.** Guarded by `tests/architecture.test.ts`.
 
 ## Tuning

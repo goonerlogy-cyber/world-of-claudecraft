@@ -23,6 +23,14 @@
 import { hash2 } from './rng';
 import type { Decoration } from './world';
 
+/**
+ * How far a rock model is sunk below the terrain, in MODEL units, so its
+ * underside buries on slopes. Owned here because the height contract is a
+ * two-sided deal: the renderer scales each variant so that
+ * `(bboxTop - ROCK_SINK_UNITS) * scale` equals `rockHeight()`, and the sim
+ * publishes that same height as the collider top.
+ */
+export const ROCK_SINK_UNITS = 0.3;
 /** Mean rendered height of a rock per unit of `Decoration.scale` (yards). */
 export const ROCK_HEIGHT_PER_SCALE = 0.84;
 /** Collider radius per unit of `Decoration.scale` (yards). */

@@ -23,6 +23,7 @@ import { PLAYER_BODY_RADIUS, PLAYER_MAX_CLIMB_SLOPE, PLAYER_SWIM_DEPTH } from '.
 import {
   type CharacterMoveParams,
   type CharacterMoveResult,
+  floorHeightAt,
   MAX_STEP_HEIGHT,
   moveCharacter,
 } from './physics';
@@ -61,6 +62,7 @@ const moveParams: CharacterMoveParams = {
   stepHeight: 0,
   maxSlope: 0,
   grounded: false,
+  swimming: false,
   ignoreFences: false,
 };
 const moveOut: CharacterMoveResult = { x: 0, y: 0, z: 0, blocked: false, stepped: 0 };
@@ -247,6 +249,7 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
       moveParams.stepHeight = MAX_STEP_HEIGHT;
       moveParams.maxSlope = MAX_CLIMB_SLOPE;
       moveParams.grounded = p.onGround && !swimming;
+      moveParams.swimming = swimming;
       moveParams.ignoreFences = clearFences;
       moveCharacter(moveParams, p.pos.x, p.pos.y, p.pos.z, stepX * DT, stepZ * DT, moveOut);
       p.pos.x = moveOut.x;
@@ -349,15 +352,12 @@ function verticalPass(
   // beside the body never lifts it); airborne it reaches MANTLE_REACH above
   // the feet, so a jump that carries the body over a rim seats on the top:
   // the mantle. Away from props this IS the terrain height.
-  const support = Math.max(
-    ground,
-    supportHeightAt(
-      deps.seed,
-      p.pos.x,
-      p.pos.z,
-      BODY_RADIUS,
-      p.pos.y + (p.onGround ? 0 : MANTLE_REACH),
-    ),
+  const support = floorHeightAt(
+    deps.seed,
+    p.pos.x,
+    p.pos.z,
+    BODY_RADIUS,
+    p.pos.y + (p.onGround ? 0 : MANTLE_REACH),
   );
   const deepWater = ground < waterLevelAt(p.pos.x, p.pos.z) - SWIM_DEPTH;
   if (deepWater && p.pos.y <= swimSurfaceY(p.pos.x, p.pos.z) + 0.05) {

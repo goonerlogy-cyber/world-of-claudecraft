@@ -588,10 +588,10 @@ export function isInstancedRegion(x: number): boolean {
 /**
  * Broadphase for the character physics solver: append every open-world
  * collider whose grid cell overlaps the given AABB into `out` (caller-owned,
- * so the hot path allocates nothing). Duplicates are impossible within one
- * cell but a collider spanning cells is appended once per cell it occupies,
- * which the solver tolerates (the same surface simply gets tested twice).
- * Returns `out`. Empty inside instanced regions, which never route here.
+ * so the hot path does not allocate a list per call). A collider spanning
+ * several cells is appended ONCE: the membership check keeps the solver from
+ * testing, and depenetrating against, the same surface twice. Returns `out`.
+ * Empty inside instanced regions, which never route here.
  */
 export function queryOpenWorldColliders(
   seed: number,
@@ -620,6 +620,13 @@ export function queryOpenWorldColliders(
   return out;
 }
 
+/**
+ * Highest STANDABLE prop top under the body at (x, z) that sits at or below
+ * `maxY`: the walking and landing surface the movement kernel maxes against
+ * the terrain (see `physics/character.ts` `floorHeightAt`). Grounded movers
+ * pass their exact feet height; airborne movers add the mantle reach.
+ * Open-world grid only; returns -Infinity when nothing supports.
+ */
 export function supportHeightAt(
   seed: number,
   x: number,

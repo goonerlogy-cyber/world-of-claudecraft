@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CRATE_TOP, isBlocked, MANTLE_REACH } from '../src/sim/colliders';
+import { CRATE_TOP, isBlocked, MANTLE_REACH, queryOpenWorldColliders } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import {
   ROCK_COLLIDER_MIN_SCALE,
@@ -16,7 +16,13 @@ import {
 } from '../src/sim/physics';
 import { GRAVITY, JUMP_VELOCITY } from '../src/sim/player_motion';
 import type { WorldContent } from '../src/sim/types';
-import { generateDecorations, groundHeight, terrainHeight, WATER_LEVEL } from '../src/sim/world';
+import {
+  generateDecorations,
+  groundHeight,
+  terrainHeight,
+  terrainSteepnessAt,
+  WATER_LEVEL,
+} from '../src/sim/world';
 
 // The character physics solver: swept collision, multi-plane sliding,
 // depenetration, step-up, and the terrain wall/contour gate. These pin the
@@ -41,6 +47,7 @@ function params(over: Partial<CharacterMoveParams> = {}): CharacterMoveParams {
     stepHeight: MAX_STEP_HEIGHT,
     maxSlope: PLAYER_MAX_CLIMB_SLOPE,
     grounded: true,
+    swimming: false,
     ignoreFences: false,
     ...over,
   };
@@ -66,6 +73,64 @@ function findFlatSpot(): { x: number; z: number } {
 }
 
 const SPOT = findFlatSpot();
+
+// Signed side of an XZ segment: same sign means the body never crossed it.
+function sideOf(
+  l: { x1: number; z1: number; x2: number; z2: number },
+  x: number,
+  z: number,
+): number {
+  return (x - l.x1) * (l.z2 - l.z1) - (z - l.z1) * (l.x2 - l.x1);
+}
+
+// A genuinely unwalkable rising face (the world rim), collider-free and dry.
+
+// A collidable stone whose climb from the approach footing is inside the step
+// reach, standing alone on flat dry ground: the isolated "walk over a stone"
+// fixture. Selecting by the TRUE climb (top minus the approach foot, not the
+// stone's own height) is what the solver actually tests.
+function findStrideableStone(): { x: number; z: number; scale: number } | undefined {
+  for (const d of generateDecorations(SEED)) {
+    if (d.kind !== 'rock' || d.scale < ROCK_COLLIDER_MIN_SCALE) continue;
+    if (Math.abs(d.x) > 160) continue; // stay off the world rim
+    const top = groundHeight(d.x, d.z, SEED) + rockHeight(d.x, d.z, d.scale, SEED);
+    if (top - groundHeight(d.x, d.z - 1.2, SEED) > MAX_STEP_HEIGHT) continue;
+    let clean = true;
+    for (let t = -2.6; t <= 1.6 && clean; t += 0.4) {
+      const z = d.z + t;
+      if (terrainSteepnessAt(d.x, z, SEED) > 0.4) clean = false;
+      if (terrainHeight(d.x, z, SEED) < WATER_LEVEL + 2) clean = false;
+    }
+    if (!clean) continue;
+    // Nothing else blocking the approach corridor, so the stone is the only
+    // thing under test (a tree five yards to the side is fine).
+    const near: ReturnType<typeof queryOpenWorldColliders> = [];
+    queryOpenWorldColliders(SEED, d.x - 5, d.z - 5, d.x + 5, d.z + 5, near);
+    const blocksCorridor = near.some((c) => {
+      const cx = c.x ?? 0;
+      const cz = c.z ?? 0;
+      if (Math.hypot(cx - d.x, cz - d.z) <= 0.25) return false; // the stone itself
+      if (cz < d.z - 3 || cz > d.z + 2) return false; // outside the walk
+      const reach = (c.type === 'circle' ? c.r : Math.hypot(c.hw, c.hd)) + 0.6;
+      return Math.abs(cx - d.x) < reach;
+    });
+    if (blocksCorridor) continue;
+    return { x: d.x, z: d.z, scale: d.scale };
+  }
+  return undefined;
+}
+
+function findSteepFace(): { x: number; z: number } | undefined {
+  for (let z = -60; z <= 200; z += 7) {
+    for (let x = -130; x >= -184; x -= 0.25) {
+      if (terrainHeight(x, z, SEED) < WATER_LEVEL + 0.5) break;
+      if (isBlocked(SEED, x, z, 0.6)) break;
+      const rise = terrainHeight(x - 0.5, z, SEED) - terrainHeight(x, z, SEED);
+      if (rise > MAX_STEP_HEIGHT * 2) return { x, z };
+    }
+  }
+  return undefined;
+}
 
 describe('swept collision and sliding', () => {
   it('moves freely when nothing is in the way', () => {
@@ -144,19 +209,10 @@ describe('step up: walking over low obstacles', () => {
 
   it('walks clean over a real low field stone', () => {
     setActiveWorldContent(null);
-    // The "I cannot walk over stones" case, driven against real world data:
-    // a stone whose true height is inside the step reach must be strideable.
-    const stone = generateDecorations(SEED).find(
-      (d) =>
-        d.kind === 'rock' &&
-        d.scale >= ROCK_COLLIDER_MIN_SCALE &&
-        rockHeight(d.x, d.z, d.scale, SEED) <= MAX_STEP_HEIGHT &&
-        terrainHeight(d.x, d.z, SEED) > WATER_LEVEL + 2,
-    );
+    // The "I cannot walk over stones" case, driven against real world data.
+    const stone = findStrideableStone();
     expect(stone).toBeDefined();
     if (!stone) return;
-    const height = rockHeight(stone.x, stone.z, stone.scale, SEED);
-    expect(height).toBeLessThanOrEqual(MAX_STEP_HEIGHT);
 
     const g = groundHeight(stone.x, stone.z, SEED);
     // Approach from 3 yards south, walking north straight through it.
@@ -169,12 +225,48 @@ describe('step up: walking over low obstacles', () => {
       px = out.x;
       pz = out.z;
       stepped += out.stepped;
-      py = Math.max(out.y, floorHeightAt(SEED, px, pz, R, out.y + 0.01));
+      // The kernel's vertical pass SNAPS to the floor (it does not keep a
+      // raised foot that nothing supports), so model it faithfully here: a
+      // step-up that fails to land the body on the surface must show up as a
+      // stall, not be hidden by a max() that props the feet up artificially.
+      py = floorHeightAt(SEED, px, pz, R, out.y + 0.01);
     }
     // It walked clean past the stone rather than stalling against it.
     expect(pz).toBeGreaterThan(stone.z + 1);
     expect(stepped).toBeGreaterThan(0); // it really did climb, not slip round
-    expect(py).toBeGreaterThanOrEqual(g - 1);
+    // And it ended SUPPORTED: the faithful vertical model above would have
+    // dropped it otherwise, which is what the step-commit fix guarantees.
+    expect(py).toBeCloseTo(floorHeightAt(SEED, px, pz, R, py + 0.01), 6);
+    expect(g).toBeGreaterThan(-1000); // fixture sanity
+  });
+
+  it('never locks a slow mover against a stone (backpedal and snare speeds)', () => {
+    setActiveWorldContent(null);
+    const stone = findStrideableStone();
+    expect(stone).toBeDefined();
+    if (!stone) return;
+    // A step-up that raises the feet at the CONTACT radius without carrying
+    // the body onto the surface deadlocks against the vertical pass: the feet
+    // drop, depenetration pushes back out, and net progress is zero forever.
+    // Crossing must therefore work at every speed, not just at a full run.
+    for (const perTick of [0.35, 0.2275 /* backpedal */, 0.1 /* heavy snare */]) {
+      let px = stone.x;
+      let pz = stone.z - 2;
+      let py = floorHeightAt(SEED, px, pz, R, groundHeight(px, pz, SEED) + 0.01);
+      let stalled = 0;
+      for (let i = 0; i < 200; i++) {
+        const beforeZ = pz;
+        moveCharacter(params(), px, py, pz, 0, perTick, out);
+        px = out.x;
+        pz = out.z;
+        py = floorHeightAt(SEED, px, pz, R, out.y + 0.01);
+        stalled = pz - beforeZ < perTick * 0.05 ? stalled + 1 : 0;
+        // A body may pause a tick or two while committing a step, never lock.
+        expect(stalled, `locked at ${perTick} yd/tick, z=${pz}`).toBeLessThan(12);
+        if (pz > stone.z + 1) break;
+      }
+      expect(pz, `never crossed at ${perTick} yd/tick`).toBeGreaterThan(stone.z + 1);
+    }
   });
 
   it('every collidable stone is traversable: strideable, or reachable by a jump', () => {
@@ -203,13 +295,7 @@ describe('step up: walking over low obstacles', () => {
 
   it('refuses to step up while airborne (no mid-air stairs)', () => {
     setActiveWorldContent(null);
-    const stone = generateDecorations(SEED).find(
-      (d) =>
-        d.kind === 'rock' &&
-        d.scale >= ROCK_COLLIDER_MIN_SCALE &&
-        rockHeight(d.x, d.z, d.scale, SEED) <= MAX_STEP_HEIGHT &&
-        terrainHeight(d.x, d.z, SEED) > WATER_LEVEL + 2,
-    );
+    const stone = findStrideableStone();
     expect(stone).toBeDefined();
     if (!stone) return;
     const g = groundHeight(stone.x, stone.z, SEED);
@@ -231,19 +317,7 @@ describe('step up: walking over low obstacles', () => {
 describe('terrain gate', () => {
   it('keeps an unwalkable rise a wall, and slides along it', () => {
     setActiveWorldContent(null);
-    // The world rim is the canonical unwalkable face.
-    let found: { x: number; z: number } | null = null;
-    for (let z = -60; z <= 200 && !found; z += 7) {
-      for (let x = -130; x >= -184; x -= 0.25) {
-        if (terrainHeight(x, z, SEED) < WATER_LEVEL + 0.5) break;
-        if (isBlocked(SEED, x, z, 0.6)) break;
-        const rise = terrainHeight(x - 0.5, z, SEED) - terrainHeight(x, z, SEED);
-        if (rise > MAX_STEP_HEIGHT * 2) {
-          found = { x, z };
-          break;
-        }
-      }
-    }
+    const found = findSteepFace();
     expect(found).toBeDefined();
     if (!found) return;
     const g = groundHeight(found.x, found.z, SEED);
@@ -252,16 +326,74 @@ describe('terrain gate', () => {
     expect(out.x).toBeGreaterThan(found.x - 0.6);
   });
 
-  it('steps up a small terrain lip instead of walling on it', () => {
-    // A rise inside the step height is a kerb, not a cliff: the solver must
-    // let the body through even when the local gradient is unwalkable.
+  it('never terrain-gates a swimmer, and never walls an airborne body below its feet', () => {
     setActiveWorldContent(null);
-    const p = params();
-    // Synthesize the check directly: any point whose forward neighbour rises
-    // less than the step height must be reachable.
-    const g0 = groundHeight(SPOT.x, SPOT.z, SEED);
-    moveCharacter(p, SPOT.x, g0, SPOT.z, 0, 0.35, out);
-    expect(Math.hypot(out.x - SPOT.x, out.z - SPOT.z)).toBeGreaterThan(0.3);
+    const steep = findSteepFace();
+    expect(steep).toBeDefined();
+    if (!steep) return;
+    const g = groundHeight(steep.x, steep.z, SEED);
+    // Grounded: the face is a wall (the long-standing rule).
+    moveCharacter(params(), steep.x, g, steep.z, -0.5, 0, out);
+    expect(Math.abs(out.x - steep.x)).toBeLessThan(0.45);
+    // Treading water: never gated.
+    moveCharacter(params({ swimming: true, grounded: false }), steep.x, g, steep.z, -0.5, 0, out);
+    expect(Math.abs(out.x - steep.x)).toBeGreaterThan(0.4);
+    // Airborne well above the ground ahead: the arc must not be stopped by a
+    // slope far below (this is what makes a jump onto a bank possible).
+    moveCharacter(params({ grounded: false }), steep.x, g + 40, steep.z, -0.5, 0, out);
+    expect(Math.abs(out.x - steep.x)).toBeGreaterThan(0.4);
+  });
+});
+
+describe('oriented boxes (fences, blocker walls, dock huts)', () => {
+  // Every open-world OBB now resolves through the physics sweep, so the slab
+  // test, the rounded corners, and the rotated normals need real coverage.
+  const FX = () => SPOT.x;
+  const FZ = () => SPOT.z + 2;
+
+  it('blocks a grounded body head-on and slides it along the rail', () => {
+    // A diagonal fence: exercises rot != 0 in both the sweep and the normal.
+    setActiveWorldContent(
+      world({ fences: [{ x1: SPOT.x - 6, z1: FZ() - 6, x2: SPOT.x + 6, z2: FZ() + 6 }] }),
+    );
+    const g = groundHeight(SPOT.x, SPOT.z, SEED);
+    // Head-on into the rail (perpendicular to it) must not cross.
+    const line = { x1: SPOT.x - 6, z1: FZ() - 6, x2: SPOT.x + 6, z2: FZ() + 6 };
+    const start = { x: SPOT.x + 2, z: FZ() - 2 };
+    moveCharacter(params(), start.x, g, start.z, -2, 2, out);
+    expect(out.blocked).toBe(true);
+    // Never crossed: the body stays on the side of the rail it started on.
+    expect(Math.sign(sideOf(line, out.x, out.z))).toBe(Math.sign(sideOf(line, start.x, start.z)));
+  });
+
+  it('lets a jumping body clear a fence, and never a grounded one', () => {
+    setActiveWorldContent(
+      world({ fences: [{ x1: SPOT.x - 6, z1: FZ(), x2: SPOT.x + 6, z2: FZ() }] }),
+    );
+    const g = groundHeight(SPOT.x, SPOT.z, SEED);
+    moveCharacter(params(), SPOT.x, g, FZ() - 1.5, 0, 3, out);
+    expect(out.z).toBeLessThan(FZ());
+    moveCharacter(
+      params({ grounded: false, ignoreFences: true }),
+      SPOT.x,
+      g + 1,
+      FZ() - 1.5,
+      0,
+      3,
+      out,
+    );
+    expect(out.z).toBeGreaterThan(FZ());
+  });
+
+  it('resolves a rotated blocker wall without leaking through its corner', () => {
+    const wall = { x1: SPOT.x - 3, z1: FZ() - 3, x2: SPOT.x + 3, z2: FZ() + 3 };
+    setActiveWorldContent({ ...world({}), blockers: [wall] } as WorldContent);
+    const g = groundHeight(SPOT.x, SPOT.z, SEED);
+    // Aim straight at the wall's midpoint from the near side.
+    const from = { x: SPOT.x + 2, z: FZ() - 2 };
+    moveCharacter(params(), from.x, g, from.z, -4, 4, out);
+    expect(out.blocked).toBe(true);
+    expect(Math.sign(sideOf(wall, out.x, out.z))).toBe(Math.sign(sideOf(wall, from.x, from.z)));
   });
 });
 

@@ -15,9 +15,9 @@
 //      and low rubble something you stride over instead of bump into, with no
 //      jump input and no vertical velocity: the defining feature of a modern
 //      character controller.
-//   4. TERRAIN GATE  the heightfield is not a collider: a step whose rise
-//      exceeds the walkable slope is a wall, UNLESS the rise is inside
-//      `stepHeight`, in which case it is a kerb and the body steps up. A
+//   4. TERRAIN GATE  the heightfield is not a collider, so the walkable-slope
+//      rule is applied separately: an unwalkable rise is a wall, and step-up
+//      deliberately does NOT apply to it (see the NOTE at the gate). A
 //      rejected uphill retries along the contour so a body slides across a
 //      steep face instead of sticking to it.
 //
@@ -62,6 +62,10 @@ const MAX_DEPENETRATION_ITERATIONS = 4;
 const TOP_EPS = 1e-3;
 /** Motions below this are treated as zero. */
 const MIN_MOTION = 1e-7;
+/** How far a step-up may carry the body forward to land ON the surface. */
+const STEP_COMMIT_DISTANCE = 0.35;
+/** Commit samples tried, from 0 (already over the top) to the full distance. */
+const STEP_COMMIT_TRIES = 4;
 
 export interface CharacterMoveParams {
   seed: number;
@@ -73,6 +77,8 @@ export interface CharacterMoveParams {
   maxSlope: number;
   /** Step-up requires footing: an airborne body only passes over tops. */
   grounded: boolean;
+  /** A treading body is never terrain-gated (a lake bank is not a wall). */
+  swimming: boolean;
   /** Jump arcs clear low fence rails (the long-standing fence rule). */
   ignoreFences: boolean;
 }
@@ -237,14 +243,42 @@ export function moveCharacter(
     // Step up rather than stop, when the obstacle is a low standable ledge and
     // the body fits at the raised height. The horizontal motion continues
     // unchanged: no vertical velocity, no input, no pause.
+    //
+    // The step must COMMIT the body onto the surface, not just raise it at the
+    // contact point. Contact sits at `collider.r + bodyRadius` from the prop's
+    // centre, while the kernel's support query only holds a body up well
+    // inside that (a rim graze must not levitate anyone), so a raise alone
+    // leaves the feet unsupported: the vertical pass drops them back the same
+    // tick and depenetration shoves the body out again the next one. That is a
+    // movement LOCK for anyone crossing slower than about three quarters of run
+    // speed (backpedalling, snared, walking a diagonal). So the step advances
+    // the body along its motion until the floor query actually reports the top
+    // underfoot; if no clear, supported spot exists, the step is abandoned and
+    // the body slides around the obstacle exactly as it would off a wall.
     const blocker = candidates[bestIndex];
     if (steppableAt(blocker, feetY, params)) {
       const lifted = (blocker.moveTopY as number) + TOP_EPS;
-      if (isClear(px, pz, lifted, params)) {
+      const dirLen = Math.hypot(remX, remZ);
+      const ux = dirLen > MIN_MOTION ? remX / dirLen : 0;
+      const uz = dirLen > MIN_MOTION ? remZ / dirLen : 0;
+      let committed = false;
+      for (let s = 0; s < STEP_COMMIT_TRIES && !committed; s++) {
+        const adv = (s * STEP_COMMIT_DISTANCE) / (STEP_COMMIT_TRIES - 1);
+        const cx = px + ux * adv;
+        const cz = pz + uz * adv;
+        if (!isClear(cx, cz, lifted, params)) continue;
+        const floor = supportHeightAt(params.seed, cx, cz, params.radius, lifted + TOP_EPS);
+        if (floor < lifted - TOP_EPS) continue; // nothing underfoot there
+        px = cx;
+        pz = cz;
+        const consumed = Math.min(adv, dirLen);
+        remX -= ux * consumed;
+        remZ -= uz * consumed;
         stepped += lifted - feetY;
         feetY = lifted;
-        continue;
+        committed = true;
       }
+      if (committed) continue;
     }
 
     blocked = true;
@@ -259,12 +293,20 @@ export function moveCharacter(
   }
 
   // Terrain gate. The heightfield is not in the collider set, so the walkable
-  // slope rule is applied to the net move: an unwalkable rise is a wall unless
-  // it is inside the step height, in which case the body steps onto it.
+  // slope rule is applied to the net move.
+  //
+  // Three conditions reproduce the pre-engine rule exactly, and all three
+  // matter: a SWIMMER is never terrain-gated (treading water over a steep
+  // lake bank must not be walled); an AIRBORNE body is gated only by ground
+  // that rises above its feet (otherwise a jump is stopped dead in mid-air by
+  // a slope far below, killing every leap onto a bank); and the slope ratio is
+  // measured against the REQUESTED step, not the collision-shortened one (a
+  // 0.05 yd slide along a crate beside a hill is not a 2:1 climb).
   const groundStart = groundHeight(x, z, params.seed);
   let groundEnd = groundHeight(px, pz, params.seed);
-  const run = Math.hypot(px - x, pz - z);
-  if (groundEnd > groundStart && run > 1e-5) {
+  const run = Math.hypot(dx, dz);
+  const airborneClears = !params.grounded && groundEnd <= feetY;
+  if (!params.swimming && !airborneClears && groundEnd > groundStart && run > 1e-5) {
     const rise = groundEnd - groundStart;
     const unwalkable =
       rise / run > params.maxSlope || terrainSteepnessAt(px, pz, params.seed) > params.maxSlope;
@@ -284,8 +326,10 @@ export function moveCharacter(
       const gx = slope?.x ?? 0;
       const gz = slope?.z ?? 0;
       const glen = Math.hypot(gx, gz);
-      px = x;
-      pz = z;
+      // Back to the DEPENETRATED origin, never the raw input: a body that
+      // started embedded must keep the push-out that freed it.
+      px = depen.x;
+      pz = depen.z;
       if (glen > 1e-6) {
         const ux = gx / glen;
         const uz = gz / glen;
@@ -298,7 +342,11 @@ export function moveCharacter(
           const contourGround = groundHeight(cx, cz, params.seed);
           const contourRise = contourGround - groundStart;
           const contourRun = Math.hypot(contourX, contourZ);
-          const contourOk = contourRise <= 0 || contourRise / contourRun <= params.maxSlope;
+          // Both halves of the original wall rule: the step's own slope AND
+          // the gradient of the ground it lands on.
+          const contourOk =
+            (contourRise <= 0 || contourRise / contourRun <= params.maxSlope) &&
+            terrainSteepnessAt(cx, cz, params.seed) <= params.maxSlope;
           if (contourOk && isClear(cx, cz, feetY, params)) {
             px = cx;
             pz = cz;

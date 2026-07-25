@@ -9,7 +9,7 @@ import {
   WORLD_MIN_Z,
   ZONES,
 } from '../sim/data';
-import { rockHeightOf } from '../sim/decoration_dims';
+import { ROCK_SINK_UNITS, rockHeightOf } from '../sim/decoration_dims';
 import type { BiomeId } from '../sim/types';
 import { isInSowfieldShell } from '../sim/vale_cup_layout';
 import type { Decoration } from '../sim/world';
@@ -243,8 +243,11 @@ function rockNativeHeight(geo: THREE.BufferGeometry | undefined): number {
   const cached = rockNativeHeights.get(geo);
   if (cached !== undefined) return cached;
   geo.computeBoundingBox();
-  const bb = geo.boundingBox;
-  const h = bb ? bb.max.y - bb.min.y : 1;
+  // bb.max.y, NOT the box height: the instance is seated at the terrain minus
+  // the sink, so top-above-ground is (max.y - sink) * scale. The merged
+  // cluster archetype has a member below zero, so using the full height there
+  // would render clusters short of the collider top the sim publishes.
+  const h = geo.boundingBox ? geo.boundingBox.max.y : 1;
   rockNativeHeights.set(geo, h);
   return h;
 }
@@ -1095,14 +1098,14 @@ function buildTrees(
           // for the sy that puts the model's top (its own height, less the
           // 0.3 sink below) at rockHeight() above the terrain. The geometry is
           // seated base-near-zero, so top-above-ground = (nativeH - 0.3) * sy.
-          const nativeH = rockNativeHeight(geo);
-          const sy = rockHeightOf(r, seed) / Math.max(0.1, nativeH - 0.3);
+          const nativeTop = rockNativeHeight(geo);
+          const sy = rockHeightOf(r, seed) / Math.max(0.1, nativeTop - ROCK_SINK_UNITS);
           const tiltAmp = Math.max(sxz1, sxz2) > 0.8 ? 0.12 : 0.26;
           q.setFromEuler(
             e.set((h1 - 0.5) * tiltAmp, r.variant * 1.7 + h3 * 2.0, (h2 - 0.5) * tiltAmp),
           );
           // sink so undersides bury on slopes (geometry base is near y=0)
-          m.compose(v.set(r.x, y - 0.3 * sy, r.z), q, sv.set(sxz1, sy, sxz2));
+          m.compose(v.set(r.x, y - ROCK_SINK_UNITS * sy, r.z), q, sv.set(sxz1, sy, sxz2));
           rockMesh.setMatrixAt(i, m);
           // low-altitude peaks rocks drop the icy blue-gray for a warm field
           // stone — pale rocks on green foothill grass read as eggs
