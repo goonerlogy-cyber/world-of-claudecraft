@@ -226,11 +226,35 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
   if (slide || movingOnGround || airSteering || (!p.onGround && (p.vx !== 0 || p.vz !== 0))) {
     if (slide && p.castingAbility) deps.cancelCast(p);
     if (airSteering) {
+      // Steer the air velocity toward the wish vector, limited as a VECTOR
+      // rather than per axis: a per-axis clamp is anisotropic (diagonal
+      // steering gets root-two more authority) and, because the result only
+      // has to land inside the box spanned by the old and wanted velocities,
+      // a spinning wish vector can walk the SPEED up. Measured at about 3
+      // percent above run speed by spinning the camera mid-air, which is the
+      // classic air-strafe exploit in miniature.
       const accel = AIR_CONTROL_ACCEL * DT;
-      const dvx = wishX * wishSpeed - p.vx;
-      const dvz = wishZ * wishSpeed - p.vz;
-      p.vx += Math.max(-accel, Math.min(accel, dvx));
-      p.vz += Math.max(-accel, Math.min(accel, dvz));
+      let dvx = wishX * wishSpeed - p.vx;
+      let dvz = wishZ * wishSpeed - p.vz;
+      const dLen = Math.hypot(dvx, dvz);
+      if (dLen > accel) {
+        const k = accel / dLen;
+        dvx *= k;
+        dvz *= k;
+      }
+      const before = Math.hypot(p.vx, p.vz);
+      p.vx += dvx;
+      p.vz += dvz;
+      // Steering redirects momentum, it never adds any. The cap keeps whatever
+      // speed the body already carried (a knockback or a charge stays fast) and
+      // forbids growing past it or past the wish speed.
+      const after = Math.hypot(p.vx, p.vz);
+      const cap = Math.max(wishSpeed, before);
+      if (after > cap && after > 1e-9) {
+        const k = cap / after;
+        p.vx *= k;
+        p.vz *= k;
+      }
     }
     const stepX = slide ? slide.x * STEEP_SLIDE_SPEED : movingOnGround ? wishX * wishSpeed : p.vx;
     const stepZ = slide ? slide.z * STEEP_SLIDE_SPEED : movingOnGround ? wishZ * wishSpeed : p.vz;

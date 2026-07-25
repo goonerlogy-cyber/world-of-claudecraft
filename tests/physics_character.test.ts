@@ -2,8 +2,10 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   CRATE_TOP,
   isBlocked,
+  lineOfSightClear,
   MANTLE_REACH,
   queryOpenWorldColliders,
+  SIGHT_HEIGHT,
   supportHeightAt,
 } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
@@ -23,7 +25,9 @@ import {
   resetPhysicsStats,
 } from '../src/sim/physics';
 import { GRAVITY, JUMP_VELOCITY } from '../src/sim/player_motion';
+import { Sim } from '../src/sim/sim';
 import type { WorldContent } from '../src/sim/types';
+import { RUN_SPEED } from '../src/sim/types';
 import {
   generateDecorations,
   groundHeight,
@@ -512,5 +516,70 @@ describe('the pruned support query matches the collider-grid query', () => {
       const viaFloor = floorHeightAt(SEED, x, z, R, maxY);
       expect(viaFloor).toBe(Math.max(groundHeight(x, z, SEED), viaGrid));
     }
+  });
+});
+
+describe('air control cannot manufacture speed', () => {
+  // Quake-lineage air steering is a classic source of exploit speed: steering
+  // perpendicular to your velocity in the air can ADD to it if the
+  // acceleration is applied without regard to the current speed. This solver
+  // steers velocity TOWARD the wish vector instead, so the airborne speed can
+  // converge on the run speed but never exceed it, whatever the input does.
+  it('never exceeds run speed however the wish vector is steered', () => {
+    setActiveWorldContent(world({}));
+    const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
+    sim.setPlayerLevel(60);
+    const p = sim.player;
+    p.pos.x = SPOT.x;
+    p.pos.z = SPOT.z;
+    p.pos.y = terrainHeight(SPOT.x, SPOT.z, SEED);
+    p.prevPos = { ...p.pos };
+    p.onGround = true;
+    p.facing = 0;
+    const meta = sim.players.get(p.id);
+    if (!meta) throw new Error('missing player meta');
+    const input = {
+      forward: true,
+      back: false,
+      turnLeft: false,
+      turnRight: false,
+      strafeLeft: false,
+      strafeRight: false,
+      jump: true,
+    };
+    Object.assign(meta.moveInput, input);
+    sim.tick();
+    expect(p.onGround).toBe(false);
+    let peak = 0;
+    // Spin the wish vector while airborne, the classic air-strafe input.
+    for (let i = 0; i < 200; i++) {
+      p.facing += 0.35;
+      Object.assign(meta.moveInput, { ...input, jump: false, strafeRight: i % 2 === 0 });
+      sim.tick();
+      peak = Math.max(peak, Math.hypot(p.vx, p.vz));
+      if (p.onGround) {
+        Object.assign(meta.moveInput, { ...input, jump: true });
+        sim.tick();
+      }
+    }
+    expect(peak).toBeLessThanOrEqual(RUN_SPEED + 1e-6);
+  });
+});
+
+describe('rock tops below eye height no longer block line of sight', () => {
+  // Making the collider top match the silhouette also changed what a rock
+  // OCCLUDES: a boulder you can see over no longer blocks a cast. That is a
+  // deliberate gameplay consequence of the fix, and it is pinned here so it
+  // cannot change again by accident.
+  it('lets a cast cross a stone shorter than the sight line', () => {
+    setActiveWorldContent(null);
+    const stone = findStrideableStone();
+    expect(stone).toBeDefined();
+    if (!stone) return;
+    const top = rockHeight(stone.x, stone.z, stone.scale, SEED);
+    expect(top).toBeLessThan(SIGHT_HEIGHT);
+    const from = { x: stone.x, z: stone.z - 4 };
+    const to = { x: stone.x, z: stone.z + 4 };
+    expect(lineOfSightClear(SEED, from, to)).toBe(true);
   });
 });
