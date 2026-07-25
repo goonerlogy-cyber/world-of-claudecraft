@@ -238,7 +238,8 @@ export interface FoliagePerfStats {
 // the height the sim publishes (src/sim/decoration_dims.ts), whichever GLB
 // variant it draws.
 const rockNativeHeights = new WeakMap<THREE.BufferGeometry, number>();
-function rockNativeHeight(geo: THREE.BufferGeometry): number {
+function rockNativeHeight(geo: THREE.BufferGeometry | undefined): number {
+  if (!geo) return 1; // fail soft: a missing variant must never break world entry
   const cached = rockNativeHeights.get(geo);
   if (cached !== undefined) return cached;
   geo.computeBoundingBox();
@@ -1060,10 +1061,16 @@ function buildTrees(
         r.biome === 'peaks' && terrainHeight(r.x, r.z, seed) > ROCK_SNOWLINE_Y;
       // 1 of the 3 single variants per bucket + the cluster archetype
       const singleSubset = variantSubset(1, 3, bucket.band, bucket.col, 71);
+      // Index against the set's ACTUAL length: the colorway is
+      // [singles..., cluster], and the low-tier model list ships fewer single
+      // variants than the high tier, so a hardcoded index (set[3]) resolved to
+      // undefined there and handed an undefined geometry to the instancer.
       const groupGeo = (r: Decoration): THREE.BufferGeometry => {
         const set = isSnowy(r) ? snowRocks : mossRocks;
-        if (isCluster(r)) return set[3];
-        return set[singleSubset[Math.floor(hashAt(r.x, r.z, 72) * singleSubset.length)]];
+        const singles = Math.max(1, set.length - 1); // last entry is the cluster
+        if (isCluster(r)) return set[set.length - 1];
+        const pick = singleSubset[Math.floor(hashAt(r.x, r.z, 72) * singleSubset.length)];
+        return set[Math.min(pick, singles - 1)];
       };
       const groups = new Map<THREE.BufferGeometry, Decoration[]>();
       for (const r of rocks) {
