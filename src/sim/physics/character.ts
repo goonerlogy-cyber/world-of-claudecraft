@@ -41,13 +41,19 @@ import { groundHeight, terrainDownhill, terrainSteepnessAt } from '../world';
 import { overlapCollider, SKIN_WIDTH, sweepCollider } from './sweep';
 
 /**
- * How high a walking body climbs without jumping (yards). At the player's
- * 2 yd body height this is 35 percent of stature: generous in the classic-MMO
- * tradition, and chosen against the measured world geometry so small field
- * stones and low rubble are strideable while crates and boulders still ask for
- * a jump. Pinned against the rock size model by tests/physics_character.test.ts.
+ * How high a walking body climbs without jumping (yards). At the player's 2 yd
+ * body height this is 45 percent of stature: generous, in the classic-MMO
+ * tradition rather than the simulation one, and chosen against MEASURED world
+ * geometry rather than taste. The rock field's own height model
+ * (`decoration_dims.ts`) runs about 0.7 to 1.7 yd, and the climb the solver
+ * actually tests is from the BODY'S FEET, so rolling terrain adds a few
+ * centimetres either way: a tighter value left stones that read as obviously
+ * strideable failing by under a centimetre, which is precisely the "why did I
+ * stop?" moment this engine exists to remove. Everything above it stays a jump
+ * (crates at 1.35, the taller boulders), reachable via the mantle assist.
+ * Pinned against the rock size model by tests/physics_character.test.ts.
  */
-export const MAX_STEP_HEIGHT = 0.8;
+export const MAX_STEP_HEIGHT = 0.9;
 /** Slide passes per move. Four resolves a corner (two planes) plus slack. */
 const MAX_SLIDE_ITERATIONS = 4;
 /** Depenetration passes when the body starts embedded. */
