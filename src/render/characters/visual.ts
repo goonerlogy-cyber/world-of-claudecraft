@@ -585,6 +585,18 @@ export class CharacterVisual {
   // LOD / shadow plumbing (memoized — called every frame by the renderer)
   // -------------------------------------------------------------------------
 
+  /**
+   * Terrain lean, in the body's own frame (see `render/ground_tilt_core.ts`).
+   * Written on `root`, which nothing else transforms: `poseWrap` rewrites its
+   * own rotation every frame for the swim pose, so a lean applied there would
+   * be stomped. Two float writes, elided when the plan has not moved.
+   */
+  setGroundTilt(pitch: number, roll: number): void {
+    if (this.root.rotation.x === pitch && this.root.rotation.z === roll) return;
+    this.root.rotation.x = pitch;
+    this.root.rotation.z = roll;
+  }
+
   setShadow(on: boolean): void {
     if (on === this.shadowOn) return;
     this.shadowOn = on;
