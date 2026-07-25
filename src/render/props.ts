@@ -870,9 +870,13 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
   }
 
   // ---- graveyards: 4 headstone shapes, leaning, instanced ------------------
-  const graveKinds: PropKey[] = lowProps
-    ? ['graveRound']
-    : ['graveRound', 'graveCross', 'graveBevel', 'graveDecor'];
+  // The SAME four stones at every graphics tier. Collision derives each
+  // headstone's height from this cycle (`sim/prop_layout.ts`) and the sim has
+  // no notion of a graphics preset, so substituting a shorter stone on low
+  // would make what blocks a player depend on their settings, which the
+  // gameplay-neutrality invariant forbids. Six stones per graveyard is a
+  // rounding error next to the instanced foliage either way.
+  const graveKinds: PropKey[] = ['graveRound', 'graveCross', 'graveBevel', 'graveDecor'];
   for (const gy of getActiveWorldContent().props.graveyards) {
     for (let i = 0; i < 6; i++) {
       const gx = gy.x + (i % 3) * 2.2,

@@ -3,6 +3,7 @@ import { ABILITIES, abilitiesKnownAt, CLASSES } from '../src/sim/content/classes
 import { Sim } from '../src/sim/sim';
 import { type AuraKind, dist2d } from '../src/sim/types';
 import { groundHeight, WATER_LEVEL } from '../src/sim/world';
+import { OPEN_GROUND } from './helpers/open_ground';
 
 const NEW_DRUID = [
   'travel_form',
@@ -169,6 +170,9 @@ describe('druid spell pack — casting applies effects', () => {
       const e = sim.entities.get(a)!;
       sim.setPlayerLevel(20, a);
       e.resource = 100;
+      // Measure the speed ratio on empty ground: the starting town is
+      // furnished now, so a run from spawn measures a collision, not a speed.
+      placeOnGround(sim, a, OPEN_GROUND.x, OPEN_GROUND.z);
       if (withForm) {
         sim.castAbility('travel_form', a);
         sim.tick();
@@ -201,6 +205,8 @@ describe('druid spell pack — casting applies effects', () => {
       const e = sim.entities.get(pid)!;
       sim.setPlayerLevel(20, pid);
       e.resource = e.maxResource;
+      // Same reason as Travel Form above: measure on empty ground.
+      placeOnGround(sim, pid, OPEN_GROUND.x, OPEN_GROUND.z);
       sim.castAbility('cat_form', pid);
       sim.tick();
       advanceTicks(sim, 40);

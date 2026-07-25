@@ -1,3 +1,4 @@
+import { STATIONS } from './content/professions';
 import {
   arenaOriginAt,
   DUNGEON_X_THRESHOLD,
@@ -11,6 +12,8 @@ import {
   isArenaPos,
   isDelvePos,
   isYumiMazePos,
+  NPCS,
+  OVERWORLD_GRAVEYARDS,
   yumiMazeOriginAt,
 } from './data';
 import { ROCK_COLLIDER_MIN_SCALE, rockHeight, rockRadius } from './decoration_dims';
@@ -24,6 +27,16 @@ import {
   SANCTUM_LAYOUT,
   TEMPLE_LAYOUT,
 } from './dungeon_layout';
+import {
+  GRAVE_COUNT,
+  GRAVE_RADIUS,
+  graveHeight,
+  graveOffset,
+  MINE_CART,
+  SMITHY_DRESSING,
+  STALL_DRESSING,
+} from './prop_layout';
+import { townPropPlacements } from './town_props';
 import type { WorldContent } from './types';
 import { valeCupColliders } from './vale_cup_layout';
 import { generateDecorations, groundHeight } from './world';
@@ -150,6 +163,31 @@ function rotY(lx: number, lz: number, rot: number): { x: number; z: number } {
 // ---------------------------------------------------------------------------
 // Collider sets
 // ---------------------------------------------------------------------------
+
+// Positions no prop may stand on: authored NPCs, plus every overworld
+// graveyard anchor, where a Spirit Healer is spawned at runtime rather than
+// being an authored NPC record.
+function townNpcPositions(): { x: number; z: number }[] {
+  const out: { x: number; z: number }[] = [];
+  for (const npc of Object.values(NPCS)) {
+    const pos = (npc as { pos?: { x: number; z: number } }).pos;
+    if (pos) out.push({ x: pos.x, z: pos.z });
+  }
+  for (const g of OVERWORLD_GRAVEYARDS) out.push({ x: g.x, z: g.z });
+  return out;
+}
+
+function standsOnNpcSpot(
+  x: number,
+  z: number,
+  r: number,
+  spots: readonly { x: number; z: number }[],
+): boolean {
+  for (const s of spots) {
+    if (Math.hypot(s.x - x, s.z - z) < r + 0.4) return true;
+  }
+  return false;
+}
 
 function staticWorldColliders(seed: number): Collider[] {
   const out: Collider[] = [];
@@ -311,6 +349,92 @@ function staticWorldColliders(seed: number): Collider[] {
         camGhost: true,
       });
     }
+  }
+
+  // Graveyard headstones. Six per anchor on a fixed grid, and until now the
+  // only top-level prop category with no collision at all: a whole cemetery
+  // the player strolled through. Standable, so the taller crosses are
+  // something to jump onto rather than a wall.
+  const npcSpots = townNpcPositions();
+  for (const gy of PROPS.graveyards) {
+    for (let i = 0; i < GRAVE_COUNT; i++) {
+      const off = graveOffset(i);
+      const gx = gy.x + off.x;
+      const gz = gy.z + off.z;
+      // Same rule as the town furniture: never wall off an NPC. A Spirit
+      // Healer hovers at every overworld graveyard's anchor, which is exactly
+      // where the first stone of the grid is drawn, so that one stays scenery.
+      if (standsOnNpcSpot(gx, gz, GRAVE_RADIUS, npcSpots)) continue;
+      const top = topY(seed, gx, gz, graveHeight(i));
+      out.push({
+        type: 'circle',
+        x: gx,
+        z: gz,
+        r: GRAVE_RADIUS,
+        cameraTopY: top,
+        moveTopY: top,
+        standable: true,
+        camGhost: true,
+      });
+    }
+  }
+
+  // Profession-station clusters and Artisan Row: the town's furniture. Both
+  // layouts are sim-owned data the renderer reads back (`town_props.ts`), so
+  // an anvil you can see is an anvil you can climb on.
+  for (const tp of townPropPlacements(
+    STATIONS.map((st) => ({ type: st.type, x: st.pos.x, z: st.pos.z })),
+    townNpcPositions(),
+  )) {
+    const top = topY(seed, tp.x, tp.z, tp.size.height);
+    out.push({
+      type: 'circle',
+      x: tp.x,
+      z: tp.z,
+      r: tp.size.r,
+      cameraTopY: top,
+      moveTopY: top,
+      standable: tp.size.standable,
+      camGhost: true,
+    });
+  }
+
+  // Market-stall dressing and the mine's ore cart: sub-props the renderer
+  // draws as loose children of their parent, previously invisible to
+  // collision. Local offsets rotate with the parent, exactly as the meshes do.
+  for (const st of PROPS.stalls) {
+    for (const d of st.smithy ? SMITHY_DRESSING : STALL_DRESSING) {
+      const off = rotY(d.x, d.z, st.rot);
+      const x = st.x + off.x;
+      const z = st.z + off.z;
+      const top = topY(seed, x, z, d.height);
+      out.push({
+        type: 'circle',
+        x,
+        z,
+        r: d.r,
+        cameraTopY: top,
+        moveTopY: top,
+        standable: true,
+        camGhost: true,
+      });
+    }
+  }
+  for (const m of PROPS.mines) {
+    const off = rotY(MINE_CART.x, MINE_CART.z, m.rot);
+    const x = m.x + off.x;
+    const z = m.z + off.z;
+    const top = topY(seed, x, z, MINE_CART.height);
+    out.push({
+      type: 'circle',
+      x,
+      z,
+      r: MINE_CART.r,
+      cameraTopY: top,
+      moveTopY: top,
+      standable: true,
+      camGhost: true,
+    });
   }
 
   // Editor-placed assets with a collide footprint (custom maps only; the

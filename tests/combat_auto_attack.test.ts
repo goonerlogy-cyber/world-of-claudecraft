@@ -19,6 +19,7 @@ import { createMob } from '../src/sim/entity';
 import { advancePendingProjectiles } from '../src/sim/projectile_travel';
 import { Sim } from '../src/sim/sim';
 import { DT, type Entity, type PlayerClass } from '../src/sim/types';
+import { standOnOpenGround } from './helpers/open_ground';
 
 type AnySim = Sim & Record<string, any>;
 type AnyEntity = Entity & Record<string, any>;
@@ -44,6 +45,9 @@ function makeSim(
   const sim = new Sim({ seed, playerClass: cls, autoEquip: true }) as AnySim;
   sim.setPlayerLevel(level);
   const p = sim.player as AnyEntity;
+  // Ranged fixtures place their target relative to the player, so stand on
+  // empty ground: the town is furnished and would block the shot lane.
+  standOnOpenGround(sim);
   const meta = sim.players.get(p.id);
   p.resource = p.maxResource;
   return { sim, p, meta };

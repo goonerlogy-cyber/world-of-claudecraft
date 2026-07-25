@@ -4968,7 +4968,13 @@ export class Sim {
     // (a leap has its own landing contract) and before charge/follow/fear so
     // those cannot fight a pull-up already in progress.
     if (advanceClimb(p)) return;
-    if (meta.moveInput.jump && tryStartClimb(p, this.cfg.seed) && advanceClimb(p)) return;
+    // Grabbing is AUTOMATIC, not a second button. A player who jumps at a
+    // ledge has already expressed the intent; making them also hold a key at
+    // the exact frame their hands reach it is the difference between a move
+    // that feels like traversal and one that feels like a QTE. The grab is
+    // already gated on being airborne past the apex, moving toward the ledge,
+    // and the ledge being somewhere the body fits.
+    if (tryStartClimb(p, this.cfg.seed) && advanceClimb(p)) return;
     if (this.updateChargeMovement(p)) return;
     if (this.updateFollowMovement(p, meta)) return;
     if (this.updateFearMovement(p)) return;

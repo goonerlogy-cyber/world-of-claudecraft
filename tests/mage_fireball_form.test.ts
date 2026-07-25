@@ -7,6 +7,7 @@ import { Sim } from '../src/sim/sim';
 import type { Entity } from '../src/sim/types';
 import { abilityBuffValue } from '../src/ui/ability_damage';
 import { hasExplicitAbilityIcon } from '../src/ui/icons';
+import { standOnOpenGround } from './helpers/open_ground';
 
 const FORM_ID = 'fireball_form';
 
@@ -85,6 +86,8 @@ describe('Mage Fireball Form', () => {
     const distanceOver = (transformed: boolean): number => {
       const sim = mageWithSpec('arcane');
       const player = sim.player;
+      // Measure the speed ratio on empty ground: the town square is furnished.
+      standOnOpenGround(sim);
       if (transformed) activate(sim);
       const meta = sim.meta(player.id);
       if (!meta) throw new Error('mage metadata missing');

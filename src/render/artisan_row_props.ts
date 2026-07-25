@@ -9,6 +9,10 @@
 
 import * as THREE from 'three';
 import { BUILTIN_WORLD, getActiveWorldContent } from '../sim/data';
+import {
+  type ArtisanPropKind,
+  ARTISAN_ROW_PLACEMENTS as SIM_ARTISAN_ROW_PLACEMENTS,
+} from '../sim/town_props';
 import { terrainHeight } from '../sim/world';
 import { loadGltf } from './assets/loader';
 import { registerPreload } from './assets/preload';
@@ -18,18 +22,6 @@ import { surfaceMat } from './gfx';
 // prop, so furniture-scale props tilt to match sloped terrain instead of
 // floating/sinking a corner. Small relative to placement spacing.
 const PITCH_SAMPLE_STEP = 0.4;
-
-type ArtisanPropKind =
-  | 'engineering_workbench'
-  | 'alchemy_cauldron'
-  | 'cooking_spit'
-  | 'leatherworking_rack'
-  | 'tailoring_loom'
-  | 'inscription_lectern'
-  | 'enchanting_altar'
-  | 'jewelcrafting_bench'
-  | 'mining_ore_cart'
-  | 'herbalism_drying_rack';
 
 const ARTISAN_ASSET_URL: Record<ArtisanPropKind, string> = {
   engineering_workbench: '/models/props/engineering_workbench.glb',
@@ -59,30 +51,10 @@ const ARTISAN_TARGET_HEIGHT: Record<ArtisanPropKind, number> = {
   herbalism_drying_rack: 1.4,
 };
 
-// Fixed placements around Smith Haldren's market stall (zone1, stall at
-// x=9.5 z=17.5), arced clear of his stall footprint (r=1.7) and the house at
-// x=10 z=12. entityId-free: this is a hand-authored landmark, not procedural
-// scatter, so exact spots matter more than deterministic variety.
-const ARTISAN_ROW_PLACEMENTS: ReadonlyArray<{
-  kind: ArtisanPropKind;
-  x: number;
-  z: number;
-  rot: number;
-}> = [
-  { kind: 'engineering_workbench', x: 2, z: 20, rot: 0.4 },
-  { kind: 'alchemy_cauldron', x: 5, z: 23, rot: -0.6 },
-  { kind: 'cooking_spit', x: 9, z: 25, rot: 0 },
-  { kind: 'leatherworking_rack', x: 13, z: 24, rot: 0.9 },
-  // Nudged off the northeast ruins road (roadDistance was 2.36 and 1.25 at the
-  // original spots, well inside the 3.2 grass/foliage clearance and standing
-  // on bare road surface with no collider): both now sit past 4.0.
-  { kind: 'tailoring_loom', x: 13.5, z: 20.5, rot: 1.6 },
-  { kind: 'inscription_lectern', x: 19.5, z: 14.5, rot: 2.4 },
-  { kind: 'enchanting_altar', x: 16, z: 13, rot: -2.6 },
-  { kind: 'jewelcrafting_bench', x: 15, z: 9, rot: -1.8 },
-  { kind: 'mining_ore_cart', x: 3, z: 12, rot: -0.9 },
-  { kind: 'herbalism_drying_rack', x: 1, z: 16, rot: 0.3 },
-];
+// The placements now live in `src/sim/town_props.ts` so COLLISION can see
+// them: ten solid pieces of furniture stand along this row, and until the sim
+// owned their positions a player walked straight through every one.
+const ARTISAN_ROW_PLACEMENTS = SIM_ARTISAN_ROW_PLACEMENTS;
 
 const loadedArtisanGltf = new Map<ArtisanPropKind, THREE.Group>();
 
