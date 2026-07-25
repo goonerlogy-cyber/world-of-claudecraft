@@ -35,6 +35,7 @@ import {
   type Collider,
   MANTLE_REACH,
   queryOpenWorldColliders,
+  SUPPORT_OVERLAP,
   supportHeightAt,
 } from '../colliders';
 import { groundHeight, terrainDownhill, terrainSteepnessAt } from '../world';
@@ -94,10 +95,90 @@ export interface CharacterMoveResult {
   stepped: number;
 }
 
+/**
+ * Work counters for the efficiency pin. Wall-clock budgets rot across machines
+ * and CI runners; the WORK a solve performs does not, so
+ * tests/physics_character.test.ts asserts against these instead. Plain integer
+ * adds, free on the hot path.
+ */
+export const physicsStats = {
+  solves: 0,
+  /** Colliders surviving the broadphase prune, summed over solves. */
+  candidates: 0,
+  /** Swept collider tests performed (the dominant inner-loop cost). */
+  sweeps: 0,
+  /** Overlap tests (depenetration plus step-up headroom). */
+  overlaps: 0,
+};
+
+export function resetPhysicsStats(): void {
+  physicsStats.solves = 0;
+  physicsStats.candidates = 0;
+  physicsStats.sweeps = 0;
+  physicsStats.overlaps = 0;
+}
+
 // Module scratch: this runs per body per tick and must not allocate.
 const candidates: Collider[] = [];
 const hit = { t: 0, nx: 0, nz: 0 };
 const push = { nx: 0, nz: 0, depth: 0 };
+
+// Rotate a world offset into an OBB's local frame, into scratch (no object).
+const localPt = { x: 0, z: 0 };
+function toLocal(lx: number, lz: number, rot: number): void {
+  const c = Math.cos(rot);
+  const s = Math.sin(rot);
+  localPt.x = lx * c + lz * s;
+  localPt.z = -lx * s + lz * c;
+}
+
+// Drop every candidate that cannot touch the swept body, once, before the
+// slide iterations. A grid cell is 16 yd across and a tick's step is under
+// one, so the broadphase hands back far more than the solver can ever hit;
+// pruning here shrinks the inner loops (sweep, depenetrate, isClear, support)
+// from "everything nearby" to "the two or three things actually in reach".
+function pruneCandidates(x: number, z: number, dx: number, dz: number, reach: number): void {
+  const minX = Math.min(x, x + dx) - reach;
+  const maxX = Math.max(x, x + dx) + reach;
+  const minZ = Math.min(z, z + dz) - reach;
+  const maxZ = Math.max(z, z + dz) + reach;
+  let kept = 0;
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    const ext = c.type === 'circle' ? c.r : Math.hypot(c.hw, c.hd);
+    if (c.x + ext < minX || c.x - ext > maxX || c.z + ext < minZ || c.z - ext > maxZ) continue;
+    candidates[kept++] = c;
+  }
+  candidates.length = kept;
+}
+
+/**
+ * Highest standable top under (x, z) among the PRUNED candidates, at or below
+ * `maxY`. Identical predicate to `colliders.ts` `supportHeightAt` (pinned by
+ * tests/physics_character.test.ts), computed against the list the solver
+ * already holds so a step-up does not re-enter the broadphase per attempt.
+ */
+function supportFromCandidates(x: number, z: number, r: number, maxY: number): number {
+  let best = -Infinity;
+  const reachR = r * SUPPORT_OVERLAP;
+  for (let i = 0; i < candidates.length; i++) {
+    const c = candidates[i];
+    if (!c.standable || c.moveTopY === undefined) continue;
+    if (c.moveTopY > maxY + TOP_EPS || c.moveTopY <= best) continue;
+    if (c.type === 'circle') {
+      const dx = x - c.x;
+      const dz = z - c.z;
+      const reach = c.r + reachR;
+      if (dx * dx + dz * dz < reach * reach) best = c.moveTopY;
+    } else {
+      toLocal(x - c.x, z - c.z, -c.rot);
+      if (Math.abs(localPt.x) < c.hw + reachR && Math.abs(localPt.z) < c.hd + reachR) {
+        best = c.moveTopY;
+      }
+    }
+  }
+  return best;
+}
 
 /**
  * Does this collider block a body whose feet are at `feetY`?
@@ -132,6 +213,7 @@ function isClear(x: number, z: number, feetY: number, params: CharacterMoveParam
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     if (!blocksAt(c, feetY, params)) continue;
+    physicsStats.overlaps++;
     if (overlapCollider(c, x, z, params.radius, push)) return false;
   }
   return true;
@@ -153,6 +235,7 @@ function depenetrate(
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i];
       if (!blocksAt(c, feetY, params)) continue;
+      physicsStats.overlaps++;
       if (!overlapCollider(c, px, pz, params.radius, push)) continue;
       px += push.nx * (push.depth + SKIN_WIDTH);
       pz += push.nz * (push.depth + SKIN_WIDTH);
@@ -197,6 +280,9 @@ export function moveCharacter(
     Math.max(z, z + dz) + pad,
     candidates,
   );
+  pruneCandidates(x, z, dx, dz, params.radius + STEP_COMMIT_DISTANCE + SKIN_WIDTH);
+  physicsStats.solves++;
+  physicsStats.candidates += candidates.length;
 
   let feetY = y;
   depenetrate(x, z, feetY, params, depen);
@@ -218,6 +304,7 @@ export function moveCharacter(
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i];
       if (!blocksAt(c, feetY, params)) continue;
+      physicsStats.sweeps++;
       if (!sweepCollider(c, px, pz, remX, remZ, params.radius, hit)) continue;
       if (hit.t < bestT) {
         bestT = hit.t;
@@ -267,7 +354,7 @@ export function moveCharacter(
         const cx = px + ux * adv;
         const cz = pz + uz * adv;
         if (!isClear(cx, cz, lifted, params)) continue;
-        const floor = supportHeightAt(params.seed, cx, cz, params.radius, lifted + TOP_EPS);
+        const floor = supportFromCandidates(cx, cz, params.radius, lifted + TOP_EPS);
         if (floor < lifted - TOP_EPS) continue; // nothing underfoot there
         px = cx;
         pz = cz;

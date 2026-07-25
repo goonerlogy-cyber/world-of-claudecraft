@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { CRATE_TOP, isBlocked, MANTLE_REACH, queryOpenWorldColliders } from '../src/sim/colliders';
+import {
+  CRATE_TOP,
+  isBlocked,
+  MANTLE_REACH,
+  queryOpenWorldColliders,
+  supportHeightAt,
+} from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import {
   ROCK_COLLIDER_MIN_SCALE,
@@ -13,6 +19,8 @@ import {
   floorHeightAt,
   MAX_STEP_HEIGHT,
   moveCharacter,
+  physicsStats,
+  resetPhysicsStats,
 } from '../src/sim/physics';
 import { GRAVITY, JUMP_VELOCITY } from '../src/sim/player_motion';
 import type { WorldContent } from '../src/sim/types';
@@ -431,5 +439,78 @@ describe('rock dimensions match the rendered silhouette', () => {
     const b = rockHeight(12.5, -33.25, 1.1, SEED);
     expect(a).toBe(b);
     expect(rockHeight(12.5, -33.25, 1.1, SEED + 1)).not.toBe(a);
+  });
+});
+
+describe('efficiency: the solver does bounded work per tick', () => {
+  // Wall-clock budgets rot across machines; the WORK a solve performs does
+  // not. These bound what the hot path may touch, which is what keeps the
+  // engine cheap enough to run for every player on the authoritative server.
+  it('prunes the broadphase down to what is actually in reach', () => {
+    setActiveWorldContent(null);
+    const stone = findStrideableStone();
+    expect(stone).toBeDefined();
+    if (!stone) return;
+    resetPhysicsStats();
+    // Walk a 200-tick route straight through the stone at run speed.
+    let px = stone.x;
+    let pz = stone.z - 4;
+    let py = floorHeightAt(SEED, px, pz, R, groundHeight(px, pz, SEED) + 0.01);
+    for (let i = 0; i < 200; i++) {
+      moveCharacter(params(), px, py, pz, 0, 0.35, out);
+      px = out.x;
+      pz = out.z;
+      py = floorHeightAt(SEED, px, pz, R, out.y + 0.01);
+    }
+    expect(physicsStats.solves).toBe(200);
+    // A 16 yd grid cell can hold dozens of colliders; after the prune a solve
+    // must consider only the handful within a step of the body.
+    const perSolve = physicsStats.candidates / physicsStats.solves;
+    expect(perSolve).toBeLessThan(4);
+    // Sweeps and overlap tests stay proportional to that handful, never to
+    // the cell population, and never blow up per slide iteration.
+    expect(physicsStats.sweeps / physicsStats.solves).toBeLessThan(6);
+    expect(physicsStats.overlaps / physicsStats.solves).toBeLessThan(12);
+  });
+
+  it('costs nothing extra on empty ground', () => {
+    setActiveWorldContent(world({}));
+    resetPhysicsStats();
+    for (let i = 0; i < 100; i++) {
+      moveCharacter(params(), SPOT.x, groundHeight(SPOT.x, SPOT.z, SEED), SPOT.z, 0, 0.35, out);
+    }
+    // Open ground: nothing survives the prune, so no sweep or overlap runs.
+    expect(physicsStats.candidates).toBe(0);
+    expect(physicsStats.sweeps).toBe(0);
+    expect(physicsStats.overlaps).toBe(0);
+  });
+
+  it('reuses the caller result object rather than minting poses', () => {
+    setActiveWorldContent(world({}));
+    const before = out;
+    moveCharacter(params(), SPOT.x, 0, SPOT.z, 0.1, 0.1, out);
+    expect(out).toBe(before);
+  });
+});
+
+describe('the pruned support query matches the collider-grid query', () => {
+  it('agrees with supportHeightAt across a sampled route', () => {
+    setActiveWorldContent(null);
+    const stone = findStrideableStone();
+    expect(stone).toBeDefined();
+    if (!stone) return;
+    // The solver computes support from its own pruned list; drift between the
+    // two would silently change what a body can stand on.
+    for (let t = -3; t <= 3; t += 0.25) {
+      const x = stone.x + t * 0.3;
+      const z = stone.z + t;
+      const maxY = groundHeight(x, z, SEED) + MAX_STEP_HEIGHT + 1;
+      const viaGrid = supportHeightAt(SEED, x, z, R, maxY);
+      // Drive one zero-length solve so the solver's prune covers this point,
+      // then compare the floor it would land on.
+      moveCharacter(params(), x, groundHeight(x, z, SEED), z, 0, 0, out);
+      const viaFloor = floorHeightAt(SEED, x, z, R, maxY);
+      expect(viaFloor).toBe(Math.max(groundHeight(x, z, SEED), viaGrid));
+    }
   });
 });

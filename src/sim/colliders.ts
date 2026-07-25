@@ -61,6 +61,8 @@ export interface CircleCollider {
    * mantle lift, so a jump at the rim hoists the body onto the top.
    */
   standable?: boolean;
+  /** Engine bookkeeping: index into the owning grid's dedupe stamp buffer. */
+  gridIndex?: number;
 }
 
 export interface ObbCollider {
@@ -84,6 +86,8 @@ export interface ObbCollider {
    * the OBBs built from `PROPS.fences`.
    */
   isFence?: boolean;
+  /** See {@link CircleCollider.gridIndex}. */
+  gridIndex?: number;
 }
 
 export type Collider = CircleCollider | ObbCollider;
@@ -105,7 +109,7 @@ const MOVE_TOP_EPS = 1e-3;
 // the mover: standing needs the center meaningfully over the prop, while the
 // full collision radius still gates entry, so a jump can graze past a rim
 // without being captured by it.
-const SUPPORT_OVERLAP = 0.5;
+export const SUPPORT_OVERLAP = 0.5;
 // Physical movement tops (yards above the prop's ground). The camera/sight
 // tops above stay untouched: cameraTopY for a campfire includes the flame,
 // but the SOLID obstacle is only the log pile, which is what a jump clears.
@@ -401,7 +405,27 @@ const BLOCKER_WALL_HEIGHT = 6;
 const FENCE_RAIL_HEIGHT = 0.95;
 
 interface ColliderGrid {
-  cells: Map<string, Collider[]>;
+  cells: Map<number, Collider[]>;
+  /** Per-collider visit stamps for allocation-free multi-cell dedupe. */
+  stamps: Uint32Array;
+  /** Bumped once per query; a stamp equal to it means "already collected". */
+  gen: number;
+}
+
+// Grid cells are keyed by a packed integer rather than a `gx,gz` template
+// string. The key is built on every lookup in the movement, camera, and
+// line-of-sight hot paths, and a string key allocated there was the single
+// largest source of per-tick garbage in the physics solver (it dominated even
+// on empty ground, where there is no collider work to do at all). The bias
+// keeps negative cells positive; the span covers any world the editor can
+// author (cell 16 yd, so +/- 32768 cells is +/- 524288 yd).
+const CELL_KEY_BIAS = 32768;
+const CELL_KEY_SPAN = 65536;
+function cellKey(gx: number, gz: number): number {
+  return (gx + CELL_KEY_BIAS) * CELL_KEY_SPAN + (gz + CELL_KEY_BIAS);
+}
+function cellKeyAt(x: number, z: number): number {
+  return cellKey(Math.floor(x / GRID_CELL), Math.floor(z / GRID_CELL));
 }
 
 // Grids are cached per (active world content, seed). The WeakMap keeps the
@@ -432,8 +456,12 @@ function gridFor(seed: number): ColliderGrid {
   }
   let grid = perContent.get(seed);
   if (grid) return grid;
-  grid = { cells: new Map() };
-  for (const c of staticWorldColliders(seed)) {
+  const built = staticWorldColliders(seed);
+  // Index every collider once so queries can dedupe against a flat stamp
+  // buffer (a collider spanning cells appears in each of them).
+  for (let i = 0; i < built.length; i++) built[i].gridIndex = i;
+  grid = { cells: new Map(), stamps: new Uint32Array(built.length), gen: 0 };
+  for (const c of built) {
     const b = colliderBounds(c);
     const x0 = Math.floor((b.minX - MAX_BODY_RADIUS) / GRID_CELL);
     const x1 = Math.floor((b.maxX + MAX_BODY_RADIUS) / GRID_CELL);
@@ -441,7 +469,7 @@ function gridFor(seed: number): ColliderGrid {
     const z1 = Math.floor((b.maxZ + MAX_BODY_RADIUS) / GRID_CELL);
     for (let gx = x0; gx <= x1; gx++) {
       for (let gz = z0; gz <= z1; gz++) {
-        const key = `${gx},${gz}`;
+        const key = cellKey(gx, gz);
         const list = grid.cells.get(key);
         if (list) list.push(c);
         else grid.cells.set(key, [c]);
@@ -561,8 +589,7 @@ export function resolvePosition(
     return { x: local.x + ox, z: local.z + oz };
   }
   const grid = gridFor(seed);
-  const key = `${Math.floor(x / GRID_CELL)},${Math.floor(z / GRID_CELL)}`;
-  const list = grid.cells.get(key);
+  const list = grid.cells.get(cellKeyAt(x, z));
   if (!list) return { x, z };
   return resolveAgainst(list, x, z, r, ignoreFences, mover);
 }
@@ -607,13 +634,31 @@ export function queryOpenWorldColliders(
   const gx1 = Math.floor(maxX / GRID_CELL);
   const gz0 = Math.floor(minZ / GRID_CELL);
   const gz1 = Math.floor(maxZ / GRID_CELL);
+  // Single-cell queries are the overwhelmingly common case (a 16 yd cell
+  // versus a sub-yard step) and need no dedupe at all.
+  if (gx0 === gx1 && gz0 === gz1) {
+    const only = grid.cells.get(cellKey(gx0, gz0));
+    if (only) for (let i = 0; i < only.length; i++) out.push(only[i]);
+    return out;
+  }
+  // Multi-cell: stamp each collider as it is taken. Allocation-free and O(1)
+  // per collider, where a rescan of `out` (or a Set) costs more the denser the
+  // ground gets, which is exactly where the budget is tightest.
+  if (grid.gen >= 0xffffffff) {
+    grid.stamps.fill(0);
+    grid.gen = 0;
+  }
+  const gen = ++grid.gen;
   for (let gx = gx0; gx <= gx1; gx++) {
     for (let gz = gz0; gz <= gz1; gz++) {
-      const list = grid.cells.get(`${gx},${gz}`);
+      const list = grid.cells.get(cellKey(gx, gz));
       if (!list) continue;
       for (let i = 0; i < list.length; i++) {
         const c = list[i];
-        if (out.indexOf(c) < 0) out.push(c);
+        const gi = c.gridIndex as number;
+        if (grid.stamps[gi] === gen) continue;
+        grid.stamps[gi] = gen;
+        out.push(c);
       }
     }
   }
@@ -638,7 +683,7 @@ export function supportHeightAt(
     return -Infinity;
   }
   const grid = gridFor(seed);
-  const list = grid.cells.get(`${Math.floor(x / GRID_CELL)},${Math.floor(z / GRID_CELL)}`);
+  const list = grid.cells.get(cellKeyAt(x, z));
   if (!list) return -Infinity;
   let best = -Infinity;
   const reachR = r * SUPPORT_OVERLAP;
@@ -964,7 +1009,7 @@ export function cameraOcclusion(
   let best = 1;
   for (let gx = gx0; gx <= gx1; gx++) {
     for (let gz = gz0; gz <= gz1; gz++) {
-      const list = grid.cells.get(`${gx},${gz}`);
+      const list = grid.cells.get(cellKey(gx, gz));
       if (list) best = Math.min(best, sweepColliders(list, ax, ay, az, bx, by, bz, pad, false));
     }
   }
@@ -1016,7 +1061,7 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
     return overlapsAny(INTERIOR_COLLIDERS[interior] ?? CRYPT_COLLIDERS, x - ox, z - oz, false);
   }
   const grid = gridFor(seed);
-  const list = grid.cells.get(`${Math.floor(x / GRID_CELL)},${Math.floor(z / GRID_CELL)}`);
+  const list = grid.cells.get(cellKeyAt(x, z));
   return list ? overlapsAny(list, x, z, true) : false;
 }
 

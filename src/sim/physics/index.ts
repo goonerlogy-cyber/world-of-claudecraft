@@ -7,5 +7,7 @@ export {
   floorHeightAt,
   MAX_STEP_HEIGHT,
   moveCharacter,
+  physicsStats,
+  resetPhysicsStats,
 } from './character';
 export { overlapCollider, SKIN_WIDTH, type SweepHit, sweepCollider } from './sweep';
