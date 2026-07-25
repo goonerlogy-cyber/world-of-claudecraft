@@ -62,6 +62,44 @@ describe('step smoothing', () => {
     }
   });
 
+  it('absorbs a mantle catch: a flight ending on a surface ABOVE the feet', () => {
+    // Jumping onto a boulder ends the arc by being pulled UP onto the top.
+    // Gravity never does that, so it is the mantle, and drawing it raw is the
+    // teleport-onto-the-rock jank this rule exists to remove.
+    const s = createStepSmooth();
+    stepSmoothHeight(s, 0, true, DT);
+    let y = 0;
+    for (let i = 0; i < 6; i++) {
+      y += 0.1; // rising through the arc, airborne: exact
+      expect(stepSmoothHeight(s, y, false, DT)).toBeCloseTo(y, 6);
+    }
+    // The catch: feet snap up onto the ledge as the body becomes grounded.
+    const top = y + 0.7;
+    const drawn = stepSmoothHeight(s, top, true, DT);
+    expect(drawn).toBeLessThan(top - 0.2); // eased, not teleported
+    expect(drawn).toBeGreaterThan(y - 1e-9); // and never dips below the arc
+    let prev = drawn;
+    for (let i = 0; i < 60; i++) {
+      const next = stepSmoothHeight(s, top, true, DT);
+      expect(next).toBeGreaterThanOrEqual(prev - 1e-9);
+      prev = next;
+    }
+    expect(prev).toBeCloseTo(top, 5);
+  });
+
+  it('keeps a real landing exact: a flight ending on a surface BELOW', () => {
+    // The impact is the point; damping it would make gravity feel like syrup.
+    const s = createStepSmooth();
+    stepSmoothHeight(s, 10, true, DT);
+    let y = 10;
+    for (let i = 0; i < 8; i++) {
+      y -= 0.28;
+      expect(stepSmoothHeight(s, y, false, DT)).toBeCloseTo(y, 6);
+    }
+    const floor = y - 0.28;
+    expect(stepSmoothHeight(s, floor, true, DT)).toBeCloseTo(floor, 6);
+  });
+
   it('snaps on a teleport rather than gliding across the world', () => {
     const s = createStepSmooth();
     stepSmoothHeight(s, 0, true, DT);

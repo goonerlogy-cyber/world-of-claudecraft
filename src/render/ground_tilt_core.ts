@@ -19,10 +19,19 @@
 // Pure math, no Three, no DOM. The renderer samples the heights (it already
 // holds the seed and the sampler) and calls this with the gradient.
 
-/** Fraction of the true surface angle the body actually takes. */
-export const GROUND_TILT_BLEND = 0.55;
-/** Hard cap on either axis (radians, about 17 degrees). */
-export const GROUND_TILT_MAX = 0.3;
+/**
+ * Fraction of the true surface angle the body actually takes.
+ *
+ * Tuned DOWN from a first pass that took over half the angle and capped at 17
+ * degrees: on ordinary walkable ground that produced a 14 degree lean, which
+ * reads as a character fighting a gale rather than one standing on a hill. The
+ * cue works best when it is almost subliminal, so this takes under a third of
+ * the angle and caps below 9 degrees. On a typical hillside that is 4 to 7
+ * degrees: you feel the ground, you do not watch the pose.
+ */
+export const GROUND_TILT_BLEND = 0.3;
+/** Hard cap on either axis (radians, about 8.6 degrees). */
+export const GROUND_TILT_MAX = 0.15;
 /** Damping rate toward the target lean (1/s). */
 export const GROUND_TILT_RATE = 9;
 const MAX_STEP_DT = 0.1;

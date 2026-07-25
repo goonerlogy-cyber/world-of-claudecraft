@@ -281,6 +281,12 @@ const AIRBORNE_EPS = 0.4;
  * samples at 60 fps and self-corrects when frames are scarce. Per body, the
  * phase is staggered by entity id so a crowd never resamples in lockstep.
  */
+/**
+ * Landing speed (yd/s) below which a touchdown is a step, not an impact. A
+ * jump from flat ground lands near 6 yd/s, so this sits under that: catching
+ * a boulder part way up the arc, or settling off a kerb, stays a footfall.
+ */
+const SOFT_LANDING_SPEED = 4.5;
 const TILT_SAMPLE_INTERVAL = 0.06;
 const TILT_SAMPLE_SPAN = 0.55;
 // Beyond this (squared) an entity's footsteps/movement are inaudible, so we skip
@@ -5534,7 +5540,15 @@ export class Renderer {
         // jump / land / water-entry edges
         if (airborne && !v.wasAirborne && !visuallyDead) sink.movement('jump', ax, ay, az, isSelf);
         else if (!airborne && v.wasAirborne && !visuallyDead) {
-          sink.movement('land', ax, ay, az, isSelf);
+          // A flight that ends by catching a ledge is not a fall, and the
+          // heavy landing thud on one reads as a bug: you hopped onto a rock
+          // mid-arc and the game played a crash. Anything softer than a plain
+          // jump's own landing speed gets a footfall instead.
+          if (v.fallSpeed >= SOFT_LANDING_SPEED) {
+            sink.movement('land', ax, ay, az, isSelf);
+          } else {
+            sink.footstep(ax, ay, az, this.surfaceAt(ax, az, ay), false, isSelf);
+          }
           // Impact dust, scaled by how hard the body actually came down and
           // tinted by what it came down on. This is the visual half of the
           // landing the camera already thumps for.

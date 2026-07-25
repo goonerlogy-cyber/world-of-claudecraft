@@ -34,18 +34,29 @@ export interface StepSmoothState {
   /** Current rendered height offset from the physical one (<= 0 while catching up). */
   offset: number;
   lastY: number;
+  wasGrounded: boolean;
   active: boolean;
 }
 
 export function createStepSmooth(): StepSmoothState {
-  return { offset: 0, lastY: 0, active: false };
+  return { offset: 0, lastY: 0, wasGrounded: true, active: false };
 }
 
 /**
  * Given the physical display height the renderer was about to draw, return the
- * height it should actually draw. `grounded` false (airborne, swimming, dead)
- * passes through untouched and drains any residual offset, so the very next
- * jump or fall is pixel-exact.
+ * height it should actually draw.
+ *
+ * Which discontinuities get absorbed is the whole design:
+ *   - GROUNDED to grounded: absorb. This is a step up or down, or terrain.
+ *   - AIRBORNE to grounded with the surface ABOVE the feet: absorb. Gravity
+ *     only ever pulls a body DOWN, so an upward jolt on the landing frame is
+ *     never a fall, it is the mantle catching a ledge. Left raw it reads as
+ *     the body teleporting onto the rock, which is precisely the jank a jump
+ *     onto a boulder used to show.
+ *   - AIRBORNE to grounded with the surface BELOW: pass through exactly. That
+ *     is a real landing and its impact is the point.
+ *   - Still airborne: pass through exactly, so a jump's rise and a fall's
+ *     acceleration are never damped.
  */
 export function stepSmoothHeight(
   s: StepSmoothState,
@@ -56,14 +67,24 @@ export function stepSmoothHeight(
   if (!s.active) {
     s.active = true;
     s.lastY = y;
+    s.wasGrounded = grounded;
     s.offset = 0;
     return y;
   }
   const step = Math.min(Math.max(dt, 0), MAX_STEP_DT);
   const dy = y - s.lastY;
   s.lastY = y;
+  const wasGrounded = s.wasGrounded;
+  s.wasGrounded = grounded;
+  // The frame a flight ends. Which way the surface moved the feet decides
+  // everything: UP is a mantle catch (absorb it), DOWN is a real landing
+  // (draw it exactly, the impact is the point).
+  const touchedDown = grounded && !wasGrounded;
+  const caughtLedge = touchedDown && dy > 0;
+  const teleported = Math.abs(dy) > STEP_SMOOTH_SNAP;
+  const drawExactly = teleported || (!caughtLedge && (!grounded || touchedDown));
 
-  if (!grounded || Math.abs(dy) > STEP_SMOOTH_SNAP) {
+  if (drawExactly) {
     // Airborne, or a teleport: show the truth immediately. Drain fast rather
     // than jumping the offset to zero, so a body that steps up and then walks
     // straight off the ledge does not gain a second, upward pop.
@@ -72,9 +93,9 @@ export function stepSmoothHeight(
     return y + s.offset;
   }
 
-  // A grounded height change is a surface change (a step up, a step down, or
-  // terrain). Absorb it into the offset, then let the offset decay: the body
-  // rises onto the kerb over the window instead of inside one frame.
+  // A surface change (a step, a mantle catch, or terrain). Absorb it into the
+  // offset, then let the offset decay: the body rises onto the kerb or the
+  // ledge over the window instead of inside one frame.
   s.offset -= dy;
   if (s.offset > STEP_SMOOTH_MAX_LAG) s.offset = STEP_SMOOTH_MAX_LAG;
   else if (s.offset < -STEP_SMOOTH_MAX_LAG) s.offset = -STEP_SMOOTH_MAX_LAG;
