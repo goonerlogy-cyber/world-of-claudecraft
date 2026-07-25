@@ -273,8 +273,15 @@ const ENTITY_LOD_RANGE_SQ = 58 * 58;
 // it but a jump (apex ~1.1u) does. Needed because online snapshots don't carry
 // `onGround`, so the flag alone never fires the jump clip for the mirrored world.
 const AIRBORNE_EPS = 0.4;
-/** Terrain-lean gradient resample cadence (frames) and sample arm (yards). */
-const GROUND_TILT_SAMPLE_FRAMES = 4;
+/**
+ * Terrain-lean gradient resample interval (seconds) and sample arm (yards).
+ * TIME based, not frame based: a frame-count cadence silently starves on a
+ * slow client (at 4 fps an "every 4th frame" gradient updates once a second,
+ * so the lean never arrives), while a time budget costs the same four terrain
+ * samples at 60 fps and self-corrects when frames are scarce. Per body, the
+ * phase is staggered by entity id so a crowd never resamples in lockstep.
+ */
+const TILT_SAMPLE_INTERVAL = 0.06;
 const TILT_SAMPLE_SPAN = 0.55;
 // Beyond this (squared) an entity's footsteps/movement are inaudible, so we skip
 // the surface sample + dispatch entirely. Kept under the engine's own cutoff (46u).
@@ -703,6 +710,8 @@ export interface EntityView {
   tiltGradX: number;
   tiltGradZ: number;
   tiltOnProp: boolean;
+  /** Countdown to the next gradient resample (seconds). */
+  tiltSampleT: number;
 }
 
 function collectCasters(root: THREE.Object3D, into: THREE.Object3D[]): void {
@@ -4329,6 +4338,8 @@ export class Renderer {
       prevRenderY: 0,
       hasPrevY: false,
       fallSpeed: 0,
+      // Stagger the first resample so a crowd spreads its terrain samples.
+      tiltSampleT: (e.id % 7) * (TILT_SAMPLE_INTERVAL / 7),
       tiltGradX: 0,
       tiltGradZ: 0,
       tiltOnProp: false,
@@ -5476,7 +5487,9 @@ export class Renderer {
       // in between, so a crowd costs a handful of samples per frame, and a
       // body standing on a flat prop top stays upright.
       if (v.visual && !v.isFar) {
-        if ((this.frameIdx + e.id) % GROUND_TILT_SAMPLE_FRAMES === 0) {
+        v.tiltSampleT -= dt;
+        if (v.tiltSampleT <= 0) {
+          v.tiltSampleT = TILT_SAMPLE_INTERVAL;
           const ts = this.sim.cfg.seed;
           const hx0 = groundHeight(ax - TILT_SAMPLE_SPAN, az, ts);
           const hx1 = groundHeight(ax + TILT_SAMPLE_SPAN, az, ts);
