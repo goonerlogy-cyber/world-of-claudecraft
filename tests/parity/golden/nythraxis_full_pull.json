@@ -13,8 +13,8 @@
     "Final Stand enrage at 5% + grantNythraxisLockout (raidLockouts) + onBossDeath death dialogue",
     "class:warrior"
   ],
-  "draws": 3282,
-  "drawDigest": "15a1a241",
+  "draws": 3281,
+  "drawDigest": "c0e43925",
   "frames": [
     {
       "tick": 0,
@@ -10493,8 +10493,8 @@
       "state": "bc462f9c",
       "events": "741638a5",
       "rng": {
-        "draws": 3055,
-        "digest": "74801bda"
+        "draws": 3054,
+        "digest": "23ccaa38"
       }
     },
     {
@@ -10504,8 +10504,8 @@
       "state": "21995170",
       "events": "741638a5",
       "rng": {
-        "draws": 3092,
-        "digest": "7a0601e8"
+        "draws": 3091,
+        "digest": "4bf686b1"
       }
     },
     {
@@ -10515,8 +10515,8 @@
       "state": "6e53a25e",
       "events": "741638a5",
       "rng": {
-        "draws": 3144,
-        "digest": "cf538127"
+        "draws": 3143,
+        "digest": "46dc9a57"
       }
     },
     {
@@ -10526,8 +10526,8 @@
       "state": "f17d4a2a",
       "events": "741638a5",
       "rng": {
-        "draws": 3189,
-        "digest": "b9b4e3a2"
+        "draws": 3191,
+        "digest": "f06a3411"
       }
     },
     {
@@ -10537,8 +10537,8 @@
       "state": "162bcbc8",
       "events": "741638a5",
       "rng": {
-        "draws": 3242,
-        "digest": "1ea0d65d"
+        "draws": 3249,
+        "digest": "519a0f5e"
       }
     },
     {
@@ -10548,8 +10548,8 @@
       "state": "53dea5e6",
       "events": "e3560676",
       "rng": {
-        "draws": 3282,
-        "digest": "15a1a241"
+        "draws": 3281,
+        "digest": "c0e43925"
       },
       "label": "final",
       "players": [
