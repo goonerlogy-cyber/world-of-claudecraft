@@ -1,10 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { advanceClimb, CLIMB_DURATION, tryStartClimb } from '../src/sim/climb';
-import { isBlocked } from '../src/sim/colliders';
+import { isBlocked, MANTLE_REACH } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import { PLAYER_BODY_RADIUS } from '../src/sim/pathfind';
 import { MAX_STEP_HEIGHT } from '../src/sim/physics';
 import { findLedgeGrab, LEDGE_GRAB_MAX, LEDGE_GRAB_MIN } from '../src/sim/physics/ledge';
+import { GRAVITY, JUMP_VELOCITY } from '../src/sim/player_motion';
+import { GRAVE_COUNT, graveHeight, graveOffset } from '../src/sim/prop_layout';
 import { Sim } from '../src/sim/sim';
 import type { Entity, WorldContent } from '../src/sim/types';
 import { groundHeight, terrainHeight, terrainSteepnessAt, WATER_LEVEL } from '../src/sim/world';
@@ -236,6 +238,63 @@ describe('the climb through a live Sim', () => {
       sim.tick();
       if (p.onGround && Math.abs(p.pos.y - crateTop) < 0.05) reachedTop = true;
     }
+    expect(reachedTop).toBe(true);
+  });
+});
+
+describe('the climb against real world geometry', () => {
+  it('a graveyard cross is too tall to vault, and the climb reaches it', () => {
+    setActiveWorldContent(null);
+    // The traversal ladder, checked against content rather than a fixture:
+    // apex + mantle clears most things, and the tall stones are what is left
+    // for the climb. If this inverts, the climb has nothing to do in the world.
+    const apex = (JUMP_VELOCITY * JUMP_VELOCITY) / (2 * GRAVITY);
+    const vaultReach = apex + MANTLE_REACH;
+    const climbReach = apex + LEDGE_GRAB_MAX;
+    const crossHeight = graveHeight(1); // the cross in the grid's cycle
+    expect(crossHeight).toBeGreaterThan(vaultReach);
+    expect(crossHeight).toBeLessThanOrEqual(climbReach);
+  });
+
+  it('carries a player from the ground onto a real graveyard cross', () => {
+    setActiveWorldContent(null);
+    // Eastbrook's cemetery, stone 1: a cross, and the anchor stone beside it
+    // is deliberately uncollided (a Spirit Healer stands there).
+    const gy = { x: -14, z: -14 };
+    const off = graveOffset(1);
+    const sx = gy.x + off.x;
+    const sz = gy.z + off.z;
+    const top = groundHeight(sx, sz, SEED) + graveHeight(1);
+
+    const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
+    sim.setPlayerLevel(60);
+    const p = sim.player;
+    p.pos.x = sx;
+    p.pos.z = sz - 1.6;
+    p.pos.y = terrainHeight(p.pos.x, p.pos.z, SEED);
+    p.prevPos = { ...p.pos };
+    p.facing = 0; // +z, at the stone
+    p.onGround = true;
+    const meta = sim.players.get(p.id);
+    if (!meta) throw new Error('missing meta');
+
+    let climbed = false;
+    let reachedTop = false;
+    for (let i = 0; i < 80; i++) {
+      Object.assign(meta.moveInput, {
+        forward: true,
+        back: false,
+        turnLeft: false,
+        turnRight: false,
+        strafeLeft: false,
+        strafeRight: false,
+        jump: true,
+      });
+      sim.tick();
+      if (p.climb) climbed = true;
+      if (p.onGround && Math.abs(p.pos.y - top) < 0.1) reachedTop = true;
+    }
+    expect(climbed).toBe(true);
     expect(reachedTop).toBe(true);
   });
 });
