@@ -13,6 +13,7 @@ import {
   isYumiMazePos,
   yumiMazeOriginAt,
 } from './data';
+import { ROCK_COLLIDER_MIN_SCALE, rockHeight, rockRadius } from './decoration_dims';
 import { type DelveModuleId, delveModuleColliders } from './delve_layout';
 import { isLitanyModuleId, litanyModuleLosColliders } from './delve_litany_layout';
 import {
@@ -97,7 +98,7 @@ export type Collider = CircleCollider | ObbCollider;
  * a crate rim by up to this much still carries the body over, and the support
  * snap in the movement kernel then seats the feet on the top (the vault).
  */
-export const MANTLE_REACH = 0.55;
+export const MANTLE_REACH = 0.7;
 /** Float slack when comparing feet height against a collider top. */
 const MOVE_TOP_EPS = 1e-3;
 // How much of the body radius must overlap a standable top before it supports
@@ -111,7 +112,6 @@ const SUPPORT_OVERLAP = 0.5;
 // Exported so tests pin against the one authoritative value.
 export const CRATE_TOP = 1.35;
 export const CAMPFIRE_MOVE_TOP = 0.55;
-export const ROCK_TOP_PER_SCALE = 1.25;
 
 /** The mover's feet altitude plus how much standable lift it gets (the
  * airborne mantle assist). Both hosts derive it from the SAME entity fields so
@@ -279,16 +279,23 @@ function staticWorldColliders(seed: number): Collider[] {
   // trees & large rocks from the deterministic decoration field
   for (const d of generateDecorations(seed)) {
     if (d.kind === 'rock') {
-      if (d.scale >= 0.8)
+      if (d.scale >= ROCK_COLLIDER_MIN_SCALE) {
+        // Height comes from decoration_dims (the one source the renderer
+        // scales the rock GLB to), so the collision top IS the silhouette top:
+        // a squat field stone is now inside the character step height and gets
+        // walked over, instead of carrying an invisible wall above it.
+        const height = rockHeight(d.x, d.z, d.scale, seed);
+        const top = topY(seed, d.x, d.z, height);
         out.push({
           type: 'circle',
           x: d.x,
           z: d.z,
-          r: 0.7 * d.scale,
-          cameraTopY: topY(seed, d.x, d.z, ROCK_TOP_PER_SCALE * d.scale),
-          moveTopY: topY(seed, d.x, d.z, ROCK_TOP_PER_SCALE * d.scale),
+          r: rockRadius(d.scale),
+          cameraTopY: top,
+          moveTopY: top,
           standable: true,
         });
+      }
     } else {
       // tree trunks only — canopies don't block
       out.push({
@@ -568,6 +575,51 @@ export function resolvePosition(
  * rim seats on top. Open-world grid only: instanced interiors have no props.
  * Returns -Infinity when nothing supports.
  */
+/**
+ * Is (x) inside an instanced region (dungeon interior, delve, arena, Yumi
+ * maze) rather than the open world? Those regions are flat-floored rooms of
+ * full-height walls resolved in region-local coordinates, so the open-world
+ * physics broadphase does not apply to them.
+ */
+export function isInstancedRegion(x: number): boolean {
+  return isYumiMazePos(x) || isDelvePos(x) || isArenaPos(x) || x > DUNGEON_X_THRESHOLD;
+}
+
+/**
+ * Broadphase for the character physics solver: append every open-world
+ * collider whose grid cell overlaps the given AABB into `out` (caller-owned,
+ * so the hot path allocates nothing). Duplicates are impossible within one
+ * cell but a collider spanning cells is appended once per cell it occupies,
+ * which the solver tolerates (the same surface simply gets tested twice).
+ * Returns `out`. Empty inside instanced regions, which never route here.
+ */
+export function queryOpenWorldColliders(
+  seed: number,
+  minX: number,
+  minZ: number,
+  maxX: number,
+  maxZ: number,
+  out: Collider[],
+): Collider[] {
+  if (isInstancedRegion(minX) || isInstancedRegion(maxX)) return out;
+  const grid = gridFor(seed);
+  const gx0 = Math.floor(minX / GRID_CELL);
+  const gx1 = Math.floor(maxX / GRID_CELL);
+  const gz0 = Math.floor(minZ / GRID_CELL);
+  const gz1 = Math.floor(maxZ / GRID_CELL);
+  for (let gx = gx0; gx <= gx1; gx++) {
+    for (let gz = gz0; gz <= gz1; gz++) {
+      const list = grid.cells.get(`${gx},${gz}`);
+      if (!list) continue;
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i];
+        if (out.indexOf(c) < 0) out.push(c);
+      }
+    }
+  }
+  return out;
+}
+
 export function supportHeightAt(
   seed: number,
   x: number,

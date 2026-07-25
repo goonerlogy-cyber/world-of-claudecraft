@@ -17,9 +17,15 @@
 // deps at the identical call site, so the Sim's global draw order is unchanged
 // by the extraction.
 
-import { MANTLE_REACH, supportHeightAt } from './colliders';
+import { isInstancedRegion, MANTLE_REACH, supportHeightAt } from './colliders';
 import { isRooted, isStunned } from './combat/cc';
 import { PLAYER_BODY_RADIUS, PLAYER_MAX_CLIMB_SLOPE, PLAYER_SWIM_DEPTH } from './pathfind';
+import {
+  type CharacterMoveParams,
+  type CharacterMoveResult,
+  MAX_STEP_HEIGHT,
+  moveCharacter,
+} from './physics';
 import { GHOST_RUN_MULT } from './spirit';
 import {
   DT,
@@ -46,6 +52,18 @@ export const JUMP_VELOCITY = 6; // apex = v^2/2g ≈ 1.125 yd
 // meaningfully adjust a jump arc (full authority in ~0.35 s of a ~0.75 s arc)
 // without letting a knockback be cancelled outright.
 export const AIR_CONTROL_ACCEL = 20;
+// Kernel-owned scratch for the physics solver: the kernel is called once per
+// player per tick on a single thread, so one reused pair keeps the hot path
+// allocation-free (the same discipline the renderer's per-frame cores use).
+const moveParams: CharacterMoveParams = {
+  seed: 0,
+  radius: 0,
+  stepHeight: 0,
+  maxSlope: 0,
+  grounded: false,
+  ignoreFences: false,
+};
+const moveOut: CharacterMoveResult = { x: 0, y: 0, z: 0, blocked: false, stepped: 0 };
 // Coyote time: seconds after WALKING off a ledge (never after a jump) during
 // which a jump still fires. Stateless on purpose: a walk-off starts at vy = 0,
 // so "recently left the ledge" is exactly vy > -GRAVITY * COYOTE_TIME.
@@ -214,8 +232,56 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
     }
     const stepX = slide ? slide.x * STEEP_SLIDE_SPEED : movingOnGround ? wishX * wishSpeed : p.vx;
     const stepZ = slide ? slide.z * STEEP_SLIDE_SPEED : movingOnGround ? wishZ * wishSpeed : p.vz;
-    let nx = p.pos.x + stepX * DT;
-    let nz = p.pos.z + stepZ * DT;
+    // Slide along buildings, trees, crypt walls; but while airborne from a
+    // jump, pass through fences for the whole arc. Keying off the jump itself
+    // (not a height threshold) makes this independent of slope: an uphill
+    // approach no longer flickers the clearance off right at the rail.
+    const clearFences = !p.onGround && p.jumping;
+    if (!isInstancedRegion(p.pos.x)) {
+      // OPEN WORLD: the character physics solver. Swept collision with
+      // multi-plane sliding, depenetration, the terrain wall/contour gate,
+      // and step-up, so a walking body climbs low stones and kerbs without a
+      // jump instead of stopping dead against them.
+      moveParams.seed = deps.seed;
+      moveParams.radius = BODY_RADIUS;
+      moveParams.stepHeight = MAX_STEP_HEIGHT;
+      moveParams.maxSlope = MAX_CLIMB_SLOPE;
+      moveParams.grounded = p.onGround && !swimming;
+      moveParams.ignoreFences = clearFences;
+      moveCharacter(moveParams, p.pos.x, p.pos.y, p.pos.z, stepX * DT, stepZ * DT, moveOut);
+      p.pos.x = moveOut.x;
+      p.pos.z = moveOut.z;
+      // A step-up raises the feet; the vertical pass below then finds this
+      // same surface as the floor and keeps the body settled on it.
+      if (moveOut.stepped > 0) p.pos.y = moveOut.y;
+      if (!p.onGround && moveOut.blocked) {
+        p.vx = (p.pos.x - p.prevPos.x) / DT;
+        p.vz = (p.pos.z - p.prevPos.z) / DT;
+      }
+    } else {
+      stepInstancedRegion(deps, p, stepX, stepZ, swimming, clearFences);
+    }
+  }
+
+  verticalPass(deps, p, inp, wishX, wishZ, wishSpeed, swimming, steepGround);
+  standoffPass(deps, p, stepStartX, stepStartZ, wishX, wishZ, wishSpeed, movingOnGround);
+}
+
+// Instanced interiors (dungeons, delves, arena, the Yumi maze): flat floors
+// walled by full-height layouts, where step-up has nothing to act on and the
+// delve module bounds/doors must still clamp. Unchanged from the pre-physics
+// kernel on purpose, so every interior test stays byte-identical.
+function stepInstancedRegion(
+  deps: PlayerMotionDeps,
+  p: Entity,
+  stepX: number,
+  stepZ: number,
+  swimming: boolean,
+  clearFences: boolean,
+): void {
+  let nx = p.pos.x + stepX * DT;
+  let nz = p.pos.z + stepZ * DT;
+  {
     // cliffs, steep mountainsides, and the world rim are walls, not ramps:
     // an uphill step is blocked when the step itself is too steep OR when it
     // lands on ground whose true gradient is unwalkable (so approaching at an
@@ -254,11 +320,6 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
         }
       }
     }
-    // Slide along buildings, trees, crypt walls; but while airborne from a
-    // jump, pass through fences for the whole arc. Keying off the jump itself
-    // (not a height threshold) makes this independent of slope: an uphill
-    // approach no longer flickers the clearance off right at the rail.
-    const clearFences = !p.onGround && p.jumping;
     const resolved = deps.resolveMove(p.pos.x, p.pos.z, nx, nz, BODY_RADIUS, p, clearFences);
     p.pos.x = resolved.x;
     p.pos.z = resolved.z;
@@ -267,8 +328,21 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
       p.vz = (resolved.z - p.prevPos.z) / DT;
     }
   }
+}
 
-  // Vertical: jumping, gravity, swimming, fall damage
+// The vertical state machine: swim tread, jump (with the coyote window),
+// gravity, landing and fall damage, and the walkable step-down that keeps a
+// body glued to the surface instead of bouncing airborne off every kerb.
+function verticalPass(
+  deps: PlayerMotionDeps,
+  p: Entity,
+  inp: MoveInput,
+  wishX: number,
+  wishZ: number,
+  wishSpeed: number,
+  swimming: boolean,
+  steepGround: boolean,
+): void {
   const ground = groundHeight(p.pos.x, p.pos.z, deps.seed);
   // The surface the body rests on: the terrain, or a standable prop top
   // (crate, rock) under the feet. Grounded the query is exact (a taller prop
@@ -366,8 +440,11 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
     // climbs) is walkable, so we snap down to follow it instead of falling.
     // Only a steeper-than-walkable drop counts as walking off a ledge. The
     // 0.4 base keeps a near-stationary player snapped over tiny terrain noise.
+    // The step height floors it: a body that strides UP a kerb must be able to
+    // walk back DOWN one without launching into a fall (the classic stair
+    // stutter), so descent and ascent share the same reach.
     const run = Math.hypot(p.pos.x - p.prevPos.x, p.pos.z - p.prevPos.z);
-    const maxStepDown = 0.4 + run * MAX_CLIMB_SLOPE;
+    const maxStepDown = Math.max(MAX_STEP_HEIGHT, 0.4 + run * MAX_CLIMB_SLOPE);
     if (support < p.pos.y - maxStepDown) {
       // Walked off a ledge or a prop top (not a jump), so fences still block.
       // Momentum carries: the horizontal velocity this tick keeps driving the
@@ -383,17 +460,29 @@ export function stepPlayerMotion(deps: PlayerMotionDeps, p: Entity, inp: MoveInp
       p.fallStartY = support;
     }
   }
+}
 
-  // Ease the body off any terrain wall it now overlaps. The slope gates above
-  // block the CENTER from climbing a wall, but nothing keeps the body's WIDTH
-  // clear of one, so standing at (or strafing along) a wall foot buries the near
-  // side of the model. Only on settled ground (a fall/ledge is resolved above),
-  // never while standing on a prop top (the standoff reseats onto TERRAIN
-  // height, which would yank the body off its crate/rock), and never onto
-  // ground steeper than the climb limit (a rare terrace corner: a tick's clip
-  // beats being shoved onto a wall). Lives in the kernel so the server Sim and
-  // the client self-predictor apply it identically; no-op on open ground and
-  // on flat instanced floors.
+// Ease the body off any terrain wall it now overlaps. The slope gates above
+// block the CENTER from climbing a wall, but nothing keeps the body's WIDTH
+// clear of one, so standing at (or strafing along) a wall foot buries the near
+// side of the model. Only on settled ground (a fall/ledge is resolved above),
+// never while standing on a prop top (the standoff reseats onto TERRAIN
+// height, which would yank the body off its crate/rock), and never onto
+// ground steeper than the climb limit (a rare terrace corner: a tick's clip
+// beats being shoved onto a wall). Lives in the kernel so the server Sim and
+// the client self-predictor apply it identically; no-op on open ground and
+// on flat instanced floors.
+function standoffPass(
+  deps: PlayerMotionDeps,
+  p: Entity,
+  stepStartX: number,
+  stepStartZ: number,
+  wishX: number,
+  wishZ: number,
+  wishSpeed: number,
+  movingOnGround: boolean,
+): void {
+  const ground = groundHeight(p.pos.x, p.pos.z, deps.seed);
   if (p.onGround && p.pos.y <= ground + 1e-3 && !isSwimming(p, deps.seed)) {
     const s = terrainWallStandoff(p.pos.x, p.pos.z, deps.seed, BODY_RADIUS, MAX_CLIMB_SLOPE);
     if (s.x !== p.pos.x || s.z !== p.pos.z) {

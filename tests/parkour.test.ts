@@ -5,13 +5,13 @@ import {
   isBlocked,
   MANTLE_REACH,
   moverHeight,
-  ROCK_TOP_PER_SCALE,
   resolveMovement,
   resolvePosition,
   seatGroundedAt,
   supportHeightAt,
 } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
+import { rockHeightOf } from '../src/sim/decoration_dims';
 import {
   COYOTE_TIME,
   GRAVITY,
@@ -182,7 +182,7 @@ describe('supportHeightAt: standable prop tops', () => {
     );
     expect(rock).toBeDefined();
     if (!rock) return;
-    const top = groundHeight(rock.x, rock.z, SEED) + ROCK_TOP_PER_SCALE * rock.scale;
+    const top = groundHeight(rock.x, rock.z, SEED) + rockHeightOf(rock, SEED);
     expect(supportHeightAt(SEED, rock.x, rock.z, 0.5, top + 1)).toBeCloseTo(top, 6);
   });
 });

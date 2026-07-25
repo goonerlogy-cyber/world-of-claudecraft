@@ -9,6 +9,7 @@ import {
   WORLD_MIN_Z,
   ZONES,
 } from '../sim/data';
+import { rockHeightOf } from '../sim/decoration_dims';
 import type { BiomeId } from '../sim/types';
 import { isInSowfieldShell } from '../sim/vale_cup_layout';
 import type { Decoration } from '../sim/world';
@@ -232,6 +233,21 @@ export interface FoliagePerfStats {
 }
 
 // deterministic 0..1 hash on integer grid cells / world coords
+// Model-space height of a rock geometry, cached per geometry: the renderer
+// solves each variant's vertical scale from it so every rock lands at exactly
+// the height the sim publishes (src/sim/decoration_dims.ts), whichever GLB
+// variant it draws.
+const rockNativeHeights = new WeakMap<THREE.BufferGeometry, number>();
+function rockNativeHeight(geo: THREE.BufferGeometry): number {
+  const cached = rockNativeHeights.get(geo);
+  if (cached !== undefined) return cached;
+  geo.computeBoundingBox();
+  const bb = geo.boundingBox;
+  const h = bb ? bb.max.y - bb.min.y : 1;
+  rockNativeHeights.set(geo, h);
+  return h;
+}
+
 function hashAt(a: number, b: number, k: number): number {
   const s = Math.sin(a * 127.1 + b * 311.7 + k * 74.7) * 43758.5453123;
   return s - Math.floor(s);
@@ -1067,9 +1083,14 @@ function buildTrees(
           // boulders, low slabs and tall stones depending on the draw
           const sxz1 = r.scale * 0.62 * (0.85 + h2 * 0.5);
           const sxz2 = r.scale * 0.62 * (0.85 + h1 * 0.45);
-          const maxH = Math.max(sxz1, sxz2);
-          const sy = Math.max(r.scale * 0.45 * (0.75 + h3 * 0.5), 0.55 * maxH);
-          const tiltAmp = maxH > 0.8 ? 0.12 : 0.26;
+          // Vertical scale is DERIVED from the sim's rock height so the stone
+          // you see is exactly the stone you collide with and stand on: solve
+          // for the sy that puts the model's top (its own height, less the
+          // 0.3 sink below) at rockHeight() above the terrain. The geometry is
+          // seated base-near-zero, so top-above-ground = (nativeH - 0.3) * sy.
+          const nativeH = rockNativeHeight(geo);
+          const sy = rockHeightOf(r, seed) / Math.max(0.1, nativeH - 0.3);
+          const tiltAmp = Math.max(sxz1, sxz2) > 0.8 ? 0.12 : 0.26;
           q.setFromEuler(
             e.set((h1 - 0.5) * tiltAmp, r.variant * 1.7 + h3 * 2.0, (h2 - 0.5) * tiltAmp),
           );
