@@ -286,7 +286,7 @@ const HOT_PAINTERS: ReadonlyArray<{
   // per-frame write (scores, clock, flag/pip classes, respawn) is facet-routed.
   {
     file: 'hud/battleground/battleground_scoreboard_painter.ts',
-    allow: { '.innerHTML': 1, '.setAttribute': 6 },
+    allow: { '.innerHTML': 1, '.setAttribute': 5 },
     reflowAllow: {},
   },
   { file: 'auras_painter.ts', allow: { '.className': 3 }, reflowAllow: {} },
