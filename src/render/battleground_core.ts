@@ -12,6 +12,7 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_CURTAIN_WALLS,
   BG_CURTAIN_Z,
   BG_FLAG_Z,
   BG_GATEHOUSE_WALLS,
@@ -131,6 +132,12 @@ const WALL_KINDS: [string, number][] = [
 // two mirrored gatehouses always dress identically.
 const BARRICADE_KINDS: [string, number][] = [['wall_cracked', 1]];
 const GATEHOUSE_KINDS: [string, number][] = [['wall', 1]];
+// The curtains are the oldest walls on the field: cracked-heavy, so the Ruin
+// Courtyard's boundary reads ancient against the maintained perimeter/keeps.
+const CURTAIN_KINDS: [string, number][] = [
+  ['wall_cracked', 2],
+  ['wall', 1],
+];
 // The ruin shell reads ruined: cracked-heavy modules at hash-varied heights.
 const RUIN_KINDS: [string, number][] = [
   ['wall_cracked', 2],
@@ -165,19 +172,18 @@ const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
     ['floor_tile_large_rocks', 1],
     ['floor_dirt_large', 1],
   ],
-  // the worn approach road: the original mixed weathering
+  // each team's field chamber: a kept road, clearly tidier than the courtyard
   approach: [
-    ['floor_tile_large', 4],
+    ['floor_tile_large', 5],
     ['floor_tile_large_rocks', 2],
-    ['floor_dirt_large', 2],
-    ['floor_dirt_large_rocky', 1],
+    ['floor_dirt_large', 1],
   ],
-  // the ruin courtyard: mostly broken earth
+  // the ruin courtyard: broken earth almost wall to wall
   mid: [
     ['floor_tile_large', 1],
     ['floor_tile_large_rocks', 2],
     ['floor_dirt_large', 3],
-    ['floor_dirt_large_rocky', 3],
+    ['floor_dirt_large_rocky', 4],
   ],
 };
 
@@ -190,7 +196,7 @@ const ACCENT_KINDS: [string, number][] = [
   ['floor_tile_small_weeds_A', 3],
   ['floor_tile_small_weeds_B', 3],
 ];
-const ACCENT_CHANCE = 0.3;
+const ACCENT_CHANCE = 0.45;
 const ACCENT_Y_LIFT = 0.015;
 const ACCENT_CLEARANCE = 2.4; // keep-away radius around rune pads
 const ACCENT_SCALE = 1.4;
@@ -319,6 +325,8 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       tileWallSegment(walls, s, BARRICADE_KINDS, null, BG_LOW_WALL_Y_SCALE);
     } else if (BG_GATEHOUSE_WALLS.includes(s)) {
       tileWallSegment(walls, s, GATEHOUSE_KINDS, null);
+    } else if (BG_CURTAIN_WALLS.includes(s)) {
+      tileWallSegment(walls, s, CURTAIN_KINDS, null);
     } else {
       tileWallSegment(walls, s, WALL_KINDS, null);
     }
@@ -392,6 +400,29 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
         z: innerBackZ,
         ry: faceField,
         scale: [TORCH_MODULE_SCALE, TORCH_MODULE_SCALE, TORCH_MODULE_SCALE],
+      });
+    }
+    // Each team's colors also dress the FIELD side of its own curtain wall
+    // (a thin banner mid-run, shields at the main-gate jambs), so the three
+    // chambers read as places: your field wears your colors, the courtyard
+    // between wears none. Positions are the exact point mirrors: the south
+    // curtain carries red at x -5 (run center), 3 and 13 (gate jambs), the
+    // north curtain carries blue at 5, -3 and -13.
+    const curtainZ = dir * (BG_CURTAIN_Z + BANNER_WALL_INSET);
+    const faceOwnField = dir === -1 ? Math.PI : 0; // cloth faces the team's field
+    const curtainSpots: { x: number; kind: string }[] = [
+      { x: -5, kind: kinds.side },
+      { x: 3, kind: kinds.mouth },
+      { x: 13, kind: kinds.mouth },
+    ];
+    for (const spot of curtainSpots) {
+      wallBanners.push({
+        kind: spot.kind,
+        x: base.team === 0 ? spot.x : -spot.x,
+        y: 0,
+        z: curtainZ,
+        ry: faceOwnField,
+        scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
       });
     }
   }
