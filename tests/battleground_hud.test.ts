@@ -182,11 +182,8 @@ describe('battleground scoreboard view (pure core)', () => {
     expect(v.seconds).toBe(5);
     expect(v.flagStates).toEqual(['home', 'carried']);
     expect(v.carrierNames[1]).toBe('Ravven');
-    expect(v.pipsCrimson).toEqual([
-      { name: 'Ravven', me: true, dead: false, carrying: true },
-      { name: 'Bryn', me: false, dead: true, carrying: false },
-    ]);
-    expect(v.pipsAzure).toHaveLength(1);
+    expect(v.flagStates).toEqual(['home', 'carried']);
+    expect(v.carrierNames).toEqual([null, 'Ravven']);
     // The expanded board: both rosters in team order with the match tallies.
     expect(v.board).toHaveLength(3);
     expect(v.board[0]).toMatchObject({

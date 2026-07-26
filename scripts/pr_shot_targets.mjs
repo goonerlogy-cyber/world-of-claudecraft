@@ -209,7 +209,10 @@ export const TARGETS = [
         });
         await wait(400);
         await page.evaluate(() => {
-          window.__game.sim.releaseSpirit();
+          // Drive the REAL death-overlay button, not the sim hook: this shot
+          // is also the regression check that the Release path works in a
+          // battleground (the sim-hook version masked a dead button once).
+          document.querySelector('#release-btn')?.click();
           window.__game.input.camDist = 13;
           window.__game.input.camPitch = 0.55;
         });

@@ -16,7 +16,7 @@ import { classDisplayName } from '../../entity_i18n';
 import { esc } from '../../esc';
 import { formatNumber, t } from '../../i18n';
 import type { PainterHostWriters } from '../../painter_host';
-import type { BgScoreboardPip, BgScoreboardView } from './battleground_scoreboard_view';
+import type { BgScoreboardView } from './battleground_scoreboard_view';
 
 const num = (n: number): string => formatNumber(n, { maximumFractionDigits: 0 });
 const FLAG_STATES = ['home', 'carried', 'dropped'] as const;
@@ -41,10 +41,8 @@ export class BattlegroundScoreboard {
   private scoreCrimsonEl: HTMLElement | null = null;
   private scoreAzureEl: HTMLElement | null = null;
   private clockEl: HTMLElement | null = null;
-  private phaseEl: HTMLElement | null = null;
   private flagEls: [HTMLElement | null, HTMLElement | null] = [null, null];
-  private pipEls: HTMLElement[] = [];
-  private pipCount = 0;
+  private fstateEls: [HTMLElement | null, HTMLElement | null] = [null, null];
   // Expanded-board row cells, aligned with view.board order (structural sig).
   private boardRows: { row: HTMLElement; k: HTMLElement; d: HTMLElement; c: HTMLElement }[] = [];
 
@@ -68,10 +66,11 @@ export class BattlegroundScoreboard {
       this.scoreCrimsonEl = root.querySelector('.bg-score.crimson');
       this.scoreAzureEl = root.querySelector('.bg-score.azure');
       this.clockEl = root.querySelector('.bg-clock');
-      this.phaseEl = root.querySelector('.bg-caps');
       this.flagEls = [root.querySelector('.bg-flag.crimson'), root.querySelector('.bg-flag.azure')];
-      this.pipEls = [...root.querySelectorAll<HTMLElement>('.bg-pip')];
-      this.pipCount = this.pipEls.length;
+      this.fstateEls = [
+        root.querySelector('.bg-fstate.crimson'),
+        root.querySelector('.bg-fstate.azure'),
+      ];
       this.boardRows = [...root.querySelectorAll<HTMLElement>('.bg-brow.bg-bplayer')].map(
         (row) => ({
           row,
@@ -84,41 +83,40 @@ export class BattlegroundScoreboard {
     if (this.scoreCrimsonEl) w.setText(this.scoreCrimsonEl, num(view.scoreCrimson));
     if (this.scoreAzureEl) w.setText(this.scoreAzureEl, num(view.scoreAzure));
     if (this.clockEl) {
+      // The one center slot: the form-up countdown before the gates open,
+      // the match clock afterward. No standing instruction text.
       w.setText(
         this.clockEl,
-        t('hudChrome.bg.clock', {
-          minutes: num(view.minutes),
-          seconds: String(view.seconds).padStart(2, '0'),
-        }),
-      );
-    }
-    if (this.phaseEl) {
-      w.setText(
-        this.phaseEl,
         view.state === 'countdown'
           ? t('hudChrome.bg.formUp', { seconds: num(view.countdown) })
-          : t('hudChrome.bg.firstTo', { caps: num(view.capsToWin) }),
+          : t('hudChrome.bg.clock', {
+              minutes: num(view.minutes),
+              seconds: String(view.seconds).padStart(2, '0'),
+            }),
       );
     }
     for (const team of [0, 1] as const) {
-      const el = this.flagEls[team];
-      if (!el) continue;
-      for (const s of FLAG_STATES) w.toggleClass(el, s, view.flagStates[team] === s);
+      const state = view.flagStates[team];
       const carrier = view.carrierNames[team];
       const stateText = carrier
         ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
-        : t(FLAG_STATE_KEYS[view.flagStates[team]]);
-      w.setAttr(el, 'title', stateText);
-      // The flag state is actionable information: give assistive tech the same
-      // readout the tooltip carries (the glyph is a real named image, never
-      // aria-hidden decoration).
-      w.setAttr(el, 'aria-label', stateText);
-    }
-    const pips = [...view.pipsCrimson, ...view.pipsAzure];
-    for (let i = 0; i < this.pipCount && i < pips.length; i++) {
-      const el = this.pipEls[i];
-      w.toggleClass(el, 'dead', pips[i].dead);
-      w.toggleClass(el, 'flag', pips[i].carrying);
+        : t(FLAG_STATE_KEYS[state]);
+      const el = this.flagEls[team];
+      if (el) {
+        for (const s of FLAG_STATES) w.toggleClass(el, s, state === s);
+        w.setAttr(el, 'title', stateText);
+        // The flag state is actionable information: give assistive tech the
+        // same readout the tooltip carries (the glyph is a real named image,
+        // never aria-hidden decoration).
+        w.setAttr(el, 'aria-label', stateText);
+      }
+      // The visible status line under each side: 'Flag at the keep' at rest,
+      // the enemy carrier's NAME while carried, 'Flag on the ground' dropped.
+      const fs = this.fstateEls[team];
+      if (fs) {
+        for (const s of FLAG_STATES) w.toggleClass(fs, s, state === s);
+        w.setText(fs, carrier ?? t(FLAG_STATE_KEYS[state]));
+      }
     }
     for (let i = 0; i < this.boardRows.length && i < view.board.length; i++) {
       const cells = this.boardRows[i];
@@ -195,26 +193,26 @@ export class BattlegroundScoreboard {
   }
 
   private skeleton(view: BgScoreboardView): string {
-    const pipRow = (pips: BgScoreboardPip[], team: 'crimson' | 'azure'): string =>
-      pips
-        .map(
-          (p) => `<span class="bg-pip ${team}${p.me ? ' me' : ''}" title="${esc(p.name)}"></span>`,
-        )
-        .join('');
     // Own-team marker: a styling class + tooltip on the team label itself
     // (an underline in the team color), keeping the header symmetric instead
     // of the old lopsided "(you)" text tag.
     const mine = (team: number): string => (view.myTeam === team ? ' mine' : '');
     const mineTitle = (team: number): string =>
       view.myTeam === team ? ` title="${esc(t('hudChrome.bg.yourTeamTitle'))}"` : '';
+    // Two rows, nothing abstract: the score line, then each side's FLAG
+    // status flanking the match clock (the roster lives in the expanded
+    // board, and the caps target lives in its header).
     return (
       `<div class="bg-score-line">` +
       `<span class="bg-team crimson${mine(0)}"${mineTitle(0)}><span class="bg-flag crimson" role="img"></span>${esc(t('hudChrome.bg.crimson'))}</span>` +
       `<span class="bg-score crimson"></span><span class="bg-score-colon">:</span><span class="bg-score azure"></span>` +
       `<span class="bg-team azure${mine(1)}"${mineTitle(1)}>${esc(t('hudChrome.bg.azure'))}<span class="bg-flag azure" role="img"></span></span>` +
       `</div>` +
-      `<div class="bg-under"><span class="bg-clock"></span><span class="bg-caps"></span></div>` +
-      `<div class="bg-roster"><span class="bg-roster-side">${pipRow(view.pipsCrimson, 'crimson')}</span><span class="bg-roster-gap"></span><span class="bg-roster-side">${pipRow(view.pipsAzure, 'azure')}</span></div>` +
+      `<div class="bg-under">` +
+      `<span class="bg-fstate crimson"></span>` +
+      `<span class="bg-clock"></span>` +
+      `<span class="bg-fstate azure"></span>` +
+      `</div>` +
       this.boardHtml(view)
     );
   }
@@ -226,7 +224,11 @@ export class BattlegroundScoreboard {
   // can never be clobbered by data writes).
   private boardHtml(view: BgScoreboardView): string {
     const teamCls = (team: number): string => (team === 0 ? 'crimson' : 'azure');
+    const capsLine = `<div class="bg-bcaps">${esc(
+      t('hudChrome.bg.firstTo', { caps: num(view.capsToWin) }),
+    )}</div>`;
     const header =
+      capsLine +
       `<div class="bg-brow bg-bhead">` +
       `<span class="bb-name"></span>` +
       `<span class="bb-k">${esc(t('hudChrome.bg.board.kills'))}</span>` +
