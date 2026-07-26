@@ -14,18 +14,20 @@ may be flat or shaped (`TopSlope`), sampled through `colliderTopAt`.
 |---|---|---|
 | Houses, inn, blacksmith | full-height OBB | Single merged meshes with no per-part data; roofs are out of climb reach by design. |
 | Chapel | composed: full-height tower OBB + standable gabled hall roof | Composition single-sourced in `prop_layout.ts` (CHAPEL_TOWER/CHAPEL_HALL); the entry hall is the climbable low roof section. |
-| Market stalls | full-height circle with a standable CONE canopy top | Counters block walks; the canopy climbs and walks up to its peak. |
+| Market stalls | measured 3.1 x 2.5 OBB; awning is a steep gable (ridge 2.54, eaves 1.50) along the stall's axis | Vault on at the eave edge, walk up the fabric, or grab the higher slope; counters block walks. |
 | Stall dressing (crates, barrels, anvil, weapon stand) | standable circles at measured heights | Stride or vault per the ladder. |
 | Wells | full-height circle | Roof (3.6) is deliberately out of climb reach. |
 | Dock decks | raised walkable ground (`world.ts`) | Planks are floor, not colliders. |
 | Dock hut | OBB with a standable gabled roof | Ridge along the hut's long axis. |
 | Dock loose dressing (two barrels, one crate) | standable circles at measured heights | Stride/vault; tops ride the deck surface via groundHeight. |
-| Moored rowboat | standable OBB deck (stride height) | Afloat at the waterline or hauled on the bank, same predicate the renderer seats the mesh with; you can step in and stand. |
+| Moored rowboat | measured hull OBB (2.3 x 0.9), deck at 0.4 | Step in and stand IN the boat; afloat or beached by the waterline predicate. |
 | Tents | full-height circle | Cloth cones are not standable on purpose. |
-| Crates | standable circle (CRATE_TOP 1.35) | The classic vault. |
+| Camp crates | per-point kind and scale via the shared placement roll: wooden crate (~1.14-1.27 top, r 0.57-0.64) or barrel (1.13, r 0.44) | The collider takes the SAME roll the renderer draws. |
 | Campfires | pass-over top, NOT standable | A jump clears the flame; nobody perches in it. |
 | Mud huts (murloc mushrooms) | stem-only circle (r 1.1) | The cap overhangs; extruded-2D cannot model overhangs, so walking under the cap is the honest choice. |
-| Ruin columns | full-height circles | 4.3 tall: walls. |
+| Ruin ring columns | intact monoliths full-height; broken STUMPS standable at their drawn heights (1.0/1.56/2.11 by index) | Stumps are parkour pillars, not infinite walls. |
+| Ruin heart relics (statue head, block, fallen column) | standable circles + a lying-cylinder OBB (top ~1.1, yaw from the shared roll) | The fallen column is a walkable log. |
+| Mine timber portal | two post circles (r 0.27) | Lintel beams start above head height and never block. |
 | Fences | rail OBBs (`isFence`) | Grounded collide, jumps clear. |
 | Field rocks | standable circles, heights from `decoration_dims.ts` | Stride/vault/climb by size; tops are flat (small enough that a dome profile would read identically). |
 | Graveyard headstones | standable circles at per-shape heights | The cross is the town's classic climb. |
@@ -38,8 +40,8 @@ may be flat or shaped (`TopSlope`), sampled through `colliderTopAt`.
 |---|---|---|
 | Walls, chamber stubs, pillars | full-height | Reach the ceiling. |
 | Boss dais | raised FLOOR (`dungeon_floor.ts`, DAIS_HEIGHT 0.6) | Real elevation through `groundHeight`: mobs and players stand ON it, the rim strides up and down, jumps arc onto it. Flat rooms (arena, Nythraxis raid) have no lift. |
-| Tomb slots, `coffins` dressing | one standable OBB lid per slot, height by the shared `tombSlotRoll` | Plain 1.72 / decorated 1.17, matching the drawn prop exactly. |
-| Tomb slots, `cargo` dressing (Sunken Bastion) | two standables per slot: crate/box stack OBB + barrel/keg circle | Stack (2.14/1.99) is a grab-and-climb; cask (1.70/1.85) vaults. The gap between them is now walkable, as drawn. |
+| Tomb slots, `coffins` dressing | standable HUMP: ridge along the coffin's length (plain 1.72 over a 1.10 plinth, decorated 1.17 over 0.71) | Feet ride the lid's crest and fall to the plinth at the sides. |
+| Tomb slots, `cargo` dressing (Sunken Bastion) | TWO-TIER staircase per stack (broad tier 1.35/1.20, measured top crate above) + cask circles at true radii (0.70/0.75) | Vault the tier, stride to the top crate; the stack-cask gap is walkable, as drawn. |
 | Tomb slots, temple altars | full-height (no dressing field) | Candle shrines are sacred, not furniture. |
 
 ## Instanced bands left flat by contract
@@ -68,3 +70,12 @@ temple walls, delve inertness), `tests/climb.test.ts` (roof reach pins, the
 stall cone walk), `tests/parkour.test.ts` + `tests/physics_character.test.ts`
 (the ladder itself), captures under `docs/screenshots/dungeon-parkour-roofs/`
 and `docs/screenshots/ledge-climb-roofs/`.
+
+## Slope glue: walking up a pitched surface stays grounded
+
+The grounded support query is capped at the feet (a taller prop BESIDE a
+body must never levitate it), which would flicker a body climbing a roof
+gable airborne every other tick. `slopeGlueHeight` re-samples exactly the
+surface the body stood on at its previous position and carries the feet up
+its pitch within a stride, in the shared kernel, so slope walking is smooth
+and bit-identical across hosts.

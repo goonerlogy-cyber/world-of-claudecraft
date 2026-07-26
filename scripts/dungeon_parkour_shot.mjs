@@ -189,30 +189,16 @@ const results = {};
   const inst = await enterDungeon('sunken_bastion');
   console.log('sunken_bastion origin', JSON.stringify(inst));
   await sleep(2500);
-  // Jump at the cargo stack at tomb slot (-19, 16): stack centre (t.x, t.z-1).
-  const arm = await drive(inst.ox - 19, inst.oz + 16 - 1 - 0.95 - 1.5, 0, [
-    { forward: true, jump: true, ticks: 90, stopOnClimb: true, freezeClimb: true },
+  // The cargo stack is a two-tier staircase now: vault the broad lower tier,
+  // stride onto the top crate. Stop the drive the moment the body stands on
+  // the top so it does not run off the far side.
+  const up = await drive(inst.ox - 19, inst.oz + 16 - 1 - 1.0 - 1.5, 0, [
+    { forward: true, jump: true, ticks: 120, stopAboveY: 2.0 },
   ]);
-  console.log('cargo arm:', JSON.stringify(arm));
-  if (arm[0].climbing) {
-    await page.evaluate(() => {
-      const p = window.__game.sim.player;
-      if (p.climb && p.climb.duration < 9000) p.climb.duration = 9999;
-    });
-    await cam(0.85, 5, 0.15);
-    await setClimbPhase(0.16);
-    await shoot('dungeon-cargo-reach');
-    await setClimbPhase(0.5);
-    await shoot('dungeon-cargo-pull');
-    await finishClimb();
-    const done = await drive(null, 0, 0, [{ ticks: 10 }]);
-    console.log('cargo done:', JSON.stringify(done));
-    await cam(0.85, 7, 0.3);
-    await shoot('dungeon-cargo-standing');
-    results.cargo = done[0].onGround && done[0].y > 1.6;
-  } else {
-    results.cargo = false;
-  }
+  console.log('cargo up:', JSON.stringify(up));
+  await cam(0.85, 6, 0.25);
+  await shoot('dungeon-cargo-standing');
+  results.cargo = up[0].onGround && up[0].y > 2.0;
 }
 
 // --- Scene 3: Eastbrook chapel entry-hall roof -------------------------------

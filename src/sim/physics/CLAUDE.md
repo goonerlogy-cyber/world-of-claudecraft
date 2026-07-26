@@ -66,7 +66,8 @@ general 3D solver and exact rather than approximate for this content.
   raised boss dais (`dungeon_floor.ts`), and the instanced kernel arm grants
   the step allowance up the dais rim plus the airborne mantle over it. The
   delve/arena/yumi bands stay flat-floor by contract.
-- **Standable tops may be SHAPED** (`TopSlope`: gabled ridge or cone), sampled
+- **Standable tops may be SHAPED** (`TopSlope`: gabled ridge with a per-asset
+  axis, or cone), sampled
   everywhere through `colliderTopAt`: support, landing, pass-over, the ledge
   fit, and the solver's blocking test all read the pitched surface at the
   query point, never the ridge max (a ridge-max blocking read depenetrates a
