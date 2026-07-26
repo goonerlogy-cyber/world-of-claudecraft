@@ -35,8 +35,9 @@ const WALL_TILE_LEN = 8;
 export const BG_FLOOR_Y = 0.02;
 /** Wall module y scale: the visual wall height matches the collider height. */
 export const BG_WALL_Y_SCALE = BG_WALL_HEIGHT / WALL_MODULE_H;
-/** Low barricades (BgWallSeg.low) render waist-high: half the rampart height.
- *  Visual only; the collider is the same full-block wall either way. */
+/** Low barricades (BgWallSeg.low) render at half the rampart height: 3yd,
+ *  head-high-plus, above SIGHT_HEIGHT. The collider matches: same footprint,
+ *  camera clears it above 3yd, casts stay blocked (layout cameraTopY). */
 export const BG_LOW_WALL_Y_SCALE = BG_WALL_Y_SCALE * 0.5;
 const WALL_CROSS_SCALE = (BG_WALL_T * 2) / WALL_MODULE_T;
 
@@ -119,11 +120,10 @@ const WALL_KINDS: [string, number][] = [
   ['wall', 5],
   ['wall_cracked', 1],
 ];
-// Low barricades read as crumbled rubble walls, not fresh masonry.
-const BARRICADE_KINDS: [string, number][] = [
-  ['wall_cracked', 2],
-  ['wall', 1],
-];
+// Low barricades read as crumbled rubble walls, not fresh masonry. One fixed
+// kind: with so few modules, a hash mix would dress the two keeps' barricades
+// differently, and the mirrored dressing rule outranks variety here.
+const BARRICADE_KINDS: [string, number][] = [['wall_cracked', 1]];
 // The ruin shell reads ruined: cracked-heavy modules at hash-varied heights.
 const RUIN_KINDS: [string, number][] = [
   ['wall_cracked', 2],
@@ -201,7 +201,9 @@ const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
 // Torch-lit ramparts: mounted torches along the perimeter side walls plus the
 // keep back walls, mirrored. The builder adds a small warm glow at each
 // BG_TORCH_GLOW_H; no lights, so every tier pays the same nothing.
-const TORCH_SIDE_ZS = [-44, -28, -12, 12, 28, 44];
+// The +-16 pair sits between each side room's short wall and the nearest niche
+// stub, never inside a room or its doorway plane.
+const TORCH_SIDE_ZS = [-44, -28, -16, 16, 28, 44];
 const TORCH_KEEP_XS = [-10, 10];
 const TORCH_MODULE_SCALE = 1.5;
 const TORCH_WALL_INSET = 1.0;

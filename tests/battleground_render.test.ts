@@ -29,8 +29,11 @@ import {
   type BgWallSeg,
   battlegroundWallSegments,
 } from '../src/sim/battleground_layout';
+import { SIGHT_HEIGHT } from '../src/sim/colliders';
 
-const WALL_MODULE_LEN = 4; // KayKit wall length at scale 1 (dungeon.ts convention)
+// KayKit wall module is 4u long and 4u tall at scale 1 (dungeon.ts convention),
+// so scale[0] * 4 is a module's run length and scale[1] * 4 its height.
+const WALL_MODULE_LEN = 4;
 
 function ruinBlock(): BgWallSeg {
   const blocks = battlegroundWallSegments().filter(isRuinBlock);
@@ -172,18 +175,27 @@ describe('battleground render manifest derives from the layout', () => {
       expect(Math.abs(f.x)).toBeLessThan(34);
       expect(Math.abs(f.z)).toBeLessThan(60);
     }
-    // Solid walls render at the collider's full height, EXCEPT the two low
-    // mouth barricades, which render waist-high (visual only; same collider).
+    // Solid walls render at the collider's full height, EXCEPT the low mouth
+    // barricades, which render at half height (their collider tops match).
     const isBarricadeModule = (p: BgModulePlacement) =>
       BG_KEEP_BARRICADES.some(
         (b) => p.z === b.z && Math.abs(p.x - b.x) <= b.hw && (b.low ?? false),
       );
-    const lowMods = m.walls.filter(isBarricadeModule);
-    expect(lowMods.length).toBeGreaterThan(0);
+    const lowMods = m.walls.filter((p) => p.scale[1] === BG_LOW_WALL_Y_SCALE);
+    // exactly two modules per barricade, nothing else low, and the mirrored
+    // barricades dress identically (one fixed rubble kind, no hash coin-flip)
+    expect(lowMods).toHaveLength(4);
+    for (const p of lowMods) {
+      expect(isBarricadeModule(p)).toBe(true);
+      expect(p.kind).toBe('wall_cracked');
+    }
     for (const p of m.walls) {
       expect(p.scale[1]).toBe(isBarricadeModule(p) ? BG_LOW_WALL_Y_SCALE : BG_WALL_Y_SCALE);
     }
     expect(BG_LOW_WALL_Y_SCALE).toBeLessThan(BG_WALL_Y_SCALE);
+    // the low render height still tops out above the spell sight line, so a
+    // barricade that blocks casts is never drawn short enough to see over
+    expect(BG_LOW_WALL_Y_SCALE * WALL_MODULE_LEN).toBeGreaterThan(SIGHT_HEIGHT);
     for (const p of m.ruin) {
       expect(p.scale[1]).toBeGreaterThan(0);
       expect(p.scale[1]).toBeLessThanOrEqual(BG_WALL_Y_SCALE);
