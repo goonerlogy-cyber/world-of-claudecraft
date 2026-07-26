@@ -28,7 +28,7 @@ const OUT_DIR = 'docs/screenshots/ravenrift-battleground';
 const SCALE = 8; // px per yard
 // Wide side gutters so every callout label lands OUTSIDE the field, clear of
 // both the walls and the legend.
-const MARGIN_L = 215;
+const MARGIN_L = 275;
 const MARGIN_R = 235;
 const MARGIN_T = 110;
 const MARGIN_B = 120;
@@ -95,10 +95,12 @@ rect(
 );
 rect(0, 0, BG_HALF_X, BG_ZONE_MID_HALF_Z, '#5e7a3a', 0.12);
 
-// ---- walls (perimeter + keeps incl. postern gaps + cover) ------------------
+// ---- walls (perimeter + keeps incl. posterns + cover + v2 route work) ------
+const LOW_WALL = '#7d6a52';
 for (const s of battlegroundWallSegments()) {
   const ruin = Math.min(s.hw, s.hd) > 1;
-  rect(s.x, s.z, s.hw, s.hd, ruin ? '#6b5b45' : WALL, ruin ? 0.85 : 1, 2);
+  const fill = s.low ? LOW_WALL : ruin ? '#6b5b45' : WALL;
+  rect(s.x, s.z, s.hw, s.hd, fill, ruin ? 0.85 : 1, 2);
 }
 for (const p of BG_COVER_PILLARS) circle(p.x, p.z, 1.0, WALL);
 for (const c of BG_COVER_CRATES) rect(c.x, c.z, 0.9, 0.9, '#8a6a3c', 1, 2);
@@ -145,13 +147,17 @@ callout(0, 36, 38, 34, 'flag-approach rune', '#8a6a3c');
 callout(24, 0, 38, -3, 'flank rune', '#8a6a3c');
 callout(-24, 0, -38, 3, 'flank rune', '#8a6a3c');
 callout(5, 3, 38, 10, 'heart ruin (hollow)', '#6b5b45');
+callout(5, 8, 38, 17, 'ruin fragments (slip gaps)', '#6b5b45');
 callout(-13, -16, -38, -19, 'staggered lane walls', INK);
 callout(22, 30, 38, 26, 'wing baffle', INK);
+callout(-27, -5, -38, -8, 'flank side room (two doors)', INK);
+callout(-31.5, -22, -38, -27, 'rampart niche (cover bay)', INK);
+callout(-2, -42, -38, -45, 'mouth barricade (low wall)', LOW_WALL);
 callout(-9, -56, -38, -61, 'keep banner poles', CRIMSON);
 label(
   0,
   -(BG_HALF_Z + 7.2),
-  'Crimson attacks north through the lanes or the west flank; Azure mirrors it exactly:',
+  'Crimson attacks north through the ruin lanes, the side rooms, or the flanks; Azure mirrors it exactly:',
   13.5,
   '#6b5b45',
 );
@@ -167,7 +173,7 @@ label(
 const lx = MARGIN_L + BG_HALF_X * 2 * SCALE + MARGIN_R + 10;
 let ly = MARGIN_T + 20;
 parts.push(
-  `<rect x="${lx - 16}" y="${ly - 26}" width="${LEGEND_W - 30}" height="392" fill="#fff" opacity="0.55" rx="10"/>`,
+  `<rect x="${lx - 16}" y="${ly - 26}" width="${LEGEND_W - 30}" height="422" fill="#fff" opacity="0.55" rx="10"/>`,
 );
 const legend = (draw, text) => {
   parts.push(draw(lx, ly));
@@ -187,6 +193,10 @@ legend(
 legend(
   (x, y) => `<rect x="${x}" y="${y - 7}" width="18" height="14" fill="#6b5b45" rx="2"/>`,
   'heart ruin (solid block, hollow shell)',
+);
+legend(
+  (x, y) => `<rect x="${x}" y="${y - 4}" width="18" height="8" fill="${LOW_WALL}" rx="2"/>`,
+  'low barricade (blocks movement)',
 );
 legend((x, y) => `<circle cx="${x + 9}" cy="${y}" r="7" fill="${WALL}"/>`, 'pillar');
 legend(

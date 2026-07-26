@@ -42,6 +42,7 @@ export const TARGETS = [
       { key: 'queue-window', scene: 'queue' },
       { key: 'field', scene: 'field' },
       { key: 'postern', scene: 'postern' },
+      { key: 'side-room', scene: 'room' },
       { key: 'carry-scoreboard', scene: 'carry' },
       { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
     ],
@@ -127,6 +128,16 @@ export const TARGETS = [
           game.input.camYaw = -Math.PI / 2;
           game.input.camDist = 12;
           game.input.camPitch = 0.42;
+        } else if (sceneKey === 'room') {
+          // inside the west flank side room (backed by the rampart, north of
+          // the Crimson keep), at its north end looking south down its length:
+          // ambush crate mid-room, the south doorway and cover bay beyond
+          const home = match.flags[0].home;
+          tp(home.x - 31, home.z + 45);
+          p.facing = Math.PI;
+          game.input.camYaw = Math.PI;
+          game.input.camDist = 14;
+          game.input.camPitch = 0.5;
         } else {
           // carry: stand on the ENEMY flag; the deliberate press follows
           const foe = match.flags[myTeam === 0 ? 1 : 0];
