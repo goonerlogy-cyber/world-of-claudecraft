@@ -35,6 +35,9 @@ const WALL_TILE_LEN = 8;
 export const BG_FLOOR_Y = 0.02;
 /** Wall module y scale: the visual wall height matches the collider height. */
 export const BG_WALL_Y_SCALE = BG_WALL_HEIGHT / WALL_MODULE_H;
+/** Low barricades (BgWallSeg.low) render waist-high: half the rampart height.
+ *  Visual only; the collider is the same full-block wall either way. */
+export const BG_LOW_WALL_Y_SCALE = BG_WALL_Y_SCALE * 0.5;
 const WALL_CROSS_SCALE = (BG_WALL_T * 2) / WALL_MODULE_T;
 
 /** Banner poles flank each keep's spawn banner point on x by this offset. */
@@ -115,6 +118,11 @@ export function isRuinBlock(s: BgWallSeg): boolean {
 const WALL_KINDS: [string, number][] = [
   ['wall', 5],
   ['wall_cracked', 1],
+];
+// Low barricades read as crumbled rubble walls, not fresh masonry.
+const BARRICADE_KINDS: [string, number][] = [
+  ['wall_cracked', 2],
+  ['wall', 1],
 ];
 // The ruin shell reads ruined: cracked-heavy modules at hash-varied heights.
 const RUIN_KINDS: [string, number][] = [
@@ -212,6 +220,7 @@ function tileWallSegment(
   s: BgWallSeg,
   kinds: [string, number][],
   heightLevels: number[] | null,
+  baseYScale: number = BG_WALL_Y_SCALE,
 ): void {
   const alongZ = s.hd >= s.hw;
   const len = 2 * (alongZ ? s.hd : s.hw);
@@ -223,8 +232,8 @@ function tileWallSegment(
     const x = alongZ ? s.x : c;
     const z = alongZ ? c : s.z;
     const yScale = heightLevels
-      ? BG_WALL_Y_SCALE * heightLevels[Math.floor(hash2(z, x * 7.3) * heightLevels.length)]
-      : BG_WALL_Y_SCALE;
+      ? baseYScale * heightLevels[Math.floor(hash2(z, x * 7.3) * heightLevels.length)]
+      : baseYScale;
     out.push({
       kind: pickKind(kinds, hash2(x * 1.7, z)),
       x,
@@ -293,6 +302,8 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       for (const edge of ruinShellSegments(s)) {
         tileWallSegment(ruin, edge, RUIN_KINDS, RUIN_HEIGHT_LEVELS);
       }
+    } else if (s.low) {
+      tileWallSegment(walls, s, BARRICADE_KINDS, null, BG_LOW_WALL_Y_SCALE);
     } else {
       tileWallSegment(walls, s, WALL_KINDS, null);
     }

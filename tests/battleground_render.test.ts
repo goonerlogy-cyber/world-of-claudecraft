@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BG_BANNER_FLANK_DX,
+  BG_LOW_WALL_Y_SCALE,
   BG_WALL_Y_SCALE,
   BG_ZONE_MID_HALF_Z,
   type BgModulePlacement,
@@ -21,6 +22,7 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
   BG_SPEED_RUNES,
   BG_WALL_T,
@@ -170,9 +172,18 @@ describe('battleground render manifest derives from the layout', () => {
       expect(Math.abs(f.x)).toBeLessThan(34);
       expect(Math.abs(f.z)).toBeLessThan(60);
     }
-    // Solid walls always render at the collider's full height; only the
-    // cosmetic ruin shell varies (and never above the collider height).
-    for (const p of m.walls) expect(p.scale[1]).toBe(BG_WALL_Y_SCALE);
+    // Solid walls render at the collider's full height, EXCEPT the two low
+    // mouth barricades, which render waist-high (visual only; same collider).
+    const isBarricadeModule = (p: BgModulePlacement) =>
+      BG_KEEP_BARRICADES.some(
+        (b) => p.z === b.z && Math.abs(p.x - b.x) <= b.hw && (b.low ?? false),
+      );
+    const lowMods = m.walls.filter(isBarricadeModule);
+    expect(lowMods.length).toBeGreaterThan(0);
+    for (const p of m.walls) {
+      expect(p.scale[1]).toBe(isBarricadeModule(p) ? BG_LOW_WALL_Y_SCALE : BG_WALL_Y_SCALE);
+    }
+    expect(BG_LOW_WALL_Y_SCALE).toBeLessThan(BG_WALL_Y_SCALE);
     for (const p of m.ruin) {
       expect(p.scale[1]).toBeGreaterThan(0);
       expect(p.scale[1]).toBeLessThanOrEqual(BG_WALL_Y_SCALE);
