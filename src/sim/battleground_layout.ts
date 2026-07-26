@@ -78,8 +78,10 @@ export interface BgWallSeg {
   z: number;
   hw: number; // half-width (x extent)
   hd: number; // half-depth (z extent)
-  /** Low barricade: collides like any wall but renders waist-high (visual
-   *  height only; the collider set never reads this). */
+  /** Low barricade: blocks movement like any wall but is HALF the rampart
+   *  height (3yd, above eye level): it renders half-height, the chase camera
+   *  clears it from above via its cameraTopY, and it still blocks spell line
+   *  of sight (its top is above SIGHT_HEIGHT). Footprint is identical. */
   low?: boolean;
 }
 
@@ -109,15 +111,15 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 8, z: 32 },
   { x: 9, z: -22 },
   { x: -9, z: 22 },
-  { x: -30, z: -8 }, // ambush cover inside each flank side room
-  { x: 30, z: 8 },
+  { x: -29, z: -8 }, // ambush cover inside each flank side room, set against
+  { x: 29, z: 8 }, // the field wall so the rampart-side passage stays wide
 ];
 
 // Ruin fragments: two broken L-shapes hugging the heart ruin, mirrored. Each L
-// is deliberately split at its corner (a body-width slip gap), so mid-field
-// threads several distinct paths instead of flowing around one box: the tight
-// 2yd corridor along the heart's face, the 2yd pinch between fragment and lane
-// wall, and the open lanes outside them.
+// is deliberately split at its corner (a 2yd slip gap), so mid-field threads
+// several distinct paths instead of flowing around one box: the tight 2yd
+// corridor along the heart's face, the 3yd gap between the fragment foot and
+// the lane wall, and the open lanes outside them.
 export const BG_RUIN_FRAGMENTS: BgWallSeg[] = [
   { x: -9, z: -1, hw: 1, hd: 4 }, // southwest L, upright arm
   { x: -5, z: -8, hw: 4, hd: 1 }, // southwest L, foot (corner slip gap between)
@@ -131,11 +133,11 @@ export const BG_RUIN_FRAGMENTS: BgWallSeg[] = [
 // route with hard cover and ambush corners rather than a bare wall run.
 export const BG_SIDE_ROOM_WALLS: BgWallSeg[] = [
   { x: -27, z: -5, hw: 1, hd: 9 }, // west room, field-side wall
-  { x: -28, z: 3, hw: 2, hd: 1 }, // west room, north wall (doorway at the rampart)
-  { x: -28, z: -13, hw: 2, hd: 1 }, // west room, south wall (doorway at the rampart)
+  { x: -29, z: 3, hw: 1, hd: 1 }, // west room, north wall (doorway at the rampart;
+  { x: -29, z: -13, hw: 1, hd: 1 }, // butt-joins the field wall, never overlaps it)
   { x: 27, z: 5, hw: 1, hd: 9 }, // east room mirror
-  { x: 28, z: -3, hw: 2, hd: 1 },
-  { x: 28, z: 13, hw: 2, hd: 1 },
+  { x: 29, z: -3, hw: 1, hd: 1 },
+  { x: 29, z: 13, hw: 1, hd: 1 },
 ];
 
 // Rampart niches: shallow cover bays notched between stub walls that jut from
@@ -152,18 +154,27 @@ export const BG_RAMPART_NICHES: BgWallSeg[] = [
   { x: 31.5, z: 25, hw: 1.5, hd: 1 },
 ];
 
-// Mouth barricades: one low wall 2yd field-side of each keep mouth, offset so
-// it splits the approach into a narrow gap on the postern side and a wide gap
-// on the other. It breaks the straight sightline (and the straight charge)
-// into the keep: defenders get a hold point, attackers pick a side. Sits
-// OUTSIDE keepInteriorBounds, so the form-up containment never reads it.
+// Mouth barricades: one low wall 2yd field-side of each keep mouth, offset
+// across the mouth span so the straight line from the field to the flag is
+// broken: measured against the keep's own width, a runner rounds it through a
+// narrow lane on the postern side or a wide lane on the other (the open field
+// beyond the keep's width flanks it entirely). Defenders get a hold point,
+// attackers pick a side. Sits OUTSIDE keepInteriorBounds, so the form-up
+// containment never reads it.
 export const BG_KEEP_BARRICADES: BgWallSeg[] = [
-  { x: -2, z: -42, hw: 5, hd: 1, low: true },
-  { x: 2, z: 42, hw: 5, hd: 1, low: true },
+  { x: -2, z: -42, hw: 6, hd: 1, low: true },
+  { x: 2, z: 42, hw: 6, hd: 1, low: true },
 ];
 
 const PILLAR_R = 1.0;
 const CRATE_R = 0.8;
+
+// Visual tops for camera occlusion and the spell-sight low-obstacle skip
+// (src/sim/colliders.ts): walls and pillars render BG_WALL_HEIGHT tall, low
+// barricades half that, and a crate stack tops out at the kit crate's 1.35u
+// height under the renderer's 1.6 crate scale. The BG ground is flat y=0, so
+// these are absolute Y. Movement collision ignores all of them.
+const CRATE_TOP = 2.2;
 
 // The four perimeter ramparts.
 export const BG_PERIMETER_WALLS: BgWallSeg[] = [
@@ -249,9 +260,21 @@ export function battlegroundWallSegments(): BgWallSeg[] {
 export function battlegroundColliders(): Collider[] {
   const out: Collider[] = [];
   for (const w of battlegroundWallSegments()) {
-    out.push({ type: 'obb', x: w.x, z: w.z, hw: w.hw, hd: w.hd, rot: 0 });
+    out.push({
+      type: 'obb',
+      x: w.x,
+      z: w.z,
+      hw: w.hw,
+      hd: w.hd,
+      rot: 0,
+      cameraTopY: w.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT,
+    });
   }
-  for (const p of BG_COVER_PILLARS) out.push({ type: 'circle', x: p.x, z: p.z, r: PILLAR_R });
-  for (const c of BG_COVER_CRATES) out.push({ type: 'circle', x: c.x, z: c.z, r: CRATE_R });
+  for (const p of BG_COVER_PILLARS) {
+    out.push({ type: 'circle', x: p.x, z: p.z, r: PILLAR_R, cameraTopY: BG_WALL_HEIGHT });
+  }
+  for (const c of BG_COVER_CRATES) {
+    out.push({ type: 'circle', x: c.x, z: c.z, r: CRATE_R, cameraTopY: CRATE_TOP });
+  }
   return out;
 }

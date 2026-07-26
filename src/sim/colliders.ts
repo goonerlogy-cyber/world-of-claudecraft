@@ -780,8 +780,11 @@ export function cameraOcclusion(
   delveModules?: readonly string[],
 ): number {
   if (isBgPos(ax)) {
+    // BG colliders all carry a cameraTopY (walls 6, low barricades 3, crate
+    // tops), so the chase cam clears anything it is visually above: what you
+    // see over, the camera sees over. The BG ground is flat y=0.
     const o = bgOriginAt(az);
-    return sweepColliders(BG_COLLIDERS, ax - o.x, ay, az - o.z, bx - o.x, by, bz - o.z, pad, true);
+    return sweepColliders(BG_COLLIDERS, ax - o.x, ay, az - o.z, bx - o.x, by, bz - o.z, pad, false);
   }
   if (isYumiMazePos(ax)) {
     const o = yumiMazeOriginAt(az);
@@ -870,8 +873,12 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
     return false;
   };
   if (isBgPos(x)) {
+    // Tops are known for every BG collider, so the low-obstacle skip applies:
+    // today everything (walls 6, low barricades 3, crates 2.2) tops out above
+    // SIGHT_HEIGHT and still blocks casts, and the contract stays honest if a
+    // future element drops below the sight line.
     const o = bgOriginAt(z);
-    return overlapsAny(BG_COLLIDERS, x - o.x, z - o.z, false);
+    return overlapsAny(BG_COLLIDERS, x - o.x, z - o.z, true);
   }
   if (isYumiMazePos(x)) {
     const o = yumiMazeOriginAt(z);

@@ -11,12 +11,20 @@ import {
   BG_RAMPART_NICHES,
   BG_RUIN_FRAGMENTS,
   BG_SIDE_ROOM_WALLS,
+  BG_WALL_HEIGHT,
+  BG_WALL_T,
   battlegroundColliders,
   battlegroundWallSegments,
   KEEP_MOUTH_DZ,
   keepWallSegments,
 } from '../src/sim/battleground_layout';
-import { resolveMovement, resolvePosition } from '../src/sim/colliders';
+import {
+  cameraOcclusion,
+  lineOfSightClear,
+  resolveMovement,
+  resolvePosition,
+  SIGHT_HEIGHT,
+} from '../src/sim/colliders';
 import {
   BG_BAND_X_MAX,
   BG_BAND_X_MIN,
@@ -142,6 +150,48 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     const low = battlegroundWallSegments().filter((s) => s.low);
     expect(low).toEqual(BG_KEEP_BARRICADES);
     for (const b of BG_KEEP_BARRICADES) expect(b.low).toBe(true);
+  });
+
+  it('the low flag never changes a collider footprint, only its visual top', () => {
+    const segs = battlegroundWallSegments();
+    const obbs = battlegroundColliders().filter((c) => c.type === 'obb');
+    expect(obbs).toHaveLength(segs.length);
+    segs.forEach((s, i) => {
+      const c = obbs[i];
+      expect([c.x, c.z, c.hw, c.hd]).toEqual([s.x, s.z, s.hw, s.hd]);
+      expect(c.cameraTopY).toBe(s.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT);
+    });
+  });
+
+  it('every real wall run is exactly BG_WALL_T thin; the heart is the one thick block', () => {
+    const segs = battlegroundWallSegments();
+    const thick = segs.filter((s) => Math.min(s.hw, s.hd) > BG_WALL_T);
+    expect(thick).toHaveLength(1); // the heart ruin
+    for (const s of segs) {
+      if (!thick.includes(s)) expect(Math.min(s.hw, s.hd)).toBe(BG_WALL_T);
+    }
+  });
+
+  it('the chase camera clears what it is visually above; casts stay blocked at eye height', () => {
+    const o = battlegroundOrigin(0);
+    // below the barricade top (3yd): the camera ray is occluded
+    const blockedLow = cameraOcclusion(SEED, o.x, 1.0, o.z - 38, o.x, 1.0, o.z - 46);
+    expect(blockedLow).toBeLessThan(1);
+    // above the barricade top but below the rampart top: it clears the low wall
+    expect(cameraOcclusion(SEED, o.x, 4.0, o.z - 38, o.x, 4.0, o.z - 46)).toBe(1);
+    // the full-height heart ruin still occludes at that height, and clears above
+    expect(cameraOcclusion(SEED, o.x, 4.0, o.z - 10, o.x, 4.0, o.z + 2)).toBeLessThan(1);
+    expect(
+      cameraOcclusion(SEED, o.x, BG_WALL_HEIGHT + 1, o.z - 10, o.x, BG_WALL_HEIGHT + 1, o.z + 2),
+    ).toBe(1);
+    // spell sight runs at eye height and the barricade top stays above it, so
+    // a cast straight across the barricade is blocked
+    expect(BG_WALL_HEIGHT / 2).toBeGreaterThan(SIGHT_HEIGHT);
+    expect(lineOfSightClear(SEED, { x: o.x, z: o.z - 38 }, { x: o.x, z: o.z - 46 })).toBe(false);
+    // and an unobstructed lane stays castable
+    expect(lineOfSightClear(SEED, { x: o.x - 10, z: o.z - 38 }, { x: o.x - 10, z: o.z - 46 })).toBe(
+      true,
+    );
   });
 });
 
