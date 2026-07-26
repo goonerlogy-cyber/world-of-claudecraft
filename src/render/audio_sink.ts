@@ -15,6 +15,41 @@ export interface AmbientPointSource {
   readonly z: number;
 }
 
+/** Per-ability audio moments fired by the ability-VFX engine: windup (the
+ *  charge bed while a cast is winding up, at the caster), release (cast lets
+ *  go, at the caster), impact (at the impact point), pulse (one soft zone
+ *  re-hit), crit (the sting layered over a critical impact), spirit (a
+ *  creature apparition calls as it spawns), motif (set-piece foley at the
+ *  motif anchor). */
+export type AbilityAudioKind =
+  | 'windup'
+  | 'release'
+  | 'impact'
+  | 'pulse'
+  | 'crit'
+  | 'spirit'
+  | 'motif';
+
+export interface AbilityAudioOpts {
+  /** Quieter, sub-less version (spec liteAudio or a degraded visual tier). */
+  lite?: boolean;
+  finisher?: boolean;
+  /** Spec archetype: heal/buff/cc chime gently instead of booming. */
+  archetype?: string;
+  /** Authored buff apply style ('raise' | 'morph' | 'veil'). */
+  buffStyle?: string;
+  /** Spec-authored bespoke sample id (impact.sample), wins over the palette
+   *  identity when the sample pack carries it. */
+  sample?: string;
+  /** The spirit creature model ('spirit') or motif name ('motif'). */
+  name?: string;
+  /** The casting ability id, so the audio engine can apply a per-ability
+   *  identity override (src/game/ability_sfx_samples.ts ABILITY_AUDIO_OVERRIDES)
+   *  when an ability's sound should differ from its palette default - e.g. a
+   *  green nature bolt that must WHOOSH like wind, not crackle like fire. */
+  abilityId?: string;
+}
+
 export interface SpatialAudioSink {
   /** Listener pose each frame: position + forward unit vector (camera). */
   setListener(x: number, y: number, z: number, fx: number, fy: number, fz: number): void;
@@ -49,5 +84,17 @@ export interface SpatialAudioSink {
     nearWater: boolean,
     crowd: number,
     points?: readonly AmbientPointSource[],
+  ): void;
+  /** One per-ability procedural audio moment at a world position (the 12
+   *  palette identities live in src/game/sfx.ts). Optional: an engine without
+   *  the synth layer simply stays silent for ability moments. */
+  abilityAudio?(
+    kind: AbilityAudioKind,
+    palette: string,
+    power: number,
+    x: number,
+    y: number,
+    z: number,
+    opts?: AbilityAudioOpts,
   ): void;
 }

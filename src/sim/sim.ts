@@ -3542,7 +3542,7 @@ export class Sim {
    *  re-resolve the active skin against the equipped mainhand. Cosmetic only. */
   setWeaponSkinLoadout(pid: number, loadout: WeaponSkinLoadout): void {
     const e = this.entities.get(pid);
-    if (!e || e.kind !== 'player') return;
+    if (e?.kind !== 'player') return;
     const next: WeaponSkinLoadout = {};
     for (const [t, skinId] of Object.entries(loadout)) {
       if (typeof skinId !== 'string') continue;
@@ -3573,7 +3573,7 @@ export class Sim {
    *  the loadout changed. */
   setWeaponSkin(pid: number, skinId: string | null, weaponType?: WeaponSkinType): boolean {
     const e = this.entities.get(pid);
-    if (!e || e.kind !== 'player') return false;
+    if (e?.kind !== 'player') return false;
     const cls = e.templateId;
     if (skinId !== null) {
       const def = WEAPON_SKINS[skinId];
@@ -3757,10 +3757,14 @@ export class Sim {
     return this.primaryId;
   }
   get player(): Entity {
-    return this.entities.get(this.primaryId)!;
+    const p = this.entities.get(this.primaryId);
+    if (!p) throw new Error('primary player entity missing');
+    return p;
   }
   private get primary(): PlayerMeta {
-    return this.players.get(this.primaryId)!;
+    const meta = this.players.get(this.primaryId);
+    if (!meta) throw new Error('primary player meta missing');
+    return meta;
   }
   get moveInput(): MoveInput {
     return this.primary.moveInput;
@@ -5224,6 +5228,7 @@ export class Sim {
   // L1 loot distribution moved to loot/loot_roll.ts (behind SimContext). Sim keeps a
   // thin delegate for partyLootCandidatesForMob because dead_party_loot.test.ts reaches
   // it via cast; the strategy resolvers it used have no other caller and moved fully.
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: dead_party_loot.test.ts reaches this via cast (see above).
   private partyLootCandidatesForMob(mob: Entity): PlayerMeta[] {
     return partyLootCandidatesForMobImpl(this.ctx, mob);
   }
@@ -5572,12 +5577,17 @@ export class Sim {
   ): void {
     const source = this.entities.get(effect.sourceId);
     if (!source || source.dead) return;
+    // The pulse cue anchors at the ZONE (the hazard is what ticks), not the
+    // caster, and names the ability so the renderer can play its authored fx.
     this.emit({
-      type: 'spellfx',
-      sourceId: source.id,
-      targetId: source.id,
+      type: 'spellfxAt',
+      x: effect.pos.x,
+      z: effect.pos.z,
       school: effect.school,
       fx: 'tick',
+      radius: effect.radius,
+      ability: effect.abilityId,
+      sourceId: source.id,
     });
     // Rune of Power (mage choice row): a FRIENDLY zone pulse. Buffs every ally
     // standing inside (refresh keeps it while they stay near, and it falls off
@@ -5770,6 +5780,7 @@ export class Sim {
     return hexOutputMultImpl(this.ctx, source);
   }
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_heal_absorb.test.ts drives this via `(sim as any).consumeHealAbsorb`.
   private consumeHealAbsorb(target: Entity, healed: number): number {
     return consumeHealAbsorbImpl(this.ctx, target, healed);
   }
@@ -6240,6 +6251,7 @@ export class Sim {
     updatePlayerAutoAttackImpl(this.ctx, p, meta);
   }
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: fixes.test.ts drives this via `(sim as any).rangedSwing`.
   private rangedSwing(
     attacker: Entity,
     target: Entity,
@@ -6439,6 +6451,7 @@ export class Sim {
   // highestThreatTarget moved to mob/targeting.ts (M1); retargetMob/updateMobTarget
   // call it there. No Sim delegate: it had no caller outside those two methods.
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: parity scenarios drive this via `(sim as any).updateMobTarget`.
   private updateMobTarget(mob: Entity): void {
     updateMobTargetFn(this.ctx, mob);
   }
@@ -6455,10 +6468,12 @@ export class Sim {
     return mobCombatProfileFn(mob);
   }
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_melee_walk_past.test.ts reaches this on an untyped sim handle.
   private mobEffectiveMeleeRange(mob: Entity): number {
     return mobEffectiveMeleeRangeFn(mob);
   }
 
+  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_melee_walk_past.test.ts reaches this on an untyped sim handle.
   private tryMobMeleeSwingInRange(mob: Entity, target: Entity): boolean {
     return tryMobMeleeSwingInRangeFn(this.ctx, mob, target);
   }
@@ -8941,7 +8956,9 @@ export class Sim {
     pid: number,
     team: 'A' | 'B',
   ): import('../world_api').FiestaMatchInfo {
-    const f = match.fiesta!;
+    const f = match.fiesta;
+    // unreachable: the sole caller guards on match.fiesta before delegating here
+    if (!f) throw new Error('fiestaMatchInfo requires a Fiesta match');
     const origin = arenaOrigin(match.slot);
     const meta = this.players.get(pid);
     const offer = f.offers.get(pid);
