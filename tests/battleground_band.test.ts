@@ -229,12 +229,12 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     // courtyard door (x -24..-21): the offset-door S-jog
     walk({ x: -18, z: -30 }, [
       { x: -18, z: -24 }, // in through the field-side door
-      { x: -21.5, z: -22 }, // jog west around the ambush crate
+      { x: -21.5, z: -23 }, // jog west around the ambush crate
       { x: -22.5, z: -16 },
       { x: -22.5, z: -12 }, // out through the courtyard-side door
     ]);
-    // the straight door-to-door line is blocked by the crate
-    const crate = resolveMovement(SEED, o.x - 18, o.z - 24, o.x - 18, o.z - 16, 0.5);
+    // the crate's own line is a dead stop (probed radially at its center x)
+    const crate = resolveMovement(SEED, o.x - 19, o.z - 25, o.x - 19, o.z - 16, 0.5);
     expect(crate.z).toBeLessThan(o.z - 23.2);
     // the gatehouse east wall is solid from the field side
     const wall = resolveMovement(SEED, o.x - 15, o.z - 30, o.x - 15, o.z - 24, 0.5);
@@ -242,19 +242,73 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     // the north gatehouse mirrors: in at x 16..20, out at x 21..24
     walk({ x: 18, z: 30 }, [
       { x: 18, z: 24 },
-      { x: 21.5, z: 22 },
+      { x: 21.5, z: 23 },
       { x: 22.5, z: 16 },
       { x: 22.5, z: 12 },
     ]);
   });
 
   it('chambers are sight-sealed: casts cross only at the crossings', () => {
-    // across the curtain between crossings: no line of sight
-    expect(lineOfSightClear(SEED, { x: o.x, z: o.z - 24 }, { x: o.x, z: o.z - 16 })).toBe(false);
-    // through the main gate: clear
+    // across the curtain between crossings: no line of sight, probed along
+    // BOTH curtains at every walled stretch
+    for (const [x, z] of [
+      [0, -20],
+      [-10, -20],
+      [20, -20],
+      [31.5, -20],
+      [0, 20],
+      [10, 20],
+      [-20, 20],
+      [-31.5, 20],
+    ]) {
+      expect(
+        lineOfSightClear(SEED, { x: o.x + x, z: o.z + z - 4 }, { x: o.x + x, z: o.z + z + 4 }),
+        `curtain sealed at (${x}, ${z})`,
+      ).toBe(false);
+    }
+    // through the main gate and the flank arch: clear
     expect(lineOfSightClear(SEED, { x: o.x + 8, z: o.z - 24 }, { x: o.x + 8, z: o.z - 16 })).toBe(
       true,
     );
+    expect(lineOfSightClear(SEED, { x: o.x + 28, z: o.z - 24 }, { x: o.x + 28, z: o.z - 16 })).toBe(
+      true,
+    );
+    // the heart's 12yd core crosses every main-gate-to-main-gate ray, so the
+    // two gates can never see each other; flag to flag is sealed too
+    expect(lineOfSightClear(SEED, { x: o.x + 8, z: o.z - 20 }, { x: o.x - 8, z: o.z + 20 })).toBe(
+      false,
+    );
+    expect(
+      lineOfSightClear(SEED, { x: o.x, z: o.z - BG_FLAG_Z }, { x: o.x, z: o.z + BG_FLAG_Z }),
+    ).toBe(false);
+  });
+
+  it('pins the crossing spans exactly: gate 8yd, arch 4yd, gatehouse doors 4 and 3', () => {
+    const spans = (z: number) =>
+      BG_CURTAIN_WALLS.filter((s) => s.z === z)
+        .map((s) => [s.x - s.hw, s.x + s.hw])
+        .sort((a, b) => a[0] - b[0]);
+    // south curtain walls: rampart..gatehouse west, gatehouse east..main gate,
+    // main gate..flank arch, flank arch..rampart (openings are the gaps)
+    expect(spans(-20)).toEqual([
+      [-33, -26],
+      [-14, 4],
+      [12, 26],
+      [30, 33],
+    ]);
+    // the north curtain is the exact point mirror
+    expect(spans(20)).toEqual([
+      [-33, -30],
+      [-26, -12],
+      [-4, 14],
+      [26, 33],
+    ]);
+    // gatehouse doors: field-side door x -20..-16 (4yd), courtyard-side door
+    // x -24..-21 (3yd); the walls end exactly at those door edges
+    const field = BG_GATEHOUSE_WALLS.find((s) => s.z === -26);
+    const court = BG_GATEHOUSE_WALLS.find((s) => s.z === -14);
+    expect(field ? field.x + field.hw : null).toBe(-20);
+    expect(court ? court.x - court.hw : null).toBe(-21);
   });
 
   it('the mouth barricade blocks the straight charge and both gaps stay open', () => {
@@ -313,7 +367,7 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       { x: -22, z: -28 },
       { x: -18, z: -27 },
       { x: -18, z: -24 }, // the gatehouse S-jog
-      { x: -21.5, z: -22 },
+      { x: -21.5, z: -23 },
       { x: -22.5, z: -16 },
       { x: -22.5, z: -12 },
       { x: -24, z: -4 }, // the courtyard west flank, over the rune pad

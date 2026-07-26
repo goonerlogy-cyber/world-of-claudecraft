@@ -91,8 +91,9 @@ export interface BgWallSeg {
 // Chamber cover: the hollow heart ruin and flanking cover inside the Ruin
 // Courtyard, plus one wing baffle per field chamber near each keep mouth.
 // The heart ruin collides as one solid block; the renderer dresses it as a
-// hollow ruin shell (visual only, same footprint). The two sightline
-// breakers are angled so the two main gates never see each other.
+// hollow ruin shell (visual only, same footprint). The 12yd heart is what
+// seals main-gate-to-main-gate sight (every such ray crosses its core); the
+// two offset breakers add courtyard cover and cut the diagonal lanes.
 export const BG_COVER_WALLS: BgWallSeg[] = [
   { x: 0, z: 0, hw: 6, hd: 6 }, // heart ruin block
   { x: -10, z: -10, hw: 4, hd: 1 }, // courtyard sightline breakers
@@ -111,8 +112,8 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 8, z: 32 },
   { x: 27, z: -3 }, // cover beside each flank rune
   { x: -27, z: 3 },
-  { x: -18, z: -22 }, // the ambush crate inside each gatehouse: it blocks the
-  { x: 18, z: 22 }, // straight door-to-door line and forces the jog wide
+  { x: -19, z: -22 }, // the ambush crate inside each gatehouse: it blocks the
+  { x: 19, z: 22 }, // straight door-to-door line and forces the jog wide
 ];
 
 /** The z line of each curtain wall: the chamber boundaries. */
@@ -122,22 +123,25 @@ export const BG_CURTAIN_Z = 20;
 // carve the field into three chambers (each team's field, the Ruin Courtyard
 // between). Each curtain is pierced by exactly three crossings, mirrored:
 //   main gate, 8yd, off-center toward the field side (Crimson's east);
-//   flank arch, 4yd, hugging the far rampart;
+//   flank arch, 4yd, three yards off the far rampart;
 //   the gatehouse, whose walls the curtain terminates into (below).
+// Every curtain segment butt-joins what it meets (the rampart inner face at
+// |x| 33, the gatehouse side walls), never overlaps it.
 export const BG_CURTAIN_WALLS: BgWallSeg[] = [
-  { x: -30, z: -20, hw: 4, hd: 1 }, // rampart to gatehouse west wall
+  { x: -29.5, z: -20, hw: 3.5, hd: 1 }, // rampart to gatehouse west wall
   { x: -5, z: -20, hw: 9, hd: 1 }, // gatehouse east wall to main gate (x 4..12)
   { x: 19, z: -20, hw: 7, hd: 1 }, // main gate to flank arch (x 26..30)
-  { x: 32, z: -20, hw: 2, hd: 1 }, // flank arch to rampart
-  { x: 30, z: 20, hw: 4, hd: 1 }, // north curtain, point mirror
+  { x: 31.5, z: -20, hw: 1.5, hd: 1 }, // flank arch to rampart
+  { x: 29.5, z: 20, hw: 3.5, hd: 1 }, // north curtain, point mirror
   { x: 5, z: 20, hw: 9, hd: 1 },
   { x: -19, z: 20, hw: 7, hd: 1 },
-  { x: -32, z: 20, hw: 2, hd: 1 },
+  { x: -31.5, z: 20, hw: 1.5, hd: 1 },
 ];
 
-// The gatehouses: a 12x12 room straddling each curtain with OFFSET doors
-// (enter the field-side door on one half, exit the courtyard-side door on the
-// other), so crossing it is a jog past ambush corners, not a straight run.
+// The gatehouses: a room straddling each curtain (12yd wide, 14yd long over
+// its end walls) with OFFSET doors (enter the field-side door on one half,
+// exit the courtyard-side door on the other), so crossing it is a jog past
+// ambush corners, not a straight run.
 // Each sits on its team's postern side, so a runner slipping out the postern
 // chains naturally into it. Walls butt-join the curtain segments exactly.
 export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
