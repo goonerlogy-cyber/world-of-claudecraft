@@ -834,8 +834,9 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaWin': '피에스타 승리',
   'hudChrome.warfare.reasons.battlegroundWin': '레이븐리프트 승리',
   'hudChrome.warfare.reasons.battlegroundComplete': '레이븐리프트 참전',
-  'hudChrome.keybinds.battleground': '레이븐리프트(전장)',
   'hudChrome.keybinds.bgFlag': '전장 깃발 행동',
+  'hudChrome.pvp.launcherTitle': 'PvP: 레이븐리프트와 투기장',
+  'hudChrome.pvp.mobileLabel': 'PvP',
   'hudChrome.bg.title': '레이븐리프트',
   'hudChrome.bg.modeTag': '5v5 깃발 뺏기',
   'hudChrome.bg.close': '닫기',
@@ -876,7 +877,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.defeatBanner': '패배. 레이븐리프트 {crimson}:{azure}. 레이팅 {rating}({delta})',
   'hudChrome.bg.drawBanner': '레이븐리프트 무승부 {crimson}:{azure}. 레이팅 {rating}({delta})',
   'hudChrome.bg.endLog': '레이븐리프트 종료, {crimson}:{azure}. 레이팅 {rating}({delta}).',
-  'hudChrome.bg.mobileLabel': '레이븐',
   'guide.nav.ravenrift': '레이븐리프트',
   'guide.ravenriftPage.heading': '레이븐리프트',
   'guide.ravenriftPage.intro':
@@ -4332,7 +4332,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'fiesta.end.draw': 'Fiesta 무승부! 우열을 가릴 수 없습니다!',
   'fiesta.end.loss': 'Fiesta 패배! 다시 도전하세요!',
   'fiesta.end.win': 'Fiesta 승리! 🎉 멋진 축제였습니다!',
-  'fiesta.enterQueue': 'Fiesta에 참가하세요!',
   'fiesta.error.leaderOnly': '{label} 대기열에는 파티장만 팀을 등록할 수 있습니다.',
   'fiesta.error.noAugment': '지금 선택할 수 있는 증강이 없습니다.',
   'fiesta.error.notOnOffer': '그 증강은 제공되지 않습니다.',
@@ -4349,9 +4348,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'fiesta.powerup.pow_colossus.name': '거인',
   'fiesta.powerup.pow_moon_boots.name': '달빛 장화',
   'fiesta.powerup.pow_speed_demon.name': '질주의 악마',
-  'fiesta.practice': '🎉 봇 상대 연습',
-  'fiesta.practiceNote':
-    '오프라인 연습: AI 봇 3기를 소환하고 2대2 Fiesta 대기열에 등록합니다. 다시 클릭하면 중지합니다.',
   'fiesta.queue.join': '2대2 Fiesta 대기열에 들어갑니다. 축제를 준비하세요…',
   'fiesta.queue.leave': '2대2 Fiesta 대기열에서 나갑니다.',
   'fiesta.queue.teamLeave': '당신의 팀이 2대2 Fiesta 대기열에서 나갑니다.',
@@ -5325,17 +5321,12 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'guide.abilityHook.thorns': '아군을 보호해, 근접 공격자가 칠 때마다 스스로 피해를 입게 합니다.',
   'guide.abilityHook.thunder_clap': '주위의 모든 적을 타격하고 그들의 공격 속도를 늦춥니다.',
   'guide.abilityHook.wrath': '원거리에서 대상에게 던지는 자연 화살로, 주력 공격기입니다.',
-  'guide.arenaPage.augmentsNote':
-    '증강과 강화 효과는 해당 경기 동안에만 유지됩니다. 지속적인 힘이 아니라 그 자리에서 재미있게 빌드를 짜는 것이 목적이므로, 돈으로 승리를 사는 일은 없습니다.',
   'guide.arenaPage.coliseumBody':
     '콜로세움은 왕국의 투기장으로, 1대1 또는 2대2 등급전에서 다른 플레이어들과 맞붙는 곳입니다. 등급 구간마다 별도의 순위가 매겨지므로, 승리하면 그 사다리에서 순위가 올라 왕국 전체가 그 결과를 보게 됩니다. 투기장 창을 열어 혼자 또는 파트너와 함께 등급 구간에 참가 신청을 하세요.',
   'guide.arenaPage.coliseumHeading': '잿빛 콜로세움',
   'guide.arenaPage.duelsBody':
     '마주치는 누구에게나 가벼운 결투를 신청할 수 있습니다. 자존심 외에는 걸린 것이 없으므로, 상대법을 익히거나 가벼운 논쟁을 가리는 가장 쉬운 방법입니다.',
   'guide.arenaPage.duelsHeading': '결투',
-  'guide.arenaPage.fiestaBody':
-    '피에스타는 하나의 연속된 시합으로 치러지는 빠른 2대2 난투로, 모든 참가자가 동등한 조건에서 싸웁니다. 싸움이 진행되는 동안 증강을 골라 뽑는데, 이는 그때그때 구성을 바꾸는 빠른 강화 효과이므로 어떤 경기도 똑같이 흘러가지 않습니다.',
-  'guide.arenaPage.fiestaHeading': '2대 2 피에스타',
   'guide.arenaPage.heading': '투기장과 PvP',
   'guide.arenaPage.intro':
     '다른 플레이어와 실력을 겨뤄 보고 싶으신가요? 플레이어 대 플레이어 전투가 기본으로 갖춰져 있으며, 강요받는 일 없이 언제나 직접 선택하는 방식입니다.',
@@ -5516,21 +5507,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
     '남쪽에서 북쪽으로 이어지는 세 지역은 각각 레벨이 한 단계씩 높아집니다. 퀘스트 길을 따라가면 땅이 당신을 골짜기에서 봉우리까지 이끌어 줍니다.',
   'guide.worldPage.places': '주요 명소',
   'guide.worldPage.residents': '만나게 될 이들',
-  'guide.arenaPage.powerupsBody':
-    '빛나는 구슬이 전투 도중 투기장 안으로 떨어지기도 하며, 먼저 닿는 사람이 임자입니다. 일부러 과장되게 만들어졌고 효과는 잠깐뿐입니다. 눈이 멀 듯한 속도를 주는 스피드 데몬, 굼뜬 거인으로 부풀어 오르는 콜로서스, 저중력으로 통통 튀어 오르게 하는 문 부츠, 그리고 분노가 한순간에 폭발하는 버서커가 있습니다.',
-  'guide.arenaPage.powerupsTitle': '원형 안의 강화 효과',
-  'guide.arenaPage.waveGoldBody':
-    '중반 웨이브: 양날의 조합으로, 이 무렵부터 당신의 빌드가 모습을 갖추고 노래하기 시작합니다.',
-  'guide.arenaPage.waveGoldTitle': '골드',
-  'guide.arenaPage.wavePrismaticBody':
-    '마지막 웨이브: 빌드를 결정짓고 화면을 녹여 버리는 폭발적인 한 방으로, 더없이 통쾌하게 터무니없는 느낌을 주려는 것입니다.',
-  'guide.arenaPage.wavePrismaticTitle': '프리즘',
-  'guide.arenaPage.waveSilverBody':
-    '첫 웨이브: 군더더기 없이 능력치 하나만 끌어올려 당신 직업의 기본기를 다듬어 줍니다.',
-  'guide.arenaPage.waveSilverTitle': '실버',
-  'guide.arenaPage.wavesBody':
-    '피에스타 시합은 진행되면서 새로운 선택지를 건네주며, 시합이 길어질수록 그 선택은 점점 대담해집니다. 한 웨이브에서 다음 웨이브로 빌드를 쌓아 가는데, 매번 몇 가지 중 하나를 골라 남은 시합 동안 계속 지니게 됩니다.',
-  'guide.arenaPage.wavesTitle': '증강은 웨이브로 찾아옵니다',
   'guide.bestiary.flavor.gravecaller_cultist':
     '골짜기에서 봉우리까지 무덤을 더럽히는 죽음교단의 로브 두른 종복들. 이들이 모이는 곳에서는 죽은 자가 쉬지 못합니다.',
   'guide.bestiary.flavor.grubjaw':
@@ -7365,9 +7341,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   // Protect Yumi locale fill (M16 wordy-key floor).
   'yumi.hud.collapse': 'Protect Yumi 게이지 접기',
   'yumi.hud.expand': 'Protect Yumi 게이지 펼치기',
-  'guide.arenaPage.yumiHeading': 'Yumi를 지켜라',
-  'guide.arenaPage.yumiBody':
-    'Protect Yumi는 미로에서 펼쳐지는 팀 목표 모드입니다. 각 팀은 아군 고양이 소환수를 지키면서 상대의 소환수를 사냥합니다. 두 고양이는 이따금 미로의 새 구석으로 순간이동하므로 전투는 수비, 추격, 수색 사이를 오갑니다. 3대3 또는 5대5로 참가할 수 있으며, 쓰러져도 잠시 벤치에 앉을 뿐입니다.',
   'yumi.queue.join': 'Protect Yumi 대기열에 참가했습니다. 소환수를 지키세요…',
   'yumi.queue.leave': 'Protect Yumi 대기열에서 나갑니다.',
   'yumi.queue.teamLeave': '팀이 Protect Yumi 대기열에서 나갑니다.',
@@ -7376,7 +7349,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'yumi.log.start': 'Protect Yumi! 아군 소환수를 지키고 적의 소환수를 사냥하세요.',
   'yumi.bracket3': 'Yumi 3대3',
   'yumi.bracket5': 'Yumi 5대5',
-  'yumi.enterQueue': 'Protect Yumi 참가!',
   'yumi.hud.title': 'PROTECT YUMI',
   'yumi.hud.getReady': '준비하세요…',
   'yumi.hud.teleportIn': 'Yumi 이동까지 {s}초',

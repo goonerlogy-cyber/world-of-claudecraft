@@ -58,7 +58,7 @@ export const TARGETS = [
         });
         if (!opened.ok) return { skip: opened.reason };
         const ready = await pollForSize(page, '#arena-window');
-        if (!ready) return { skip: 'battleground window never became visible' };
+        if (!ready) return { skip: 'the PvP window never became visible' };
         return { clip: '#arena-window' };
       }
       // Stage a live 5v5 offline: nine bots + the player queue, the form-up is

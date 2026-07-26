@@ -130,6 +130,7 @@ export class ArenaWindow {
       this.lastSig = '';
       this.fetchLeaderboardFor(tab);
       this.render();
+      this.focusActiveTab();
       return;
     }
     this.close();
@@ -173,7 +174,7 @@ export class ArenaWindow {
       .then((d) => {
         if (d && Array.isArray(d.leaders)) {
           this.allTime[format] = d.leaders;
-          this.lastSig = '';
+          if (this.tab === format) this.lastSig = '';
         }
       })
       .catch(() => {
@@ -190,7 +191,7 @@ export class ArenaWindow {
       .then((d) => {
         if (d && Array.isArray(d.leaders)) {
           this.bgAllTime = d.leaders;
-          this.lastSig = '';
+          if (this.tab === 'ravenrift') this.lastSig = '';
         }
       })
       .catch(() => {
@@ -204,14 +205,10 @@ export class ArenaWindow {
     // The dialog role / aria-modal / aria-labelledby / tabindex are set ONCE in toggle()
     // on open (the root is stable across renders), not here, so the 250ms mediumHud
     // re-render does not re-write them every tick.
-    const bg = world.bgInfo;
-    const arena = world.arenaInfo;
     const strip = buildPvpTabs({
       selected: this.tab,
-      bgBusy: Boolean(bg && (bg.queued || bg.match !== null)),
-      arenaBusyBracket: arena
-        ? (arena.match?.format ?? (arena.queued ? arena.format : null))
-        : null,
+      bg: world.bgInfo,
+      arena: world.arenaInfo,
     });
     if (strip.commit) this.tab = strip.active;
 
@@ -240,7 +237,7 @@ export class ArenaWindow {
       return;
     }
     this.fetchBgLeaderboard();
-    const sig = `ravenrift|${view.sig}`;
+    const sig = `ravenrift|${strip.tabs.map((tab) => (tab.locked ? 1 : 0)).join('')}|${view.sig}`;
     if (sig === this.lastSig) return;
     this.lastSig = sig;
     el.innerHTML = this.bgTitleHtml() + this.stripHtml(strip) + this.bgBodyHtml(view);
@@ -280,7 +277,7 @@ export class ArenaWindow {
     }
 
     this.fetchArenaLeaderboard(view.bracket);
-    const sig = `${tab}|${view.sig}`;
+    const sig = `${tab}|${strip.tabs.map((s2) => (s2.locked ? 1 : 0)).join('')}|${view.sig}`;
     if (sig === this.lastSig) return;
     this.lastSig = sig;
     el.innerHTML =
@@ -296,15 +293,23 @@ export class ArenaWindow {
     });
   }
 
+  /** After a strip-click rebuild, keyboard focus follows the active tab. */
+  private focusActiveTab(): void {
+    const el = this.deps.root();
+    (el.querySelector(`[data-bracket="${this.tab}"]`) as HTMLElement | null)?.focus();
+  }
+
   /** Close + tab-strip wiring shared by every panel state. */
   private wireChrome(el: HTMLElement): void {
     el.querySelector('[data-close]')?.addEventListener('click', () => this.close());
-    el.querySelectorAll('[data-bracket]:not([disabled])').forEach((btn) => {
+    el.querySelectorAll('[data-bracket]').forEach((btn) => {
       btn.addEventListener('click', () => {
+        if (btn.getAttribute('aria-disabled') === 'true') return;
         this.tab = (btn as HTMLElement).dataset.bracket as PvpTabId;
         this.lastSig = '';
         this.fetchLeaderboardFor(this.tab);
         this.render();
+        this.focusActiveTab();
         audio.click();
       });
     });
@@ -314,7 +319,7 @@ export class ArenaWindow {
 
   private arenaTitleHtml(bracket: ArenaFormat | null): string {
     const tag = bracket
-      ? ` <span class="arena-bracket-tag">${esc(this.tabLabel(bracket as PvpTabId))}</span>`
+      ? ` <span class="arena-bracket-tag">${esc(this.tabLabel(bracket))}</span>`
       : '';
     return `<div class="panel-title"><span id="arena-title">${esc(t('hud.arena.title'))}${tag}</span><button type="button" class="x-btn" data-close aria-label="${esc(t('hud.arena.close'))}">${svgIcon('close')}</button></div>`;
   }
@@ -324,8 +329,10 @@ export class ArenaWindow {
   }
 
   private stripHtml(strip: PvpTabsModel): string {
+    // Locked tabs carry aria-disabled (still perceivable and announced) rather
+    // than disabled (which would drop them from the accessibility tree).
     const btn = (tab: { id: PvpTabId; active: boolean; locked: boolean }): string =>
-      `<button class="arena-bracket${tab.active ? ' active' : ''}${tab.locked ? ' locked' : ''}" data-bracket="${tab.id}" aria-pressed="${tab.active ? 'true' : 'false'}"${tab.locked ? ' disabled' : ''}>${esc(this.tabLabel(tab.id))}</button>`;
+      `<button class="arena-bracket${tab.active ? ' active' : ''}${tab.locked ? ' locked' : ''}" data-bracket="${tab.id}" aria-pressed="${tab.active ? 'true' : 'false'}"${tab.locked ? ' aria-disabled="true"' : ''}>${esc(this.tabLabel(tab.id))}</button>`;
     return `<div class="arena-brackets">${strip.tabs.map(btn).join('')}</div>`;
   }
 
@@ -499,8 +506,14 @@ export class ArenaWindow {
       .join('');
   }
 
-  private tabLabel(tab: PvpTabId): string {
+  private tabLabel(tab: PvpTabId | ArenaFormat): string {
     if (tab === 'ravenrift') return t('hudChrome.bg.title');
-    return tab;
+    if (tab === '1v1') return t('hudChrome.pvp.bracket1v1');
+    if (tab === '2v2') return t('hudChrome.pvp.bracket2v2');
+    // Retired brackets stay renderable (a dev-started bout commits them into
+    // the title tag), so their labels stay localized, never a raw id.
+    if (tab === 'fiesta') return t('fiesta.bracket');
+    if (tab === 'yumi3') return t('yumi.bracket3');
+    return t('yumi.bracket5');
   }
 }

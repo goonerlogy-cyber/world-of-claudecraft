@@ -14,8 +14,19 @@ const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '
 const hud = readFileSync(new URL('../src/ui/hud.ts', import.meta.url), 'utf8');
 
 describe('arena_window: WCAG chrome (focusable controls + focus-return)', () => {
-  it('drives the panel from the pure view core', () => {
+  it('drives the panels from all three pure cores', () => {
     expect(code).toContain('buildArenaView(');
+    expect(code).toContain('buildBgWindowView(');
+    expect(code).toContain('buildPvpTabs(');
+  });
+
+  it('exposes the tab deep entry and tab-prefixes every live render-skip sig', () => {
+    // openTab is the Ravenrift deep entry (hud.toggleBattleground rides it).
+    expect(code).toContain('openTab(tab: PvpTabId)');
+    // The two live signatures carry the tab and the strip's lock state, so a
+    // tab switch or a lock change can never be skipped by a colliding sig.
+    expect(code).toContain('const sig = `ravenrift|');
+    expect(code).toContain('const sig = `${tab}|');
   });
 
   it('gives the close control a real button with an aria-label', () => {
@@ -37,8 +48,16 @@ describe('arena_window: WCAG chrome (focusable controls + focus-return)', () => 
     expect(code).toContain('this.openerFocus = this.deps.captureFocus()');
   });
 
-  it('keeps the offline / not-yet-synced unavailable note', () => {
+  it('keeps the offline / not-yet-synced unavailable note on both tabs', () => {
     expect(code).toContain("t('hud.arena.offlineNote')");
+    expect(code).toContain("t('hudChrome.bg.offlineNote')");
+  });
+
+  it('every panel state emits the dialog label id, the Ravenrift title included', () => {
+    // markDialogRoot(labelledBy: 'arena-title') is set once on open; both
+    // title builders must therefore carry the id in every rebuilt panel.
+    expect(code).toContain('<span id="arena-title">${esc(t(\'hud.arena.title\'))}');
+    expect(code).toContain('<span id="arena-title">${esc(t(\'hudChrome.bg.title\'))}');
   });
 });
 
@@ -75,7 +94,13 @@ describe('arena_window: mediumHud redraw call site', () => {
     expect(hud).toContain(
       "if (inArenaMatch && !this.arenaMatchSeen && $('#arena-window').style.display === 'block') {",
     );
+    // The Ravenrift match-start auto-close routes through the same painter.
+    expect(hud).toContain(
+      "if (inBgMatch && !this.bgMatchSeen && $('#arena-window').style.display === 'block') {",
+    );
     expect(hud).not.toContain("'#arena-window').style.display = 'none'");
+    // hud.toggleBattleground deep-opens the merged window on the Ravenrift tab.
+    expect(hud).toContain("this.arenaWindow.openTab('ravenrift')");
   });
 });
 
@@ -84,8 +109,9 @@ describe('arena_window: offline skip-rebuild sentinel (collision-proof)', () => 
     const m = code.match(/ARENA_OFFLINE_SIG\s*=\s*'([^']*)'/);
     expect(m, 'ARENA_OFFLINE_SIG literal').not.toBeNull();
     const sentinel = m ? m[1] : '';
-    // The live sig is JSON.stringify([...]) so it always starts with '['; the sentinel must not,
-    // or an offline->live transition could wrongly skip a real rebuild.
+    // The live sig is tab-prefixed (`ravenrift|...` / `1v1|...`), never this bare
+    // token, so an offline->live transition can never wrongly skip a rebuild; the
+    // sentinel also must not start with '[' (the shape of a raw JSON sig).
     expect(sentinel.length).toBeGreaterThan(0);
     expect(sentinel.startsWith('[')).toBe(false);
     // The offline branch early-returns on the sentinel (builds once per open, not every tick).

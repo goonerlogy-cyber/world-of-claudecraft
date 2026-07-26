@@ -810,8 +810,9 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaWin': '嘉年華勝利',
   'hudChrome.warfare.reasons.battlegroundWin': '鴉裂谷勝利',
   'hudChrome.warfare.reasons.battlegroundComplete': '鴉裂谷參戰',
-  'hudChrome.keybinds.battleground': '鴉裂谷(戰場)',
   'hudChrome.keybinds.bgFlag': '戰場奪旗動作',
+  'hudChrome.pvp.launcherTitle': 'PvP:鴉裂谷與競技場',
+  'hudChrome.pvp.mobileLabel': 'PvP',
   'hudChrome.bg.title': '鴉裂谷',
   'hudChrome.bg.modeTag': '5v5奪旗戰',
   'hudChrome.bg.close': '關閉',
@@ -852,7 +853,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.defeatBanner': '戰敗。鴉裂谷{crimson}:{azure}。評分{rating}({delta})',
   'hudChrome.bg.drawBanner': '鴉裂谷平手{crimson}:{azure}。評分{rating}({delta})',
   'hudChrome.bg.endLog': '鴉裂谷結束,{crimson}:{azure}。評分{rating}({delta})。',
-  'hudChrome.bg.mobileLabel': '鴉裂谷',
   'guide.nav.ravenrift': '鴉裂谷',
   'guide.ravenriftPage.heading': '鴉裂谷',
   'guide.ravenriftPage.intro':
@@ -4182,7 +4182,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'fiesta.end.draw': 'Fiesta平手！難分高下！',
   'fiesta.end.loss': 'Fiesta落敗！再來一場！',
   'fiesta.end.win': 'Fiesta獲勝！🎉 多麼盡興的派對！',
-  'fiesta.enterQueue': '加入Fiesta！',
   'fiesta.error.leaderOnly': '只有隊長能為你的隊伍排入{label}佇列。',
   'fiesta.error.noAugment': '你目前沒有可供選擇的強化。',
   'fiesta.error.notOnOffer': '那項強化未在提供之列。',
@@ -4198,8 +4197,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'fiesta.powerup.pow_colossus.name': '巨像',
   'fiesta.powerup.pow_moon_boots.name': '月靴',
   'fiesta.powerup.pow_speed_demon.name': '極速狂魔',
-  'fiesta.practice': '🎉 對戰機器人練習',
-  'fiesta.practiceNote': '離線練習：生成3個AI機器人並將你排入2v2 Fiesta佇列。再次點擊即可停止。',
   'fiesta.queue.join': '你加入了2v2 Fiesta佇列。準備好狂歡吧…',
   'fiesta.queue.leave': '你離開了2v2 Fiesta佇列。',
   'fiesta.queue.teamLeave': '你的隊伍離開了2v2 Fiesta佇列。',
@@ -5088,17 +5085,12 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'guide.abilityHook.thorns': '守護友方，讓近戰攻擊者每次出手都會傷到自己。',
   'guide.abilityHook.thunder_clap': '打擊你周遭的一切並降低它們的攻擊速度。',
   'guide.abilityHook.wrath': '從遠處朝目標擲出一道自然箭矢，是你慣用的核彈。',
-  'guide.arenaPage.augmentsNote':
-    '強化與增益只在該場對戰中有效。它們著重於即興、好玩的搭配，而非長久的力量，所以沒有人能花錢買到勝利。',
   'guide.arenaPage.coliseumBody':
     '灰燼競技場是這個王國的競技場，你會在排名對戰中面對其他玩家，進行一對一或二對二的較量。每個級別都各自保有自己的排名，因此一場勝利能讓你在那道天梯上往上爬，讓整個王國都看得見。開啟競技場視窗即可報名參加某個級別，可以獨自一人，也可以與你的搭檔一同上場。',
   'guide.arenaPage.coliseumHeading': '灰燼鬥獸場',
   'guide.arenaPage.duelsBody':
     '向你遇到的任何玩家發起一場友誼決鬥。賭上的只有顏面，所以這是學習對戰組合或解決友好爭論最簡單的方式。',
   'guide.arenaPage.duelsHeading': '決鬥',
-  'guide.arenaPage.fiestaBody':
-    '嘉年華是一種快節奏的二對二混戰，以一場連續不斷的對戰進行，每位鬥士都被拉到同一起跑線上。隨著戰鬥推進，你會抽選強化，這些快速的增益能即時重塑你的配套，讓每場對戰都不盡相同。',
-  'guide.arenaPage.fiestaHeading': '二對二嘉年華',
   'guide.arenaPage.heading': '競技場與PvP',
   'guide.arenaPage.intro':
     '想與其他玩家一較高下嗎？玩家對戰功能已內建於遊戲中，而且永遠由你自己選擇參與，絕不會被強迫。',
@@ -5267,19 +5259,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
     '三個地區由南而北，等級層層遞增。跟著任務的軌跡走，這片土地會帶你從谷地一路前往群峰。',
   'guide.worldPage.places': '著名地點',
   'guide.worldPage.residents': '你將遇見的人物',
-  'guide.arenaPage.powerupsBody':
-    '戰鬥進行到一半，發光的能量球也會落入競技場，誰先搶到就歸誰。它們刻意設計得誇張過火，且只持續短短一陣子：速度惡魔讓你瞬間飆出令人目眩的步伐，巨像讓你脹大成笨重的巨人，月靴帶來低重力的彈跳躍動，狂戰士則是一股突如其來的暴怒之潮。',
-  'guide.arenaPage.powerupsTitle': '鬥技場中的能量道具',
-  'guide.arenaPage.waveGoldBody': '中段那波：雙刃般的搭配組合，你的配套在此開始成形，奏出旋律。',
-  'guide.arenaPage.waveGoldTitle': '黃金',
-  'guide.arenaPage.wavePrismaticBody':
-    '最後那波：足以定義整套配套、能融化整個畫面的爆發，刻意設計得荒謬到讓人拍案叫絕。',
-  'guide.arenaPage.wavePrismaticTitle': '彩虹',
-  'guide.arenaPage.waveSilverBody': '開場那波：乾淨俐落的單一屬性增益，磨利你職業的基本功。',
-  'guide.arenaPage.waveSilverTitle': '白銀',
-  'guide.arenaPage.wavesBody':
-    '一場嘉年華對戰會隨著進行不斷發給你新的選項，而戰鬥拖得愈久，選項也愈來愈大膽。你會一波接一波地堆疊構築，每次從幾個選項中挑一個，並保留到這場對戰結束。',
-  'guide.arenaPage.wavesTitle': '強化如波浪般湧來',
   'guide.bestiary.flavor.gravecaller_cultist':
     '死亡邪教的長袍僕從，他們的作為玷污了從谷地到群峰的座座墳塚。凡他們聚集之處，亡者便不得安息。',
   'guide.bestiary.flavor.grubjaw':
@@ -7017,9 +6996,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   // Protect Yumi locale fill (M16 wordy-key floor).
   'yumi.hud.collapse': '摺疊Protect Yumi血條',
   'yumi.hud.expand': '展開Protect Yumi血條',
-  'guide.arenaPage.yumiHeading': '守護Yumi',
-  'guide.arenaPage.yumiBody':
-    'Protect Yumi是一種在迷宮中進行的團隊目標模式：每隊守護自己的貓咪使魔，同時獵殺對方的。兩隻貓咪會不時閃現到迷宮的新角落，戰鬥在防守、追獵與尋回之間不斷搖擺。可選擇3對3或5對5排隊；陣亡只會讓你短暫離場。',
   'yumi.queue.join': '你加入了Protect Yumi佇列。守好你的使魔……',
   'yumi.queue.leave': '你離開了Protect Yumi佇列。',
   'yumi.queue.teamLeave': '你的隊伍離開了Protect Yumi佇列。',
@@ -7028,7 +7004,6 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'yumi.log.start': 'Protect Yumi！保衛你的使魔，獵殺敵方的使魔。',
   'yumi.bracket3': 'Yumi 3v3',
   'yumi.bracket5': 'Yumi 5v5',
-  'yumi.enterQueue': '加入Protect Yumi！',
   'yumi.hud.title': '守護YUMI',
   'yumi.hud.getReady': '做好準備……',
   'yumi.hud.teleportIn': 'Yumi將在{s}秒後傳送',

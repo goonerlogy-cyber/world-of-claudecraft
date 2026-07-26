@@ -10963,27 +10963,6 @@
 
   /* Fiesta arena-bracket integration: style the .btn (windows) and .arena-bracket
      (Ashen Coliseum) bases, co-located with those bases in @layer components. */
-  .btn.fiesta-practice {
-    background: linear-gradient(135deg, #ff3df0, #1b9fff);
-    border-color: #ff3df0;
-    color: #fff;
-    font-weight: 800;
-  }
-  .btn.fiesta-practice:hover {
-    box-shadow: 0 0 14px #ff3df088;
-  }
-  .arena-bracket.fiesta {
-    background: linear-gradient(135deg, #ff3df033, #1b9fff22);
-  }
-  .arena-bracket.fiesta.active {
-    background: linear-gradient(135deg, #ff3df0, #1b9fff);
-    color: #fff;
-    border-color: #ff3df0;
-  }
-  .arena-bracket-tag.fiesta {
-    background: linear-gradient(90deg, #ff3df0, #1b9fff);
-    color: #fff;
-  }
   /* ---------- paperdoll unequip + bags drop-target ---------- */
   /* Character-window / bags chrome that rode inline past the windows extraction;
      homed here beside the other window bodies under @layer components. */

@@ -835,8 +835,9 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaWin': 'フィエスタ勝利',
   'hudChrome.warfare.reasons.battlegroundWin': 'レイヴンリフト勝利',
   'hudChrome.warfare.reasons.battlegroundComplete': 'レイヴンリフト参戦',
-  'hudChrome.keybinds.battleground': 'レイヴンリフト(戦場)',
   'hudChrome.keybinds.bgFlag': '戦場フラッグアクション',
+  'hudChrome.pvp.launcherTitle': 'PvP:レイヴンリフトと闘技場',
+  'hudChrome.pvp.mobileLabel': 'PvP',
   'hudChrome.bg.title': 'レイヴンリフト',
   'hudChrome.bg.modeTag': '5v5キャプチャー・ザ・フラッグ',
   'hudChrome.bg.close': '閉じる',
@@ -880,7 +881,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.drawBanner':
     'レイヴンリフト引き分け{crimson}:{azure}。レーティング{rating}({delta})',
   'hudChrome.bg.endLog': 'レイヴンリフト終了、{crimson}:{azure}。レーティング{rating}({delta})。',
-  'hudChrome.bg.mobileLabel': 'レイヴン',
   'guide.nav.ravenrift': 'レイヴンリフト',
   'guide.ravenriftPage.heading': 'レイヴンリフト',
   'guide.ravenriftPage.intro':
@@ -4354,7 +4354,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'fiesta.end.draw': 'Fiesta引き分け！僅差で決着つかず！',
   'fiesta.end.loss': 'Fiesta敗北！もう一戦だ！',
   'fiesta.end.win': 'Fiesta勝利！🎉 最高のパーティだ！',
-  'fiesta.enterQueue': 'Fiestaに参加！',
   'fiesta.error.leaderOnly': '{label}にチームをキュー登録できるのはパーティリーダーだけです。',
   'fiesta.error.noAugment': '今は選べるオーグメントがありません。',
   'fiesta.error.notOnOffer': 'そのオーグメントは提示されていません。',
@@ -4371,9 +4370,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'fiesta.powerup.pow_colossus.name': '巨像',
   'fiesta.powerup.pow_moon_boots.name': 'ムーンブーツ',
   'fiesta.powerup.pow_speed_demon.name': 'スピードデーモン',
-  'fiesta.practice': '🎉 ボットとの練習',
-  'fiesta.practiceNote':
-    'オフライン練習：AIボットを3体出現させ、2v2 Fiestaのキューに登録します。もう一度クリックで停止。',
   'fiesta.queue.join': '2v2 Fiestaのキューに参加しました。パーティの準備を…',
   'fiesta.queue.leave': '2v2 Fiestaのキューを離れました。',
   'fiesta.queue.teamLeave': 'あなたのチームは2v2 Fiestaのキューを離れました。',
@@ -5331,17 +5327,12 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'guide.abilityHook.thorns': '味方を守り、近接で攻撃してきた相手に反射ダメージを与えます。',
   'guide.abilityHook.thunder_clap': '周囲のすべてに当たり、相手の攻撃を遅くします。',
   'guide.abilityHook.wrath': '遠距離から標的に放つネイチャーのボルト。主力の火力です。',
-  'guide.arenaPage.augmentsNote':
-    'オーグメントやパワーアップはそのマッチの間だけ続きます。持続的な強さではなく、その場で組む遊び心のあるビルドが目的なので、課金で勝ちを買えるわけではありません。',
   'guide.arenaPage.coliseumBody':
     '灰の闘技場はレルムのアリーナで、ランクマッチで他のプレイヤーと対戦します。一対一、あるいは二対二です。各ブラケットはそれぞれ独自の順位を保つので、勝てばそのラダーを駆け上がり、レルム全体に見てもらえます。アリーナのウィンドウを開き、一人で、あるいはパートナーとブラケットに登録しましょう。',
   'guide.arenaPage.coliseumHeading': '灰のコロシアム',
   'guide.arenaPage.duelsBody':
     '出会った相手なら誰でも友好的な決闘に挑めます。賭けるのはプライドだけなので、相性を学んだり仲間内の言い争いに決着をつけたりするのに一番手軽な方法です。',
   'guide.arenaPage.duelsHeading': '決闘',
-  'guide.arenaPage.fiestaBody':
-    'フィエスタは、一つの途切れない試合として行うテンポの速い2対2の乱戦で、すべての戦士が対等な条件で戦います。試合が進むにつれてオーグメント、つまりその場で構成を組み替える手早い強化をドラフトするので、同じマッチは二つとありません。',
-  'guide.arenaPage.fiestaHeading': '2対2のフィエスタ',
   'guide.arenaPage.heading': 'アリーナとPvP',
   'guide.arenaPage.intro':
     '他のプレイヤーと腕試しをしたいですか。プレイヤー対プレイヤーは標準で備わっていて、常に自分で選ぶものであり、強制されることは決してありません。',
@@ -5520,21 +5511,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
     '南から北へ三つのゾーンが並び、それぞれレベルが一段ずつ上がります。クエストの道筋をたどれば、土地が谷から峰々へとあなたを運んでいきます。',
   'guide.worldPage.places': '注目の場所',
   'guide.worldPage.residents': '出会う者たち',
-  'guide.arenaPage.powerupsBody':
-    '戦いの最中、光り輝くオーブがアリーナに落ちてきます。先に取った者の自由になり、しかも狙い通りに度を越していて、効果はほんの一瞬だけ。スピードデーモンは目もくらむ速さへ、コロッサスはのっそりと歩く巨人へ、ムーンブーツは低重力で跳ね回るジャンプへ、バーサーカーは突如あふれる怒りへとあなたを変えます。',
-  'guide.arenaPage.powerupsTitle': 'リングのパワーアップ',
-  'guide.arenaPage.waveGoldBody':
-    '中盤のウェーブ。両刃の組み合わせが並び、あなたのビルドが形を成して輝き始めます。',
-  'guide.arenaPage.waveGoldTitle': 'ゴールド',
-  'guide.arenaPage.wavePrismaticBody':
-    '最後のウェーブ。ビルドを決定づける、画面を溶かすほどのスパイク。最高の意味でばかげていると感じられるよう作られています。',
-  'guide.arenaPage.wavePrismaticTitle': 'プリズマティック',
-  'guide.arenaPage.waveSilverBody':
-    '最初のウェーブ。単一ステータスを伸ばすシンプルな強化で、クラスの基本を研ぎ澄まします。',
-  'guide.arenaPage.waveSilverTitle': 'シルバー',
-  'guide.arenaPage.wavesBody':
-    'フィエスタの試合では、進行に応じて新たな一手が手に入り、試合が長引くほどその一手は大胆になっていきます。一つのウェーブから次へとビルドを築き上げ、毎回いくつかの候補から一つを選び、残りの試合の間はそれを持ち続けます。',
-  'guide.arenaPage.wavesTitle': 'オーグメントはウェーブで訪れる',
   'guide.bestiary.flavor.gravecaller_cultist':
     '死のカルトに仕えるローブ姿の僕たち。その業は渓谷から高地まで墓を汚し、彼らが集う場所では死者が安らぎません。',
   'guide.bestiary.flavor.grubjaw':
@@ -7386,9 +7362,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   // Protect Yumi locale fill (M16 wordy-key floor).
   'yumi.hud.collapse': 'Protect Yumiのバーを折りたたむ',
   'yumi.hud.expand': 'Protect Yumiのバーを展開する',
-  'guide.arenaPage.yumiHeading': 'Yumiを守れ',
-  'guide.arenaPage.yumiBody':
-    'Protect Yumiは迷路で行うチーム目標モード。各チームは自分の猫の使い魔を守りながら、敵の使い魔を狙います。二匹の猫は時折迷路の別の場所へ転移するため、防衛、追撃、捜索の間で戦況が揺れ動きます。3対3か5対5でキューに参加でき、倒れても少しの間ベンチに下がるだけです。',
   'yumi.queue.join': 'Protect Yumiのキューに参加しました。使い魔を守りましょう…',
   'yumi.queue.leave': 'Protect Yumiのキューを離れました。',
   'yumi.queue.teamLeave': 'チームがProtect Yumiのキューを離れました。',
@@ -7397,7 +7370,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'yumi.log.start': 'Protect Yumi！自分の使い魔を守り、敵の使い魔を狙え。',
   'yumi.bracket3': 'Yumi 3v3',
   'yumi.bracket5': 'Yumi 5v5',
-  'yumi.enterQueue': 'Protect Yumiに参加！',
   'yumi.hud.title': 'PROTECT YUMI',
   'yumi.hud.getReady': '準備して…',
   'yumi.hud.teleportIn': 'Yumiの転移まで{s}秒',

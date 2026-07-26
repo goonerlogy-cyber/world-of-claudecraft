@@ -1818,7 +1818,11 @@ describe('i18n Localization Key Coverage', () => {
     expect(html).toContain('data-i18n="hud.core.mobileChat"');
     expect(html).toContain('data-i18n="hud.core.mobileMore"');
     expect(html).toContain('data-i18n="hud.core.mobileSocial"');
-    expect(html).toContain('data-i18n="hud.core.mobileArena"');
+    // The merged PvP window's launcher label (Ravenrift + arenas on one
+    // button); the old mobileArena key stays in the catalog like mobileTarget
+    // but no longer appears in the markup.
+    expect(html).toContain('data-i18n="hudChrome.pvp.mobileLabel"');
+    expect(html).not.toContain('data-i18n="hud.core.mobileArena"');
     // The Settings button (promoted to the bar between Social and More) uses
     // mobileSettings ("Settings"); the old mobileMenu ("Menu") key stays in the
     // catalog but, like mobileTarget, no longer appears in the markup.

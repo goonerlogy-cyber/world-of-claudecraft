@@ -22,12 +22,6 @@ import type { ArenaMapId } from '../sim/dungeon_layout';
 import type { PlayerClass } from '../sim/types';
 import type { ArenaFormat, ArenaInfo, ArenaStanding, PartyInfo } from '../world_api';
 
-/** The ranked duel brackets the merged PvP window offers, in display order.
- *  Fiesta and Protect Yumi are retired from the menu (owner call, 2026-07-25);
- *  their sim modes remain and this builder stays format-complete, so a
- *  dev-started bout in a retired format still renders its live state. */
-const ARENA_BRACKETS: readonly ArenaFormat[] = ['1v1', '2v2'];
-
 /** Premade-party cap per team bracket (1v1 is partyless). */
 function bracketTeamCap(fmt: ArenaFormat): number {
   return fmt === 'yumi5' ? 5 : fmt === 'yumi3' ? 3 : fmt === '2v2' || fmt === 'fiesta' ? 2 : 1;
@@ -61,13 +55,6 @@ export interface ArenaAllTimeRow extends ArenaLadderRow {
   level: number;
 }
 
-/** One bracket tab's state. */
-export interface ArenaBracketTab {
-  fmt: ArenaFormat;
-  active: boolean;
-  locked: boolean;
-}
-
 /** A 2v2/Fiesta party member row on the pre-queue party panel. */
 export interface ArenaPartyMember {
   name: string;
@@ -96,12 +83,7 @@ export type ArenaView =
       kind: 'live';
       /** The resolved bracket (a match/queue forces its bracket). */
       bracket: ArenaFormat;
-      /** True when the resolved bracket should be committed as the selection (a
-       *  queue/match pins the bracket the painter shows next). */
-      commitBracket: boolean;
-      canSwitchBracket: boolean;
       standing: ArenaStanding;
-      brackets: ArenaBracketTab[];
       isTeamBracket: boolean;
       party: ArenaPartySection;
       action: ArenaAction;
@@ -139,8 +121,9 @@ export function buildArenaView(input: ArenaViewInput): ArenaView {
 
   const inMatch = a.match !== null;
   const queuedFmt = a.queued ? a.format : null;
+  // The resolved bracket (a match/queue forces its own); the merged PvP strip
+  // (pvp_tabs_view.ts) owns tab pinning and locking, fed by the same snapshot.
   const bracket = a.match?.format ?? queuedFmt ?? selectedBracket;
-  const commitBracket = Boolean(queuedFmt || a.match);
   const canSwitchBracket = !a.queued && !inMatch;
   const standing = a.standings[bracket];
   const ladderRows = a.ladders[bracket];
@@ -158,12 +141,6 @@ export function buildArenaView(input: ArenaViewInput): ArenaView {
     rating: r.rating,
     wins: r.wins,
     losses: r.losses,
-  }));
-
-  const brackets: ArenaBracketTab[] = ARENA_BRACKETS.map((fmt) => ({
-    fmt,
-    active: bracket === fmt,
-    locked: !canSwitchBracket && bracket !== fmt,
   }));
 
   let partySection: ArenaPartySection = { kind: 'none' };
@@ -240,10 +217,7 @@ export function buildArenaView(input: ArenaViewInput): ArenaView {
   return {
     kind: 'live',
     bracket,
-    commitBracket,
-    canSwitchBracket,
     standing,
-    brackets,
     isTeamBracket,
     party: partySection,
     action,

@@ -627,7 +627,6 @@ export const hudChromeStrings = {
     // Discord is a brand name; it stays identical across locales.
     discord: 'Discord',
     valecup: 'Vale Cup',
-    battleground: 'Ravenrift (Battleground)',
     bgFlag: 'Battleground Flag Action',
     sheathe: 'Sheathe/Unsheathe Weapon',
     // Pet bar (Ctrl+1..5 by default) key-binding rows + category header.
@@ -645,6 +644,14 @@ export const hudChromeStrings = {
   // (i18n.catalog/abilities.ts), not here.
   // Ravenrift, the 5v5 capture-the-flag battleground: the queue window, the
   // in-match scoreboard strip, and the event banners/log lines.
+  // The merged PvP window's chrome: the launcher (one button for Ravenrift and
+  // the arenas) and the tab-strip bracket labels.
+  pvp: {
+    launcherTitle: 'PvP: Ravenrift and the Arenas',
+    mobileLabel: 'PvP',
+    bracket1v1: '1v1',
+    bracket2v2: '2v2',
+  },
   bg: {
     title: 'Ravenrift',
     modeTag: '5v5 Capture the Flag',
@@ -691,7 +698,6 @@ export const hudChromeStrings = {
     defeatBanner: 'Defeat. Ravenrift {crimson}:{azure}. Rating {rating} ({delta})',
     drawBanner: 'Ravenrift draw {crimson}:{azure}. Rating {rating} ({delta})',
     endLog: 'Ravenrift ended {crimson}:{azure}. Rating {rating} ({delta}).',
-    mobileLabel: 'Ravenrift',
   },
   vcup: {
     title: 'The Vale Cup',

@@ -4,8 +4,9 @@
 // is the family template). It models the one thing the window decides that is
 // worth testing without a DOM: which state the snapshot is in (offline vs live),
 // the player's standing, the main action affordance (in-match / queued / idle),
-// and the all-time ladder rows. The DOM/i18n + network side lives in
-// battleground_window.ts; rendering is driven entirely off the structure here.
+// and the all-time ladder rows. The DOM/i18n + network side lives in the
+// merged PvP window (src/ui/arena_window.ts, renderRavenrift: Ravenrift is
+// that window's primary tab); rendering is driven off the structure here.
 //
 // Unlike the arena there is no live-online ladder on the wire: the persistent
 // ladder is the server's cached REST board (GET /api/battleground/leaderboard),

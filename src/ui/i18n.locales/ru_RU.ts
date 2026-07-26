@@ -836,8 +836,9 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaWin': 'Победа на Фиесте',
   'hudChrome.warfare.reasons.battlegroundWin': 'Победа в Вороньем Разломе',
   'hudChrome.warfare.reasons.battlegroundComplete': 'Битва в Вороньем Разломе',
-  'hudChrome.keybinds.battleground': 'Вороний Разлом (поле боя)',
   'hudChrome.keybinds.bgFlag': 'Действие с флагом',
+  'hudChrome.pvp.launcherTitle': 'PvP: Вороний Разлом и арены',
+  'hudChrome.pvp.mobileLabel': 'PvP',
   'hudChrome.bg.title': 'Вороний Разлом',
   'hudChrome.bg.modeTag': 'Захват флага 5 на 5',
   'hudChrome.bg.close': 'Закрыть',
@@ -882,7 +883,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.drawBanner':
     'Ничья в Вороньем Разломе {crimson}:{azure}. Рейтинг {rating} ({delta})',
   'hudChrome.bg.endLog': 'Вороний Разлом завершен, {crimson}:{azure}. Рейтинг {rating} ({delta}).',
-  'hudChrome.bg.mobileLabel': 'Разлом',
   'guide.nav.ravenrift': 'Вороний Разлом',
   'guide.ravenriftPage.heading': 'Вороний Разлом',
   'guide.ravenriftPage.intro':
@@ -4395,7 +4395,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'fiesta.end.draw': 'НИЧЬЯ В FIESTA! Слишком близко, не разобрать!',
   'fiesta.end.loss': 'FIESTA ПРОИГРАНА! Отыграйся!',
   'fiesta.end.win': 'FIESTA ВЫИГРАНА! 🎉 Вот это праздник!',
-  'fiesta.enterQueue': 'Присоединиться к Fiesta!',
   'fiesta.error.leaderOnly': 'Только лидер группы может записать вашу команду на {label}.',
   'fiesta.error.noAugment': 'Сейчас вам нечего выбирать из усилений.',
   'fiesta.error.notOnOffer': 'Это усиление не предлагается.',
@@ -4412,9 +4411,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'fiesta.powerup.pow_colossus.name': 'Колосс',
   'fiesta.powerup.pow_moon_boots.name': 'Лунные сапоги',
   'fiesta.powerup.pow_speed_demon.name': 'Демон скорости',
-  'fiesta.practice': '🎉 Тренировка с ботами',
-  'fiesta.practiceNote':
-    'Тренировка офлайн: создаёт 3 ботов с ИИ и записывает вас на Fiesta 2 на 2. Нажмите снова, чтобы остановить.',
   'fiesta.queue.join': 'Вы встаёте в очередь Fiesta 2 на 2. Готовьтесь ЗАЖИГАТЬ…',
   'fiesta.queue.leave': 'Вы покидаете очередь Fiesta 2 на 2.',
   'fiesta.queue.teamLeave': 'Ваша команда покидает очередь Fiesta 2 на 2.',
@@ -5423,17 +5419,12 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'guide.abilityHook.thunder_clap': 'Бьет по всем вокруг вас и замедляет их атаки.',
   'guide.abilityHook.wrath':
     'Удар силами природы, запущенный в цель с дистанции, ваш основной способ бить.',
-  'guide.arenaPage.augmentsNote':
-    'Улучшения и усиления действуют только в рамках матча. Они нужны для забавных импровизированных сборок, а не для постоянного превосходства, так что никто не сможет купить себе победу.',
   'guide.arenaPage.coliseumBody':
     'Колизей, это арена королевства, где вы сходитесь с другими игроками в рейтинговых матчах: один на один или два на два. У каждой категории своя таблица рейтинга, так что победа поднимает вас по этой лестнице на виду у всего королевства. Откройте окно арены, чтобы записаться в категорию, в одиночку или с напарником.',
   'guide.arenaPage.coliseumHeading': 'Пепельный Колизей',
   'guide.arenaPage.duelsBody':
     'Вызовите любого встречного игрока на дружескую дуэль. На кону только гордость, так что это самый простой способ изучить противостояние или разрешить дружеский спор.',
   'guide.arenaPage.duelsHeading': 'Дуэли',
-  'guide.arenaPage.fiestaBody':
-    'Фиеста, это быстрая схватка два на два, что идёт одним непрерывным боем, где все бойцы уравнены в силах. По ходу боя вы набираете улучшения, быстрые усиления, которые на ходу меняют ваш набор, так что нет двух одинаковых матчей.',
-  'guide.arenaPage.fiestaHeading': 'Фиеста два на два',
   'guide.arenaPage.heading': 'Арена и PvP',
   'guide.arenaPage.intro':
     'Хотите проверить себя в схватке с другими игроками? Режим игрок против игрока встроен в игру, и это всегда ваш выбор, вас никогда не принуждают к нему.',
@@ -5616,21 +5607,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
     'Три зоны, с юга на север, каждая на ступень выше по уровню. Следуйте за цепочкой заданий, и сама земля проведет вас от долины к вершинам.',
   'guide.worldPage.places': 'Примечательные места',
   'guide.worldPage.residents': 'Кого вы встретите',
-  'guide.arenaPage.powerupsBody':
-    'Прямо посреди схватки на арену падают и светящиеся сферы, доступные тому, кто доберётся до них первым. Они нарочно сделаны вызывающе яркими и держатся лишь короткий миг: Демон скорости дарит вспышку слепящей прыти, Колосс раздувает вас в неповоротливого великана, Лунные ботинки превращают шаг в прыжок при пониженной гравитации, а Берсерк дарует внезапный прилив неистовства.',
-  'guide.arenaPage.powerupsTitle': 'Усиления на ринге',
-  'guide.arenaPage.waveGoldBody':
-    'Средняя волна: двусторонние сочетания, в которых ваша сборка начинает обретать форму и звучать в полную силу.',
-  'guide.arenaPage.waveGoldTitle': 'Золото',
-  'guide.arenaPage.wavePrismaticBody':
-    'Финальная волна: определяющие сборку, выжигающие экран всплески, которым положено казаться нелепо мощными в самом лучшем смысле.',
-  'guide.arenaPage.wavePrismaticTitle': 'Радужный',
-  'guide.arenaPage.waveSilverBody':
-    'Первая волна: чистые усиления одной характеристики, что оттачивают основы вашего класса.',
-  'guide.arenaPage.waveSilverTitle': 'Серебро',
-  'guide.arenaPage.wavesBody':
-    'Бой Фиесты по ходу подкидывает вам свежий выбор, и варианты становятся всё смелее, чем дольше длится схватка. Вы выстраиваете сборку от волны к волне, каждый раз беря один из нескольких вариантов и оставляя его до конца боя.',
-  'guide.arenaPage.wavesTitle': 'Улучшения приходят волнами',
   'guide.bestiary.flavor.gravecaller_cultist':
     'Облачённые в рясы прислужники культа смерти, чьи труды оскверняют могилы от Долины до самых вершин. Там, где они собираются, мёртвым нет покоя.',
   'guide.bestiary.flavor.grubjaw':
@@ -7508,9 +7484,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   // Protect Yumi locale fill (M16 wordy-key floor).
   'yumi.hud.collapse': 'Свернуть полосы Protect Yumi',
   'yumi.hud.expand': 'Развернуть полосы Protect Yumi',
-  'guide.arenaPage.yumiHeading': 'Защитите Yumi',
-  'guide.arenaPage.yumiBody':
-    'Protect Yumi: командный режим с целью, который разыгрывается в лабиринте. Каждая команда защищает свою кошку-фамильяра и охотится на чужую. Время от времени обе кошки переносятся в новые углы лабиринта, и бой качается между защитой, охотой и поиском. Очередь на 3 на 3 или 5 на 5; павший лишь ненадолго садится на скамью.',
   'yumi.queue.join': 'Вы встаёте в очередь Protect Yumi. Берегите своего фамильяра…',
   'yumi.queue.leave': 'Вы покидаете очередь Protect Yumi.',
   'yumi.queue.teamLeave': 'Ваша команда покидает очередь Protect Yumi.',
@@ -7519,7 +7492,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'yumi.log.start': 'Protect Yumi! Защищайте своего фамильяра и охотьтесь на чужого.',
   'yumi.bracket3': 'Yumi 3 на 3',
   'yumi.bracket5': 'Yumi 5 на 5',
-  'yumi.enterQueue': 'В бой за Yumi!',
   'yumi.hud.title': 'PROTECT YUMI',
   'yumi.hud.getReady': 'Приготовьтесь…',
   'yumi.hud.teleportIn': 'Yumi переместятся через {s}',
