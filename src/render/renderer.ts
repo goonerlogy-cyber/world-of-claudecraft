@@ -5518,8 +5518,15 @@ export class Renderer {
         v.visual.setGroundTilt(v.groundTilt.pitch, v.groundTilt.roll);
       }
       // Ledge climb: the sim owns the move (Entity.climb offline, the mirrored
-      // `climbing` flag online); the visual poses it by hand.
-      if (v.visual) v.visual.setClimbing(!!e.climb || e.climbing === true);
+      // progress online); the visual poses it by hand, tracking the move's
+      // real phase so hands plant when the body reaches the lip whatever the
+      // climb's height-scaled duration is.
+      if (v.visual) {
+        v.visual.setClimbing(
+          !!e.climb || e.climbing === true,
+          e.climb ? e.climb.elapsed / e.climb.duration : e.climbProgress,
+        );
+      }
       const st = this.animScratch;
       st.speed = loco.speed;
       st.moving = moving;

@@ -2828,10 +2828,13 @@ export interface Entity {
   // Authoritative ledge-climb pull-up. Like `leap`, it owns movement while it
   // runs; see `src/sim/climb.ts`.
   climb?: LedgeClimb | null;
-  // CLIENT MIRROR of the above: the wire carries a boolean, not the arc, so
-  // the online renderer can pose a climb it does not simulate. Never set by
-  // the sim (which has the real `climb`), so it stays out of golden traces.
+  // CLIENT MIRROR of the above: the wire carries the climb's progress, not
+  // the arc, so the online renderer can pose a climb it does not simulate.
+  // Never set by the sim (which has the real `climb`), so both stay out of
+  // golden traces. `climbProgress` is 0..1 through the pull, advancing at the
+  // snapshot cadence; the visual smooths between updates.
   climbing?: boolean;
+  climbProgress?: number;
   followTargetId: number | null; // /follow: auto-walk after another player until interrupted
   savedMana: number; // druid forms: mana put aside while running on rage/energy
   sitting: boolean;
