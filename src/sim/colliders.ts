@@ -27,6 +27,8 @@ import {
   CHAPEL_HALL_ROOF_EAVE,
   CHAPEL_HALL_ROOF_TOP,
   CHAPEL_TOWER,
+  DOCK_BOAT,
+  DOCK_DRESSING,
   GRAVE_COUNT,
   GRAVE_RADIUS,
   graveHeight,
@@ -38,7 +40,7 @@ import {
 import { townPropPlacements } from './town_props';
 import type { WorldContent } from './types';
 import { valeCupColliders } from './vale_cup_layout';
-import { generateDecorations, groundHeight } from './world';
+import { generateDecorations, groundHeight, waterLevelAt } from './world';
 import { yumiMazeColliders } from './yumi_maze_layout';
 
 // Static world collision. Prop placement comes from the per-zone content
@@ -364,6 +366,52 @@ function staticWorldColliders(seed: number): Collider[] {
         eaveY: topY(seed, x, z, DOCK_HUT_ROOF_EAVE),
       },
     });
+    // The dock's loose dressing (DOCK_DRESSING: shore-side barrels and crate,
+    // deliberately off the pinned-crossable plank walkway) used to be the
+    // last walk-through props in the world. Heights are measured GLB bounds
+    // times the placed scale; groundHeight under them already includes the
+    // deck where they touch it, so tops ride the surface like the meshes do.
+    for (const dd of DOCK_DRESSING) {
+      const off = rotY(dd.x, dd.z, d.rot);
+      const px = d.x + off.x;
+      const pz = d.z + off.z;
+      const top = topY(seed, px, pz, dd.height);
+      out.push({
+        type: 'circle',
+        x: px,
+        z: pz,
+        r: dd.r,
+        cameraTopY: top,
+        camGhost: true,
+        moveTopY: top,
+        standable: true,
+      });
+    }
+    // The moored rowboat: a stridable deck you can actually step into, afloat
+    // at the waterline or hauled up on the bank (the same predicate the
+    // renderer uses to seat the mesh). The visual adds a small rotation
+    // jitter; the hull's rounded OBB forgives the few degrees of difference.
+    {
+      const off = rotY(DOCK_BOAT.x, DOCK_BOAT.z, d.rot);
+      const bx = d.x + off.x;
+      const bz = d.z + off.z;
+      const bg = groundHeight(bx, bz, seed);
+      const wl = waterLevelAt(bx, bz);
+      const afloat = bg < wl - 0.1;
+      const deckY = (afloat ? wl + 0.18 : bg + 0.06) + DOCK_BOAT.deckHeight;
+      out.push({
+        type: 'obb',
+        x: bx,
+        z: bz,
+        hw: DOCK_BOAT.hw,
+        hd: DOCK_BOAT.hd,
+        rot: d.rot + DOCK_BOAT.rot,
+        cameraTopY: deckY + 0.3,
+        camGhost: true,
+        moveTopY: deckY,
+        standable: true,
+      });
+    }
   }
 
   for (const t of PROPS.tents)

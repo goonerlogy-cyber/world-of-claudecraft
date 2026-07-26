@@ -55,6 +55,34 @@ export const STALL_DRESSING: readonly SubProp[] = [
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
+// Dock dressing (parent: PROPS.docks, local offsets rotated by the dock rot)
+// ---------------------------------------------------------------------------
+// Loose barrels and a crate around the pier ENTRY and the hut, deliberately
+// OFF the plank walkway (issue #1500 pins the deck as crossable in a straight
+// line), all collidable and standable. The single source both render/props.ts
+// and colliders.ts consume, exactly like STALL_DRESSING.
+export const DOCK_DRESSING: readonly SubProp[] = [
+  // barrel.glb 0.898 native, placed at 0.95: west of the pier entry, ashore.
+  { x: -1.8, z: 1.3, r: 0.38, height: 0.85, scale: 0.95 },
+  // barrel.glb at 1.15: beside the pier throat, against the hut's corner.
+  { x: 1.45, z: 0.9, r: 0.4, height: 1.03, scale: 1.15 },
+  // crate_wooden.glb 0.931 native at 0.9: behind the hut on the shore.
+  { x: 0.55, z: 4.6, r: 0.6, height: 0.84, scale: 0.9 },
+];
+
+/** The moored rowboat beside the pier tip: a stridable deck you can step
+ *  into. Local offset/heading; afloat-vs-beached is decided at the waterline
+ *  (the same predicate the renderer seats the mesh with). */
+export const DOCK_BOAT = {
+  x: 3.1,
+  z: -5.6,
+  rot: 0.35,
+  hw: 1.8,
+  hd: 0.72,
+  deckHeight: 0.3,
+} as const;
+
+// ---------------------------------------------------------------------------
 // Chapel composition (parent: PROPS.buildings kind 'chapel')
 // ---------------------------------------------------------------------------
 // The chapel is COMPOSED: a tall bell tower at the rear plus a squat stone

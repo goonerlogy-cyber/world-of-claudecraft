@@ -8,7 +8,7 @@ import {
   dockSurfaceLine,
   dockSurfaceYAt,
 } from '../sim/dock_layout';
-import { CHAPEL_HALL, CHAPEL_TOWER } from '../sim/prop_layout';
+import { CHAPEL_HALL, CHAPEL_TOWER, DOCK_BOAT, DOCK_DRESSING } from '../sim/prop_layout';
 import { hash2 } from '../sim/rng';
 import { terrainHeight, waterLevel } from '../sim/world';
 import { loadGltf, releaseGltf } from './assets/loader';
@@ -1234,20 +1234,28 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
       scale: [(d.hutLocal.hw * 2) / hut.size.x, 2.6 / hut.size.y, (d.hutLocal.hd * 2) / hut.size.z],
     });
     if (!lowProps) {
-      addParts(g, 'barrel', {
-        x: 0.55,
-        y: 0.52,
-        z: -0.55,
-        rot: keyRand(key, 5) * Math.PI,
-        scale: 0.95,
+      // Loose dressing from the shared DOCK_DRESSING layout (all collidable
+      // now, so they sit OFF the pinned-crossable plank walkway, on the
+      // shore around the pier entry and the hut). Each seats on its own
+      // ground sample: the shore undulates around the anchor.
+      DOCK_DRESSING.forEach((dd, i) => {
+        const off = {
+          x: dd.x * Math.cos(d.rot) + dd.z * Math.sin(d.rot),
+          z: -dd.x * Math.sin(d.rot) + dd.z * Math.cos(d.rot),
+        };
+        addParts(g, i === 2 ? 'crateWooden' : 'barrel', {
+          x: dd.x,
+          y: ground(d.x + off.x, d.z + off.z) - y,
+          z: dd.z,
+          rot: keyRand(key, 5 + i) * Math.PI,
+          scale: dd.scale ?? 1,
+        });
       });
-      addParts(g, 'barrel', { x: 1.45, z: 0.9, rot: keyRand(key, 6) * Math.PI, scale: 1.15 });
-      addParts(g, 'crateWooden', { x: -0.6, y: 0.52, z: -2.2, rot: keyRand(key, 7), scale: 0.9 });
     }
     // rowboat beside the deck's far end: floats at water level when the
     // shore dips below it, otherwise sits hauled up on the bank
-    const boatLx = 2.4,
-      boatLz = -5.0;
+    const boatLx = DOCK_BOAT.x,
+      boatLz = DOCK_BOAT.z;
     const boatWx = d.x + boatLx * Math.cos(d.rot) + boatLz * Math.sin(d.rot);
     const boatWz = d.z - boatLx * Math.sin(d.rot) + boatLz * Math.cos(d.rot);
     const boatGround = ground(boatWx, boatWz);
@@ -1257,11 +1265,11 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
       x: boatLx,
       z: boatLz,
       y: (isAfloat ? wl + 0.18 : boatGround + 0.06) - y,
-      rot: 0.5 + (keyRand(key, 8) - 0.5) * 0.4,
+      rot: DOCK_BOAT.rot + (keyRand(key, 8) - 0.5) * 0.4,
       scale: 0.85,
       euler: isAfloat
         ? undefined
-        : new THREE.Euler(0.04, 0.5 + (keyRand(key, 8) - 0.5) * 0.4, 0.16),
+        : new THREE.Euler(0.04, DOCK_BOAT.rot + (keyRand(key, 8) - 0.5) * 0.4, 0.16),
     });
     g.position.set(d.x, y, d.z);
     g.rotation.y = d.rot;
