@@ -135,7 +135,7 @@ export const TARGETS = [
           // ambush crate, the offset field-side door beyond. The camera backs
           // out through the courtyard door, so it never clips a wall.
           const home = match.flags[0].home;
-          tp(home.x - 22.5, home.z + 30);
+          tp(home.x - 30, home.z + 66);
           p.facing = Math.PI;
           game.input.camYaw = Math.PI;
           game.input.camDist = 11;

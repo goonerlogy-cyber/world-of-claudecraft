@@ -29,7 +29,7 @@ import {
 import { BROWSER_PATH } from '../browser_path.mjs';
 
 const OUT_DIR = 'docs/screenshots/ravenrift-battleground';
-const SCALE = 8; // px per yard
+const SCALE = 6; // px per yard
 // Wide side gutters so every callout label lands OUTSIDE the field, clear of
 // both the walls and the legend.
 const MARGIN_L = 275;
@@ -99,6 +99,15 @@ rect(
 );
 rect(0, 0, BG_HALF_X, BG_ZONE_MID_HALF_Z, '#5e7a3a', 0.12);
 
+// the ~120yd view-distance ring from each flag stand: what one player can
+// see; the rest of the map is fog until you travel
+for (const base of BG_BASES) {
+  const color = base.team === 0 ? CRIMSON : AZURE;
+  parts.push(
+    `<circle cx="${sx(base.flag.x)}" cy="${sy(base.flag.z)}" r="${120 * SCALE}" fill="none" stroke="${color}" stroke-width="1.6" stroke-dasharray="8 6" opacity="0.45"/>`,
+  );
+}
+
 // ---- walls (perimeter + keeps incl. posterns + curtains + gatehouses) ------
 const LOW_WALL = '#7d6a52';
 for (const s of battlegroundWallSegments()) {
@@ -133,46 +142,56 @@ for (const r of BG_SPEED_RUNES) {
 }
 
 // ---- annotations (labels live in the side gutters, clear of the field) -----
-label(0, BG_HALF_Z + 8.2, 'RAVENRIFT: THE FIELD', 26, INK);
+label(0, BG_HALF_Z + 11, 'RAVENRIFT: THE FIELD', 26, INK);
 label(
   0,
-  BG_HALF_Z + 4.6,
+  BG_HALF_Z + 6,
   `${BG_HALF_X * 2} x ${BG_HALF_Z * 2} yards, walled and open-air. North is up.`,
   14,
   '#6b5b45',
 );
-label(0, 52.6, 'AZURE KEEP', 17, AZURE);
-label(0, -54.6, 'CRIMSON KEEP', 17, CRIMSON);
-label(0, 27.4, 'AZURE FIELD', 17, AZURE, 'middle', 700);
-label(0, -29, 'CRIMSON FIELD', 17, CRIMSON, 'middle', 700);
-label(0, 15.5, 'THE RUIN COURTYARD', 16, '#5e7a3a', 'middle', 700);
-callout(1.6, 48, 38, 45.5, 'flag stand + capture point', AZURE);
-callout(3, 51, 38, 52, 'spawn ring (wave respawn)', AZURE);
-callout(14, 50, 38, 58, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
-callout(-14, -50, -38, -55, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
-callout(0, 36, 38, 34, 'flag-approach rune', '#8a6a3c');
-callout(24, 0, 38, -3, 'flank rune + cover', '#8a6a3c');
-callout(-24, 0, -38, 3, 'flank rune + cover', '#8a6a3c');
-callout(6, 3, 38, 8, 'heart ruin 12x12 (hollow)', '#6b5b45');
-callout(10, 10, 38, 16, 'sightline breaker', INK);
-callout(8, -20, 38, -24, 'main gate (8yd)', INK);
-callout(28, -20, 38, -17, 'flank arch (4yd)', INK);
-callout(-20, -20, -38, -13, 'gatehouse (offset doors)', INK);
-callout(-18, -22, -38, -27, 'ambush crate', '#8a6a3c');
-callout(-22, -30, -38, -33, 'wing baffle', INK);
-callout(-2, -42, -38, -45, 'mouth barricade (low wall)', LOW_WALL);
-callout(-9, -56, -38, -61, 'keep banner poles', CRIMSON);
+label(0, 124, 'AZURE KEEP', 16, AZURE);
+label(0, -126, 'CRIMSON KEEP', 16, CRIMSON);
+label(0, 76, 'AZURE FIELD', 18, AZURE, 'middle', 700);
+label(0, -78, 'CRIMSON FIELD', 18, CRIMSON, 'middle', 700);
+label(0, 36, 'THE RUIN COURTYARD', 18, '#5e7a3a', 'middle', 700);
+callout(2, 118, 54, 114, 'flag stand + capture point', AZURE);
+callout(3.5, 122, 54, 122, 'spawn ring (wave respawn)', AZURE);
+callout(16, 119, 54, 130, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
+callout(-16, -119, -54, -125, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
+callout(0, 91, 54, 89, 'flag-approach rune', '#8a6a3c');
+callout(38, 0, 54, -3, 'flank rune + cover', '#8a6a3c');
+callout(-38, 0, -54, 3, 'flank rune + cover', '#8a6a3c');
+callout(8, 4, 54, 10, 'heart ruin 16x16 (hollow)', '#6b5b45');
+callout(16, 22, 54, 28, 'sightline breakers (two pairs)', INK);
+callout(13, -56, 54, -60, 'main gate (10yd)', INK);
+callout(40.5, -56, 54, -50, 'flank arch (5yd)', INK);
+callout(-26, -56, -54, -50, 'gatehouse (offset doors)', INK);
+callout(-26, -58, -54, -62, 'ambush crates', '#8a6a3c');
+callout(-30, -98, -54, -96, 'wing baffle', INK);
+callout(10, -84, 54, -82, 'staggered S-approach walls', INK);
+callout(-3, -106, -54, -108, 'mouth barricade (low wall)', LOW_WALL);
+callout(-9, -128, -54, -132, 'keep banner poles', CRIMSON);
+callout(0, -2, -54, -30, 'view-distance ring: ~120yd of', AZURE);
+label(-54, -34.5, 'fog; enemies fade in', 14, AZURE, 'end');
 label(
   0,
-  -(BG_HALF_Z + 7.2),
+  -(BG_HALF_Z + 9),
   'Every move between chambers passes a crossing: the main gate, the flank arch, or the gatehouse jog.',
   13.5,
   '#6b5b45',
 );
 label(
   0,
-  -(BG_HALF_Z + 10.2),
-  'The whole map is point-symmetric, so neither side is favored.',
+  -(BG_HALF_Z + 13),
+  'The whole map is point-symmetric, so neither side is favored. The sim tracks the whole match;',
+  13.5,
+  '#6b5b45',
+);
+label(
+  0,
+  -(BG_HALF_Z + 17),
+  'the client sees to ~120yd with distance fog, like the open world.',
   13.5,
   '#6b5b45',
 );
