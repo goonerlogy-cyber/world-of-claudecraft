@@ -418,10 +418,21 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
   it('the form-up spots and spawn rings stay walkable under the new geometry', () => {
     for (const base of BG_BASES) {
       for (const sp of base.spawns) {
-        // The back-row spawn touches the keep back wall face (a #589-era
-        // trait), so allow the face-nudge but never a real embed.
+        // The ring sits in open keep floor (moved off the back wall so the
+        // spawn-in camera has clearance): exact resolution, no face-nudge.
         const p = resolvePosition(SEED, o.x + sp.x, o.z + sp.z, 0.5);
-        expect(Math.hypot(p.x - (o.x + sp.x), p.z - (o.z + sp.z))).toBeLessThanOrEqual(0.5 + 1e-6);
+        expect(p.x).toBeCloseTo(o.x + sp.x, 5);
+        expect(p.z).toBeCloseTo(o.z + sp.z, 5);
+        // Never on the flag stand itself, and clear of the keep back wall
+        // (|z| = 128, BG_FLAG_Z + KEEP_BACK_DZ) by the camera's working room.
+        expect(Math.hypot(sp.x - base.flag.x, sp.z - base.flag.z)).toBeGreaterThanOrEqual(4);
+        expect(128 - Math.abs(sp.z)).toBeGreaterThanOrEqual(10);
+      }
+      // The two rings mirror under the point symmetry like everything else.
+      const mirror = BG_BASES[1 - base.team];
+      for (const [i, sp] of base.spawns.entries()) {
+        expect(mirror.spawns[i].x).toBeCloseTo(-sp.x, 5);
+        expect(mirror.spawns[i].z).toBeCloseTo(-sp.z, 5);
       }
     }
     // the mechanics suites stage in-match players at flag-relative offsets;

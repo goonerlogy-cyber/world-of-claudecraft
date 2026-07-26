@@ -44,12 +44,14 @@ export const BG_BASES: BgBaseDef[] = [
   {
     team: 0,
     flag: { x: 0, z: -BG_FLAG_Z },
+    // The ring flanks the flag stand on its field side (never on it) and sits
+    // ~11yd off the back wall so the spawn-in chase camera never collides.
     spawns: [
-      { x: -7, z: -125 },
-      { x: 0, z: -126 },
-      { x: 7, z: -125 },
-      { x: -3.5, z: -122 },
-      { x: 3.5, z: -122 },
+      { x: -7, z: -117 },
+      { x: 0, z: -113 },
+      { x: 7, z: -117 },
+      { x: -3.5, z: -114.5 },
+      { x: 3.5, z: -114.5 },
     ],
     banner: { x: 0, z: -128 },
   },
@@ -57,11 +59,11 @@ export const BG_BASES: BgBaseDef[] = [
     team: 1,
     flag: { x: 0, z: BG_FLAG_Z },
     spawns: [
-      { x: 7, z: 125 },
-      { x: 0, z: 126 },
-      { x: -7, z: 125 },
-      { x: 3.5, z: 122 },
-      { x: -3.5, z: 122 },
+      { x: 7, z: 117 },
+      { x: 0, z: 113 },
+      { x: -7, z: 117 },
+      { x: 3.5, z: 114.5 },
+      { x: -3.5, z: 114.5 },
     ],
     banner: { x: 0, z: 128 },
   },
