@@ -210,9 +210,7 @@ describe('rift spawn lists only ever field spawn-list templates', () => {
     for (let seed = 1; seed <= 40; seed++) {
       for (const baseLevel of RANK_BASE_LEVELS) {
         const upgrade = buildHeuristicRiftUpgrade(buildRiftDungeonDraft(seed, baseLevel));
-        if (
-          upgrade?.floors.some((f) => f.monsterIds.some((id) => SUMMONED_ADD_IDS.includes(id)))
-        ) {
+        if (upgrade?.floors.some((f) => f.monsterIds.some((id) => SUMMONED_ADD_IDS.includes(id)))) {
           manifestsProposingAnAdd++;
         }
         for (let f = 0; f < riftFloorCount(seed, baseLevel); f++) {
