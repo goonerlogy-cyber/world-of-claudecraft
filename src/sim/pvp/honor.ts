@@ -13,6 +13,13 @@ export const RANKED_ARENA_WIN_HONOR = {
 export const FIESTA_KILL_HONOR = 20;
 export const FIESTA_COMPLETION_HONOR = 20;
 export const FIESTA_WIN_BONUS_HONOR = 40;
+// Ravenrift 5v5 capture-the-flag. A win pays more than a 2v2 win because a
+// full match is a 10-player, ~10-13 minute commitment; the loss award is a
+// completion consolation (a draw pays the loss amount to both sides). Both
+// decay per repeated opposing-team via HONOR_REPEAT_DR (the Fiesta rule for
+// longer multi-player modes); forfeits pay nothing (social/battleground.ts).
+export const BATTLEGROUND_WIN_HONOR = 60;
+export const BATTLEGROUND_LOSS_HONOR = 20;
 
 // Arena is especially easy to coordinate in 1v1, so only the first win against
 // the same opponent/team pays each UTC day. Fiesta uses softer decay because its
@@ -45,10 +52,14 @@ function normalizeCountRecord(value: unknown): Record<string, number> {
 export function normalizeHonorDailyState(value: unknown): HonorArenaDailyState | undefined {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined;
   const record = value as Record<string, unknown>;
+  const bgResults = normalizeCountRecord(record.bgResultsByOpponent);
   return {
     date: typeof record.date === 'string' ? record.date : '',
     winsByOpponent: normalizeCountRecord(record.winsByOpponent),
     fiestaCompletionsByOpponent: normalizeCountRecord(record.fiestaCompletionsByOpponent),
+    // Optional: absent (not empty) when there are no results, so pre-Ravenrift
+    // saves round-trip byte-identical.
+    ...(Object.keys(bgResults).length > 0 ? { bgResultsByOpponent: bgResults } : {}),
     totalWins: normalizeHonorCounter(record.totalWins),
   };
 }
@@ -138,6 +149,28 @@ export function awardRankedArenaWinHonor(
   daily.winsByOpponent[key] = repeats + 1;
   daily.totalWins++;
   return grantHonor(ctx, meta, amount, 'arena_win');
+}
+
+// Ravenrift result honor: one award per played-out match, decayed per repeated
+// opposing-team identity in the same UTC day (HONOR_REPEAT_DR, the softer
+// Fiesta curve; a 5v5 match is long enough that the arena's first-win-only rule
+// would be needlessly punishing). Draws pay the loss amount to both sides.
+// Forfeits never reach this function (the caller pays nothing on forfeit).
+export function awardBattlegroundHonor(
+  ctx: SimContext,
+  meta: PlayerMeta,
+  opponentTeamKey: string,
+  outcome: 'win' | 'loss' | 'draw',
+): number {
+  const daily = dailyWindow(ctx, meta);
+  const key = `bg:${opponentTeamKey}`;
+  if (!daily.bgResultsByOpponent) daily.bgResultsByOpponent = {};
+  const results = daily.bgResultsByOpponent;
+  const repeats = results[key] ?? 0;
+  results[key] = repeats + 1;
+  const base = outcome === 'win' ? BATTLEGROUND_WIN_HONOR : BATTLEGROUND_LOSS_HONOR;
+  const reason: HonorReason = outcome === 'win' ? 'battleground_win' : 'battleground_complete';
+  return grantHonor(ctx, meta, Math.floor(base * repeatHonorMultiplier(repeats)), reason);
 }
 
 export function awardFiestaKillHonor(

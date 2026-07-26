@@ -577,6 +577,48 @@ export function yumiMazeOriginAt(z: number): { x: number; z: number; slot: numbe
   return { x: o.x, z: o.z, slot: best };
 }
 
+// ---------------------------------------------------------------------------
+// Ravenrift, the 5v5 capture-the-flag battleground. Its match instances take
+// the next free far-east band past the Protect Yumi maze cap (YUMI_BAND_X_MAX
+// = 12000) and stay well west of the Vale Cup practice pitches (x = 30000,
+// src/sim/vale_cup_layout.ts vcPracticeOrigin). Like every far-east band:
+// flat ground (world.groundHeight) and one shared instance-local collider set
+// (sim/battleground_layout.ts via sim/colliders.ts).
+// ---------------------------------------------------------------------------
+
+export const BG_BAND_X_MIN = 16000; // x at/after this = a Ravenrift instance
+// Two-sided cap, the Yumi-band move: the band never claims everything east,
+// so a later band (or the Vale Cup pitches at 30000) stays classifiable.
+export const BG_BAND_X_MAX = 20000;
+export const BG_X = 16400; // battleground instances share this x; slots stack along z
+export const BG_SLOT_COUNT = 3; // concurrent 5v5 matches the world can host
+const BG_Z0 = -1500;
+const BG_SLOT_SPACING = 300; // > the 68x120 field footprint so slots never overlap
+
+export function battlegroundOrigin(slot: number): { x: number; z: number } {
+  return { x: BG_X, z: BG_Z0 + slot * BG_SLOT_SPACING };
+}
+
+export function isBgPos(x: number): boolean {
+  return x >= BG_BAND_X_MIN && x < BG_BAND_X_MAX;
+}
+
+// Nearest battleground instance origin to a far-off position, matched by
+// z-band (the x is shared across slots). Mirrors arenaOriginAt.
+export function bgOriginAt(z: number): { x: number; z: number; slot: number } {
+  let best = 0,
+    bestD = Infinity;
+  for (let i = 0; i < BG_SLOT_COUNT; i++) {
+    const d = Math.abs(z - battlegroundOrigin(i).z);
+    if (d < bestD) {
+      bestD = d;
+      best = i;
+    }
+  }
+  const o = battlegroundOrigin(best);
+  return { x: o.x, z: o.z, slot: best };
+}
+
 export const DELVES: Record<string, DelveDef> = {
   [COLLAPSED_RELIQUARY_DELVE.id]: COLLAPSED_RELIQUARY_DELVE,
   [DROWNED_LITANY_DELVE.id]: DROWNED_LITANY_DELVE,

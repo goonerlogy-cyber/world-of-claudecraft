@@ -37,6 +37,7 @@ import type {
   ResolvedAbility,
   TradeSession,
 } from './sim';
+import type { BgMatch, BgQueueGroup } from './social/battleground';
 import type { CardDuelMatch } from './social/card_duel';
 import type { FinderFormationUnit } from './social/party';
 import type { VcState } from './social/vale_cup';
@@ -159,6 +160,15 @@ export interface SimContextPrimitives {
   arenaQueueYumi5: ArenaQueueUnit[];
   readonly yumiBusySlots: Set<number>;
   readonly yumiCatMatches: Map<number, ArenaMatch>;
+  // Ravenrift battleground state (social/battleground.ts). The queue array is
+  // REASSIGNED by the matchmaker's prune filters (read-write, the arena-queue
+  // precedent); the pid -> shared-match map, the busy slot pool (its own pool,
+  // never the arena's: slot numbers collide across pools) and the match-id
+  // counter are mutated in place. Backing fields stay on Sim.
+  bgQueue: BgQueueGroup[];
+  readonly bgMatches: Map<number, BgMatch>;
+  readonly bgBusySlots: Set<number>;
+  nextBgMatchId: number;
   // I2a delve runs: the live run pool (seeded in the Sim ctor, never reassigned) and
   // the transient pet stash both stay Sim-owned (the disconnect path + serializePet
   // poke them); exposed here as live views the run module reads/mutates in place.
@@ -863,6 +873,13 @@ export interface SimContextCallbacks {
   vcupShoot(caster: Entity, power: number, loft: number, range: number): void;
   vcupSportDash(caster: Entity, distance: number, catchBall: boolean): void;
   vcupSportShove(caster: Entity, target: Entity, distance: number): void;
+  // Ravenrift battleground (social/battleground.ts). bgOnPlayerDeath is the
+  // death hook the damage hub calls for a fallen battleground player (carrier
+  // death drops the flag in place; the wave clock revives, so no release).
+  // bgBreakSpawnProtection ends spawn protection early on the protected
+  // player's own first hostile action (called from the damage and aura paths).
+  bgOnPlayerDeath(e: Entity, killer: Entity | null): void;
+  bgBreakSpawnProtection(e: Entity): void;
 }
 
 // The seam consumed by extracted modules.
@@ -1006,6 +1023,24 @@ export function createSimContext(host: SimContextHost): SimContext {
     },
     get yumiCatMatches() {
       return host.yumiCatMatches;
+    },
+    get bgQueue() {
+      return host.bgQueue;
+    },
+    set bgQueue(v) {
+      host.bgQueue = v;
+    },
+    get bgMatches() {
+      return host.bgMatches;
+    },
+    get bgBusySlots() {
+      return host.bgBusySlots;
+    },
+    get nextBgMatchId() {
+      return host.nextBgMatchId;
+    },
+    set nextBgMatchId(v) {
+      host.nextBgMatchId = v;
     },
     get nextArenaMatchId() {
       return host.nextArenaMatchId;
@@ -1307,5 +1342,8 @@ export function createSimContext(host: SimContextHost): SimContext {
     vcupShoot: host.vcupShoot,
     vcupSportDash: host.vcupSportDash,
     vcupSportShove: host.vcupSportShove,
+    // Ravenrift battleground hooks (points at social/battleground.ts via Sim).
+    bgOnPlayerDeath: host.bgOnPlayerDeath,
+    bgBreakSpawnProtection: host.bgBreakSpawnProtection,
   };
 }

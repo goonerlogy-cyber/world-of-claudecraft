@@ -134,6 +134,17 @@ export function dealDamage(
   // damage (owner 2026-07-13), so nothing gets through until it is cancelled or
   // expires. Every damage path funnels here, so this covers melee, spells, and DoTs.
   if (target.auras.some((a) => a.kind === 'stasis')) return;
+  // Ravenrift spawn protection: full damage immunity for a few seconds after
+  // every battleground spawn (social/battleground.ts owns the aura). Every
+  // damage path funnels here, so this covers melee, spells, and DoT ticks.
+  // The protected player's own first hostile action ends their protection
+  // early; both checks are gated on a live match existing so the overworld
+  // hot path never scans for them.
+  if (ctx.bgMatches.size > 0) {
+    if (target.auras.some((a) => a.kind === 'spawn_protection')) return;
+    if (source && source.kind === 'player' && source.id !== target.id)
+      ctx.bgBreakSpawnProtection(source);
+  }
   // A wild mob that broke leash is in 'evade': it has dropped its hate table
   // and walks home without fighting back, healing to full only on arrival.
   // Classic mechanics make it immune while it retreats, so it can't be chipped
@@ -1080,6 +1091,9 @@ export function handleDeath(ctx: SimContext, e: Entity, killer: Entity | null): 
     if (e.leap !== undefined) e.leap = null;
     e.followTargetId = null;
     ctx.emit({ type: 'playerDeath', pid: e.id });
+    // Ravenrift: carrier death drops the flag in place; the team wave clock
+    // revives the fallen (no release, corpse, or ghost run).
+    ctx.bgOnPlayerDeath(e, killer);
     for (const m of ctx.entities.values()) {
       if (m.kind === 'mob' && !m.dead && m.aggroTargetId === e.id && m.aiState !== 'dead') {
         // turn on the next nearby attacker; go home only if nobody is left

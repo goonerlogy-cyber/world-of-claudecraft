@@ -154,6 +154,7 @@ import {
   INSTANCE_SLOT_COUNT,
   ITEMS,
   isArenaPos,
+  isBgPos,
   isDelvePos,
   MOBS,
   QUESTS,
@@ -429,6 +430,7 @@ export { computeQuestState } from './quests/quest_commands';
 import { completeCurrentQuestsForDev, completeQuestForDev } from './quests/dev_quest_commands';
 import * as arenaMod from './social/arena';
 import { clearAfkOnMove } from './social/away';
+import * as bgMod from './social/battleground';
 import type { CardDuelMatch } from './social/card_duel';
 import * as cardDuelMod from './social/card_duel';
 import * as duelMod from './social/duel';
@@ -1077,6 +1079,13 @@ export interface PlayerMeta {
   arena2v2Rating: number;
   arena2v2Wins: number;
   arena2v2Losses: number;
+  // Ravenrift 5v5 battleground standing (rated, not matched); bgCaptures is
+  // the career flag-capture count feeding the Book of Deeds meters. All
+  // persisted in CharacterState, absent until the first result.
+  bgRating: number;
+  bgWins: number;
+  bgLosses: number;
+  bgCaptures: number;
   // The Vale Cup (docs/prd/vale-cup.md). `sportRole` is the temporary sport-kit
   // role while seated in a Sowfield match: SESSION-ONLY, never serialized
   // (known is derived on load, so persistence is naturally safe with no restore
@@ -1318,6 +1327,13 @@ export interface CharacterState {
   arena2v2Rating?: number;
   arena2v2Wins?: number;
   arena2v2Losses?: number;
+  // Ravenrift battleground standing (JSONB; optional and written only once a
+  // result or capture exists, so pre-Ravenrift saves load cleanly and
+  // unchanged saves stay byte-equal).
+  bgRating?: number;
+  bgWins?: number;
+  bgLosses?: number;
+  bgCaptures?: number;
   // The Vale Cup standing (JSONB; optional and written only once a result
   // exists, so pre-cup saves load cleanly and unchanged saves stay byte-equal).
   vcupWins?: number;
@@ -1587,6 +1603,14 @@ export class Sim {
   private yumiBusySlots = new Set<number>();
   private yumiCatMatches = new Map<number, ArenaMatch>();
   private nextArenaMatchId = 1;
+  // Ravenrift battleground: queued party-groups, live matches keyed by every
+  // member pid, and the band's own busy-slot pool (slot numbers collide across
+  // pools, so it must never share the arena's). social/battleground.ts owns
+  // the behavior; these are its ctx live views.
+  bgQueue: bgMod.BgQueueGroup[] = [];
+  bgMatches = new Map<number, bgMod.BgMatch>(); // pid -> shared match (all members)
+  private bgBusySlots = new Set<number>();
+  private nextBgMatchId = 1;
   // The Vale Cup boarball state (social/vale_cup.ts): ONE holder object (the
   // per-bracket queues, the single Sowfield match slot, the Groundskeeper's
   // deserter book, and the live bot pids), exposed as the live ctx.vcup view.
@@ -2141,7 +2165,12 @@ export class Sim {
     // branch's `?? DUNGEON_LIST[0]` fallback would otherwise swallow a delve
     // position and eject the player to a dungeon door instead of the board door
     // (FR-1.6). The two bands are disjoint, so `else if` keeps dungeon handling intact.
-    if (savedPos && isDelvePos(savedPos.x)) {
+    if (savedPos && isBgPos(savedPos.x)) {
+      // A save inside the Ravenrift band (a crash mid-match) has no match to
+      // rejoin: resume at the world start (dungeonAt() knows nothing about
+      // this band, so the dungeon-door fallback below must never see it).
+      savedPos = null;
+    } else if (savedPos && isDelvePos(savedPos.x)) {
       const delve = delveAt(savedPos.x) ?? DELVE_LIST[0];
       savedPos = { x: delve.doorPos.x, z: delve.doorPos.z - 4 };
     } else if (savedPos && savedPos.x > DUNGEON_X_THRESHOLD) {
@@ -2226,6 +2255,10 @@ export class Sim {
       arena2v2Rating: savedArena2v2.rating,
       arena2v2Wins: savedArena2v2.wins,
       arena2v2Losses: savedArena2v2.losses,
+      bgRating: savedState?.bgRating ?? bgMod.BG_BASE_RATING,
+      bgWins: savedState?.bgWins ?? 0,
+      bgLosses: savedState?.bgLosses ?? 0,
+      bgCaptures: savedState?.bgCaptures ?? 0,
       sportRole: null,
       vcupWins: savedState?.vcupWins ?? 0,
       vcupLosses: savedState?.vcupLosses ?? 0,
@@ -2839,6 +2872,11 @@ export class Sim {
     // arena: leaving the queue is free; disconnecting mid-bout forfeits it
     this.arenaDequeue(pid);
     this.arenaResolveDesertion(pid);
+    // battleground: drop out of the queue; leaving a live match drops any
+    // carried flag and the team fights on a player down (a fully vacated
+    // side forfeits). social/battleground.ts owns the rule.
+    bgMod.bgDequeue(this.ctx, pid);
+    bgMod.bgResolveDesertion(this.ctx, pid);
     // Card Duel: leaving the queue is free; a live match is forfeited to the
     // opponent (mirrors the disconnect/jail paths in server/game.ts, and keeps
     // the offline Sim / headless env from leaking cardDuels/cardDuelQueue
@@ -3053,6 +3091,16 @@ export class Sim {
       arena2v2Rating: meta.arena2v2Rating,
       arena2v2Wins: meta.arena2v2Wins,
       arena2v2Losses: meta.arena2v2Losses,
+      // Absent until the first Ravenrift result or capture moves something
+      // (back-compat + parity-stable saves).
+      ...(meta.bgWins || meta.bgLosses || meta.bgCaptures || meta.bgRating !== bgMod.BG_BASE_RATING
+        ? {
+            bgRating: meta.bgRating,
+            bgWins: meta.bgWins,
+            bgLosses: meta.bgLosses,
+            bgCaptures: meta.bgCaptures,
+          }
+        : {}),
       // Absent until sheathed (back-compat + parity-stable saves).
       ...(e.weaponStowed ? { weaponStowed: true } : {}),
       // Absent until the first cup result (back-compat + parity-stable saves).
@@ -3808,6 +3856,25 @@ export class Sim {
       set nextArenaMatchId(v) {
         sim.nextArenaMatchId = v;
       },
+      // Ravenrift battleground live views (social/battleground.ts).
+      get bgQueue() {
+        return sim.bgQueue;
+      },
+      set bgQueue(v) {
+        sim.bgQueue = v;
+      },
+      get bgMatches() {
+        return sim.bgMatches;
+      },
+      get bgBusySlots() {
+        return sim.bgBusySlots;
+      },
+      get nextBgMatchId() {
+        return sim.nextBgMatchId;
+      },
+      set nextBgMatchId(v) {
+        sim.nextBgMatchId = v;
+      },
       get delveRuns() {
         return sim.delveRuns;
       },
@@ -4274,6 +4341,9 @@ export class Sim {
         valeCupMod.vcupSportDash(sim.ctx, caster, distance, catchBall),
       vcupSportShove: (caster, target, distance) =>
         valeCupMod.vcupSportShove(sim.ctx, caster, target, distance),
+      // Ravenrift battleground hooks (social/battleground.ts).
+      bgOnPlayerDeath: (e, killer) => bgMod.bgOnPlayerDeath(sim.ctx, e, killer),
+      bgBreakSpawnProtection: (e) => bgMod.bgBreakSpawnProtection(sim.ctx, e),
     };
     return createSimContext(host);
   }
@@ -4639,6 +4709,10 @@ export class Sim {
     // tick-staggered bots), so appending it here cannot fork the draw order.
     this.updateValeCup();
     lap?.('valecup');
+    // Ravenrift draws ZERO rng (queue-order matchmaking, tick-math wave and
+    // rune clocks), so appending it here cannot fork the draw order.
+    bgMod.updateBattleground(this.ctx);
+    lap?.('battleground');
     // The Dungeon Finder phase draws ZERO rng (queue bookkeeping + role
     // matching on the sim clock), so appending it here cannot fork the draw order.
     this.updateDungeonFinder();
@@ -5346,6 +5420,22 @@ export class Sim {
       !isUnbreakableControlAura(aura)
     )
       return;
+    // Ravenrift spawn protection rejects every hostile control effect (the
+    // broad Ice Block set: stuns, roots, silences, snares, ...) for its few
+    // seconds; and a protected player CASTING a control effect on someone
+    // else ends their own protection early (a hostile action).
+    if (
+      target.kind === 'player' &&
+      target.auras.some((a) => a.kind === 'spawn_protection') &&
+      this.isIceBlockCrowdControlAura(aura.kind) &&
+      aura.sourceId !== target.id &&
+      !isUnbreakableControlAura(aura)
+    )
+      return;
+    if (this.bgMatches.size > 0 && this.isControlAura(aura.kind) && aura.sourceId !== target.id) {
+      const src = this.entities.get(aura.sourceId);
+      if (src && src.kind === 'player') bgMod.bgBreakSpawnProtection(this.ctx, src);
+    }
     if (
       target.kind === 'mob' &&
       (MOBS[target.templateId]?.ccImmune || target.ccImmune) &&
@@ -7669,6 +7759,13 @@ export class Sim {
       ) {
         return true;
       }
+      // Ravenrift: hostile to the other team while the battle is live,
+      // friendly to your own (isFriendlyTo derives from this arm, so
+      // cross-team heals are refused too).
+      const bg = this.bgMatches.get(attackerPlayer.id);
+      if (bg && bg.state === 'active' && this.bgMatches.get(target.id) === bg) {
+        return bgMod.bgTeamOf(bg, attackerPlayer.id) !== bgMod.bgTeamOf(bg, target.id);
+      }
       // The jail brawl: prisoners are hostile to each other, always (pets
       // resolve to their owner via pvpController above, so a prisoner's pet
       // fights too). A visiting moderator is never jailed, so no prisoner
@@ -8208,6 +8305,42 @@ export class Sim {
 
   arenaMatchFor(pid: number): ArenaMatch | null {
     return arenaMod.arenaMatchFor(this.ctx, pid);
+  }
+
+  // -------------------------------------------------------------------------
+  // Ravenrift, the 5v5 capture-the-flag battleground. Thin delegates onto
+  // social/battleground.ts (the arena-slice pattern): the wire command path,
+  // tests, and the server resolve these on the facade.
+  // -------------------------------------------------------------------------
+
+  bgQueueJoin(pid?: number): void {
+    bgMod.bgQueueJoin(this.ctx, pid);
+  }
+
+  bgQueueLeave(pid?: number): void {
+    bgMod.bgQueueLeave(this.ctx, pid);
+  }
+
+  bgFlagAction(pid?: number): void {
+    bgMod.bgFlagAction(this.ctx, pid);
+  }
+
+  bgMatchFor(pid: number): bgMod.BgMatch | null {
+    return bgMod.bgMatchFor(this.ctx, pid);
+  }
+
+  bgInfoFor(pid: number): import('../world_api').BgInfo | null {
+    return bgMod.bgInfoFor(this.ctx, pid);
+  }
+
+  // Dev/test only: force-start a match from whoever is queued (server-gated
+  // behind ALLOW_DEV_COMMANDS; see social/battleground.ts).
+  devStartBg(): void {
+    bgMod.devStartBg(this.ctx);
+  }
+
+  get bgInfo(): import('../world_api').BgInfo | null {
+    return this.primaryId === -1 ? null : this.bgInfoFor(this.primaryId);
   }
 
   // -------------------------------------------------------------------------

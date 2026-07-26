@@ -123,6 +123,10 @@ function makeCtx() {
     yumiCatDamaged: vi.fn(),
     cleanupYumiMatch: vi.fn(),
     nextArenaMatchId: 1,
+    bgQueue: [],
+    bgMatches: new Map(),
+    bgBusySlots: new Set(),
+    nextBgMatchId: 1,
     delveRuns: [],
     delvePetStash: new Map(),
     utcDay: '',
@@ -366,6 +370,9 @@ function makeCtx() {
     vcupShoot: vi.fn(),
     vcupSportDash: vi.fn(),
     vcupSportShove: vi.fn(),
+    // Ravenrift battleground hooks.
+    bgOnPlayerDeath: vi.fn(),
+    bgBreakSpawnProtection: vi.fn(),
   };
   const ctx = createSimContext(host);
   return {

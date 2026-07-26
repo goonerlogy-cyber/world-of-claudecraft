@@ -1,3 +1,4 @@
+import { battlegroundColliders } from './battleground_layout';
 import {
   buildingCameraHeight,
   buildingTerrainEnvelope,
@@ -5,6 +6,7 @@ import {
 } from './building_layout';
 import {
   arenaOriginAt,
+  bgOriginAt,
   DUNGEON_X_THRESHOLD,
   defaultDelveModules,
   delveAt,
@@ -14,6 +16,7 @@ import {
   INSTANCE_SLOT_COUNT,
   instanceOrigin,
   isArenaPos,
+  isBgPos,
   isDelvePos,
   isYumiMazePos,
   yumiMazeOriginAt,
@@ -346,6 +349,9 @@ const TEMPLE_COLLIDERS: Collider[] = layoutColliders(TEMPLE_LAYOUT);
 const ARENA_COLLIDERS: Collider[] = layoutColliders(ARENA_LAYOUT);
 const DROWNED_COURT_COLLIDERS: Collider[] = layoutColliders(DROWNED_COURT_LAYOUT);
 const NYTHRAXIS_COLLIDERS: Collider[] = layoutColliders(NYTHRAXIS_LAYOUT);
+// Ravenrift battleground: one shared set for every slot, built once at load
+// from the same plain-data layout the renderer places its modules from.
+const BG_COLLIDERS: Collider[] = battlegroundColliders();
 
 // Arena slots host fixed maps by slot parity (EVEN = Coliseum, ODD = Drowned
 // Court; see ARENA_MAPS in dungeon_layout.ts). Both sets are built once at
@@ -518,6 +524,11 @@ export function resolvePosition(
   ignoreFences = false,
   delveModules?: readonly string[],
 ): { x: number; z: number } {
+  if (isBgPos(x)) {
+    const o = bgOriginAt(z);
+    const local = resolveAgainst(BG_COLLIDERS, x - o.x, z - o.z, r);
+    return { x: local.x + o.x, z: local.z + o.z };
+  }
   if (isYumiMazePos(x)) {
     const o = yumiMazeOriginAt(z);
     const local = resolveAgainst(yumiMazeColliders(), x - o.x, z - o.z, r);
@@ -768,6 +779,10 @@ export function cameraOcclusion(
   pad = 0.35,
   delveModules?: readonly string[],
 ): number {
+  if (isBgPos(ax)) {
+    const o = bgOriginAt(az);
+    return sweepColliders(BG_COLLIDERS, ax - o.x, ay, az - o.z, bx - o.x, by, bz - o.z, pad, true);
+  }
   if (isYumiMazePos(ax)) {
     const o = yumiMazeOriginAt(az);
     return sweepColliders(
@@ -854,6 +869,10 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
     }
     return false;
   };
+  if (isBgPos(x)) {
+    const o = bgOriginAt(z);
+    return overlapsAny(BG_COLLIDERS, x - o.x, z - o.z, false);
+  }
   if (isYumiMazePos(x)) {
     const o = yumiMazeOriginAt(z);
     return overlapsAny(yumiMazeColliders(), x - o.x, z - o.z, false);

@@ -113,6 +113,9 @@ export function releasePlayerSpirit(
   const { meta, e: p } = r;
   if (!p.dead || p.ghost) return; // not dead, or already a spirit
   if (ctx.arenaMatches.has(p.id)) return; // arena/fiesta run their own respawn
+  // In Ravenrift the keep respawn is automatic on the team wave clock:
+  // releasing does nothing (you cannot graveyard-walk out of the match).
+  if (ctx.bgMatches.has(p.id)) return;
   if (isDelvePos(p.pos.x)) {
     // Delves keep their own bounded respawn rules (see entity_roster), no ghost run.
     releaseSpiritInDelve(ctx, meta.entityId);

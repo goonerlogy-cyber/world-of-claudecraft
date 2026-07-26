@@ -234,6 +234,9 @@ const CALLBACK_KEYS = [
   'vcupShoot',
   'vcupSportDash',
   'vcupSportShove',
+  // Ravenrift battleground hooks (social/battleground.ts).
+  'bgOnPlayerDeath',
+  'bgBreakSpawnProtection',
 ] as const;
 
 // A fully-spied fake host. `clock` is mutable so a test can prove the context reads
@@ -290,6 +293,10 @@ function makeFakeHost() {
     yumiCatDamaged: vi.fn(),
     cleanupYumiMatch: vi.fn(),
     nextArenaMatchId: 1,
+    bgQueue: [],
+    bgMatches: new Map(),
+    bgBusySlots: new Set(),
+    nextBgMatchId: 1,
     delveRuns: [],
     delvePetStash: new Map(),
     utcDay: '',
@@ -530,6 +537,9 @@ function makeFakeHost() {
     vcupShoot: vi.fn(),
     vcupSportDash: vi.fn(),
     vcupSportShove: vi.fn(),
+    // Ravenrift battleground hooks.
+    bgOnPlayerDeath: vi.fn(),
+    bgBreakSpawnProtection: vi.fn(),
   };
   return { host, rng, entities, clock };
 }
