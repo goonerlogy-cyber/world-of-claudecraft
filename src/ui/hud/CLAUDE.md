@@ -26,5 +26,11 @@ and performance rules.
 - Every player or server value interpolated into HTML passes through `esc()`.
 - Hot painters use the shared `PainterHost` writers. Do not create a second write
   cache inside a domain.
+- All three adapter names above are swept by the painter gate
+  (`tests/hud_perf_budget.test.ts`). A `*_controller.ts` holds the same cold contract a
+  `*_window.ts` does: no forced-reflow layout read and no repeating driver of its own,
+  beyond a documented, counted allowance. Three carry one today
+  (`chat_geometry_controller`, `chat_window_controller`, `fiesta_controller`). Renaming
+  between the adapter names therefore sheds nothing, which is the point: name by role.
 - Domain tests import the owning module directly and assert behavior, not source
   line placement.

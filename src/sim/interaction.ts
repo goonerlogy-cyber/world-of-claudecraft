@@ -322,7 +322,9 @@ export function harvestCorpse(
   // the slot reserved for a LATER family's plain stack and push the uncapped
   // plain grant past capacity). The rarity rolls stay in this first loop, in
   // yield order, so the draw sequence is byte-identical to the single-pass
-  // shape (pinned by the parity goldens); only the grants are reordered.
+  // shape (pinned by the draw-count cases in tests/corpse_harvest_sim.test.ts
+  // and tests/corpse_harvest_result_event.test.ts, NOT by the parity goldens:
+  // no parity scenario drives harvestCorpse); only the grants are reordered.
   // `rarity` rides along purely so the deferred grants below can record their
   // ledger entry with the roll that produced them (#2457): the line color is
   // the ROLLED material rarity, and by the time a signed grant lands its own
@@ -345,7 +347,9 @@ export function harvestCorpse(
     const qty = focusedHarvestQuantity(tier, y.component, meta.townFocus);
     const rarity = rollCorpseMaterialRarity(ctx.rng);
     // The rarity roll above MUST stay exactly where it is (one roll per yield,
-    // in yield order: the draw sequence is pinned by the parity goldens). The
+    // in yield order: the draw sequence is pinned by the corpse suites' own
+    // draw-count cases, one per arm, since no parity scenario harvests a
+    // corpse). The
     // premium-arm denial below happens strictly AFTER the roll and
     // draws no rng: a denied family downgrades to the plain fungible grant it
     // gets on a common roll today (a specimen family keeps its plain component
@@ -387,29 +391,74 @@ export function harvestCorpse(
   // pre-gate-reserved stack room, so they outrank the specimens, which are
   // pure extras. A signed instance merges into a byte-equal same-signer stack
   // (identical-payload stacking; never a plain stack, #1165), so
-  // this gate accepts same-signer stack room OR a genuinely free slot
+  // this gate accepts same-signer stack room plus genuinely free slots
   // (canGrantItemInstance, the countFit model harvestNode's signed grants
-  // share, #2139); with neither the signed-family grant falls back to the
+  // share, #2139), measured against the FULL grant: one unit for a specimen,
+  // the whole rolled quantity for a signed component (#2473). Without room for
+  // all of it the signed-family grant falls back to the
   // plain fungible top-up (the signature truncates, the yield does not) while
   // a specimen truncates outright, the same truncation contract harvestNode's
   // signed grants follow. Each downgrade tells the player via the text-free
   // personal gatherDowngrade event, at most ONCE per harvest command (the
   // toolDeniedEmitted idiom); the mark-lost arm runs first, so when both a
   // signature and a jackpot are lost the single event reports the mark.
+  // All-or-nothing is a deliberate divergence from harvestNode, whose signed
+  // batch lands a PARTIAL fit and lets the rest of the yield go: a corpse
+  // downgrade is an UNCAPPED plain grant of the whole rolled quantity into
+  // pre-gate-reserved room, so refusing the signature here costs the player no
+  // units and keeps the harvest at one ledger entry (one chat line) per item.
+  //
+  // #2473, the one behavior this quantity fix trades away, deliberately: with
+  // PARTIAL same-signer merge room the counted grant spills into a fresh slot
+  // where the one-unit grant it replaces merged for free, so on a corpse that
+  // also procs a specimen (forest_wolf tags hide AND fang) the last free slot
+  // can go to the component instead of the jackpot, which then truncates with
+  // its lost: 'find' notice. The component wins that slot for one reason only,
+  // stated plainly because it is easy to get wrong: this loop runs FIRST. It is
+  // NOT holding a claim on the slot. The pre-gate reserves room for a PLAIN add
+  // (every `wanted` entry carries no instance) and a signed instance can never
+  // spend plain-stack room (#1165), so the free slot taken here is unreserved
+  // room, the same unreserved room the specimen wanted.
+  // Refusing the signature whenever a jackpot is pending was measured across
+  // corpse templates, bag shapes, seeds and focus picks: it saves the specimen
+  // in every case that truncates and costs no yield, but it refuses tens of
+  // signatures for each specimen saved, because most bags have plain-stack room
+  // the fallback would have used anyway. Paying that much for a rare extra is
+  // the worse trade, so the simple rule stands. BOTH states are pinned in
+  // tests/corpse_harvest_sim.test.ts: the one where holding back would change
+  // nothing, and the one where it would have saved the jackpot. The real cure
+  // is a specimen reservation in the pre-gate, wider than this issue.
   let downgradeEmitted = false;
   for (const grant of signedGrants) {
     if (grant.specimen) continue;
     const payload = { signer: meta.name };
-    if (canGrantItemInstance(meta.inventory, bagCapacity(meta.bags), grant.itemId, payload)) {
-      // The explicit count 1 is the shipped default spelled out so the opts
-      // argument can follow it; the units granted are unchanged.
-      ctx.addItemInstance(grant.itemId, payload, meta.entityId, 1, {
+    if (
+      canGrantItemInstance(
+        meta.inventory,
+        bagCapacity(meta.bags),
+        grant.itemId,
+        payload,
+        grant.plainQty,
+      )
+    ) {
+      // The whole rolled quantity, stamped (#2473): on a specimen-less family
+      // the component ITSELF is the signed grant, so the signature and the
+      // yield ride one call and a hardcoded count of 1 dropped the rest of the
+      // roll on the floor, leaving the premium arm smaller than the plain
+      // fallback right below it. The guard counts the WHOLE quantity for the
+      // same reason (#2139): a same-signer stack with room for one of three
+      // units must refuse rather than let the other two push a fresh slot past
+      // capacity. Mergeable signer payloads stack, so the whole roll costs at
+      // most ONE slot; that is one more than the single-unit grant it replaces
+      // spent whenever partial merge room let that one unit land for free,
+      // which is what the jackpot hold-back above accounts for.
+      ctx.addItemInstance(grant.itemId, payload, meta.entityId, grant.plainQty, {
         silent: true,
         callerLogs: true,
       });
       recordHarvestYield(granted, {
         itemId: grant.itemId,
-        qty: 1,
+        qty: grant.plainQty,
         rarity: grant.rarity,
         kind: 'signed',
       });
@@ -434,7 +483,9 @@ export function harvestCorpse(
     if (!grant.specimen) continue;
     const payload = { signer: meta.name };
     if (canGrantItemInstance(meta.inventory, bagCapacity(meta.bags), grant.itemId, payload)) {
-      // Explicit count 1 for the opts argument, see the matching call above.
+      // Exactly one unit, deliberately: the specimen is a jackpot, not a
+      // quantity, so it never carries the component's rolled count the way the
+      // signed grant above does. The guard's count defaults to that same 1.
       ctx.addItemInstance(grant.itemId, payload, meta.entityId, 1, {
         silent: true,
         callerLogs: true,

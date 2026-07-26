@@ -554,6 +554,24 @@ describe('a corpse harvest prints one line per DISTINCT granted item (#2457)', (
     expect(signed).toEqual([`You harvest: [${itemDisplayName(ITEMS[FANG])}].`]);
   });
 
+  it('a MULTI-UNIT signed component takes the quantity line, like its plain twin', () => {
+    // A signed corpse yield carries the roll's own quantity (#2473), so the
+    // signed-plus-quantity combination is reachable for the first time: before
+    // it, that arm could only ever land one unit. The ruling above is unchanged
+    // (a signed line reads exactly like a plain one), but the key choice now
+    // has to survive a count, and a line that dropped it would under-report
+    // what the player just received.
+    const hud = makeHud();
+    hud.handleEvents(harvestBurst([{ itemId: FANG, qty: 3, rarity: 'rare', kind: 'signed' }]));
+    const signed = lines(hud);
+    document.body.replaceChildren();
+    mountBags();
+    const plainHud = makeHud();
+    plainHud.handleEvents(harvestBurst([{ itemId: FANG, qty: 3, rarity: 'rare', kind: 'plain' }]));
+    expect(signed).toEqual(lines(plainHud));
+    expect(signed).toEqual([`You harvest: [${itemDisplayName(ITEMS[FANG])}] x3.`]);
+  });
+
   it('each line paints from its ROLLED rarity while the link paints from the item def', () => {
     // The gatherResult rule, and the arm no source-text pin can settle. Rough
     // Hide is a COMMON item granted at every roll, so a rare roll must color

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -9,6 +9,7 @@ import { stationsOfType } from '../src/sim/professions/stations';
 import { Sim } from '../src/sim/sim';
 import type { Entity, SimEvent, StationType } from '../src/sim/types';
 import { terrainHeight } from '../src/sim/world';
+import { tsFilesUnder } from './helpers/ts_files_under';
 
 // Every grant in the game flows through the one shared inventory hub
 // (Sim.addItem/addItemInstance), which unconditionally emitted a 'loot'
@@ -507,34 +508,6 @@ describe('every professions grant site is accounted for (#2430)', () => {
   // assertion). Comments are already gone by this point (codeOnly above).
   const flatten = (call: string) => call.replace(/\s+/g, ' ');
 
-  /** Every .ts file under `root`, RECURSIVELY, labeled by its path relative to
-   *  `root` with forward slashes (so a top-level file keeps its bare name and
-   *  the per-file pins below go on resolving). The single-level `readdirSync`
-   *  this replaces read one directory deep, so the day src/sim/professions grew
-   *  a subdirectory every grant inside it would have left both sweeps below
-   *  while they stayed green, covering less than the day before (#2485).
-   *  Entries are sorted by name, so the label list is the same on the ext4 CI
-   *  runner (readdir in hash order) as on a dev APFS checkout. The label idiom
-   *  is tests/i18n_admin_catalog.test.ts's walk, which recursed for the same
-   *  reason: a flat read misses what a subdirectory holds. */
-  const tsFilesUnder = (root: string, prefix = ''): Array<{ file: string; full: string }> => {
-    const out: Array<{ file: string; full: string }> = [];
-    const entries = readdirSync(root, { withFileTypes: true }).sort((a, b) =>
-      a.name < b.name ? -1 : a.name > b.name ? 1 : 0,
-    );
-    for (const entry of entries) {
-      const full = path.join(root, entry.name);
-      // The file arm is deliberately NOT gated on `entry.isFile()`. A Dirent
-      // reports lstat, so that check reads false for a symlink, and the flat
-      // read this replaces would have followed one: gating on it would narrow
-      // coverage in the very way #2485 is about, one door over. Anything named
-      // `.ts` that is not a directory gets read.
-      if (entry.isDirectory()) out.push(...tsFilesUnder(full, `${prefix}${entry.name}/`));
-      else if (entry.name.endsWith('.ts')) out.push({ file: `${prefix}${entry.name}`, full });
-    }
-    return out;
-  };
-
   /** Every grant call under `root`, each tagged with the relative file it came
    *  from. Takes a directory rather than closing over `dir`, so the fixture
    *  case below drives the exact scanner the sweep uses, not a restatement. */
@@ -779,24 +752,28 @@ describe('every professions grant site is accounted for (#2430)', () => {
     }
   });
 
-  it('the sweep reads the tree through ONE walker (no second, flat producer)', () => {
+  it('the sweep reads the tree through the shared walker (no flat producer beside it)', () => {
     // The case above pins the WALKER; nothing can pin that `sites` still goes
     // through it, because src/sim/professions is flat, so an inline flat read
     // here would return the identical list today and every assertion in this
-    // file would stay green. The only mechanical guard is that this file owns
-    // exactly one directory read, which is grantSitesUnder's. Comments are
-    // stripped first, or the prose above explaining the old single-level
-    // readdirSync would count as a second one.
+    // file would stay green. The mechanical guard is that this file owns NO
+    // directory read of its own: the walk lives in tests/helpers/ts_files_under
+    // with its own paired test, and #2489 put three more guards on it. Comments
+    // are stripped first, or the prose above explaining the old single-level
+    // readdirSync would count as a call site.
     const own = codeOnly(
       readFileSync(path.resolve(process.cwd(), 'tests/professions_silent_loot.test.ts'), 'utf8'),
     );
     // Assembled from halves so the needle does not match itself and read as the
-    // second call site it exists to forbid.
+    // call site it exists to forbid.
     const needle = `readdir${'Sync('}`;
     expect(
       own.split(needle).length - 1,
-      'this file should read a directory in exactly one place (tsFilesUnder); a second reader can go flat while the first stays recursive',
-    ).toBe(1);
+      'this file should not read a directory itself; the sweep goes through the shared walk helper, and a second reader could go flat while the shared one stays recursive',
+    ).toBe(0);
+    // Needle split for the same reason as the one above: written whole it would
+    // match its own assertion line, so this passed even with the import gone.
+    expect(own).toContain(`helpers/ts_files${'_under'}`);
   });
 
   it('the exclusion list has no stale entries', () => {
