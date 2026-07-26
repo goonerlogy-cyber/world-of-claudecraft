@@ -201,7 +201,7 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     expect(sim.meta(match.teams[1][0])!.bgLosses).toBe(1);
   });
 
-  it('a dropped flag auto-returns home after 12 seconds untouched', () => {
+  it('a dropped flag auto-returns home after 20 seconds untouched', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
@@ -215,7 +215,11 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     kill(sim, enemy);
     sim.tick();
     expect(match.flags[0].state).toBe('dropped');
-    for (let i = 0; i < 20 * 12 + 2 && match.flags[0].state === 'dropped'; i++) sim.tick();
+    // Decisive two-sided pin on the 20s timer: still dropped at 19s, home
+    // once the clock passes 20s.
+    for (let i = 0; i < 20 * 19; i++) sim.tick();
+    expect(match.flags[0].state).toBe('dropped');
+    for (let i = 0; i < 20 * 2; i++) sim.tick();
     expect(match.flags[0].state).toBe('home');
   });
 
@@ -523,7 +527,15 @@ describe('Ravenrift: carrier vulnerability (Focused Assault lineage)', () => {
 });
 
 describe('Ravenrift: runes, hostility, and the match clock', () => {
-  it('stepping on a sprint rune grants 1.4x haste for 8s and the rune recharges over 22s', () => {
+  it('pins the immersive-scale timing tune (re-pin deliberately when retuning)', () => {
+    // The behavior suites above use these constants symbolically, so this pin
+    // is what actually fails if the live tune drifts: fatigue at 75s covers
+    // roughly two 236yd flag runs, the cap is 15 minutes.
+    expect(BG_CARRIER_VULN_DELAY).toBe(75);
+    expect(BG_MAX_DURATION).toBe(900);
+  });
+
+  it('stepping on a sprint rune grants 1.4x haste for 10s and the rune recharges over 22s', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
@@ -536,7 +548,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     const sprint = e.auras.find((a) => a.id === 'bg_sprint_rune');
     expect(sprint).toBeTruthy();
     expect(sprint!.value).toBeCloseTo(1.4, 5);
-    expect(sprint!.duration).toBeCloseTo(8, 5);
+    expect(sprint!.duration).toBeCloseTo(10, 5);
     expect(rune.active).toBe(false); // consumed, now recharging
     tp(sim, runner, rune.pos.x + 20, rune.pos.z); // step away
     rune.cooldown = 0.1; // fast-forward the 22s recharge
@@ -558,7 +570,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(sim.isHostileTo(foe, a)).toBe(true);
   });
 
-  it('an equal score at the 720s cap is a draw: Elo moves by the 0.5 draw math, no W/L', () => {
+  it('an equal score at the 900s cap is a draw: Elo moves by the 0.5 draw math, no W/L', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     // skew the team averages so the draw math must move points

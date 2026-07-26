@@ -36,7 +36,7 @@ const BG_COUNTDOWN = 8; // form-up gate at the keeps before the flags go live
 export const BG_CAPS_TO_WIN = 5; // first team to this many captures wins.
 // ^ Tuning knob number one post-launch: fall back to 3 if live cap pace runs
 // slower than the modeled 2-3 minutes per capture on even teams.
-export const BG_MAX_DURATION = 720; // 12 min cap; resolves on score, ties draw
+export const BG_MAX_DURATION = 900; // 15 min cap; resolves on score, ties draw
 export const BG_WAVE_PERIOD = 10; // one respawn wave per team every 10s
 export const BG_WAVE_OFFSET = 5; // the two team clocks run staggered half-cycles
 export const BG_SPAWN_PROTECTION = 2.5; // seconds of damage/CC immunity on spawn
@@ -46,16 +46,18 @@ export const BG_SPAWN_PROTECTION = 2.5; // seconds of damage/CC immunity on spaw
 // BG_CARRIER_VULN_PER_STACK more damage taken, uncapped. Stacks clear the
 // moment the flag leaves the carrier (capture, drop, or return). Anti-turtle:
 // a hidden carrier gets softer the longer the hold.
-export const BG_CARRIER_VULN_DELAY = 45;
+// The delay is tuned to the immersive-scale field: roughly two clean
+// flag-to-flag runs (236yd, ~34s each) before the fatigue starts biting.
+export const BG_CARRIER_VULN_DELAY = 75;
 export const BG_CARRIER_VULN_INTERVAL = 15;
 export const BG_CARRIER_VULN_PER_STACK = 0.1;
-const BG_FLAG_RETURN_TIME = 12; // a dropped flag auto-returns home after this
+const BG_FLAG_RETURN_TIME = 20; // a dropped flag auto-returns home after this
 const BG_PICKUP_RADIUS = 2.5; // press the flag action this close to grab it
 const BG_CAPTURE_RADIUS = 4; // carry the enemy flag this close to your stand
 const BG_RUNE_RADIUS = 2.5; // step this close to a speed rune to claim it
 const BG_RUNE_COOLDOWN = 22; // a claimed rune recharges over this
 const BG_RUNE_SPEED = 1.4; // sprint multiplier the rune grants
-const BG_RUNE_DURATION = 8; // seconds of haste per rune
+const BG_RUNE_DURATION = 10; // seconds of haste per rune
 
 const SPAWN_PROTECTION_AURA_ID = 'bg_spawn_protection';
 const CARRIER_VULN_AURA_ID = 'bg_carrier_vulnerability';
