@@ -4,7 +4,7 @@
 // record the collider set reads, so what players collide with is exactly what
 // the builder draws. The one deliberate visual-only divergence: the heart-ruin
 // block (the single thick near-square segment) collides solid but renders as a
-// hollow four-sided ruin shell with an identical 12x12 footprint.
+// hollow four-sided ruin shell with an identical 16x16 footprint.
 // Three-free and deterministic (hash2 is the dungeon.ts position hash), so
 // tests/battleground_render.test.ts pins the geometry headlessly.
 
@@ -24,6 +24,8 @@ import {
   type BgTeam,
   type BgWallSeg,
   battlegroundWallSegments,
+  KEEP_BACK_DZ,
+  KEEP_HALF_X,
   KEEP_MOUTH_DZ,
 } from '../sim/battleground_layout';
 
@@ -215,11 +217,11 @@ const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
 // Torch-lit ramparts: mounted torches along the perimeter side walls plus the
 // keep back walls, mirrored. The builder adds a small warm glow at each
 // BG_TORCH_GLOW_H; no lights, so every tier pays the same nothing.
-// Rampart torches per side: one at each keep mouth line, one mid-field, and
-// one just courtyard-side of each curtain. The +-16 pair sits 3yd clear of
-// the curtain band (|z| 19..21) and well clear of both flank-arch throats;
-// no torch lands inside a gatehouse footprint (|x| 14..26).
-const TORCH_SIDE_ZS = [-44, -28, -16, 16, 28, 44];
+// Rampart torches per side, spread along the 280yd length: keep mouths,
+// each field chamber, and the courtyard. All clear of the curtain band
+// (|z| 55..57) and the keep walls; rampart torches sit at |x| 49, far from
+// the gatehouse footprints (|x| 18..34).
+const TORCH_SIDE_ZS = [-102, -72, -32, 32, 72, 102];
 const TORCH_KEEP_XS = [-10, 10];
 const TORCH_MODULE_SCALE = 1.5;
 const TORCH_WALL_INSET = 1.0;
@@ -367,7 +369,7 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   for (const base of BG_BASES) {
     const dir = base.team === 0 ? -1 : 1;
     const kinds = KEEP_BANNER_KINDS[base.team];
-    const backZ = base.flag.z + dir * 8;
+    const backZ = base.flag.z + dir * KEEP_BACK_DZ;
     const innerBackZ = backZ - dir * BANNER_WALL_INSET;
     const faceField = dir === -1 ? 0 : Math.PI; // cloth faces mid-field
     for (const bx of KEEP_BANNER_XS) {
@@ -381,8 +383,8 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       });
     }
     // shield banners at the mouth corners greet the attacker's approach
-    const mouthZ = base.flag.z - dir * 4;
-    for (const mx of [-14 + BANNER_WALL_INSET + 1, 14 - BANNER_WALL_INSET - 1]) {
+    const mouthZ = base.flag.z - dir * KEEP_MOUTH_DZ;
+    for (const mx of [-KEEP_HALF_X + BANNER_WALL_INSET + 1, KEEP_HALF_X - BANNER_WALL_INSET - 1]) {
       wallBanners.push({
         kind: kinds.mouth,
         x: mx,
@@ -412,8 +414,8 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     const faceOwnField = dir === -1 ? Math.PI : 0; // cloth faces the team's field
     const curtainSpots: { x: number; kind: string }[] = [
       { x: -5, kind: kinds.side },
-      { x: 3, kind: kinds.mouth },
-      { x: 13, kind: kinds.mouth },
+      { x: 7, kind: kinds.mouth },
+      { x: 19, kind: kinds.mouth },
     ];
     for (const spot of curtainSpots) {
       wallBanners.push({
