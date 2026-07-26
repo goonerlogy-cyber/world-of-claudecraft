@@ -11,8 +11,10 @@ import { describe, expect, it } from 'vitest';
 import {
   BG_BANNER_FLANK_DX,
   BG_WALL_Y_SCALE,
+  BG_ZONE_MID_HALF_Z,
   type BgModulePlacement,
   battlegroundRenderManifest,
+  bgZoneAt,
   isRuinBlock,
 } from '../src/render/battleground_core';
 import {
@@ -175,5 +177,59 @@ describe('battleground render manifest derives from the layout', () => {
       expect(p.scale[1]).toBeGreaterThan(0);
       expect(p.scale[1]).toBeLessThanOrEqual(BG_WALL_Y_SCALE);
     }
+  });
+});
+
+describe('zone theming (visual only; colliders never move)', () => {
+  const m = battlegroundRenderManifest();
+  const dirtShare = (floors: { kind: string }[]) =>
+    floors.filter((f) => f.kind.startsWith('floor_dirt')).length / Math.max(1, floors.length);
+
+  it('the mid ruin belt is decisively more broken than the keep grounds', () => {
+    const mid = m.floors.filter((f) => bgZoneAt(f.z) === 'mid');
+    const keep = m.floors.filter((f) => bgZoneAt(f.z) === 'keep');
+    expect(mid.length).toBeGreaterThan(0);
+    expect(keep.length).toBeGreaterThan(0);
+    expect(dirtShare(mid)).toBeGreaterThan(dirtShare(keep) + 0.2);
+  });
+
+  it('rubble accents stay inside the mid belt and clear of every rune pad', () => {
+    expect(m.accents.length).toBeGreaterThan(10);
+    for (const a of m.accents) {
+      expect(Math.abs(a.z)).toBeLessThanOrEqual(BG_ZONE_MID_HALF_Z + 1);
+      for (const r of m.runePads) {
+        expect(Math.hypot(r.x - a.x, r.z - a.z)).toBeGreaterThan(1.4);
+      }
+    }
+  });
+
+  it('torches are point-symmetric, so neither approach is better lit', () => {
+    const key = (x: number, z: number) => `${x.toFixed(2)}|${z.toFixed(2)}`;
+    const set = new Set(m.torches.map((t) => key(t.x, t.z)));
+    for (const t of m.torches) {
+      expect(set.has(key(-t.x, -t.z)), `torch at (${t.x},${t.z}) has no mirror`).toBe(true);
+    }
+    expect(m.torches.length).toBeGreaterThanOrEqual(12);
+  });
+
+  it('keep banner dressing mirrors exactly between the teams, colors aside', () => {
+    const red = m.wallBanners.filter((b) => b.kind.endsWith('_red'));
+    const blue = m.wallBanners.filter((b) => b.kind.endsWith('_blue'));
+    expect(red.length + blue.length).toBe(m.wallBanners.length); // team kinds only
+    expect(red.length).toBe(blue.length);
+    // every red banner has the point-mirrored blue twin of the matching family
+    const family = (k: string) => k.replace(/_(red|blue)$/, '');
+    const blueSet = new Set(
+      blue.map((b) => `${family(b.kind)}|${(-b.x).toFixed(2)}|${(-b.z).toFixed(2)}`),
+    );
+    for (const b of red) {
+      expect(
+        blueSet.has(`${family(b.kind)}|${b.x.toFixed(2)}|${b.z.toFixed(2)}`),
+        `red ${b.kind} at (${b.x},${b.z}) has no mirrored blue twin`,
+      ).toBe(true);
+    }
+    // red dresses the south keep, blue the north
+    for (const b of red) expect(b.z).toBeLessThan(0);
+    for (const b of blue) expect(b.z).toBeGreaterThan(0);
   });
 });

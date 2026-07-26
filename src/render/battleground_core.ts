@@ -98,6 +98,12 @@ export interface BattlegroundRenderManifest {
   flagPedestals: BgTeamPoint[];
   /** One additive gold ring pad per speed rune. */
   runePads: { x: number; z: number }[];
+  /** Mid-belt rubble/weed accents (small kit tiles laid proud of the floor). */
+  accents: BgModulePlacement[];
+  /** Team-colored kit banners dressing the keep walls (red south, blue north). */
+  wallBanners: BgModulePlacement[];
+  /** Mounted torches along the ramparts; the builder adds a warm glow at each. */
+  torches: BgModulePlacement[];
 }
 
 /** The heart ruin is the one thick (near-square) segment; every real wall run
@@ -117,12 +123,81 @@ const RUIN_KINDS: [string, number][] = [
 ];
 const RUIN_HEIGHT_LEVELS = [1, 0.8, 0.6];
 
-const FLOOR_KINDS: [string, number][] = [
-  ['floor_tile_large', 4],
-  ['floor_tile_large_rocks', 2],
-  ['floor_dirt_large', 2],
-  ['floor_dirt_large_rocky', 1],
+// --- Zone theming (visual only; colliders never read any of this) ----------
+// Three mirrored |z| bands give the field distinct places without touching a
+// single collider: each KEEP GROUND is a maintained garrison (clean tiles,
+// team banners, torch-lit ramparts), the APPROACH lanes are the worn road
+// between them, and the MID RUIN BELT around the heart ruin is broken,
+// overgrown ground littered with rubble. Bands key on |z|, so the two halves
+// stay exact mirrors and neither team's end reads differently in gameplay
+// terms (the fairness invariant: theme, never information).
+export type BgZone = 'keep' | 'approach' | 'mid';
+export const BG_ZONE_MID_HALF_Z = 18;
+export const BG_ZONE_KEEP_MIN_Z = 36;
+
+export function bgZoneAt(z: number): BgZone {
+  const az = Math.abs(z);
+  if (az >= BG_ZONE_KEEP_MIN_Z) return 'keep';
+  if (az > BG_ZONE_MID_HALF_Z) return 'approach';
+  return 'mid';
+}
+
+const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
+  // garrison grounds: swept tile with the odd rocky patch
+  keep: [
+    ['floor_tile_large', 6],
+    ['floor_tile_large_rocks', 1],
+    ['floor_dirt_large', 1],
+  ],
+  // the worn approach road: the original mixed weathering
+  approach: [
+    ['floor_tile_large', 4],
+    ['floor_tile_large_rocks', 2],
+    ['floor_dirt_large', 2],
+    ['floor_dirt_large_rocky', 1],
+  ],
+  // the ruin belt: mostly broken earth
+  mid: [
+    ['floor_tile_large', 1],
+    ['floor_tile_large_rocks', 2],
+    ['floor_dirt_large', 3],
+    ['floor_dirt_large_rocky', 3],
+  ],
+};
+
+// Rubble/overgrowth accents scattered over the mid belt (small kit tiles laid
+// proud of the floor). Deliberately clear of the rune pads so the gold rings
+// stay unobstructed reads.
+const ACCENT_KINDS: [string, number][] = [
+  ['floor_tile_small_broken_A', 2],
+  ['floor_tile_small_broken_B', 2],
+  ['floor_tile_small_weeds_A', 3],
+  ['floor_tile_small_weeds_B', 3],
 ];
+const ACCENT_CHANCE = 0.3;
+const ACCENT_Y_LIFT = 0.015;
+const ACCENT_CLEARANCE = 2.4; // keep-away radius around rune pads
+const ACCENT_SCALE = 1.4;
+
+// Team-colored kit banners dressing each keep's walls (red kinds south,
+// blue kinds north; positions mirror under the same point symmetry the
+// colliders keep, so neither end is dressed "more").
+const KEEP_BANNER_XS = [-6, 0, 6];
+const KEEP_BANNER_KINDS: Record<BgTeam, { center: string; side: string; mouth: string }> = {
+  0: { center: 'banner_patterna_red', side: 'banner_thin_red', mouth: 'banner_shield_red' },
+  1: { center: 'banner_patterna_blue', side: 'banner_thin_blue', mouth: 'banner_shield_blue' },
+};
+const BANNER_MODULE_SCALE = 1.5; // 4u kit banner -> 6u, the wall height
+const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
+
+// Torch-lit ramparts: mounted torches along the perimeter side walls plus the
+// keep back walls, mirrored. The builder adds a small warm glow at each
+// BG_TORCH_GLOW_H; no lights, so every tier pays the same nothing.
+const TORCH_SIDE_ZS = [-44, -28, -12, 12, 28, 44];
+const TORCH_KEEP_XS = [-10, 10];
+const TORCH_MODULE_SCALE = 1.5;
+const TORCH_WALL_INSET = 1.0;
+export const BG_TORCH_GLOW_H = 3.3;
 
 const CRATE_KINDS: [string, number][] = [
   ['crates_stacked', 2],
@@ -178,16 +253,36 @@ function ruinShellSegments(s: BgWallSeg): BgWallSeg[] {
  *  geometry): pure, deterministic, Three-free. */
 export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   const floors: BgModulePlacement[] = [];
+  const accents: BgModulePlacement[] = [];
   for (let z = -(BG_HALF_Z - FLOOR_CELL / 2); z <= BG_HALF_Z - FLOOR_CELL / 2; z += FLOOR_CELL) {
     for (let x = -(BG_HALF_X - FLOOR_CELL / 2); x <= BG_HALF_X - FLOOR_CELL / 2; x += FLOOR_CELL) {
+      const zone = bgZoneAt(z);
       floors.push({
-        kind: pickKind(FLOOR_KINDS, hash2(x * 1.31, z)),
+        kind: pickKind(FLOOR_KINDS_BY_ZONE[zone], hash2(x * 1.31, z)),
         x,
         y: BG_FLOOR_Y,
         z,
         ry: Math.floor(hash2(z, x) * 4) * QUARTER,
         scale: [1, 1, 1],
       });
+      // rubble/overgrowth only inside the ruin belt, clear of the rune pads
+      if (zone === 'mid' && hash2(x * 3.7, z * 1.9) < ACCENT_CHANCE) {
+        const nearRune = BG_SPEED_RUNES.some(
+          (r) => Math.hypot(r.x - x, r.z - z) < ACCENT_CLEARANCE,
+        );
+        if (!nearRune) {
+          const jx = (hash2(x, z * 5.1) - 0.5) * 1.6;
+          const jz = (hash2(x * 5.3, z) - 0.5) * 1.6;
+          accents.push({
+            kind: pickKind(ACCENT_KINDS, hash2(x * 7.7, z * 2.3)),
+            x: x + jx,
+            y: BG_FLOOR_Y + ACCENT_Y_LIFT,
+            z: z + jz,
+            ry: Math.floor(hash2(z * 3.1, x) * 4) * QUARTER,
+            scale: [ACCENT_SCALE, 1, ACCENT_SCALE],
+          });
+        }
+      }
     }
   }
 
@@ -231,5 +326,73 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
 
   const runePads = BG_SPEED_RUNES.map((r) => ({ x: r.x, z: r.z }));
 
-  return { floors, walls, ruin, pillars, crates, banners, flagPedestals, runePads };
+  // Keep-wall banner dressing + the torch-lit ramparts. Everything derives
+  // from the base/team geometry, so the two ends mirror exactly (color aside).
+  const wallBanners: BgModulePlacement[] = [];
+  const torches: BgModulePlacement[] = [];
+  for (const base of BG_BASES) {
+    const dir = base.team === 0 ? -1 : 1;
+    const kinds = KEEP_BANNER_KINDS[base.team];
+    const backZ = base.flag.z + dir * 8;
+    const innerBackZ = backZ - dir * BANNER_WALL_INSET;
+    const faceField = dir === -1 ? 0 : Math.PI; // cloth faces mid-field
+    for (const bx of KEEP_BANNER_XS) {
+      wallBanners.push({
+        kind: bx === 0 ? kinds.center : kinds.side,
+        x: bx,
+        y: 0,
+        z: innerBackZ,
+        ry: faceField,
+        scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
+      });
+    }
+    // shield banners at the mouth corners greet the attacker's approach
+    const mouthZ = base.flag.z - dir * 4;
+    for (const mx of [-14 + BANNER_WALL_INSET + 1, 14 - BANNER_WALL_INSET - 1]) {
+      wallBanners.push({
+        kind: kinds.mouth,
+        x: mx,
+        y: 0,
+        z: mouthZ,
+        ry: faceField,
+        scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
+      });
+    }
+    for (const tx of TORCH_KEEP_XS) {
+      torches.push({
+        kind: 'torch_mounted',
+        x: tx,
+        y: 0,
+        z: innerBackZ,
+        ry: faceField,
+        scale: [TORCH_MODULE_SCALE, TORCH_MODULE_SCALE, TORCH_MODULE_SCALE],
+      });
+    }
+  }
+  for (const sx of [-1, 1]) {
+    const wallX = sx * (BG_HALF_X - TORCH_WALL_INSET);
+    for (const tz of TORCH_SIDE_ZS) {
+      torches.push({
+        kind: 'torch_mounted',
+        x: wallX,
+        y: 0,
+        z: tz,
+        ry: sx === -1 ? Math.PI / 2 : -Math.PI / 2, // face into the field
+        scale: [TORCH_MODULE_SCALE, TORCH_MODULE_SCALE, TORCH_MODULE_SCALE],
+      });
+    }
+  }
+  return {
+    floors,
+    walls,
+    ruin,
+    pillars,
+    crates,
+    banners,
+    flagPedestals,
+    runePads,
+    accents,
+    wallBanners,
+    torches,
+  };
 }

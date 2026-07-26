@@ -16,6 +16,7 @@ import { groundHeight } from '../sim/world';
 import { registerPreload } from './assets/preload';
 import {
   BG_FLOOR_Y,
+  BG_TORCH_GLOW_H,
   type BgModulePlacement,
   battlegroundRenderManifest,
 } from './battleground_core';
@@ -55,6 +56,9 @@ const BG_RECEIVER_KINDS = new Set([
 ]);
 
 // Procedural dressing dimensions.
+const TORCH_GLOW_R = 0.24;
+const TORCH_GLOW_COLOR = 0xffb254;
+const TORCH_GLOW_OPACITY = 0.85;
 const BANNER_POLE_H = 7.6;
 const BANNER_POLE_R = 0.09;
 const BANNER_CLOTH_W = 1.5;
@@ -130,6 +134,9 @@ export function buildBattleground(
     manifest.ruin,
     manifest.pillars,
     manifest.crates,
+    manifest.accents,
+    manifest.wallBanners,
+    manifest.torches,
   ]) {
     for (const pl of list) {
       const bucket = byKind.get(pl.kind);
@@ -252,6 +259,34 @@ export function buildBattleground(
     pad.rotation.x = -Math.PI / 2;
     pad.position.set(rune.x, BG_FLOOR_Y + RUNE_PAD_Y, rune.z);
     group.add(pad);
+  }
+
+  // A small warm additive glow at every mounted torch head: the torch-lit
+  // rampart read with zero light cost, identical on every tier.
+  if (manifest.torches.length > 0) {
+    const glowGeo = new THREE.SphereGeometry(TORCH_GLOW_R, 8, 6);
+    ownGeos.push(glowGeo);
+    const glowMat = new THREE.MeshBasicMaterial({
+      color: TORCH_GLOW_COLOR,
+      transparent: true,
+      opacity: TORCH_GLOW_OPACITY,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    ownMats.push(glowMat);
+    const torchGlows = new THREE.InstancedMesh(glowGeo, glowMat, manifest.torches.length);
+    for (let i = 0; i < manifest.torches.length; i++) {
+      const t = manifest.torches[i];
+      pos.set(t.x, BG_TORCH_GLOW_H, t.z);
+      q.setFromEuler(euler.set(0, 0, 0));
+      scl.set(1, 1, 1);
+      m.compose(pos, q, scl);
+      torchGlows.setMatrixAt(i, m);
+    }
+    torchGlows.instanceMatrix.needsUpdate = true;
+    torchGlows.computeBoundingSphere();
+    instanced.push(torchGlows);
+    group.add(torchGlows);
   }
 
   freezeStaticMatrices(group);
