@@ -394,11 +394,16 @@ describe('the craft output arms each stand their hub line down', () => {
   });
 
   it('a MASTERWORK proc stands both down on the baked instance', () => {
-    // Seed 20 with tailoring at skill 200 is the hunted proc window
+    // Seed 23 with tailoring at skill 200 is the hunted proc window
     // tests/professions_masterwork.test.ts uses: the second successful
     // vestments craft procs. Reused rather than re-hunted so the two files
     // cannot disagree about which craft is the masterwork one.
-    const sim = new Sim({ seed: 20, playerClass: 'warrior', autoEquip: false });
+    //
+    // Was seed 20, which that file does not actually pin anywhere (so the two
+    // were already free to disagree) and which stops proccing once the rift
+    // systems share the rng stream. 23 is the literal that file commits for
+    // this exact scenario, so the claim above now holds.
+    const sim = new Sim({ seed: 23, playerClass: 'warrior', autoEquip: false });
     const pid = sim.playerId;
     sim.acceptArchetypeQuest('tailoring');
     const meta = sim.players.get(pid);

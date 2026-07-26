@@ -1003,11 +1003,16 @@ describe('landed-catch grant flags (pin 11)', () => {
     }>;
 
   it('a landed catch grants silent and caller-logged, so the reel line is the only line', () => {
-    const sim = makeSim(4242);
+    // Seed 467, the sequence this file actually documents (B0_SEQ_467), whose
+    // index 0 is the perch. The old 4242 cited a "B0_SEQ_4242" that was never
+    // defined here, and its first cast is a no-bite once the rift systems are
+    // present: they draw from the same shared rng stream, so a pin derived
+    // against the release-only stream lands elsewhere.
+    const sim = makeSim(467);
     const meta = sim.meta(sim.playerId)!;
     sim.events = [];
     const { caught, events } = castOnce(sim, meta);
-    expect(caught).toBe(PERCH); // B0_SEQ_4242[0], so this is never a no-bite
+    expect(caught).toBe(PERCH); // B0_SEQ_467[0], so this is never a no-bite
     const loot = lootIn(events);
     expect(loot).toHaveLength(1);
     expect(loot[0].silent).toBe(true);

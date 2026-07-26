@@ -177,7 +177,15 @@ describe('World Market filters', () => {
   // know its name. Fails for a future ItemKind with no arm, which tsc cannot see.
   it('leaves no catalog item reachable only through the All filter', () => {
     const buckets = MARKET_ITEM_TYPE_FILTERS.filter((f) => f !== 'all');
-    const orphans = Object.keys(ITEMS).filter(
+    // Scoped to what can actually reach the board: listing refuses `soulbound` and
+    // `noMarketList` goods outright (see the guard in market.ts listItem), so browse
+    // reachability is meaningless for them and a bucket built to catch them would
+    // match zero listings, i.e. exactly the dead control the non-vacuity sweep below
+    // rejects. The mount reins are the live case: all of them are soulbound.
+    const listable = Object.keys(ITEMS).filter(
+      (id) => !ITEMS[id]?.soulbound && !ITEMS[id]?.noMarketList,
+    );
+    const orphans = listable.filter(
       (id) => !buckets.some((itemType) => marketItemMatches(id, q({ itemType }))),
     );
     expect(orphans, `items no browse category can reach: ${orphans.join(', ')}`).toEqual([]);

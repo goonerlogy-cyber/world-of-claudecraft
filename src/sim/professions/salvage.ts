@@ -142,7 +142,12 @@ export function resolveSalvage(ctx: SimContext, pid: number, itemId: string): Sa
   const riftInstance = consumedInstance?.rift ? consumedInstance : null;
   if (riftInstance) {
     const count = riftSalvageYield(riftInstance);
-    ctx.addItem(RIFT_ESSENCE_ITEM_ID, count, pid);
+    // Same contract as the plain-salvage grant below: this branch returns the
+    // identical { materialItemId, count } result, so salvageResult fires its own
+    // cue and logs the item-linked line. Without silent + callerLogs the hub adds
+    // a second "You receive:" line and the generic ding stacks on the salvage cue
+    // (#2430).
+    ctx.addItem(RIFT_ESSENCE_ITEM_ID, count, pid, { silent: true, callerLogs: true });
     // A rift salvage is still a salvage: it spends the same throttle budget
     // and feeds the lifetime counter, drawing zero rng on this branch.
     if (meta) {
