@@ -37,8 +37,12 @@ vi.mock('../server/db', () => ({
 
 import { type ClientSession, GameServer } from '../server/game';
 import { ClientWorld } from '../src/net/online';
+import { MOBS } from '../src/sim/data';
+import { createMob } from '../src/sim/entity';
 import { CRAFT_THROTTLE_MAX_PER_WINDOW } from '../src/sim/professions/action_throttle';
-import type { PlayerClass, SimEvent } from '../src/sim/types';
+import type { Entity, PlayerClass, SimEvent } from '../src/sim/types';
+import { grantItemToken, grantQtyText, harvestLineKey } from '../src/ui/grant_line_view';
+import { t } from '../src/ui/i18n';
 
 const COMMON_WEAPON = 'eastbrook_arming_sword';
 const DUST = 'arcane_dust';
@@ -290,6 +294,114 @@ describe('the loot stand-down flags survive the server to client wire', () => {
     expect(loot).toHaveLength(1);
     expect(Object.hasOwn(loot[0], 'callerLogs')).toBe(false);
     expect(Object.hasOwn(loot[0], 'silent')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// A3. Corpse harvest: the LIST-carrying result event survives the wire (#2457).
+// ---------------------------------------------------------------------------
+describe('the corpse-harvest result event survives the server to client wire', () => {
+  // Corpse harvest is the one profession flow whose single command grants
+  // several DISTINCT items, so its result event is the only one carrying an
+  // ARRAY of nested objects. Everything above rides flat scalar fields, which
+  // a payload-shrinking serializer would keep working; this is the arm that
+  // would break first. The acceptance criterion it closes ("the offline
+  // browser world and the online server produce identical log output") had no
+  // assertion anywhere else, the same gap #2430 found for its own flags.
+  const CORPSE_ID = 90_452;
+
+  /** A dead, harvestable wolf corpse standing on the player, in the server's
+   *  own sim. The same construction the offline suites use. */
+  function plantCorpse(server: GameServer, at: { x: number; z: number }): Entity {
+    const template = MOBS.forest_wolf;
+    const mob = createMob(CORPSE_ID, template, template.maxLevel, { x: at.x, y: 0, z: at.z });
+    mob.dead = true;
+    mob.aiState = 'dead';
+    mob.corpseTimer = 9999;
+    mob.respawnTimer = 9999;
+    (server.sim as unknown as { entities: Map<number, Entity> }).entities.set(mob.id, mob);
+    return mob;
+  }
+
+  /** The chat lines the HUD's harvestResult arm renders for one event. Both
+   *  sides of the comparison below go through this one helper, so what it
+   *  pins is that the two HOSTS agree, not what the wording happens to be. */
+  function harvestLines(ev: SimEvent): string[] {
+    if (ev.type !== 'harvestResult') throw new Error('not a harvestResult');
+    return ev.yields.map((y) =>
+      t(harvestLineKey(y), { name: grantItemToken(y.itemId), qty: grantQtyText(y.qty) }),
+    );
+  }
+
+  it('a harvest arrives online with its whole yield list intact, rendering the same lines', () => {
+    const server = new GameServer();
+    const fc = fakeWs();
+    const st = joinServer(server, fc, 708, 'WireHarvest');
+    placeAt(server, st.pid, FIELD_POS);
+    plantCorpse(server, FIELD_POS);
+    const client = bareClient(st.pid);
+
+    const mark = fc.sent.length;
+    cmd(server, st, { cmd: 'harvestCorpse', id: CORPSE_ID });
+    routeTick(server);
+    for (const f of eventFrames(fc.sent, mark)) feed(client, f);
+
+    // What the server actually put on the wire, and what the client ended up
+    // holding, are the same object: nothing strips the nested array.
+    const onWire = eventsFor(fc.sent, 'harvestResult', mark);
+    const received = queueOf(client).filter((e: SimEvent) => e.type === 'harvestResult');
+    expect(onWire).toHaveLength(1);
+    expect(received).toEqual(onWire);
+
+    // The list survived with real content, not an empty array a shrinking
+    // serializer would also produce (which would render zero lines and pass a
+    // naive deep-equal against another empty one).
+    const ev = received[0] as Extract<SimEvent, { type: 'harvestResult' }>;
+    expect(ev.pid).toBe(st.pid);
+    expect(ev.yields.length).toBeGreaterThanOrEqual(2);
+    for (const y of ev.yields) {
+      expect(typeof y.itemId).toBe('string');
+      expect(y.qty).toBeGreaterThanOrEqual(1);
+      expect(['plain', 'signed', 'specimen']).toContain(y.kind);
+      expect(server.sim.countItem(y.itemId, st.pid)).toBeGreaterThanOrEqual(1);
+    }
+
+    // The acceptance criterion, stated directly: the lines an online client
+    // logs are byte-identical to the ones the offline world would log off the
+    // sim's own event.
+    expect(harvestLines(ev)).toEqual(harvestLines(onWire[0]));
+    expect(harvestLines(ev).length).toBe(ev.yields.length);
+    for (const line of harvestLines(ev)) expect(line).not.toMatch(/\{[A-Za-z0-9_]+\}/);
+  });
+
+  it('every hub grant behind that harvest arrives flagged, so no line doubles online', () => {
+    // The offline pin lives in tests/corpse_harvest_result_event.test.ts; this
+    // is the same contract measured on what the CLIENT holds, because the
+    // elision itself is client-side.
+    const server = new GameServer();
+    const fc = fakeWs();
+    const st = joinServer(server, fc, 709, 'WireHarvestFlags');
+    placeAt(server, st.pid, FIELD_POS);
+    plantCorpse(server, FIELD_POS);
+    const client = bareClient(st.pid);
+
+    const mark = fc.sent.length;
+    cmd(server, st, { cmd: 'harvestCorpse', id: CORPSE_ID });
+    routeTick(server);
+    for (const f of eventFrames(fc.sent, mark)) feed(client, f);
+
+    const loot = queueOf(client).filter((e: SimEvent) => e.type === 'loot') as Array<{
+      silent?: boolean;
+      callerLogs?: boolean;
+      text: string;
+    }>;
+    expect(loot.length).toBeGreaterThanOrEqual(2);
+    for (const ev of loot) {
+      expect(ev.callerLogs).toBe(true);
+      expect(ev.silent).toBe(true);
+      // The text still crosses the wire; only the client elides the render.
+      expect(ev.text).toContain('You receive:');
+    }
   });
 });
 

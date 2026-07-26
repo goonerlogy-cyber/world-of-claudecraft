@@ -9,7 +9,11 @@ and performance rules.
 - Each domain lives in its own directory and exposes a small public surface from
   `index.ts`.
 - Pure decisions stay in `*_view.ts` or `*_core.ts`. DOM and browser adapters stay
-  in controllers, windows, or painters.
+  in controllers, windows, or painters. A controller or window that reads a browser
+  global (`document`, `window`, `localStorage`, `getComputedStyle`, `Date.now`) is
+  registered in `UI_DOM_MODULES` in `tests/architecture.test.ts`, or the
+  classification sweep there fails; a DOM-touching helper that is neither an adapter
+  nor a pure core goes in `UI_PAINTER_HELPERS` and takes that list's hard contract.
 - Domain modules never import the `Hud` class. They receive narrow dependency bags
   and callbacks from the coordinator.
 - `Hud` retains cross-window coordination, the shared writer caches, and the frame

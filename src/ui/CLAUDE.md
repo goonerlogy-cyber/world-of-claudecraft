@@ -114,9 +114,33 @@ The contract above is the WHAT; reach for the matching one when you build a hot 
   by what it depends on (zone+seed, module id), then `drawImage`-blit it each redraw; only the
   dynamic markers re-stroke per frame (`delve_map_painter`, the per-zone `mapBgCache`, the
   `minimapBg` terrain canvas).
-- **Set loop-invariant canvas state once.** Assigning `ctx.font` re-parses the font string every
-  time, so set `font` / `fillStyle` / `lineWidth` before a draw loop, not per glyph
-  (`map_window_painter`).
+- **Set loop-invariant canvas state once**, and for TEXT go further. Hoisting `fillStyle` /
+  `lineWidth` above a draw loop is ordinary hygiene, but hoisting `ctx.font` does NOT fix a hot
+  text loop and the "font string re-parsing" story is wrong. Measured (17 iterations, dirty style
+  tree): bare `ctx.font` 0.033ms, `fillText` with the font already set 0.037ms, `measureText`
+  0.0368ms, `drawImage` 0.0062ms; hoisted-vs-inline `ctx.font` is 0.0385 vs 0.036, i.e. no
+  better. EVERY canvas text entry point (the `font` setter, `fillText`, `measureText`) re-resolves
+  font state against the document, so the cost tracks how dirty the style tree is, not the font
+  string. The only fix for a per-item text loop is to leave the text API: rasterize each distinct
+  (glyph, color) ONCE into an offscreen sprite and `drawImage` it, with the destination
+  `Math.round`ed (a fractional blit destination is resampled, and unrounded it silently depends on
+  whoever last set `imageSmoothingEnabled`). Reference for a CLOSED glyph set: `minimap_painter`
+  NPC glyphs, which needs no eviction because the set and the color are both fixed. For
+  LOCALIZED, open-ended labels (names, POI titles), reuse `text_sprite_cache.ts`: it measures the
+  box, bakes the outline plus fill passes into one sprite, rounds the blit, and bounds the live
+  set with an LRU trim taken at the redraw boundary, never mid-redraw (trimming mid-redraw lets a
+  label-heavy redraw evict what it is still drawing). Consumer: `map_window_painter`.
+  Two traps if you ever write another rasterizer rather than reusing that one, both of which
+  ship a plausible-looking label that is quietly cut in half, and neither of which a fake 2D
+  context can catch: (1) `TextMetrics` reports `actualBoundingBoxLeft`/`Right` RELATIVE TO the
+  current `textAlign`, so MEASURE under the same alignment and baseline you DRAW with, and take
+  the union with the plain advance/em box so a platform that ignores alignment in its metrics
+  gets a roomy box instead of a halved one; (2) an outline's mitered join at a sharp glyph apex
+  reaches `miterLimit / 2` line widths past the ink, not half a line width, so cap `miterLimit`
+  and size the padding from the same constant (at the canvas default of 10, a 3px outline
+  overruns 15px, and a substituted sans 'M' really does get its apex clipped off). Pin both in a
+  real browser: `tests/browser/text_sprite_cache.browser.test.ts` asserts no sprite's ink touches
+  its own canvas edge, which catches a box that is too small whatever the cause.
 - **DPR backing store only where it must be crisp.** A HiDPI canvas sizes its backing store to
   `devicePixelRatio` and reassigns `width`/`height` only when the DPR changes (assignment clears
   the canvas); portraits are DPR-scaled (`unit_portrait_painter`), the minimap/map/delve are 1:1.
@@ -168,6 +192,20 @@ follow the root `extract-and-test` skill for the move-not-rewrite mechanics. The
   go through the `PainterHost` elided writers; it drives tokens / CSS vars, never a literal
   hex/px/color in TS (the per-painter no-magic-values source guard). Interpolated names pass
   through `esc()`; a pure extraction reuses existing `t()` keys and adds none.
+- **Neither of the two?** A **painter-side helper**, and it is a LAST RESORT: if the DOM touch can
+  live in the painter, it must. A helper is for logic a painter needs that cannot be a pure core
+  (it has to touch the DOM) and is not itself a painter. Register it in `UI_PAINTER_HELPERS`
+  (`tests/architecture.test.ts`) and it holds a hard contract: host-agnostic (no `window` /
+  `navigator` / `localStorage` / `getComputedStyle` / `requestAnimationFrame` / `instanceof
+  HTMLElement`), deterministic (no `Date.now` / `performance.now` / `Math.random` / `new Date()`),
+  no literal hex/rgb color (the painter passes RESOLVED tokens), and `document` ONLY to mint its
+  own detached node via `createElement`. Exemplar: `text_sprite_cache.ts`. That sweep classifies
+  EVERY other `src/ui` module too: one that reaches a host (a browser global, a browser-only API,
+  the wall clock, an RNG) is registered in `UI_DOM_MODULES`, and anything unregistered must reach
+  no host at all. So a new module cannot escape both completeness sweeps by being named neither
+  `*_view`/`*_core` nor `*_painter`. Note where a `<name>_window.ts` painter lands: the painter
+  perf gate matches `*_painter.ts` only, so a window painter is classified by this sweep like any
+  other module and is registered in `UI_DOM_MODULES` once it touches `document`.
 - **For chrome:** satisfy the HUD-chrome WCAG 2.2 AA contract above; mark the window root with
   `markDialogRoot` (`src/ui/dialog_root.ts`): role=dialog + aria-modal + exactly ONE accessible
   name (labelledBy wins and clears aria-label), cold-path raw `setAttribute` BY DESIGN (not
@@ -340,8 +378,9 @@ tint with vector `PRIMITIVES` and optional `FX`. Unknown ids fall back via
 ## Small modules (pure-core + thin-consumer exemplars)
 Logic lifted out of `hud.ts`: a host-agnostic core a Vitest imports directly, plus a thin
 DOM/canvas consumer. EXEMPLARS only, each named for a non-obvious contract: the canonical
-index is the `UI_PURE_CORES` allowlist in `tests/architecture.test.ts`, and each module's
-header carries its own contract.
+index is the `UI_PURE_CORES` allowlist in `tests/architecture.test.ts` (a module that must
+touch the DOM is indexed in the sibling `UI_PAINTER_HELPERS` / `UI_DOM_MODULES` lists in that
+same file), and each module's header carries its own contract.
 - **unit_portrait.ts** / **unit_portrait_painter.ts**: the canonical template pair (DOM-free
   geometry + crest-id core, thin DPR-aware painter); player and target frames share it.
 - **hud/vendor/vendor_view.ts** / **vendor_window.ts**: the first window migrated out of

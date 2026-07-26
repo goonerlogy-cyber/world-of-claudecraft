@@ -71,7 +71,12 @@ use the `tests/server/helpers/` fakes (see Map), not a bespoke GameServer rig.
   render/ui/game/net/three import, a DOM global, or `Math.random`/`Date.now`/`performance.now`;
   run it after any `src/sim/` change. It ALSO completeness-checks the UI/render pure cores: a NEW
   pure core MUST follow the `*_view`/`*_core` naming (a bare name escapes the reverse sweep) and
-  be registered in `UI_PURE_CORES`/`RENDER_PURE_CORES`, or the guard fails.
+  be registered in `UI_PURE_CORES`/`RENDER_PURE_CORES`, or the guard fails. It then classifies
+  every REMAINING `src/ui` module (the ones the pure-core and `*_painter` name families miss): one
+  that reaches for a browser global must be registered in `UI_PAINTER_HELPERS` (a host-agnostic
+  painter-side helper, which then may only mint its own canvas and must stay deterministic and
+  colorless) or in `UI_DOM_MODULES` (it owns browser state), and anything unregistered must touch
+  no browser global at all.
 - `guide.test.ts` is the wiki freshness gate: new/changed player-facing content in
   `src/sim/content/` fails it until `npm run wiki:content` regenerates (auto in `pretest`).
 - `css_corpus.test.ts` guards the CSS union corpus + brace balance (a dropped closing

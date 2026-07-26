@@ -14,7 +14,15 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const hud = readFileSync(join(__dirname, '../src/ui/hud.ts'), 'utf8');
+// Comments stripped (`://` protocol slashes preserved), the repo's raw-source-pin
+// idiom. Every pin in this file matches on hud.ts source text, and these arms are
+// more comment than code (the harvestResult arm is 33 lines of which 20 explain
+// why), so without this a comment naming a call keeps a pin green after the call
+// itself is gone. Stripped once here rather than per block, so the older arms
+// below get the same protection.
+const hud = readFileSync(join(__dirname, '../src/ui/hud.ts'), 'utf8')
+  .replace(/\/\*[\s\S]*?\*\//g, '')
+  .replace(/(^|[^:])\/\/.*$/gm, '$1');
 
 describe('gatherResult audio wiring', () => {
   it('plays a gather cue keyed off the node type, not silence', () => {
@@ -23,6 +31,39 @@ describe('gatherResult audio wiring', () => {
     const end = hud.indexOf('break;', start);
     const body = hud.slice(start, end);
     expect(body).toContain('audio.gather(ev.nodeType)');
+  });
+});
+
+describe('harvestResult audio wiring (#2457)', () => {
+  const harvestArm = () => {
+    const start = hud.indexOf("case 'harvestResult':");
+    expect(start).toBeGreaterThan(-1);
+    return hud.slice(start, hud.indexOf('break;', start));
+  };
+
+  it('plays exactly ONE cue for the command, outside the per-yield loop', () => {
+    // The whole audio half of the bug: the hub used to ding once per grant, so
+    // a two-component harvest double-dinged and a specimen proc on a
+    // two-specimen corpse quadruple-dinged. The single call is what fixes it,
+    // and it must sit AFTER the loop that walks ev.yields, never inside it.
+    const body = harvestArm();
+    expect(body.match(/audio\.\w+\(/g)).toEqual(['audio.lootItem(']);
+    const loopEnd = body.lastIndexOf('}');
+    expect(body.indexOf('audio.lootItem();')).toBeGreaterThan(loopEnd);
+  });
+
+  it('logs one line per yield, from the shared grant-line helpers', () => {
+    // One log call, inside the loop: a line hoisted out would collapse a
+    // multi-item harvest to a single item's line, and the helpers are what
+    // carry the clickable link and the quantity the hub line used to own.
+    const body = harvestArm();
+    expect(body).toContain('for (const y of ev.yields)');
+    expect(body.match(/this\.log\(/g)).toHaveLength(1);
+    expect(body).toContain('t(harvestLineKey(y)');
+    expect(body).toContain('grantItemToken(y.itemId)');
+    expect(body).toContain('grantQtyText(y.qty)');
+    // The rolled material rarity colors the line (the gatherResult rule).
+    expect(body).toContain('QUALITY_COLOR[y.rarity]');
   });
 });
 
@@ -39,19 +80,25 @@ describe('gather-cast tool-out audio wiring', () => {
 });
 
 describe('craftResult audio wiring', () => {
-  it('resolves the recipe to its craft family instead of always playing the loot ding', () => {
+  // The slice ends at the arm's OWN break, the shape every other block in this
+  // file uses. It used to run to `case 'lootRoll'`, roughly fifteen arms
+  // further down, so the "no loot ding" assertion below was silently policing
+  // every arm in between; the corpse-harvest arm (#2457), which legitimately
+  // plays audio.lootItem() once, is what surfaced it.
+  const craftArm = () => {
     const start = hud.indexOf("case 'craftResult':");
     expect(start).toBeGreaterThan(-1);
-    const end = hud.indexOf("case 'lootRoll'", start);
-    const body = hud.slice(start, end);
+    return hud.slice(start, hud.indexOf('break;', start));
+  };
+
+  it('resolves the recipe to its craft family instead of always playing the loot ding', () => {
+    const body = craftArm();
     expect(body).toContain('audio.craftSuccess(');
     expect(body).not.toContain('audio.lootItem()');
   });
 
   it('layers the masterwork sting alongside the family cue, gated on ev.masterwork', () => {
-    const start = hud.indexOf("case 'craftResult':");
-    const end = hud.indexOf("case 'lootRoll'", start);
-    const body = hud.slice(start, end);
+    const body = craftArm();
     expect(body).toContain('if (ev.masterwork) audio.masterwork();');
     // The masterwork call must come strictly after the craftSuccess call, so
     // it layers on top rather than replacing it.

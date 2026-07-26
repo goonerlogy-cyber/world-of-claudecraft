@@ -339,6 +339,14 @@ function countToken(code: string, token: string): number {
   return (code.match(re) ?? []).length;
 }
 
+// The painter half of the src/ui classification: this suffix is what makes a
+// module a painter. The OTHER half is the module-classification sweep in
+// tests/architecture.test.ts, which hands *_painter.ts to this gate via its own
+// literal SWEPT_BY_NAME_RE and classifies everything else itself. The two are
+// coupled by that shared suffix, not by a shared symbol, so the dangerous edit is
+// widening ONE of them: adding _window there without adding it here would drop
+// every window painter out of both gates, and widening it here without there just
+// double-covers. Change them together.
 function findUiPainters(dir: string, prefix = ''): string[] {
   const painters: string[] = [];
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
