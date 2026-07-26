@@ -264,6 +264,55 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     expect(match.flags[0].state).toBe('home'); // the return won the race
     expect(match.flags[0].carrier).toBe(null);
   });
+
+  it('flags and invisibility never mix: a grab reveals, going hidden drops', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const runner = match.teams[0][0];
+    const e = sim.entities.get(runner)!;
+    const hide = () =>
+      sim.ctx.applyAura(e, {
+        id: 'stealth',
+        name: 'Stealth',
+        kind: 'stealth',
+        value: 0.5,
+        remaining: 3600,
+        duration: 3600,
+        sourceId: e.id,
+        school: 'physical',
+      });
+    // a stealthed runner CAN press the grab, but the grab is a revealing act:
+    // the stealth aura is stripped in the same tick the carry starts
+    hide();
+    expect(e.stealthed).toBe(true);
+    tp(sim, runner, match.flags[1].home.x, match.flags[1].home.z);
+    stripProtection(sim, runner);
+    sim.bgFlagAction(runner);
+    sim.tick();
+    expect(match.flags[1].carrier).toBe(runner);
+    expect(e.stealthed).toBe(false);
+    expect(e.auras.some((a) => a.kind === 'stealth')).toBe(false);
+    // going hidden WHILE carrying (stealth, vanish, invisibility: every source
+    // rides the stealth aura kind) drops the flag at the carrier's feet; the
+    // runner stays hidden but flagless, so the enemy team never chases an
+    // entity their snapshots cannot see
+    hide();
+    expect(e.stealthed).toBe(true);
+    sim.tick();
+    expect(match.flags[1].state).toBe('dropped');
+    expect(match.flags[1].carrier).toBe(null);
+    expect(e.stealthed).toBe(true); // the hide itself survives; the flag does not
+    expect(match.flags[1].pos.x).toBeCloseTo(e.pos.x, 3);
+    expect(match.flags[1].pos.z).toBeCloseTo(e.pos.z, 3);
+    // and the dropped flag then behaves like any drop: an enemy re-press takes it
+    const azure = match.teams[1].find((pid) => pid !== runner)!;
+    tp(sim, azure, match.flags[1].pos.x, match.flags[1].pos.z);
+    stripProtection(sim, azure);
+    sim.bgFlagAction(azure);
+    sim.tick();
+    expect(match.flags[1].state).toBe('home'); // own team: proximity return wins
+  });
 });
 
 describe('Ravenrift: death, wave respawn, spawn protection', () => {

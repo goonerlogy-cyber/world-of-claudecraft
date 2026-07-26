@@ -630,6 +630,7 @@ function tickFlags(ctx: SimContext, match: BgMatch): void {
       flag.carrier = pid;
       flag.carrySeconds = 0;
       bgBreakSpawnProtection(ctx, e); // a flag grab is a hostile action
+      bgBreakStealth(ctx, e); // and a revealing one: stealth never survives it
       const byName = ctx.players.get(pid)?.name ?? '?';
       bgEmitAll(ctx, match, (mp) =>
         ctx.emit({
@@ -657,6 +658,15 @@ function tickCarriedFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState): vo
   const carrier = flag.carrier !== null ? ctx.entities.get(flag.carrier) : null;
   if (!carrier || carrier.dead || ctx.bgMatches.get(flag.carrier ?? -1) !== match) {
     dropFlag(ctx, match, flag, carrier ?? null);
+    return;
+  }
+  // The classic invisibility rule: flags and hiding never mix. A carrier who
+  // turns invisible by ANY means (Stealth, Prowl, a vanish, Greater
+  // Invisibility: everything rides the stealth aura kind) drops the flag on
+  // the spot and stays hidden, flagless. The enemy team never chases an
+  // entity their snapshots cannot see.
+  if (carrier.stealthed) {
+    dropFlag(ctx, match, flag, carrier);
     return;
   }
   flag.pos = { ...carrier.pos };
@@ -773,6 +783,19 @@ function returnFlag(
       }),
     );
   }
+}
+
+/** Strip every stealth-kind aura (Stealth, Prowl, vanishes, invisibility all
+ *  share the kind) and refresh the live cache, mirroring Sim.breakStealth:
+ *  a flag grab is a deliberate, revealing act. */
+function bgBreakStealth(ctx: SimContext, e: Entity): void {
+  for (let i = e.auras.length - 1; i >= 0; i--) {
+    if (e.auras[i].kind !== 'stealth') continue;
+    const name = e.auras[i].name;
+    e.auras.splice(i, 1);
+    ctx.emit({ type: 'aura', targetId: e.id, name, gained: false });
+  }
+  e.stealthed = false; // keep the cache live without waiting for updateAuras
 }
 
 function dropFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState, at: Entity | null): void {
