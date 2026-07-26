@@ -132,16 +132,15 @@ const RUIN_KINDS: [string, number][] = [
 const RUIN_HEIGHT_LEVELS = [1, 0.8, 0.6];
 
 // --- Zone theming (visual only; colliders never read any of this) ----------
-// Three mirrored |z| bands give the field distinct places without touching a
-// single collider: each KEEP GROUND is a maintained garrison (clean tiles,
-// team banners, torch-lit ramparts), the APPROACH lanes are the worn road
-// between them, and the MID RUIN BELT around the heart ruin is broken,
-// overgrown ground littered with rubble. Bands key on |z|, so the two halves
-// stay exact mirrors and neither team's end reads differently in gameplay
-// terms (the fairness invariant: theme, never information).
+// Three mirrored |z| bands, aligned to the chamber walls: each KEEP GROUND is
+// a maintained garrison (clean tiles, team banners, torch-lit ramparts), the
+// FIELD chambers between keep and curtain are the worn road, and the RUIN
+// COURTYARD between the curtains is broken, overgrown ground littered with
+// rubble. Bands key on |z|, so the two halves stay exact mirrors and neither
+// team's end reads differently in gameplay terms (theme, never information).
 export type BgZone = 'keep' | 'approach' | 'mid';
-export const BG_ZONE_MID_HALF_Z = 18;
-export const BG_ZONE_KEEP_MIN_Z = 36;
+export const BG_ZONE_MID_HALF_Z = 20; // the curtain line: the courtyard
+export const BG_ZONE_KEEP_MIN_Z = 42; // past the mouth barricades
 
 export function bgZoneAt(z: number): BgZone {
   const az = Math.abs(z);
