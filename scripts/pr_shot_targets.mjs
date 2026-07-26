@@ -130,9 +130,9 @@ export const TARGETS = [
           game.input.camDist = 12;
           game.input.camPitch = 0.42;
         } else if (sceneKey === 'gatehouse') {
-          // inside the south gatehouse, on the courtyard-door line (x -22.5,
-          // the 3yd door at x -24..-21), looking south through the room: the
-          // ambush crate, the offset field-side door beyond. The camera backs
+          // inside the south gatehouse, on the courtyard-door line (x -30,
+          // the 4yd door at x -32..-28), looking south through the room: the
+          // ambush crates, the offset field-side door beyond. The camera backs
           // out through the courtyard door, so it never clips a wall.
           const home = match.flags[0].home;
           tp(home.x - 30, home.z + 66);

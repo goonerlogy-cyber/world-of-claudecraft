@@ -414,6 +414,8 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     for (const [sx2, sz2] of [
       [0, -104],
       [6, -110],
+      [10, -98],
+      [12, -93],
     ]) {
       const p = resolvePosition(SEED, o.x + sx2, o.z + sz2, 0.5);
       expect(p.x).toBeCloseTo(o.x + sx2, 5);

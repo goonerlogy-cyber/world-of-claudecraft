@@ -5513,7 +5513,10 @@ export class GameServer {
       this.sim.grid,
       anchors,
       INTEREST_QUERY_RADIUS,
-      BG_MATCH_DROP_RADIUS,
+      {
+        radius: BG_MATCH_DROP_RADIUS,
+        covers: isBgPos,
+      },
     );
     if (this.perfDetailActive) this.bcastGridNs += process.hrtime.bigint() - sharedStart;
     const queryLimitSq = INTEREST_QUERY_RADIUS * INTEREST_QUERY_RADIUS;
@@ -5538,9 +5541,10 @@ export class GameServer {
           const dz = e.pos.z - anchorEntity.pos.z;
           const d2 = dx * dx + dz * dz;
           if (d2 > (isBgPos(anchorEntity.pos.x) ? bgQueryLimitSq : queryLimitSq)) continue;
-          // bcVisits counts the exact per-viewer in-range set (self included),
-          // byte-identical to the old scan: increment only AFTER the exact-d2
-          // cutoff, never on the padded per-cell candidate list.
+          // bcVisits counts the exact per-viewer in-range set (self included):
+          // increment only AFTER the exact-d2 cutoff, never on the padded
+          // per-cell candidate list. Band viewers use the wider battleground
+          // cutoff, so their counts are larger than an open-world viewer's.
           if (this.perfDetailActive) this.bcVisits++;
           if (e.id === anchorEntity.id) continue;
           if (!this.canObserveEntity(anchorEntity, e, d2)) continue;

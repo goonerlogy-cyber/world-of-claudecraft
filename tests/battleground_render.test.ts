@@ -7,6 +7,7 @@
 // the heart ruin renders hollow over its solid collider footprint, and the
 // field's dressing (rune pads, flag pedestals, banners) is present and
 // point-symmetric like the layout itself.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   BG_BANNER_FLANK_DX,
@@ -239,6 +240,22 @@ describe('battleground render manifest derives from the layout', () => {
       expect(p.scale[1]).toBeGreaterThan(0);
       expect(p.scale[1]).toBeLessThanOrEqual(BG_WALL_Y_SCALE);
     }
+  });
+});
+
+describe('the band fog is view distance, tier-identical (source pin)', () => {
+  it('the battleground fog branch sets fixed values and reads no tier knob', () => {
+    // A tier-conditional fog here would be a live see-farther exploit: pin
+    // that the branch is unconditional and its values are the view-distance
+    // pair the design names.
+    const src = readFileSync(new URL('../src/render/renderer.ts', import.meta.url), 'utf8');
+    const start = src.indexOf("desired === 'battleground'");
+    expect(start).toBeGreaterThan(-1);
+    const branch = src.slice(start, src.indexOf('} else if', start + 1));
+    expect(branch).toContain('fog.near = 55');
+    expect(branch).toContain('fog.far = 130');
+    expect(branch).not.toContain('lowGfx');
+    expect(branch).not.toContain('Governor');
   });
 });
 

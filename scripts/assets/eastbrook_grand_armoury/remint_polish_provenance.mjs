@@ -18,7 +18,9 @@ import {
 
 const repoRoot = new URL('../../../', import.meta.url);
 const fileSha256 = (relativePath) =>
-  createHash('sha256').update(readFileSync(new URL(relativePath, repoRoot))).digest('hex');
+  createHash('sha256')
+    .update(readFileSync(new URL(relativePath, repoRoot)))
+    .digest('hex');
 
 const current = deriveEastbrookPolishCompositeProvenance({
   townAssetSourceFingerprint: eastbrookTownSourceFingerprint(),

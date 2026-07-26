@@ -1,4 +1,3 @@
-import { isBgPos } from '../src/sim/data';
 import type { SpatialGrid } from '../src/sim/spatial';
 import type { Entity } from '../src/sim/types';
 
@@ -74,17 +73,25 @@ export interface SharedInterestCandidates {
 // per DISTINCT occupied cell, and returns an O(1) lookup from sessionId to the
 // candidate Entity list for that session's anchor cell. The candidate list for a
 // cell is SHARED by reference across every session anchored in it.
+export interface WideBandQuery {
+  /** The wider per-cell radius (e.g. the battleground match drop radius). */
+  radius: number;
+  /** True when an x coordinate lies inside the wide band. The CALLER supplies
+   *  the predicate (this module stays world-agnostic spatial math). */
+  covers(x: number): boolean;
+}
+
 export function buildSharedInterestCandidates(
   grid: SpatialGrid,
   anchors: Iterable<AnchorRef>,
   baseRadius: number,
-  /** Wider per-cell radius for anchor cells inside the battleground band (the
-   *  raised same-slot match interest); defaults to the base radius. */
-  bgBandRadius: number = baseRadius,
+  /** Optional wide band: anchor cells whose center the predicate covers query
+   *  at the wider radius (the raised same-slot battleground interest). */
+  wideBand: WideBandQuery | null = null,
 ): SharedInterestCandidates {
   const cellSize = grid.cellSize;
   const radius = sharedQueryRadius(baseRadius, cellSize);
-  const bgRadius = sharedQueryRadius(bgBandRadius, cellSize);
+  const wideRadius = wideBand ? sharedQueryRadius(wideBand.radius, cellSize) : radius;
 
   // First pass: bucket each session into its anchor cell and record the distinct
   // occupied cells (their integer cx/cz, so the center is recovered exactly).
@@ -104,7 +111,7 @@ export function buildSharedInterestCandidates(
   for (const [key, { cx, cz }] of distinctCells) {
     const centerX = (cx + 0.5) * cellSize;
     const centerZ = (cz + 0.5) * cellSize;
-    const cellRadius = isBgPos(centerX) ? bgRadius : radius;
+    const cellRadius = wideBand?.covers(centerX) ? wideRadius : radius;
     const list: Entity[] = [];
     // Deliberately ignore the d2 the callback receives: it is measured from the
     // CELL CENTER, not any viewer, so it must not leak into the returned list as

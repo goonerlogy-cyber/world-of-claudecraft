@@ -145,7 +145,7 @@ const flagPos = async (pg, team) =>
 const myTeam = await hero.evaluate(() => window.__game.world.bgInfo.match.myTeam);
 const foeTeam = myTeam === 0 ? 1 : 0;
 
-// establishing shot: float the hero toward mid-field and pull the camera up/back
+// establishing shot: float the hero up its own field chamber and pull the camera up/back
 let myFlag = await flagPos(hero, myTeam);
 if (myFlag) {
   const center = { x: myFlag.x, z: myFlag.z + (myTeam === 0 ? 30 : -30) };

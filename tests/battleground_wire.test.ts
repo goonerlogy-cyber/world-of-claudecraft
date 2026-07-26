@@ -39,6 +39,8 @@ vi.mock('../server/db', () => ({
 
 import { type ClientSession, GameServer } from '../server/game';
 import { ClientWorld } from '../src/net/online';
+import { BG_HALF_X, BG_HALF_Z } from '../src/sim/battleground_layout';
+import { battlegroundOrigin } from '../src/sim/data';
 import type { PlayerClass } from '../src/sim/types';
 
 interface FakeClient {
@@ -194,6 +196,64 @@ describe('immersive-scale interest: the whole match stays tracked', () => {
       if (saved === undefined) delete process.env.ALLOW_DEV_COMMANDS;
       else process.env.ALLOW_DEV_COMMANDS = saved;
     }
+  });
+
+  it('cross-slot pairs never ship: the raised interest is same-slot only', () => {
+    const saved = process.env.ALLOW_DEV_COMMANDS;
+    try {
+      process.env.ALLOW_DEV_COMMANDS = '1';
+      const server = new GameServer();
+      const fa = fakeWs();
+      const a = joinServer(server, fa, 1, 'SlotZeroA');
+      const b = joinServer(server, fakeWs(), 2, 'SlotZeroB');
+      cmd(server, a, { cmd: 'bg_queue' });
+      cmd(server, b, { cmd: 'bg_queue' });
+      cmd(server, a, { cmd: 'dev_bg_start' });
+      const fc = fakeWs();
+      const c = joinServer(server, fc, 3, 'SlotOneC');
+      const d = joinServer(server, fakeWs(), 4, 'SlotOneD');
+      cmd(server, c, { cmd: 'bg_queue' });
+      cmd(server, d, { cmd: 'bg_queue' });
+      cmd(server, c, { cmd: 'dev_bg_start' });
+      const matchA = server.sim.bgMatchFor(a.pid)!;
+      const matchC = server.sim.bgMatchFor(c.pid)!;
+      expect(matchA).toBeTruthy();
+      expect(matchC).toBeTruthy();
+      expect(matchA.slot).not.toBe(matchC.slot);
+      // stand the two probes 260yd apart across the slot boundary: INSIDE the
+      // 300/320 match radius, beyond the 90/100 default, each 100yd from its
+      // own origin so slot classification is unambiguous
+      const [southMatch, northMatch] =
+        battlegroundOrigin(matchA.slot).z < battlegroundOrigin(matchC.slot).z
+          ? [matchA, matchC]
+          : [matchC, matchA];
+      const southProbe = server.sim.entities.get(southMatch === matchA ? a.pid : c.pid)!;
+      const northProbe = server.sim.entities.get(northMatch === matchA ? a.pid : c.pid)!;
+      southProbe.pos = { ...southProbe.pos, z: battlegroundOrigin(southMatch.slot).z + 100 };
+      southProbe.prevPos = { ...southProbe.pos };
+      server.sim.ctx.rebucket(southProbe);
+      northProbe.pos = { ...northProbe.pos, z: battlegroundOrigin(northMatch.slot).z - 100 };
+      northProbe.prevPos = { ...northProbe.pos };
+      server.sim.ctx.rebucket(northProbe);
+      const gap = Math.abs(southProbe.pos.z - northProbe.pos.z);
+      expect(gap).toBeGreaterThan(100); // beyond the default drop radius
+      expect(gap).toBeLessThan(300); // inside the match radius: decisive
+      (server as any).broadcastSnapshots();
+      const idsForA = (lastSnap(fa.sent).ents as { id: number }[]).map((row) => row.id);
+      const idsForC = (lastSnap(fc.sent).ents as { id: number }[]).map((row) => row.id);
+      expect(idsForA).not.toContain(c.pid);
+      expect(idsForC).not.toContain(a.pid);
+    } finally {
+      if (saved === undefined) delete process.env.ALLOW_DEV_COMMANDS;
+      else process.env.ALLOW_DEV_COMMANDS = saved;
+    }
+  });
+
+  it('the field diagonal keeps headroom inside the match interest radius', () => {
+    // The whole-match-tracked design rests on the diagonal fitting the raised
+    // radius (server BG_MATCH_INTEREST_RADIUS = 300). If the field grows again
+    // this fails loudly instead of participants popping out of mirrors.
+    expect(Math.hypot(2 * BG_HALF_X, 2 * BG_HALF_Z)).toBeLessThan(300);
   });
 });
 
