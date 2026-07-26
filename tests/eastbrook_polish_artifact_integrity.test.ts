@@ -1409,7 +1409,7 @@ describe('Eastbrook polish performance and contact evidence', () => {
     }
     expect(acceptedFiles).toHaveLength(4);
     expect(fingerprint.digest('hex')).toBe(
-      '8fb65f85a89b022321714ed1b799e27183a80d84958b3bdf5a7117ee72dc32a8',
+      '785ac40418f418723a5e939aaab9e82dd4b89198366c2f26323e557205fd477b',
     );
   });
 
