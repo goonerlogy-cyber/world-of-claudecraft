@@ -9,6 +9,7 @@ import { placeMobileStationForPlayer } from './professions/mobile_station';
 import { completeAllQuestsForDev } from './quests/dev_quest_commands';
 import type { SentChat } from './sim';
 import type { SimContext } from './sim_context';
+import { bgQueueJoin, bgQueueSize, devStartBg } from './social/battleground';
 import { revivePlayerAt } from './spirit';
 import { MAX_LEVEL } from './types';
 
@@ -270,6 +271,49 @@ export function handleDevChat(
     return null;
   }
 
+  if (/^\/(?:dev\s+bg|devbg)\s*$/i.test(raw)) {
+    if (ctx.bgMatches.has(pid)) {
+      ctx.error(pid, '[dev] You are already in a battleground.');
+      return null;
+    }
+    bgQueueJoin(ctx, pid);
+    // The join can refuse (dead, inside an instance, oversize party); it
+    // already told the caller why, so bail before padding leaks a bot.
+    if (!ctx.bgQueue.some((g) => g.pids.includes(pid))) return null;
+    if (bgQueueSize(ctx) < 2) {
+      // Solo walk-around: pad the queue with one stationary dev bot (reusing an
+      // idle one if a previous /dev bg left it behind) so the force-start below
+      // has an opposing side. Partied bots stay untouched: queueing one would
+      // drag its whole party in.
+      let botPid = -1;
+      for (const meta of ctx.players.values()) {
+        const id = meta.entityId;
+        const e = ctx.entities.get(id);
+        if (meta.isDevBot && e && !e.dead && !ctx.bgMatches.has(id) && !ctx.partyOf(id)) {
+          botPid = id;
+          break;
+        }
+      }
+      // The suffix loop only exists to step past name collisions with
+      // player-spawned "/dev bot" dummies; nine tries is plenty.
+      for (let i = 1; i <= 9 && botPid < 0; i++)
+        botPid = ctx.spawnDevBot(i === 1 ? 'Riftbot' : `Riftbot${i}`);
+      if (botPid >= 0) bgQueueJoin(ctx, botPid);
+    }
+    devStartBg(ctx);
+    const match = ctx.bgMatches.get(pid);
+    if (match) {
+      const count = match.teams[0].length + match.teams[1].length;
+      emitDevLog(ctx, pid, `[dev] Ravenrift force-started with ${count} champions.`);
+    } else {
+      ctx.error(
+        pid,
+        '[dev] Could not force-start Ravenrift (needs 2 queued players and a free slot).',
+      );
+    }
+    return null;
+  }
+
   if (/^\/(?:dev\s+vendor|devvendor)\s*$/i.test(raw)) {
     const vendorId = ctx.spawnDevVendor(pid);
     if (vendorId < 0) ctx.error(pid, '[dev] Could not spawn the test vendor.');
@@ -432,7 +476,7 @@ export function handleDevChat(
   if (/^\/dev(?:\s|$)/i.test(raw)) {
     ctx.error(
       pid,
-      'Dev commands: /dev gui, /dev level, /dev tp, /dev spawn, /dev despawn, /dev killtarget, /dev give, /dev kit, /dev gold, /dev quest, /dev quests, /dev attune, /dev mobilestation, /dev gather, /dev bot, /dev vendor, /dev lfg, /dev cascade, /dev sandbox, /dev god, /dev heal, /dev resource, /dev cooldowns, /dev revive, /dev combatreset, /dev dungeon, /dev raid, /dev kill',
+      'Dev commands: /dev gui, /dev level, /dev tp, /dev spawn, /dev despawn, /dev killtarget, /dev give, /dev kit, /dev gold, /dev quest, /dev quests, /dev attune, /dev mobilestation, /dev gather, /dev bot, /dev vendor, /dev bg, /dev lfg, /dev cascade, /dev sandbox, /dev god, /dev heal, /dev resource, /dev cooldowns, /dev revive, /dev combatreset, /dev dungeon, /dev raid, /dev kill',
     );
     return null;
   }
