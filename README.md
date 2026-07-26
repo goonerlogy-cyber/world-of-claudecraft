@@ -236,7 +236,7 @@ Press `Shift+G` or the banner button and Enter the Queue, solo or with a party o
 
 - **Team wave respawns** (no graveyard run): each team's fallen rise together on a staggered wave clock at their keep, briefly spawn-protected until they act.
 - **Anti-turtle carrier fatigue**: hold the enemy flag too long and you take ever-increasing damage until it is captured, dropped, or returned.
-- **Sprint Runes** at the flag approaches and flanks, plus mirrored postern gaps that give the flag runner a second way out of every keep.
+- **A field that plays in routes**: mirrored postern gaps out of every keep, a low barricade breaking the straight charge into each keep mouth, flank side rooms with a doorway at either end, shallow rampart cover bays, ruin fragments threading mid-field, and **Sprint Runes** at the flag approaches and flanks. The whole map is point-symmetric, so neither team is favored.
 - A persistent per-character **battleground rating** (Elo over team averages, base 1500) with an all-time leaderboard (`GET /api/battleground/leaderboard`), and Honor for played-out wins and losses.
 
 ### Playing together
