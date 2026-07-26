@@ -30,8 +30,11 @@ import type { BiomeId } from '../sim/types';
 import { terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import { BIOME_PALETTE, ROCK_SLOPE_START, TERRAIN_TONES } from './terrain_palette';
 
-/** Square far-mesh tile edge, world units. Divisible by every tier spacing. */
-export const FAR_TILE_SIZE = 480;
+/** Square far-mesh tile edge, world units. Divisible by every tier spacing.
+ *  Sized so the whole world is about a dozen draws: each tile carries only a
+ *  couple thousand triangles, so draw count, not triangle count, is what the
+ *  layer must keep small; the camera frustum still culls tile-by-tile. */
+export const FAR_TILE_SIZE = 960;
 
 /** How far past the zone-rect world the far mesh extends: covers the rim
  *  mountains' far side and the open sea apron band beyond them. */
@@ -215,7 +218,7 @@ export function farGridSide(tileSize: number, spacing: number): number {
 
 /**
  * Triangle indices for one tile's regular grid, row-major vertex order,
- * fixed diagonal. Fits Uint16 for every shipped spacing (49x49 max).
+ * fixed diagonal. Fits Uint16 for every shipped spacing (97x97 max).
  */
 export function farGridIndices(side: number): Uint16Array {
   const cells = side - 1;

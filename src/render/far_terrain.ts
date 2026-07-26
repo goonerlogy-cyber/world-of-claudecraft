@@ -44,8 +44,9 @@ const zoneRects: RectLike[] = ZONES.map((zn) => ({
 }));
 
 // An idle-paced build slice: about the same per-slice budget the near
-// terrain's streamed chunk builds use (IDLE_GEOMETRY_SLICE_MS scale).
-const FAR_BUILD_ROWS_PER_SLICE = 24;
+// terrain's streamed chunk builds use (IDLE_GEOMETRY_SLICE_MS scale). A
+// 960u tile row is ~100 terrainHeight samples, roughly half a millisecond.
+const FAR_BUILD_ROWS_PER_SLICE = 12;
 const FAR_BUILD_TIMEOUT_MS = 200;
 
 // Fragments closer than (detailFar - margin) are discarded: inside the
