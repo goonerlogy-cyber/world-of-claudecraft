@@ -18,6 +18,7 @@ import {
   battlegroundColliders,
   battlegroundWallSegments,
   KEEP_MOUTH_DZ,
+  keepInteriorBounds,
   keepWallSegments,
 } from '../src/sim/battleground_layout';
 import {
@@ -41,6 +42,7 @@ import {
   isYumiMazePos,
   YUMI_BAND_X_MAX,
 } from '../src/sim/data';
+import { bgGraveyardSpot } from '../src/sim/spirit';
 
 const SEED = 42;
 
@@ -423,6 +425,57 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       { x: -4, z: 114 },
       { x: 0, z: BG_FLAG_Z },
     ]);
+  });
+
+  it('graveyard plots: inside the keeps, exact mirrors, spots and ward clear of colliders', () => {
+    // plots are point mirrors and sit fully inside their keep interiors
+    expect(BG_GRAVEYARDS[1].x).toBeCloseTo(-BG_GRAVEYARDS[0].x, 5);
+    expect(BG_GRAVEYARDS[1].z).toBeCloseTo(-BG_GRAVEYARDS[0].z, 5);
+    expect(BG_GRAVEYARDS[1].hw).toBe(BG_GRAVEYARDS[0].hw);
+    expect(BG_GRAVEYARDS[1].hd).toBe(BG_GRAVEYARDS[0].hd);
+    for (const team of [0, 1] as const) {
+      const plot = BG_GRAVEYARDS[team];
+      const bounds = keepInteriorBounds(team);
+      expect(plot.x - plot.hw).toBeGreaterThanOrEqual(bounds.minX);
+      expect(plot.x + plot.hw).toBeLessThanOrEqual(bounds.maxX);
+      expect(plot.z - plot.hd).toBeGreaterThanOrEqual(bounds.minZ);
+      expect(plot.z + plot.hd).toBeLessThanOrEqual(bounds.maxZ);
+    }
+    // every release spot (5 roster slots x 2 teams) resolves in place at body
+    // radius: a spirit is never teleported into a fence rail
+    const o = battlegroundOrigin(0);
+    const fakeMatch = {
+      slot: 0,
+      teams: [
+        [101, 102, 103, 104, 105],
+        [201, 202, 203, 204, 205],
+      ],
+    } as unknown as Parameters<typeof bgGraveyardSpot>[0];
+    for (const pid of [...fakeMatch.teams[0], ...fakeMatch.teams[1]]) {
+      const spot = bgGraveyardSpot(fakeMatch, pid);
+      const r = resolvePosition(SEED, spot.x, spot.z, 0.5);
+      expect(r.x, `spot for ${pid}`).toBeCloseTo(spot.x, 5);
+      expect(r.z, `spot for ${pid}`).toBeCloseTo(spot.z, 5);
+      // and inside the ward box the clamp enforces (plot inset by 1.6)
+      const team = pid >= 200 ? 1 : 0;
+      const plot = BG_GRAVEYARDS[team];
+      expect(Math.abs(spot.x - (o.x + plot.x))).toBeLessThanOrEqual(plot.hw - 1.6 + 1e-9);
+      expect(Math.abs(spot.z - (o.z + plot.z))).toBeLessThanOrEqual(plot.hd - 1.6 + 1e-9);
+    }
+    // the ward corners themselves resolve in place: the clamp can never park
+    // a spirit inside a rail or keep wall
+    for (const team of [0, 1] as const) {
+      const plot = BG_GRAVEYARDS[team];
+      for (const sx of [-1, 1]) {
+        for (const sz of [-1, 1]) {
+          const wx = o.x + plot.x + sx * (plot.hw - 1.6);
+          const wz = o.z + plot.z + sz * (plot.hd - 1.6);
+          const r = resolvePosition(SEED, wx, wz, 0.5);
+          expect(r.x, `ward corner ${team}/${sx}/${sz}`).toBeCloseTo(wx, 5);
+          expect(r.z, `ward corner ${team}/${sx}/${sz}`).toBeCloseTo(wz, 5);
+        }
+      }
+    }
   });
 
   it('the form-up spots and spawn rings stay walkable under the new geometry', () => {

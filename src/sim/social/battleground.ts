@@ -271,8 +271,10 @@ export function updateBattleground(ctx: SimContext): void {
       continue;
     }
     match.timer += DT;
-    tickWaveRespawns(ctx, match);
+    // Graveyards before the wave: an auto-release landing on the wave tick
+    // still catches that wave, and the raise position is post-ward.
     tickGraveyards(ctx, match);
+    tickWaveRespawns(ctx, match);
     tickRunes(ctx, match);
     tickFlags(ctx, match);
     match.pendingFlagPress.clear();
@@ -571,12 +573,16 @@ export const BG_AUTO_RELEASE_SECONDS = 6;
 // wave raises it.
 function tickGraveyards(ctx: SimContext, match: BgMatch): void {
   const origin = battlegroundOrigin(match.slot);
+  // The ward box is the plot inset past the fence rails (which sit ON the
+  // plot edge and intrude 1yd) plus the body radius, so the clamp can never
+  // park a spirit inside a rail or the keep walls.
+  const WARD_INSET = 1.6;
   for (const team of [0, 1] as BgTeam[]) {
     const plot = BG_GRAVEYARDS[team];
-    const minX = origin.x + plot.x - plot.hw;
-    const maxX = origin.x + plot.x + plot.hw;
-    const minZ = origin.z + plot.z - plot.hd;
-    const maxZ = origin.z + plot.z + plot.hd;
+    const minX = origin.x + plot.x - plot.hw + WARD_INSET;
+    const maxX = origin.x + plot.x + plot.hw - WARD_INSET;
+    const minZ = origin.z + plot.z - plot.hd + WARD_INSET;
+    const maxZ = origin.z + plot.z + plot.hd - WARD_INSET;
     for (const pid of match.teams[team]) {
       const e = ctx.entities.get(pid);
       if (!e || !e.dead) {
@@ -917,9 +923,30 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
     deserter.bgLosses++;
     ctx.markDeedsDirty(pid);
   }
+  // Restore the leaver's body the way endBgMatch would: revive, clear any
+  // ghost/corpse state, and send them home to where they queued from. A
+  // deserter must never be left dead (or a ghost) stranded inside the band,
+  // where the bg rez refusals no longer apply once the match entry is gone.
+  const leaver = ctx.entities.get(pid);
+  if (leaver) {
+    ctx.readyArenaFighter(leaver, { clearPrep: true });
+    leaver.dead = false;
+    leaver.ghost = false;
+    leaver.corpsePos = null;
+    leaver.corpseInstanceId = null;
+    const ret = match.returns.get(pid);
+    if (ret) {
+      leaver.pos = ctx.groundPos(ret.x, ret.z);
+      leaver.prevPos = { ...leaver.pos };
+      leaver.facing = ret.facing;
+    }
+    ctx.rebucket(leaver);
+  }
   match.teams[team] = match.teams[team].filter((p) => p !== pid);
   match.returns.delete(pid);
   match.preMatchPools.delete(pid);
+  match.stats.delete(pid);
+  match.autoReleaseIn.delete(pid);
   match.pendingFlagPress.delete(pid);
   ctx.bgMatches.delete(pid);
   if (match.teams[0].length === 0 || match.teams[1].length === 0) {
@@ -1014,6 +1041,12 @@ export function endBgMatch(
         e.facing = ret.facing;
       }
       e.dead = false;
+      // A fighter who was a released spirit when the match ended must not
+      // carry the ghost state home (ghost implies dead everywhere else, and
+      // moveSpeedMult/serialize both read it).
+      e.ghost = false;
+      e.corpsePos = null;
+      e.corpseInstanceId = null;
       ctx.rebucket(e);
       ctx.emit({ type: 'respawn', pid });
     }

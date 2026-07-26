@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BG_GRAVEYARDS } from '../src/sim/battleground_layout';
+import { offerResurrection } from '../src/sim/combat/resurrection_offer';
 import { battlegroundOrigin, isBgPos } from '../src/sim/data';
 import { BATTLEGROUND_LOSS_HONOR, BATTLEGROUND_WIN_HONOR } from '../src/sim/pvp';
 import { eloDelta, Sim } from '../src/sim/sim';
@@ -13,6 +14,7 @@ import {
   BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
+  endBgMatch,
   updateBattleground,
 } from '../src/sim/social/battleground';
 import { groundHeight } from '../src/sim/world';
@@ -254,18 +256,23 @@ describe('Ravenrift: the graveyard rite', () => {
     toActive(sim, match);
     const a = match.teams[0][0];
     const b = match.teams[0][1];
+    // stage the clock so Crimson's next wave lands INSIDE the auto-release
+    // grace: advance until the boundary is ~3s away, then die
+    while (
+      BG_WAVE_PERIOD - (match.timer % BG_WAVE_PERIOD) > 3 ||
+      BG_WAVE_PERIOD - (match.timer % BG_WAVE_PERIOD) < 2
+    ) {
+      sim.tick();
+    }
     kill(sim, a);
     kill(sim, b);
     sim.tick();
     sim.releaseSpirit(a); // a releases immediately; b lies on its corpse
-    // advance to just after Crimson's next wave WITHOUT crossing b's
-    // auto-release grace (BG_WAVE_PERIOD boundary within 6s of the kills)
     const target = Math.ceil(match.timer / BG_WAVE_PERIOD) * BG_WAVE_PERIOD + 0.3;
-    if (target - match.timer < BG_AUTO_RELEASE_SECONDS - 0.5) {
-      while (match.timer < target) sim.tick();
-      expect(sim.entities.get(a)!.dead).toBe(false); // the released spirit rose
-      expect(sim.entities.get(b)!.dead).toBe(true); // the corpse waited
-    }
+    expect(target - match.timer).toBeLessThan(BG_AUTO_RELEASE_SECONDS - 0.5); // staging held
+    while (match.timer < target) sim.tick();
+    expect(sim.entities.get(a)!.dead).toBe(false); // the released spirit rose
+    expect(sim.entities.get(b)!.dead).toBe(true); // the corpse waited
     // b auto-releases and the following wave raises it too
     while (sim.entities.get(b)!.dead && match.timer < 60) sim.tick();
     expect(sim.entities.get(b)!.dead).toBe(false);
@@ -287,6 +294,57 @@ describe('Ravenrift: the graveyard rite', () => {
     sim.resurrectAtCorpse(victim);
     expect(e.dead).toBe(true);
     expect(sim.resurrectAtSpiritHealer(victim)).toBe(false);
+  });
+});
+
+describe('Ravenrift: ghost-state teardown (review pins)', () => {
+  it('a match ending while a spirit waits clears ghost and corpse state on the way home', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const victim = match.teams[1][0];
+    kill(sim, victim);
+    sim.tick();
+    sim.releaseSpirit(victim);
+    const e = sim.entities.get(victim)!;
+    expect(e.ghost).toBe(true);
+    updateBattleground(sim.ctx); // seat the release fully
+    endBgMatch(sim.ctx, match, 0, 'caps');
+    expect(e.dead).toBe(false);
+    expect(e.ghost).toBe(false);
+    expect(e.corpsePos).toBeNull();
+    expect(isBgPos(e.pos.x)).toBe(false); // sent home, not stranded in the band
+  });
+
+  it('deserting while a spirit restores the body and sends it home', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const leaver = match.teams[1][0];
+    kill(sim, leaver);
+    sim.tick();
+    sim.releaseSpirit(leaver);
+    const e = sim.entities.get(leaver)!;
+    expect(e.ghost).toBe(true);
+    sim.bgResolveDesertion(leaver);
+    expect(e.dead).toBe(false);
+    expect(e.ghost).toBe(false);
+    expect(e.corpsePos).toBeNull();
+    expect(isBgPos(e.pos.x)).toBe(false);
+  });
+
+  it('a player-cast resurrection offer is refused in-match (the wave is the one way back)', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const caster = sim.entities.get(match.teams[0][0])!;
+    const fallen = match.teams[0][1];
+    kill(sim, fallen);
+    sim.tick();
+    const target = sim.entities.get(fallen)!;
+    expect(offerResurrection(sim.ctx, caster, target, 1)).toBe(false);
+    expect(sim.ctx.pendingResurrections.has(fallen)).toBe(false);
+    expect(target.dead).toBe(true);
   });
 });
 

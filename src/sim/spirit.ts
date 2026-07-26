@@ -160,14 +160,14 @@ export function releasePlayerSpirit(
 
 // The waiting spot inside the team's graveyard plot: a small deterministic
 // grid keyed by roster index, mirrored between teams like the plot itself.
-function bgGraveyardSpot(match: BgMatch, pid: number): { x: number; z: number } {
+export function bgGraveyardSpot(match: BgMatch, pid: number): { x: number; z: number } {
   const team = match.teams[1].includes(pid) ? 1 : 0;
   const origin = battlegroundOrigin(match.slot);
   const plot = BG_GRAVEYARDS[team];
   const idx = Math.max(0, match.teams[team].indexOf(pid));
   const m = team === 0 ? 1 : -1;
   const dx = ((idx % 2) * 4 - 2) * m;
-  const dz = (Math.floor(idx / 2) - 1) * 2 * m;
+  const dz = (Math.floor(idx / 2) - 1) * 1.2 * m;
   return { x: origin.x + plot.x + dx, z: origin.z + plot.z + dz };
 }
 
