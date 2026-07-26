@@ -8311,6 +8311,7 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'entities.items.unbroken_circle.name': '不破之環',
   'entities.items.fleetblood_band.name': '疾血指環',
   'entities.items.last_step_signet.name': '末步徽戒',
+  'entities.items.last_keep_signet.name': '最後的堡壘印戒',
   'entities.items.ashen_focus_ring.name': '灰燼專注戒指',
   'entities.items.spellbreakers_seal.name': '破法者之印',
   'entities.items.final_argument_greatblade.name': '最終論斷巨刃',

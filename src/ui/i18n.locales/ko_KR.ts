@@ -8694,6 +8694,7 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.items.unbroken_circle.name': '깨지지 않는 고리',
   'entities.items.fleetblood_band.name': '쾌혈의 반지',
   'entities.items.last_step_signet.name': '마지막 걸음의 인장',
+  'entities.items.last_keep_signet.name': '마지막 요새의 인장',
   'entities.items.ashen_focus_ring.name': '잿빛 집중의 반지',
   'entities.items.spellbreakers_seal.name': '주문파괴자의 인장',
   'entities.items.final_argument_greatblade.name': '최후 논박의 대검',

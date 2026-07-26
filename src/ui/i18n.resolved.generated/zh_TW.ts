@@ -9687,7 +9687,7 @@ export const zh_TW: EnTranslations = {
         "name": "不破海岸披風"
       },
       "last_keep_signet": {
-        "name": "Signet of the Last Keep"
+        "name": "最後的堡壘印戒"
       },
       "conjured_water4": {
         "name": "魔法泉水"

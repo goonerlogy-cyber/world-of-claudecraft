@@ -4357,6 +4357,7 @@ export const ITEM_ART_PENDING = new Set<string>([
   'ashbone_war_brand',
   'cinderwalk_treads',
   'emberwing_scale',
+  'last_keep_signet',
   'mawscale_pauldrons',
   'scorched_supply_crate',
   'wyrmwatch_warning_banner',

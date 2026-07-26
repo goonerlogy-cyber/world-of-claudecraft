@@ -394,16 +394,19 @@ describe('the craft output arms each stand their hub line down', () => {
   });
 
   it('a MASTERWORK proc stands both down on the baked instance', () => {
-    // Seed 23 with tailoring at skill 200 is the hunted proc window
-    // tests/professions_masterwork.test.ts uses: the second successful
-    // vestments craft procs. Reused rather than re-hunted so the two files
-    // cannot disagree about which craft is the masterwork one.
+    // Seed 21 with tailoring at skill 200: the second successful vestments
+    // craft procs. Hunted for THIS file (bounded scan from seed 1); spares on
+    // record: 1, 9, 29, 35, 38.
     //
-    // Was seed 20, which that file does not actually pin anywhere (so the two
-    // were already free to disagree) and which stops proccing once the rift
-    // systems share the rng stream. 23 is the literal that file commits for
-    // this exact scenario, so the claim above now holds.
-    const sim = new Sim({ seed: 23, playerClass: 'warrior', autoEquip: false });
+    // Deliberately NOT shared with tests/professions_masterwork.test.ts any
+    // more. It pins 23, 26 and 7, and none of those still procs in this
+    // scenario once the rifts and world content share the rng stream, so the
+    // old "reused so the two files cannot disagree" claim is no longer true
+    // and is not worth faking. (The seed before that was 20, which that file
+    // never pinned at all, so the two were already free to disagree.) Each
+    // file now owns its own hunted window; if they must be re-coupled, hunt a
+    // seed that satisfies both and say so here.
+    const sim = new Sim({ seed: 21, playerClass: 'warrior', autoEquip: false });
     const pid = sim.playerId;
     sim.acceptArchetypeQuest('tailoring');
     const meta = sim.players.get(pid);

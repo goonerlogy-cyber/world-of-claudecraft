@@ -9687,7 +9687,7 @@ export const ja_JP: EnTranslations = {
         "name": "揺るがぬ岸のマント"
       },
       "last_keep_signet": {
-        "name": "Signet of the Last Keep"
+        "name": "最後の砦の印章"
       },
       "conjured_water4": {
         "name": "魔法の湧き水"

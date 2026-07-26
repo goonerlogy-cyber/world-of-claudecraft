@@ -8852,6 +8852,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.items.unbroken_circle.name': 'Несокрушимый круг',
   'entities.items.fleetblood_band.name': 'Кольцо стремительной крови',
   'entities.items.last_step_signet.name': 'Печатка последнего шага',
+  'entities.items.last_keep_signet.name': 'Печатка Последнего оплота',
   'entities.items.ashen_focus_ring.name': 'Кольцо пепельного средоточия',
   'entities.items.spellbreakers_seal.name': 'Печать разрушителя чар',
   'entities.items.final_argument_greatblade.name': 'Великий клинок последнего довода',

@@ -294,9 +294,9 @@ describe('scripted playthrough (one sim, live sites only)', () => {
         sawBiteOnKoiSession = bit;
       }
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded at The
-    // Last Keep's overworld door spawn): the koi bites on session index 26.
-    expect(koiSession).toBe(26);
+    // Hunted literal (seed 4242, after every beat above, re-recorded for the
+    // rifts + ability-VFX integration stream): the koi bites on session index 73.
+    expect(koiSession).toBe(73);
     expect(sawBiteOnKoiSession).toBe(true); // the celebration follows the bite moment
     expect(meta.deedsEarned.has('col_glimmerfin')).toBe(false); // grant sweeps at the tick tail
     const evs = sim.tick();
@@ -321,18 +321,18 @@ describe('scripted playthrough (one sim, live sites only)', () => {
     // Hunted literals (seed 4242, after every beat above): the harvest index
     // where each flavor's 1-in-90 event fires under the shared stream.
     const hunts: { nodeId: string; deedId: string; itemId: string; hitAt: number }[] = [
-      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 88 },
+      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 148 },
       {
         nodeId: 'wood_eastbrook_1',
         deedId: 'col_ancient_heartwood',
         itemId: 'ironbark_log',
-        hitAt: 12,
+        hitAt: 152,
       },
       {
         nodeId: 'herb_eastbrook_1',
         deedId: 'col_moonlit_bloom',
         itemId: 'silverleaf_herb',
-        hitAt: 163,
+        hitAt: 156,
       },
     ];
     for (const hunt of hunts) {

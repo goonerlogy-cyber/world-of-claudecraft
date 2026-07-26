@@ -9687,7 +9687,7 @@ export const ru_RU: EnTranslations = {
         "name": "Мантия несломленного берега"
       },
       "last_keep_signet": {
-        "name": "Signet of the Last Keep"
+        "name": "Печатка Последнего оплота"
       },
       "conjured_water4": {
         "name": "Сотворённая родниковая вода"

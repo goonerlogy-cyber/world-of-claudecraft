@@ -9687,7 +9687,7 @@ export const ko_KR: EnTranslations = {
         "name": "부서지지 않은 해안의 어깨덮개"
       },
       "last_keep_signet": {
-        "name": "Signet of the Last Keep"
+        "name": "마지막 요새의 인장"
       },
       "conjured_water4": {
         "name": "창조된 샘물"

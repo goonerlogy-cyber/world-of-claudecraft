@@ -8707,6 +8707,7 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.items.unbroken_circle.name': '不壊の円環',
   'entities.items.fleetblood_band.name': '疾血の指輪',
   'entities.items.last_step_signet.name': '最後の一歩の印章',
+  'entities.items.last_keep_signet.name': '最後の砦の印章',
   'entities.items.ashen_focus_ring.name': '灰燼の集中指輪',
   'entities.items.spellbreakers_seal.name': '呪文砕きの印章',
   'entities.items.final_argument_greatblade.name': '最後の論駁の大剣',
