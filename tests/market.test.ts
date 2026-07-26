@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ITEMS } from '../src/sim/data';
 import type { MarketQuery } from '../src/sim/market_query';
 import { Sim } from '../src/sim/sim';
 import type { Entity } from '../src/sim/types';
@@ -141,6 +142,89 @@ describe('the World Market — the Merchant', () => {
     expect(sim.marketInfoFor(viewer)?.listings.map((listing) => listing.itemId)).toEqual([
       'eastbrook_warded_leggings',
     ]);
+  });
+
+  // Issue #2189: the authoritative browse is the path a real player hits, so the bag
+  // category is pinned here too, not only against the pure predicate.
+  it('applies the bag category and its capacity subtype to the authoritative browse result', () => {
+    const sim = makeWorld();
+    const viewer = sim.addPlayer('warrior', 'Viewer');
+    standAtMerchant(sim, viewer);
+    const book = sim.market.marketListings;
+    book.length = 0;
+    for (const [id, itemId] of [
+      [1, 'linen_pouch'],
+      [2, 'gravewoven_bag'],
+      [3, 'bone_fragments'],
+      [4, 'recruit_tunic'],
+    ] as const) {
+      book.push({
+        id,
+        sellerKey: 'house',
+        sellerName: 'Merchant',
+        itemId,
+        count: 1,
+        price: 100,
+        expiresAt: Number.POSITIVE_INFINITY,
+        house: true,
+      });
+    }
+
+    // The browse sorts by display name, so "Gravewoven Bag" leads "Linen Pouch".
+    sim.marketSearch(q('', { itemType: 'bag' }), viewer);
+    expect(sim.marketInfoFor(viewer)?.listings.map((listing) => listing.itemId)).toEqual([
+      'gravewoven_bag',
+      'linen_pouch',
+    ]);
+
+    // gravewoven_bag is the 12-slot bag; the 6-slot Linen Pouch must drop out.
+    sim.marketSearch(q('', { itemType: 'bag', subtype: '12' }), viewer);
+    expect(sim.marketInfoFor(viewer)?.listings.map((listing) => listing.itemId)).toEqual([
+      'gravewoven_bag',
+    ]);
+  });
+
+  it('keeps the Merchant standing stock stocked with the vendor bags', () => {
+    const sim = makeWorld();
+    const viewer = sim.addPlayer('warrior', 'Viewer');
+    standAtMerchant(sim, viewer);
+    // A fresh world must not answer the new Bags category with an empty list.
+    sim.marketSearch(q('', { itemType: 'bag' }), viewer);
+    const listings = sim.marketInfoFor(viewer)?.listings ?? [];
+    expect(listings.map((listing) => listing.itemId)).toEqual([
+      'linen_pouch',
+      'travelers_knapsack',
+    ]);
+    // At the vendor price, not an invented one: a house row cheaper than buyValue would
+    // undercut the vendor selling the same bag, and house rows never deplete.
+    expect(listings.map((listing) => listing.price)).toEqual([
+      ITEMS.linen_pouch?.buyValue,
+      ITEMS.travelers_knapsack?.buyValue,
+    ]);
+    expect(ITEMS.linen_pouch?.buyValue).toBeGreaterThan(0);
+  });
+
+  // House ids come off one counter in stock-array order, house rows are reseeded every
+  // boot and never persisted, and market_buy carries only the listing id. So a row added
+  // anywhere but the END renumbers every row after it, and a client holding a browse list
+  // across a server restart could click Buy on an id that now means a different item.
+  // This pins the two new bags as the LAST house rows, which is what makes that safe.
+  it('appends new standing stock so existing house listing ids keep their goods', () => {
+    const sim = makeWorld();
+    const house = sim.market.marketListings.filter((listing) => listing.house);
+    const bagIds = house
+      .filter(
+        (listing) => listing.itemId === 'linen_pouch' || listing.itemId === 'travelers_knapsack',
+      )
+      .map((listing) => listing.id);
+    expect(bagIds).toHaveLength(2);
+    // Non-vacuity: there is a substantial block of older stock they must sit behind.
+    expect(house.length).toBeGreaterThan(10);
+    const olderIds = house.filter((listing) => !bagIds.includes(listing.id)).map((l) => l.id);
+    expect(Math.min(...bagIds)).toBeGreaterThan(Math.max(...olderIds));
+    // And the whole block stays collision-free, which is what buy/cancel resolve on.
+    const ids = house.map((listing) => listing.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('paginates other sellers server-side, keeping the viewer own listings on every page', () => {

@@ -4,10 +4,12 @@
 // the recipe's professionId to its own ui_craft_<family> cue via
 // audio.craftSuccess(), and that a masterwork proc LAYERS audio.masterwork()
 // alongside that cue rather than replacing it. Every professions grant also
-// suppresses the generic loot ding at the source (Sim.addItem/addItemInstance
-// opts.silent, see tests/professions_silent_loot.test.ts) so it never stacks
-// with these dedicated cues; the corresponding hud.ts case 'loot' half of
-// that contract is pinned below.
+// suppresses BOTH generic hub feedbacks at the source (Sim.addItem/
+// addItemInstance opts.silent and opts.callerLogs, see
+// tests/professions_silent_loot.test.ts) so neither the generic ding nor the
+// generic "You receive:" line stacks on top of the profession's own cue and
+// line; the corresponding hud.ts case 'loot' halves of that contract are
+// pinned below.
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -58,19 +60,58 @@ describe('craftResult audio wiring', () => {
 });
 
 describe('the generic loot cue respects ev.silent', () => {
-  it('skips both audio.coin() and audio.lootItem() when the loot event is silent, but still logs the text', () => {
+  it('skips both audio.coin() and audio.lootItem() when the loot event is silent', () => {
     const start = hud.indexOf("case 'loot':");
     expect(start).toBeGreaterThan(-1);
     const end = hud.indexOf('break;', start);
     const body = hud.slice(start, end);
     expect(body).toContain('if (!ev.silent)');
-    // The log line (feedback text) must sit OUTSIDE (before) the silent
-    // guard, so a professions grant's "You receive:" line still prints even
-    // though its audio is suppressed.
-    const silentGuardIndex = body.indexOf('if (!ev.silent)');
-    const logIndex = body.indexOf('this.log(');
-    expect(logIndex).toBeGreaterThan(-1);
-    expect(logIndex).toBeLessThan(silentGuardIndex);
+    // Both generic cues sit INSIDE the silent guard, and nothing else does:
+    // a professions grant suppresses the ding without suppressing anything
+    // else this arm does for it.
+    const guard = body.indexOf('if (!ev.silent)');
+    expect(body.indexOf('audio.lootItem()')).toBeGreaterThan(guard);
+    expect(body.indexOf('audio.coin()')).toBeGreaterThan(guard);
+  });
+});
+
+describe('the generic loot LINE respects ev.callerLogs', () => {
+  // The text half of the same idea (#2430). This block replaces an earlier pin
+  // that asserted the opposite contract ("the log line must sit OUTSIDE the
+  // silent guard, so a professions grant's 'You receive:' line still prints"):
+  // that line was the second of the two lines one profession action printed
+  // for one grant, and it now stands down. The old pin's index-order form
+  // would have stayed GREEN under this change while asserting a contract the
+  // code no longer has, so it is replaced rather than adjusted.
+  it('the hub log call sits inside a callerLogs guard, as one statement', () => {
+    const start = hud.indexOf("case 'loot':");
+    const body = hud.slice(start, hud.indexOf('break;', start));
+    // One statement, not a guard placed above an unguarded log: the adjacency
+    // is what makes this pin fail if the line ever prints unconditionally
+    // again.
+    expect(body).toContain('if (!ev.callerLogs) this.log(');
+    expect(body.match(/this\.log\(/g)).toHaveLength(1);
+  });
+
+  it('the bag refresh and the loot-roll close stay OUTSIDE the callerLogs guard', () => {
+    // A professions grant still moves items, so the online bag mirror must
+    // still repaint, and a loot-roll line must still close its prompt. Only
+    // the duplicate TEXT is elided.
+    const start = hud.indexOf("case 'loot':");
+    const body = hud.slice(start, hud.indexOf('break;', start));
+    const guard = body.indexOf('if (!ev.callerLogs)');
+    expect(guard).toBeGreaterThan(-1);
+    expect(body.indexOf('this.lootRolls.closeForItem(')).toBeGreaterThan(guard);
+    expect(body.indexOf('this.renderBags()')).toBeGreaterThan(guard);
+  });
+
+  it('the two flags stay independent conditions', () => {
+    // Merging them would tie a caller's cue ownership to its line ownership;
+    // they are deliberately separate (a caller can own one without the other).
+    const start = hud.indexOf("case 'loot':");
+    const body = hud.slice(start, hud.indexOf('break;', start));
+    expect(body).not.toContain('!ev.silent && !ev.callerLogs');
+    expect(body).not.toContain('!ev.callerLogs && !ev.silent');
   });
 });
 

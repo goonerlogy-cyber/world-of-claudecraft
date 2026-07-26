@@ -41,12 +41,15 @@ describe('hudChrome.gathering gather lines', () => {
     );
   });
 
-  it('the gather line never regresses into the loot-family "You receive:" wording', () => {
-    // The grant hub's own 'loot' SimEvent already renders "You receive:" and
-    // plays the loot cue for every harvest grant; the gatherResult line exists
-    // ON TOP of it as the rarity-colored gather summary. Rewording it back to
-    // the loot family would print two near-identical lines per harvest (the
-    // double-log regression this pin guards).
+  it('the gather line stays worded apart from the loot family it no longer prints beside', () => {
+    // #2430 inverted the reason this pin exists. The grant hub's own 'loot'
+    // SimEvent no longer prints its "You receive:" line for a harvest grant
+    // (the loot event's callerLogs flag), so the gather line is the ONLY line
+    // for the harvest and there is no longer a duplicate to diverge FROM.
+    // The two wordings must still not collide: "You receive:" remains the
+    // wording of every NON-profession grant and is the literal string
+    // Hud.localizeLootText matches on to localize those lines, so a gather
+    // line reworded into that family would be re-parsed as a hub line.
     expect(t('hudChrome.gathering.gatherLine', { name: 'X' }).startsWith('You receive')).toBe(
       false,
     );
@@ -57,12 +60,61 @@ describe('hudChrome.gathering gather lines', () => {
   });
 });
 
+describe('the single-line grant contract (#2430)', () => {
+  // The load-bearing half of the fix lives in hud.ts's `case 'loot':` arm: the
+  // hub's log() call is the ONE thing a callerLogs grant elides. A regression
+  // that widens the guard (eliding the loot-roll close or the bag refresh with
+  // it) or narrows it back out (printing the hub line again) leaves every
+  // wording pin above green, so bind the arm's structure at the source level.
+  const hudSource = () => readFileSync(path.resolve(process.cwd(), 'src/ui/hud.ts'), 'utf8');
+  const lootArm = () => {
+    const source = hudSource();
+    const start = source.indexOf("case 'loot': {");
+    expect(start).toBeGreaterThan(-1);
+    return source.slice(start, source.indexOf('break;', start));
+  };
+
+  it('the hub log call is the only thing the callerLogs guard elides', () => {
+    const arm = lootArm();
+    // The guard and the log are ONE statement: `if (!ev.callerLogs) this.log(`.
+    // Pinning the exact adjacency is what stops the "guard inserted above an
+    // unguarded log" shape, which would keep an index-order pin green while
+    // printing both lines again.
+    expect(arm).toContain('if (!ev.callerLogs) this.log(');
+    const guard = arm.indexOf('if (!ev.callerLogs)');
+    // The loot-roll close and the bag refresh must sit AFTER the one-statement
+    // guard, so they still run for a professions grant.
+    expect(arm.indexOf('this.lootRolls.closeForItem(')).toBeGreaterThan(guard);
+    expect(arm.indexOf('this.renderBags()')).toBeGreaterThan(guard);
+    // Exactly one log() call in the arm, and it is the guarded one.
+    expect(arm.match(/this\.log\(/g)).toHaveLength(1);
+  });
+
+  it('the audio guard stays independent of the text guard', () => {
+    // silent and callerLogs are separate flags on purpose: a caller may own
+    // the cue without owning the line (and vice versa). Collapsing them into
+    // one condition would silence the cue for any future line-owning caller
+    // that still wants the ding.
+    const arm = lootArm();
+    expect(arm).toContain('if (!ev.silent)');
+    expect(arm).toContain('audio.lootItem()');
+    expect(arm).toContain('audio.coin()');
+    // Neither flag may appear in the other's condition.
+    expect(arm).not.toContain('!ev.silent && !ev.callerLogs');
+    expect(arm).not.toContain('!ev.callerLogs && !ev.silent');
+  });
+});
+
 describe('hud event switch stays wired to the ids', () => {
-  it('hud.ts references every gather-event key the sim ids resolve to', () => {
-    // Source liveness pin (the S3-scan spirit): the flavor-to-key mapping and
-    // the gather-line keys live in the hud.ts event switch; losing one silently
-    // would strand the id-based event without player-visible text.
-    const source = readFileSync(path.resolve(process.cwd(), 'src/ui/hud.ts'), 'utf8');
+  it('the client references every gather-event key the sim ids resolve to', () => {
+    // Source liveness pin (the S3-scan spirit): losing one of these mappings
+    // silently would strand the id-based event without player-visible text.
+    // The flavor-to-key mapping still lives in the hud.ts event switch; the
+    // two gather-line keys moved to the grant_line_view.ts pure core when the
+    // qty-variant choice was extracted there (#2430), so scan both files.
+    const source =
+      readFileSync(path.resolve(process.cwd(), 'src/ui/hud.ts'), 'utf8') +
+      readFileSync(path.resolve(process.cwd(), 'src/ui/grant_line_view.ts'), 'utf8');
     for (const key of [
       'gatherEvent.pristineVein',
       'gatherEvent.ancientHeartwood',
@@ -153,11 +205,12 @@ describe('hud event switch stays wired to the ids', () => {
 describe('hudChrome.gathering catch line (Professions 2.0)', () => {
   // The fishingResult SimEvent is text-free like gatherResult, so the client
   // catch line carries the same duties as the gather line above: exist,
-  // splice, diverge from BOTH the loot family and the gather family (the
-  // grant hub still prints "You receive:" for the same catch), stay wired in
-  // the hud switch, and color by item quality. The arm plays
-  // exactly the reel cue (the landed-reel splash/crank), never the loot
-  // notification the grant hub already owns (the double-log trap).
+  // splice, stay distinct from BOTH the loot family and the gather family,
+  // stay wired in the hud switch, and color by item quality. Since #2430 it is
+  // also the SOLE line for a landed catch and the reel cue its SOLE cue: the
+  // catch grant now passes both silent and callerLogs, so the hub neither
+  // prints "You receive:" nor plays the loot ding on top of it (a catch used
+  // to be three lines and two cues).
   it('the catch-line key exists and splices the name', () => {
     expect(hasTranslation('hudChrome.gathering.catchLine')).toBe(true);
     expect(t('hudChrome.gathering.catchLine', { name: 'Sunglint Koi' })).toBe(

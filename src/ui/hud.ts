@@ -217,6 +217,7 @@ import { emoteIconUrl } from './emote_icons';
 import {
   applyEnchantResultToast,
   disenchantResultToast,
+  disenchantSecondaryLineKey,
   salvageResultToast,
 } from './enchanting_view';
 import {
@@ -246,6 +247,7 @@ import {
   gatherRareTierFor,
   gatherToolNoNodeKey,
 } from './gathering_view';
+import { craftedLineKey, gatherLineKey, grantItemToken, grantQtyText } from './grant_line_view';
 import { isSelfOnlyAbility } from './hud/action_bar/ability_self_only';
 import {
   handleShiftClearContextMenu,
@@ -9612,7 +9614,15 @@ export class Hud {
         case 'comboPoint':
           break;
         case 'loot': {
-          this.log(this.localizeLootText(ev.text), '#7fdc4f');
+          // callerLogs: a professions grant whose own result event (gatherResult
+          // / fishingResult / craftResult / disenchantResult / salvageResult /
+          // enchantResult) renders the player-visible line for this same grant,
+          // richer than this one (rolled quality color, quantity, a clickable
+          // item link). The hub line stands down so one action prints one line
+          // (#2430). Everything else in this arm still runs for those grants:
+          // the loot-roll close below, the bag refresh, and the independent
+          // audio guard.
+          if (!ev.callerLogs) this.log(this.localizeLootText(ev.text), '#7fdc4f');
           if (
             / wins .+ \(\d+\)$/.test(ev.text) ||
             /^Everyone passed on .+\.$/.test(ev.text) ||
@@ -9620,9 +9630,10 @@ export class Hud {
             /^.+ was not assigned and is free for all\.$/.test(ev.text)
           )
             this.lootRolls.closeForItem(ev.text);
-          // silent: a professions grant (gather/craft/enchant) with its own
-          // dedicated cue for this same grant sets this so the generic ding
-          // doesn't stack on top of it; the text line above still prints.
+          // silent: the audio half of the same idea, and independent of it (a
+          // caller can own the cue without owning the line). A professions
+          // grant with its own dedicated cue sets this so the generic ding
+          // doesn't stack on top of it.
           if (!ev.silent) {
             if (
               ev.text.includes('loot') ||
@@ -9642,9 +9653,20 @@ export class Hud {
           // instead of polling every frame.
           this.craftTierUpDrains = CRAFT_TIER_UP_DRAIN_WINDOW;
           if (ev.ok && ev.itemId) {
-            const item = ITEMS[ev.itemId];
-            const name = item ? itemDisplayName(item) : ev.itemId;
-            this.log(t('hudChrome.crafting.craftedToast', { name }), '#7fdc4f');
+            // The ONLY line for the craft grant: the hub's 'loot' events are
+            // emitted both silent and callerLogs for every craft-output grant
+            // (see crafting.ts), so this line has to carry what they used to,
+            // the output count of a resultCount > 1 recipe included (#2430).
+            // The line keeps its loot-family green; the output's quality now
+            // rides the item link's own color, which is where a player reads
+            // it everywhere else in chat.
+            this.log(
+              t(craftedLineKey(ev.count), {
+                name: grantItemToken(ev.itemId),
+                qty: grantQtyText(ev.count),
+              }),
+              '#7fdc4f',
+            );
             const recipe = ALL_RECIPES.find((r) => r.id === ev.recipeId);
             audio.craftSuccess(recipe?.professionId ?? '');
             // Masterwork layers alongside the family cue above, never replaces
@@ -9776,11 +9798,12 @@ export class Hud {
           break;
         }
         case 'masterwork': {
-          // Personal masterwork proc (Professions 2.0). The grant hub
-          // already printed the loot line + cue and the craftResult arm above
-          // already logged craftedToast + lootItem, so this arm re-logs no
-          // grant and re-cues no lootItem: it only feeds the drain-end
-          // celebration plan (banner + toast + ONE audio.achievement).
+          // Personal masterwork proc (Professions 2.0). The craftResult arm
+          // above already logged the crafted line and played the craft cue,
+          // and since #2430 that line is the only one for the craft grant (the
+          // grant hub's own line and ding stand down for it), so this arm
+          // re-logs no grant and re-cues no lootItem: it only feeds the
+          // drain-end celebration plan (banner + toast + ONE audio.achievement).
           masterworkItemId = ev.itemId;
           break;
         }
@@ -9813,23 +9836,23 @@ export class Hud {
         case 'gatherResult': {
           // Harvest feedback line (Professions 2.0), colored by rolled
           // material rarity. Identical on every graphics tier (player feedback
-          // is never profile-gated). The grant hub's own 'loot' event still
-          // prints the "You receive:" line (distinct gather wording here so
-          // the two lines never look like a duplicate), but the loot event is
-          // emitted silent for a gather grant (see gathering.ts harvestNode)
-          // specifically so it doesn't stack with the dedicated node-type cue
-          // below. The node-type impact always plays; a rare-or-better
-          // material roll (or any rare-event roll) layers one additional
-          // tiered stinger on top, never a replacement for the impact.
-          const item = ITEMS[ev.itemId];
-          const name = item ? itemDisplayName(item) : ev.itemId;
+          // is never profile-gated). This is the ONLY line for the harvest
+          // grant: the grant hub's own 'loot' event is emitted both silent and
+          // callerLogs for a gather grant (see gathering.ts harvestNode), so
+          // neither the generic ding nor the "You receive:" line stacks on top
+          // of this line and its dedicated node-type cue (#2430). The
+          // node-type impact always plays; a rare-or-better material roll (or
+          // any rare-event roll) layers one additional tiered stinger on top,
+          // never a replacement for the impact.
+          // The LINE color is the rolled rarity (the yield roll), while the
+          // item link inside it paints from the item's own def quality: the
+          // same Copper Ore is granted at every roll, only the qty scales, so
+          // the link must not claim the ore itself got rarer.
           this.log(
-            ev.qty > 1
-              ? t('hudChrome.gathering.gatherLineQty', {
-                  name,
-                  qty: formatNumber(ev.qty, { maximumFractionDigits: 0 }),
-                })
-              : t('hudChrome.gathering.gatherLine', { name }),
+            t(gatherLineKey(ev.qty), {
+              name: grantItemToken(ev.itemId),
+              qty: grantQtyText(ev.qty),
+            }),
             QUALITY_COLOR[ev.rarity],
           );
           audio.gather(ev.nodeType);
@@ -9867,27 +9890,53 @@ export class Hud {
         }
         case 'disenchantResult': {
           // Enchanting disenchant outcome (Professions 2.0): text-free,
-          // so enchanting_view.ts maps the event to its key + sink and the item
-          // name interpolates. The grant hub's own 'loot' events already print
-          // the material yield lines, so success is a distinct action line (the
-          // gatherResult pattern), never a second receive notification.
+          // so enchanting_view.ts maps the event to its key + sink and the
+          // names interpolate. The success line is the ONLY line for the whole
+          // action now that the hub's 'loot' events stand down for it
+          // (callerLogs, see enchanting.ts resolveDisenchant), so it names both
+          // the piece that was consumed and the material that came back; a
+          // rare+ yield's typed secondary is a different item, so it takes one
+          // extra line rather than being folded into this one (#2430).
+          // Item-link tokens only expand on the chat log, never in showError,
+          // so the deny arm stays name-free.
           const toast = disenchantResultToast(ev);
-          const item = ITEMS[ev.itemId];
-          const params = { item: item ? itemDisplayName(item) : ev.itemId };
           if (toast.sink === 'log') {
-            this.log(t(toast.key, params), '#7fdc4f');
+            this.log(
+              t(toast.key, {
+                item: grantItemToken(ev.itemId),
+                material: ev.materialItemId ? grantItemToken(ev.materialItemId) : '',
+                qty: grantQtyText(ev.count),
+              }),
+              '#7fdc4f',
+            );
+            const secondary = disenchantSecondaryLineKey(ev);
+            if (secondary && ev.secondaryItemId)
+              this.log(
+                t(secondary, {
+                  material: grantItemToken(ev.secondaryItemId),
+                  qty: grantQtyText(ev.secondaryCount),
+                }),
+                '#7fdc4f',
+              );
             audio.disenchant();
           } else this.showError(t(toast.key));
           break;
         }
         case 'salvageResult': {
           // Enchanting salvage outcome (Professions 2.0): same shape as
-          // disenchantResult above.
+          // disenchantResult above, minus the secondary (salvage yields one
+          // material). Its success line names the consumed piece and the
+          // reclaimed material for the same reason.
           const toast = salvageResultToast(ev);
-          const item = ITEMS[ev.itemId];
-          const params = { item: item ? itemDisplayName(item) : ev.itemId };
           if (toast.sink === 'log') {
-            this.log(t(toast.key, params), '#7fdc4f');
+            this.log(
+              t(toast.key, {
+                item: grantItemToken(ev.itemId),
+                material: ev.materialItemId ? grantItemToken(ev.materialItemId) : '',
+                qty: grantQtyText(ev.count),
+              }),
+              '#7fdc4f',
+            );
             audio.salvage();
           } else this.showError(t(toast.key));
           break;
@@ -9895,13 +9944,16 @@ export class Hud {
         case 'enchantResult': {
           // Apply-enchant outcome (Professions 2.0): the success line
           // names the item AND the enchant (enchantName.<id>, its first render
-          // sink); every deny is an error toast.
+          // sink); every deny is an error toast. The ONLY line for the action:
+          // the bagged arms re-mint the player's own copy through the grant
+          // hub, whose "You receive:" line claimed they had received an item
+          // that never left their bags, and now stands down (#2430). The WORN
+          // arm never reaches the hub at all, so both arms print exactly this.
           const toast = applyEnchantResultToast(ev);
-          const item = ITEMS[ev.itemId];
           if (toast.sink === 'log') {
             this.log(
               t(toast.key, {
-                item: item ? itemDisplayName(item) : ev.itemId,
+                item: grantItemToken(ev.itemId),
                 enchant: t(`hudChrome.enchantName.${ev.enchantId}` as TranslationKey),
               }),
               '#7fdc4f',
@@ -9915,14 +9967,14 @@ export class Hud {
         case 'fishingResult': {
           // Reel-in feedback line (Professions 2.0), colored by the
           // caught item's quality. Identical on every graphics tier (player
-          // feedback is never profile-gated). The grant hub's own 'loot' event
-          // already prints the "You receive:" line and plays the loot cue, so
-          // this line uses distinct reel-in wording; the reel cue
-          // is the splash-and-crank of the landed reel itself, not a second
-          // loot notification.
-          const item = ITEMS[ev.itemId];
+          // feedback is never profile-gated). This is the ONLY line for the
+          // catch grant, and the reel cue (the splash-and-crank of the landed
+          // reel) its only cue: the grant hub's 'loot' event is emitted both
+          // silent and callerLogs for a landed catch (see fishing.ts
+          // completeFishing), which is what stopped a catch printing three
+          // lines and playing two cues (#2430).
           this.log(
-            t('hudChrome.gathering.catchLine', { name: item ? itemDisplayName(item) : ev.itemId }),
+            t('hudChrome.gathering.catchLine', { name: grantItemToken(ev.itemId) }),
             QUALITY_COLOR[ev.quality],
           );
           audio.fishReel();

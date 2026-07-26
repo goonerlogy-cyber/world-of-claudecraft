@@ -2439,17 +2439,23 @@ export const hudChromeStrings = {
     // respawn timer has not elapsed yet (IWorldProfessions#nodeHarvestableByMe).
     notReady: 'This resource node has not respawned for you yet.',
     // Harvest feedback line (Professions 2.0), rendered from the
-    // id-based gatherResult SimEvent. Deliberately worded APART from the
-    // loot family: the grant hub's own 'loot' event already prints
-    // "You receive:" for the same harvest, so this line must never regress
-    // into that wording (divergence pin: tests/gather_event_i18n.test.ts).
+    // id-based gatherResult SimEvent. The SOLE player-visible line for a
+    // harvest grant (#2430): the grant hub's own 'loot' event no longer prints
+    // its "You receive:" line for a gather (the loot event's callerLogs flag),
+    // so this line carries the quantity and splices {name} as a clickable,
+    // quality-colored item link. It stays worded APART from the loot family
+    // anyway, because that family's "You receive:" wording still belongs to
+    // every non-profession grant and its hud.ts matcher (single-line contract
+    // pin: tests/gather_event_i18n.test.ts).
     gatherLine: 'You gather: {name}.',
     gatherLineQty: 'You gather: {name} x{qty}.',
     // Reel-in feedback line (Professions 2.0), rendered from the
-    // id-based fishingResult SimEvent. Like gatherLine above, deliberately
-    // worded APART from the loot family: the grant hub's own 'loot' event
-    // already prints "You receive:" for the same catch, so this line must
-    // never regress into that wording (nor into gatherLine's).
+    // id-based fishingResult SimEvent. Like gatherLine above, the sole line
+    // for a landed catch and worded apart from both the loot family and the
+    // gather family. The ONE grant-line family with no Qty sibling, and only
+    // because a catch is always exactly one fish (professions/fishing.ts grants
+    // `caught` with count 1). A multi-fish catch would need the variant added
+    // here, or the count would go unreported now that the hub line is gone.
     catchLine: 'You reel in: {name}',
     // Bite minigame lines (Professions 2.0), rendered from the
     // text-free personal fishingBite / fishingGotAway SimEvents. biteLine
@@ -2686,7 +2692,14 @@ export const hudChromeStrings = {
     reagentLine: '{name} x{have}/{required}',
     empty: 'No recipes known yet.',
     resultAria: 'Craft {name}',
+    // The SOLE player-visible line for a craft grant (#2430). The grant hub's
+    // own 'loot' event no longer prints its "You receive:" line for a craft
+    // (the loot event's callerLogs flag), so this line carries everything it
+    // used to: {name} is spliced as a clickable, quality-colored item link,
+    // and the Qty variant carries the output count of a resultCount > 1
+    // recipe, which used to be visible only through the hub line's " xN".
     craftedToast: 'Crafted: {name}',
+    craftedToastQty: 'Crafted: {name} x{qty}',
     insufficientMaterials: 'You do not have the materials for that.',
     unknownRecipe: 'That recipe does not exist.',
     comboRequirementUnmet:
@@ -2852,8 +2865,27 @@ export const hudChromeStrings = {
   // with crafting and gathering, so a generic "crafting is busy" line would
   // mis-attribute the deny.
   enchanting: {
+    // The SOLE player-visible lines for these actions (#2430). The grant hub's
+    // "You receive:" lines no longer print for a disenchant or a salvage yield
+    // (the loot event's callerLogs flag), so the Yield variants below name the
+    // reclaimed material as well as the consumed piece, or the player would be
+    // told nothing about what came back. {item} and {material} are both
+    // spliced as clickable, quality-colored item links. The plain
+    // disenchantedLine / salvagedLine stay as the yield-free fallback for a
+    // success carrying no resolvable material.
     disenchantedLine: 'You disenchant {item}.',
+    disenchantedYield: 'You disenchant {item} into {material}.',
+    disenchantedYieldQty: 'You disenchant {item} into {material} x{qty}.',
+    // A rare-or-better disenchant also yields a typed bind-on-trade material.
+    // That is a DIFFERENT item from the primary, so it takes its own line
+    // rather than being folded into the sentence above (one line per distinct
+    // granted item); rendering it from the event's secondaryCount is also what
+    // collapses the sim's per-unit grant calls into this one line.
+    disenchantedAlso: 'You also recover {material}.',
+    disenchantedAlsoQty: 'You also recover {material} x{qty}.',
     salvagedLine: 'You salvage {item}.',
+    salvagedYield: 'You salvage {item} into {material}.',
+    salvagedYieldQty: 'You salvage {item} into {material} x{qty}.',
     enchantAppliedLine: 'You enchant {item} with {enchant}.',
     notHeld: 'You do not have that item.',
     notDisenchantable: 'You cannot disenchant that.',
@@ -2919,10 +2951,37 @@ export const hudChromeStrings = {
     sameEnchant: 'That item already has that enchant.',
     replaceTag: 'Replaces {enchant}',
     sameEnchantTag: 'Already applied',
+    // The tag on the PLAIN twin of a mixed holding (#2421): one item id held
+    // both plain and enchanted emits two rows under one item name, and without
+    // this the pair differs only by the replace row HAVING a sub-line. Painted
+    // on that twin alone (enchant_apply_view.ts mixedHolding), never on an
+    // unambiguous plain row, so an ordinary target list stays tag-free.
+    plainTag: 'Not enchanted',
     replaceConfirmTitle: 'Replace the enchant on {item}?',
     replaceConfirmBody: 'This replaces {old} on {item} with {new}.',
     replaceConfirmNoRefund:
       'The old enchant is destroyed. Its materials are not refunded. This cannot be undone.',
+    // What the swap does NOT destroy (#2421). The sim's replace payload carries
+    // the signature, the masterwork roll, and the bind state through
+    // byte-identical, and the dialog previously named only what dies; {kept}
+    // joins the trait labels below, and the whole line is omitted when the
+    // victim carries none of them (a plain copy is never told its signature is
+    // safe). One label per trait rather than one key per combination, the
+    // replaceConfirmCost / replaceConfirmCostItem shape next door. Each label
+    // reuses the vocabulary its own surface already taught the player: the
+    // maker's mark from makersMark, the seal from masterworkSeal, and the bond
+    // from the commission lines, never a raw ItemInstancePayload field name.
+    replaceConfirmKeeps: 'Kept: {kept}',
+    replaceConfirmKeepsSigner: "Maker's mark",
+    replaceConfirmKeepsMasterwork: 'Masterwork bonus',
+    // ONE label for both bind states. An armed lock (bindOnTrade) and an applied
+    // one (boundTo) are the same bond, and this line says what the swap leaves
+    // alone, not which state the bond is in; the item tooltip's commissionBound
+    // / commissionUnbound lines own that distinction. Named for the mechanic the
+    // tooltip and the unbind window already call it, so a player recognizes the
+    // thing being preserved; it never names WHO it is bound to (boundTo is an
+    // entity id, not a stable identity).
+    replaceConfirmKeepsBond: 'Commission bond',
     replaceConfirmCost: 'Cost: {cost}',
     replaceConfirmCostItem: '{name} x{count}',
     replaceConfirmAccept: 'Replace',

@@ -2681,6 +2681,7 @@ export interface ZonePropsDef {
     hutLocal: { x: number; z: number; hw: number; hd: number };
   }[];
   tents: { x: number; z: number; rot: number; scale: number }[];
+  marshReeds: [number, number][];
   crates: [number, number][];
   campfires: [number, number][];
   mudHuts: [number, number][];
@@ -2750,6 +2751,7 @@ export function emptyZoneProps(): ZonePropsDef {
     benches: [],
     walls: [],
     graveyards: [],
+    marshReeds: [],
   };
 }
 
@@ -3747,12 +3749,18 @@ export type SimEvent = { pid?: number } & (
   // the client can batch those into one summary line instead of banner spam.
   | { type: 'deedUnlocked'; deedId: string; retro?: boolean }
   | { type: 'learnAbility'; abilityId: string; rank: number }
-  // silent: true suppresses only the client's default loot audio cue (the
-  // "You receive: X" text line still prints as normal); a caller with its
-  // own dedicated cue for the same grant (gathering/crafting/enchanting) sets
-  // this so the generic ding doesn't stack on top of it. See Sim.addItem/
-  // addItemInstance's opts param, the one place this gets set.
-  | { type: 'loot'; text: string; silent?: boolean }
+  // The hub grant event. Two independent stand-down flags, both set only from
+  // Sim.addItem/addItemInstance's opts param (the one place either gets set):
+  // - silent: true suppresses the client's default loot AUDIO cue; a caller with
+  //   its own dedicated cue for the same grant (gathering/crafting/enchanting)
+  //   sets it so the generic ding doesn't stack on top of it.
+  // - callerLogs: true suppresses the client's default "You receive: X" TEXT
+  //   line, because the caller owns the player-visible line for this grant and
+  //   renders a richer one (rolled quality color, quantity, clickable item
+  //   link) off its own result event. Without it a profession action printed
+  //   two lines for one grant (#2430). Everything else the client does on a
+  //   loot event (bag refresh, loot-roll close) still runs.
+  | { type: 'loot'; text: string; silent?: boolean; callerLogs?: boolean }
   | {
       type: 'lootRoll';
       rollId: number;

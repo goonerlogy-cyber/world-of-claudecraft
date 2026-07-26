@@ -49,6 +49,18 @@ export const MARKET_HOUSE_STOCK = [
   { itemId: 'outrider_legguards', count: 1, price: 2100 },
   { itemId: 'pilgrims_leggings', count: 1, price: 1700 },
   { itemId: 'outrider_sabatons', count: 1, price: 1900 },
+  // The two vendor-sold bags, at their vendor price, so the Bags filter is never
+  // empty on a fresh world. The four drop-only bags stay player-listed goods:
+  // house rows never deplete, so seeding those would be an endless bag faucet.
+  //
+  // APPENDED, never inserted mid-array: ids come off one counter in array order
+  // (below), house rows are reseeded every boot and are NOT persisted, and
+  // `market_buy` carries only the listing id with no item cross-check. Inserting
+  // here would renumber every row after it, so a client holding a browse list
+  // across a server restart could click Buy on a row that now means a different
+  // item. Appending leaves every existing id pointing at the same goods.
+  { itemId: 'linen_pouch', count: 1, price: 250 },
+  { itemId: 'travelers_knapsack', count: 1, price: 2000 },
 ] as const;
 const MARKET_MIN_PRICE = 1; // copper
 const MARKET_MAX_PRICE = 5_000_000; // 500g ceiling, guards against overflow / fat-finger

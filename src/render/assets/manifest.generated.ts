@@ -765,6 +765,7 @@ export const MEDIA_ASSETS: Record<string, string> =
   "models/props/orkadia_watchtower.glb": "/media/models/props/orkadia_watchtower.da3b7757e38c.glb",
   "models/props/orkadia_weapon_rack.glb": "/media/models/props/orkadia_weapon_rack.17e5a927925b.glb",
   "models/props/pixie_mushroom_house.glb": "/media/models/props/pixie_mushroom_house.97d11dd77483.glb",
+  "models/props/reeds.glb": "/media/models/props/reeds.8aebdb300451.glb",
   "models/props/rift_flame.glb": "/media/models/props/rift_flame.f893924e4697.glb",
   "models/props/rift_portal.glb": "/media/models/props/rift_portal.16d86c7e1a5a.glb",
   "models/props/rift_rune.glb": "/media/models/props/rift_rune.2d34784d59ac.glb",

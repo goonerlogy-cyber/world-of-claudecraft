@@ -222,6 +222,78 @@ describe('result mirror: event arm alone through the real onMessage path', () =>
 });
 
 // ---------------------------------------------------------------------------
+// A2. The grant hub's stand-down flags survive the real wire (#2430).
+// ---------------------------------------------------------------------------
+describe('the loot stand-down flags survive the server to client wire', () => {
+  it('a profession grant arrives online carrying callerLogs, so the line elides there too', () => {
+    // The single-line fix is CLIENT-side: hud.ts skips its log() when the loot
+    // event carries callerLogs. That only holds online because
+    // server/event_frame.ts serializes the WHOLE event object and
+    // src/net/online.ts pushes the parsed object untouched. Nothing else pinned
+    // that: a future field-whitelisted event serializer (the natural next step
+    // for the same payload work that produced serializeEventFragments) would
+    // silently give every online player the duplicate line back while the
+    // whole suite stayed green. This drives a real salvage over the real
+    // GameServer and asserts the flag on what the CLIENT ends up holding.
+    const server = new GameServer();
+    const fc = fakeWs();
+    const st = joinServer(server, fc, 706, 'WireFlags');
+    placeAt(server, st.pid, FIELD_POS);
+    server.sim.addItem(COMMON_WEAPON, 1, st.pid);
+    const client = bareClient(st.pid);
+
+    // The seeding grant is drained in the SAME frame batch as the salvage, so
+    // this one probe carries both arms: the loud grant that seeded the weapon
+    // and the flagged grant of the material it salvaged into.
+    const mark = fc.sent.length;
+    cmd(server, st, { cmd: 'salvage_item', item: COMMON_WEAPON });
+    routeTick(server);
+    for (const f of eventFrames(fc.sent, mark)) feed(client, f);
+
+    const loot = queueOf(client).filter((e: SimEvent) => e.type === 'loot') as Array<{
+      silent?: boolean;
+      callerLogs?: boolean;
+      text: string;
+    }>;
+    expect(loot).toHaveLength(2);
+    const [seed, yielded] = loot;
+    // Scoped, over the real wire: the seeding grant keeps both hub feedbacks
+    // and the salvage yield stands both down.
+    expect(Object.hasOwn(seed, 'callerLogs')).toBe(false);
+    expect(Object.hasOwn(seed, 'silent')).toBe(false);
+    expect(yielded.callerLogs).toBe(true);
+    expect(yielded.silent).toBe(true);
+    // The text still crosses: only the client elides the render, so the
+    // loot-roll matcher and the sim-side text pins keep working online.
+    expect(yielded.text).toContain('You receive:');
+  });
+
+  it('an ordinary grant arrives online with NEITHER flag written', () => {
+    // The control, and the wire half of the conditional-spread contract: an
+    // unflagged grant must reach the client with the keys ABSENT, not present
+    // and undefined. JSON.stringify drops an undefined value, so a written-
+    // undefined key would vanish on the wire and hide the parity-digest
+    // regression the sim-side Object.hasOwn pin catches; asserting absence
+    // here keeps both halves honest.
+    const server = new GameServer();
+    const fc = fakeWs();
+    const st = joinServer(server, fc, 707, 'WirePlain');
+    placeAt(server, st.pid, FIELD_POS);
+    const client = bareClient(st.pid);
+
+    const mark = fc.sent.length;
+    server.sim.addItem(DUST, 2, st.pid);
+    routeTick(server);
+    for (const f of eventFrames(fc.sent, mark)) feed(client, f);
+
+    const loot = queueOf(client).filter((e: SimEvent) => e.type === 'loot');
+    expect(loot).toHaveLength(1);
+    expect(Object.hasOwn(loot[0], 'callerLogs')).toBe(false);
+    expect(Object.hasOwn(loot[0], 'silent')).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // B. Identical consecutive denies: the delta suppresses, the event arm surfaces.
 // ---------------------------------------------------------------------------
 describe('result mirror: second identical deny rides the event arm alone', () => {
