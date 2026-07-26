@@ -30,7 +30,14 @@ export { battlegroundRenderManifest } from './battleground_core';
 // Kit modules outside the dungeon base pack would load here on demand (the
 // jail_scene loadKitModules seam); every module the battleground manifest
 // emits today ships in the base kit, so the extra list is empty.
-const BG_EXTRA_KIT: readonly string[] = [];
+const BG_EXTRA_KIT: readonly string[] = [
+  'gravestone',
+  'grave_a',
+  'grave_B',
+  'gravemarker_A',
+  'gravemarker_b',
+  'shrine_candles',
+];
 
 export function ensureBattlegroundAssets(): Promise<void> {
   return Promise.all([ensureDungeonAssets(), loadKitModules(BG_EXTRA_KIT)]).then(() => undefined);
@@ -137,6 +144,7 @@ export function buildBattleground(
     manifest.accents,
     manifest.wallBanners,
     manifest.torches,
+    manifest.graves,
   ]) {
     for (const pl of list) {
       const bucket = byKind.get(pl.kind);

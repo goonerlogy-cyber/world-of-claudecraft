@@ -22,6 +22,20 @@ export interface BgScoreboardPip {
   carrying: boolean;
 }
 
+/** One expanded-board row (hover/tap on the strip). Raw class id: painter localizes. */
+export interface BgBoardRow {
+  pid: number;
+  name: string;
+  cls: string;
+  team: number;
+  me: boolean;
+  dead: boolean;
+  carrying: boolean;
+  kills: number;
+  deaths: number;
+  captures: number;
+}
+
 export interface BgScoreboardView {
   active: boolean;
   state: 'countdown' | 'active';
@@ -39,6 +53,9 @@ export interface BgScoreboardView {
   carrierNames: [string | null, string | null];
   pipsCrimson: BgScoreboardPip[];
   pipsAzure: BgScoreboardPip[];
+  /** Both rosters in team order for the expanded board; stats ride elided
+   *  writer slots (stable row identity = the structural sig). */
+  board: BgBoardRow[];
   /** Seconds until my team's wave revives me (>0 only while I am dead). */
   respawnIn: number;
   /** Seconds of my spawn protection left (0 = none). */
@@ -61,6 +78,7 @@ const INACTIVE: BgScoreboardView = {
   carrierNames: [null, null],
   pipsCrimson: [],
   pipsAzure: [],
+  board: [],
   respawnIn: 0,
   protectedFor: 0,
   sig: 'off',
@@ -92,6 +110,18 @@ export function buildBgScoreboardView(info: BgInfo | null, myPid: number): BgSco
     carrierNames: [m.flags[0].carrierName, m.flags[1].carrierName],
     pipsCrimson: crimson.map(pip),
     pipsAzure: azure.map(pip),
+    board: [...crimson, ...azure].map((p) => ({
+      pid: p.pid,
+      name: p.name,
+      cls: p.cls,
+      team: p.team,
+      me: p.pid === myPid,
+      dead: p.dead,
+      carrying: p.carrying,
+      kills: p.kills,
+      deaths: p.deaths,
+      captures: p.captures,
+    })),
     respawnIn: m.respawnIn,
     protectedFor: m.protectedFor,
     sig: `${m.myTeam}|${crimson.map((p) => p.pid).join(',')}|${azure.map((p) => p.pid).join(',')}`,

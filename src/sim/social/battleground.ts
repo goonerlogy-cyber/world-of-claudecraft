@@ -14,6 +14,7 @@
 
 import {
   BG_BASES,
+  BG_GRAVEYARDS,
   BG_SPEED_RUNES,
   BG_TEAM_COLORS,
   BG_TEAM_NAMES,
@@ -25,6 +26,7 @@ import { createGroundObject } from '../entity';
 import { awardBattlegroundHonor, honorTeamIdentity } from '../pvp';
 import type { ArenaReturnPools } from '../sim';
 import type { SimContext } from '../sim_context';
+import { releasePlayerSpirit } from '../spirit';
 import { type Aura, DT, type Entity, type Vec3 } from '../types';
 import { eloDelta, snapshotArenaReturnPools } from './arena';
 
@@ -32,6 +34,9 @@ import { eloDelta, snapshotArenaReturnPools } from './arena';
 export const BG_BASE_RATING = 1500; // every character starts here on the ladder
 const BG_MIN_RATING = 100; // rating floor so a losing streak can't go absurd
 export const BG_TEAM_SIZE = 5; // players per team: a full match is 5v5
+// Queue floor: an under-leveled body on one side decides ranked matches, so
+// every queued champion (and every member of a queued party) must be 20.
+export const BG_MIN_LEVEL = 20;
 const BG_COUNTDOWN = 8; // form-up gate at the keeps before the flags go live
 export const BG_CAPS_TO_WIN = 5; // first team to this many captures wins.
 // ^ Tuning knob number one post-launch: fall back to 3 if live cap pace runs
@@ -98,6 +103,12 @@ export interface BgMatch {
   preMatchPools: Map<number, ArenaReturnPools>;
   pendingFlagPress: Set<number>; // deliberate presses, resolved next update
   honorTeamKeys: [string, string]; // snapshotted at start (rename-proof DR keys)
+  // Per-player match tallies for the scoreboard (seeded to zeros at start;
+  // a deserter's row drops with their team entry).
+  stats: Map<number, { kills: number; deaths: number; captures: number }>;
+  // Seconds until a fresh corpse auto-releases to the keep graveyard (a
+  // deliberate Release press goes sooner); keyed per dead player.
+  autoReleaseIn: Map<number, number>;
   ratingAvg: [number, number]; // team average rating at start, for Elo
   resultRecorded: boolean;
   // per-tick memo of the viewer-identical match view (server hot-path rule:
@@ -135,7 +146,7 @@ function bgEmitAll(ctx: SimContext, match: BgMatch, ev: (pid: number) => void): 
   for (const mp of bgAllPids(match)) ev(mp);
 }
 
-export function bgQueueJoin(ctx: SimContext, pid?: number): void {
+export function bgQueueJoin(ctx: SimContext, pid?: number, opts?: { bypassLevel?: boolean }): void {
   const r = ctx.resolve(pid);
   if (!r) return;
   const id = r.meta.entityId;
@@ -145,6 +156,10 @@ export function bgQueueJoin(ctx: SimContext, pid?: number): void {
   }
   if (r.e.dead) {
     ctx.error(id, 'You cannot queue for Ravenrift while dead.');
+    return;
+  }
+  if (!opts?.bypassLevel && r.e.level < BG_MIN_LEVEL) {
+    ctx.error(id, `Ravenrift requires level ${BG_MIN_LEVEL}.`);
     return;
   }
   if (r.e.pos.x > DUNGEON_X_THRESHOLD) {
@@ -168,6 +183,11 @@ export function bgQueueJoin(ctx: SimContext, pid?: number): void {
   for (const m of members) {
     if (ctx.bgMatches.has(m) || bgGroupContaining(ctx, m)) {
       ctx.error(id, 'A party member is already queued or in a match.');
+      return;
+    }
+    const member = ctx.entities.get(m);
+    if (!opts?.bypassLevel && member && member.level < BG_MIN_LEVEL) {
+      ctx.error(id, `Every party member must be level ${BG_MIN_LEVEL} to queue for Ravenrift.`);
       return;
     }
   }
@@ -252,6 +272,7 @@ export function updateBattleground(ctx: SimContext): void {
     }
     match.timer += DT;
     tickWaveRespawns(ctx, match);
+    tickGraveyards(ctx, match);
     tickRunes(ctx, match);
     tickFlags(ctx, match);
     match.pendingFlagPress.clear();
@@ -404,6 +425,8 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
     id: ctx.nextBgMatchId++,
     slot,
     teams: [teamA, teamB],
+    stats: new Map([...teamA, ...teamB].map((p) => [p, { kills: 0, deaths: 0, captures: 0 }])),
+    autoReleaseIn: new Map(),
     scores: [0, 0],
     flags,
     runes,
@@ -513,47 +536,74 @@ export function bgBreakSpawnProtection(ctx: SimContext, e: Entity): void {
 }
 
 // One team-wide respawn clock per side, period BG_WAVE_PERIOD, the two clocks
-// offset by BG_WAVE_OFFSET (staggered half-cycles, never synchronized). Every
-// dead teammate respawns together on their team's tick at the keep spawn ring;
-// there is no graveyard run and no corpse.
+// offset by BG_WAVE_OFFSET (staggered half-cycles, never synchronized). The
+// wave raises every RELEASED spirit waiting in the team graveyard, together,
+// in place; a corpse that never released waits for a later wave (release is
+// the classic rite, and auto-release makes sure nobody waits forever).
 function tickWaveRespawns(ctx: SimContext, match: BgMatch): void {
   for (const team of [0, 1] as BgTeam[]) {
     match.waveIn[team] -= DT;
     if (match.waveIn[team] > 0) continue;
     match.waveIn[team] += BG_WAVE_PERIOD;
-    match.teams[team].forEach((pid, i) => {
+    match.teams[team].forEach((pid) => {
       const e = ctx.entities.get(pid);
-      if (!e || !e.dead) return;
+      if (!e || !e.dead || !e.ghost) return;
       e.ghost = false;
       // Cooldowns persist through a battleground death (classic rules); only
       // the match start hands out the full clean slate.
       ctx.readyArenaFighter(e, { clearPrep: false });
-      placeInBgKeepingCooldowns(ctx, match, pid, team, i);
+      // Rise where the spirit stands (inside the plot), facing the field.
+      e.prevPos = { ...e.pos };
+      e.facing = team === 0 ? 0 : Math.PI;
+      e.prevFacing = e.facing;
       applySpawnProtection(ctx, e);
       ctx.emit({ type: 'respawn', pid });
     });
   }
 }
 
-// Wave respawns keep cooldowns: position + revive only (placeInBg would hand
-// back a full clean slate via clearPrep).
-function placeInBgKeepingCooldowns(
-  ctx: SimContext,
-  match: BgMatch,
-  pid: number,
-  team: BgTeam,
-  index: number,
-): void {
-  const e = ctx.entities.get(pid);
-  if (!e) return;
+// How long a fresh corpse holds before the spirit is released for it.
+export const BG_AUTO_RELEASE_SECONDS = 6;
+
+// The corpse-to-graveyard flow: auto-release fresh corpses after the grace
+// (a deliberate Release press goes sooner via releasePlayerSpirit's bg arm),
+// and hold every released spirit inside its team plot (the ward) until the
+// wave raises it.
+function tickGraveyards(ctx: SimContext, match: BgMatch): void {
   const origin = battlegroundOrigin(match.slot);
-  const spawns = BG_BASES[team].spawns;
-  const sp = spawns[index % spawns.length];
-  e.pos = ctx.groundPos(origin.x + sp.x, origin.z + sp.z);
-  e.prevPos = { ...e.pos };
-  e.facing = team === 0 ? 0 : Math.PI;
-  e.prevFacing = e.facing;
-  ctx.rebucket(e);
+  for (const team of [0, 1] as BgTeam[]) {
+    const plot = BG_GRAVEYARDS[team];
+    const minX = origin.x + plot.x - plot.hw;
+    const maxX = origin.x + plot.x + plot.hw;
+    const minZ = origin.z + plot.z - plot.hd;
+    const maxZ = origin.z + plot.z + plot.hd;
+    for (const pid of match.teams[team]) {
+      const e = ctx.entities.get(pid);
+      if (!e || !e.dead) {
+        match.autoReleaseIn.delete(pid);
+        continue;
+      }
+      if (!e.ghost) {
+        const left = (match.autoReleaseIn.get(pid) ?? BG_AUTO_RELEASE_SECONDS) - DT;
+        if (left <= 0) {
+          match.autoReleaseIn.delete(pid);
+          releasePlayerSpirit(ctx, pid);
+        } else {
+          match.autoReleaseIn.set(pid, left);
+        }
+        continue;
+      }
+      match.autoReleaseIn.delete(pid);
+      // The ward: a spirit cannot leave the plot before its wave.
+      const cx = Math.min(maxX, Math.max(minX, e.pos.x));
+      const cz = Math.min(maxZ, Math.max(minZ, e.pos.z));
+      if (cx !== e.pos.x || cz !== e.pos.z) {
+        e.pos = ctx.groundPos(cx, cz);
+        e.prevPos = { ...e.pos };
+        ctx.rebucket(e);
+      }
+    }
+  }
 }
 
 function tickRunes(ctx: SimContext, match: BgMatch): void {
@@ -742,6 +792,8 @@ function captureFlag(
       meta.bgCaptures++;
       ctx.markDeedsDirty(carrierPid);
     }
+    const stat = match.stats.get(carrierPid);
+    if (stat) stat.captures++;
   }
   returnFlag(ctx, match, flag, '', true); // the captured flag resets home
   bgEmitAll(ctx, match, (mp) =>
@@ -823,12 +875,26 @@ function dropFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState, at: Entity
 
 /** Death hook (combat/damage.ts): carrier death drops the flag in place. The
  *  wave clock revives the fallen; there is no release, corpse, or ghost run. */
-export function bgOnPlayerDeath(ctx: SimContext, e: Entity, _killer: Entity | null): void {
+export function bgOnPlayerDeath(ctx: SimContext, e: Entity, killer: Entity | null): void {
   const match = ctx.bgMatches.get(e.id);
   if (!match || match.state !== 'active') return;
   for (const flag of match.flags) {
     if (flag.carrier === e.id) dropFlag(ctx, match, flag, e);
   }
+  const victimStats = match.stats.get(e.id);
+  if (victimStats) victimStats.deaths++;
+  // Credit the kill to the enemy player behind the blow (a controlled pet
+  // credits its owner); same-team and out-of-match sources never count.
+  const creditEntity =
+    killer?.kind === 'player'
+      ? killer
+      : killer?.ownerId != null
+        ? ctx.entities.get(killer.ownerId)
+        : null;
+  if (!creditEntity || ctx.bgMatches.get(creditEntity.id) !== match) return;
+  if (bgTeamOf(match, creditEntity.id) === bgTeamOf(match, e.id)) return;
+  const killerStats = match.stats.get(creditEntity.id);
+  if (killerStats) killerStats.kills++;
 }
 
 /** Disconnect/leave/jail mid-match: the deserter takes the rating loss and a
@@ -1006,6 +1072,7 @@ function sharedMatchView(ctx: SimContext, match: BgMatch): import('../../world_a
       const e = ctx.entities.get(mp);
       const m = ctx.players.get(mp);
       if (!e || !m) continue;
+      const stat = match.stats.get(mp);
       players.push({
         pid: mp,
         name: m.name,
@@ -1013,6 +1080,9 @@ function sharedMatchView(ctx: SimContext, match: BgMatch): import('../../world_a
         team,
         carrying: match.flags.some((f) => f.carrier === mp),
         dead: e.dead,
+        kills: stat?.kills ?? 0,
+        deaths: stat?.deaths ?? 0,
+        captures: stat?.captures ?? 0,
       });
     }
   }

@@ -50,6 +50,9 @@ export const TARGETS = [
       { key: 'gatehouse', scene: 'gatehouse' },
       { key: 'carry-scoreboard', scene: 'carry' },
       { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
+      { key: 'match-board', scene: 'board' },
+      // last on purpose: it kills the player, which would pollute later scenes
+      { key: 'graveyard', scene: 'graveyard' },
     ],
     async capture(page, variant) {
       const scene = variant?.scene ?? 'field';
@@ -88,9 +91,10 @@ export const TARGETS = [
           for (let i = 0; i < 9; i++) {
             const pid = sim.addPlayer(classes[i], names[i]);
             const e = sim.entities.get(pid);
-            e.level = 12;
+            e.level = 20;
             sim.bgQueueJoin(pid);
           }
+          sim.player.level = Math.max(20, sim.player.level);
           sim.bgQueueJoin();
         }
         return { ok: true };
@@ -157,7 +161,7 @@ export const TARGETS = [
           tp(foe.pos.x, foe.pos.z);
         }
       }, scene);
-      if (scene === 'carry') {
+      if (scene === 'carry' || scene === 'board') {
         await wait(300);
         await page.evaluate(() => {
           window.__game.sim.bgFlagAction();
@@ -165,6 +169,34 @@ export const TARGETS = [
           window.__game.input.camPitch = 0.4;
         });
         await wait(800);
+      }
+      if (scene === 'board') {
+        // pin the hover-expanded match board open and shoot just the strip
+        await page.evaluate(() => {
+          document.querySelector('#bg-scoreboard')?.classList.add('expanded');
+        });
+        await wait(400);
+        return { clip: '#bg-scoreboard' };
+      }
+      if (scene === 'graveyard') {
+        await page.evaluate(() => {
+          const sim = window.__game.sim;
+          const p = sim.player;
+          p.auras = p.auras.filter((a) => a.kind !== 'spawn_protection');
+          sim.ctx.dealDamage(null, p, 9_999_999, false, 'physical', null, 'hit');
+        });
+        await wait(400);
+        await page.evaluate(() => {
+          window.__game.sim.releaseSpirit();
+          window.__game.input.camDist = 13;
+          window.__game.input.camPitch = 0.55;
+        });
+        await wait(600);
+        await page.evaluate(() => {
+          const game = window.__game;
+          game.input.camYaw = game.sim.player.facing; // chase behind the spirit
+        });
+        await wait(1200);
       }
       await wait(2600); // let the field build + banners settle
       return {};

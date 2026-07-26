@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { isBgPos } from '../src/sim/data';
+import { BG_GRAVEYARDS } from '../src/sim/battleground_layout';
+import { battlegroundOrigin, isBgPos } from '../src/sim/data';
 import { BATTLEGROUND_LOSS_HONOR, BATTLEGROUND_WIN_HONOR } from '../src/sim/pvp';
 import { eloDelta, Sim } from '../src/sim/sim';
 import type { BgMatch } from '../src/sim/social/battleground';
 import {
+  BG_AUTO_RELEASE_SECONDS,
   BG_CARRIER_VULN_DELAY,
   BG_CARRIER_VULN_INTERVAL,
   BG_MAX_DURATION,
+  BG_MIN_LEVEL,
   BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
@@ -33,6 +36,7 @@ function tenInQueue(): { sim: Sim; pids: number[] } {
   for (let i = 0; i < 10; i++) {
     const pid = sim.addPlayer(classes[i % 5], `P${i}`);
     tp(sim, pid, (i % 5) * 2 - 4, -40);
+    sim.entities.get(pid)!.level = 20; // the queue floor (BG_MIN_LEVEL)
     pids.push(pid);
   }
   for (const pid of pids) sim.bgQueueJoin(pid);
@@ -42,6 +46,16 @@ function tenInQueue(): { sim: Sim; pids: number[] } {
 
 function toActive(sim: Sim, match: BgMatch) {
   for (let i = 0; i < 20 * 12 && match.state !== 'active'; i++) sim.tick();
+}
+
+// True when the entity stands inside its team's graveyard plot (world coords).
+function inGraveyard(sim: Sim, match: BgMatch, pid: number, team: 0 | 1): boolean {
+  const o = battlegroundOrigin(match.slot);
+  const plot = BG_GRAVEYARDS[team];
+  const e = sim.entities.get(pid)!;
+  return (
+    Math.abs(e.pos.x - (o.x + plot.x)) <= plot.hw && Math.abs(e.pos.z - (o.z + plot.z)) <= plot.hd
+  );
 }
 
 function stripProtection(sim: Sim, pid: number) {
@@ -74,6 +88,7 @@ describe('Ravenrift: queue + matchmaking', () => {
     for (let i = 0; i < 9; i++) {
       const pid = sim.addPlayer('warrior', `W${i}`);
       tp(sim, pid, 0, -40);
+      sim.entities.get(pid)!.level = BG_MIN_LEVEL;
       pids.push(pid);
       sim.bgQueueJoin(pid);
     }
@@ -82,6 +97,7 @@ describe('Ravenrift: queue + matchmaking', () => {
 
     const tenth = sim.addPlayer('mage', 'Tenth');
     tp(sim, tenth, 0, -40);
+    sim.entities.get(tenth)!.level = BG_MIN_LEVEL;
     sim.bgQueueJoin(tenth);
     sim.tick();
     const match = sim.bgMatchFor(pids[0])!;
@@ -98,10 +114,12 @@ describe('Ravenrift: queue + matchmaking', () => {
     const sim = makeWorld();
     const leader = sim.addPlayer('warrior', 'Leader');
     tp(sim, leader, 0, -40);
+    sim.entities.get(leader)!.level = BG_MIN_LEVEL;
     const party = [leader];
     for (let i = 0; i < 3; i++) {
       const m = sim.addPlayer('priest', `Mate${i}`);
       tp(sim, m, 0, -40);
+      sim.entities.get(m)!.level = BG_MIN_LEVEL;
       sim.partyInvite(m, leader);
       sim.partyAccept(m);
       party.push(m);
@@ -110,6 +128,7 @@ describe('Ravenrift: queue + matchmaking', () => {
     for (let i = 0; i < 6; i++) {
       const s = sim.addPlayer('rogue', `Solo${i}`);
       tp(sim, s, 0, -40);
+      sim.entities.get(s)!.level = BG_MIN_LEVEL;
       solos.push(s);
       sim.bgQueueJoin(s);
     }
@@ -124,6 +143,7 @@ describe('Ravenrift: queue + matchmaking', () => {
   it('refuses to queue from inside an instance, while dead, or twice', () => {
     const sim = makeWorld();
     const a = sim.addPlayer('warrior', 'A');
+    sim.entities.get(a)!.level = BG_MIN_LEVEL;
     tp(sim, a, 900, -1250); // a dungeon instance band
     sim.bgQueueJoin(a);
     expect(sim.bgInfoFor(a)!.queued).toBe(false);
@@ -135,12 +155,138 @@ describe('Ravenrift: queue + matchmaking', () => {
 
     const b = sim.addPlayer('mage', 'B');
     tp(sim, b, 0, -40);
+    sim.entities.get(b)!.level = BG_MIN_LEVEL;
     sim.bgQueueJoin(b);
     sim.bgQueueJoin(b); // idempotent re-queue
     expect(sim.bgInfoFor(b)!.queued).toBe(true);
     expect(sim.bgInfoFor(b)!.queueSize).toBe(1);
     sim.bgQueueLeave(b);
     expect(sim.bgInfoFor(b)!.queued).toBe(false);
+  });
+});
+
+describe('Ravenrift: the level 20 queue floor', () => {
+  it('refuses an under-leveled solo queue and admits exactly BG_MIN_LEVEL', () => {
+    expect(BG_MIN_LEVEL).toBe(20);
+    const sim = makeWorld();
+    const low = sim.addPlayer('warrior', 'Lowbie');
+    sim.entities.get(low)!.level = BG_MIN_LEVEL - 1;
+    sim.bgQueueJoin(low);
+    expect(sim.bgInfoFor(low)!.queued).toBe(false);
+    const ready = sim.addPlayer('mage', 'Ready');
+    sim.entities.get(ready)!.level = BG_MIN_LEVEL;
+    sim.bgQueueJoin(ready);
+    expect(sim.bgInfoFor(ready)!.queued).toBe(true);
+  });
+
+  it('refuses a party containing a single under-leveled member', () => {
+    const sim = makeWorld();
+    const leader = sim.addPlayer('warrior', 'Leader');
+    const buddy = sim.addPlayer('mage', 'Buddy');
+    sim.entities.get(leader)!.level = BG_MIN_LEVEL;
+    sim.entities.get(buddy)!.level = BG_MIN_LEVEL - 1;
+    sim.partyInvite(buddy, leader);
+    sim.partyAccept(buddy);
+    sim.bgQueueJoin(leader);
+    expect(sim.bgInfoFor(leader)!.queued).toBe(false);
+    expect(sim.bgInfoFor(buddy)!.queued).toBe(false);
+    // level the buddy and the same queue press works
+    sim.entities.get(buddy)!.level = BG_MIN_LEVEL;
+    sim.bgQueueJoin(leader);
+    expect(sim.bgInfoFor(leader)!.queued).toBe(true);
+    expect(sim.bgInfoFor(buddy)!.queued).toBe(true);
+  });
+});
+
+describe('Ravenrift: match tallies (kills, deaths, captures)', () => {
+  it('counts deaths, credits only enemy killers, and counts captures on the wire rows', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const killer = match.teams[0][0];
+    const victim = match.teams[1][0];
+    kill(sim, victim, killer);
+    sim.tick();
+    let rows = sim.bgInfoFor(killer)!.match!.players;
+    expect(rows.find((p) => p.pid === killer)).toMatchObject({ kills: 1, deaths: 0, captures: 0 });
+    expect(rows.find((p) => p.pid === victim)).toMatchObject({ kills: 0, deaths: 1, captures: 0 });
+    // a same-team death counts the death and credits nobody
+    const tkVictim = match.teams[0][1];
+    const tkDealer = match.teams[0][2];
+    kill(sim, tkVictim, tkDealer);
+    sim.tick();
+    rows = sim.bgInfoFor(killer)!.match!.players;
+    expect(rows.find((p) => p.pid === tkVictim)).toMatchObject({ deaths: 1 });
+    expect(rows.find((p) => p.pid === tkDealer)).toMatchObject({ kills: 0 });
+    // a capture lands on the carrier's row
+    captureOnce(sim, match, killer);
+    rows = sim.bgInfoFor(killer)!.match!.players;
+    expect(rows.find((p) => p.pid === killer)).toMatchObject({ kills: 1, captures: 1 });
+  });
+});
+
+describe('Ravenrift: the graveyard rite', () => {
+  it('a corpse auto-releases after the grace; a released spirit is warded inside the plot', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const victim = match.teams[0][0];
+    kill(sim, victim);
+    sim.tick();
+    const e = sim.entities.get(victim)!;
+    // still a corpse just before the grace ends
+    for (let i = 0; i < Math.floor(20 * (BG_AUTO_RELEASE_SECONDS - 0.5)); i++) sim.tick();
+    expect(e.ghost).toBeFalsy();
+    // released automatically just after
+    for (let i = 0; i < 20; i++) sim.tick();
+    expect(e.ghost).toBe(true);
+    expect(inGraveyard(sim, match, victim, 0)).toBe(true);
+    // the ward: teleport the spirit outside the plot and the next tick pulls
+    // it back inside (a spirit cannot scout or leave before its wave)
+    tp(sim, victim, 0, -40);
+    sim.tick();
+    expect(inGraveyard(sim, match, victim, 0)).toBe(true);
+  });
+
+  it('the wave raises only released spirits: an unreleased corpse waits for a later wave', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const a = match.teams[0][0];
+    const b = match.teams[0][1];
+    kill(sim, a);
+    kill(sim, b);
+    sim.tick();
+    sim.releaseSpirit(a); // a releases immediately; b lies on its corpse
+    // advance to just after Crimson's next wave WITHOUT crossing b's
+    // auto-release grace (BG_WAVE_PERIOD boundary within 6s of the kills)
+    const target = Math.ceil(match.timer / BG_WAVE_PERIOD) * BG_WAVE_PERIOD + 0.3;
+    if (target - match.timer < BG_AUTO_RELEASE_SECONDS - 0.5) {
+      while (match.timer < target) sim.tick();
+      expect(sim.entities.get(a)!.dead).toBe(false); // the released spirit rose
+      expect(sim.entities.get(b)!.dead).toBe(true); // the corpse waited
+    }
+    // b auto-releases and the following wave raises it too
+    while (sim.entities.get(b)!.dead && match.timer < 60) sim.tick();
+    expect(sim.entities.get(b)!.dead).toBe(false);
+    expect(inGraveyard(sim, match, b, 0)).toBe(true);
+  });
+
+  it('corpse and Spirit Healer resurrection are refused inside a match (wave-only)', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const victim = match.teams[0][0];
+    kill(sim, victim);
+    sim.tick();
+    sim.releaseSpirit(victim);
+    const e = sim.entities.get(victim)!;
+    expect(e.ghost).toBe(true);
+    // teleport the ghost onto its own corpse: the corpse rez still refuses
+    if (e.corpsePos) tp(sim, victim, e.corpsePos.x, e.corpsePos.z);
+    sim.resurrectAtCorpse(victim);
+    expect(e.dead).toBe(true);
+    expect(sim.resurrectAtSpiritHealer(victim)).toBe(false);
   });
 });
 
@@ -334,9 +480,13 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
     const e = sim.entities.get(carrier)!;
     expect(e.dead).toBe(true);
     expect(match.flags[1].state).toBe('dropped');
-    sim.releaseSpirit(carrier); // no graveyard run in a battleground
+    // The classic rite: releasing rises the spirit in the CRIMSON keep
+    // graveyard plot; the dropped flag stays where it fell.
+    sim.releaseSpirit(carrier);
     expect(e.dead).toBe(true);
-    expect(e.ghost).toBeFalsy();
+    expect(e.ghost).toBe(true);
+    expect(inGraveyard(sim, match, carrier, 0)).toBe(true);
+    expect(match.flags[1].state).toBe('dropped');
   });
 
   it('wave respawn: 10s period, the two team clocks offset by 5s, whole wave together', () => {
@@ -352,9 +502,12 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
     kill(sim, c1);
     kill(sim, a1);
     sim.tick();
+    sim.releaseSpirit(c1); // the wave raises released spirits (release first)
+    sim.releaseSpirit(a1);
     for (let i = 0; i < 20; i++) sim.tick(); // 1s later
     kill(sim, c2);
     sim.tick();
+    sim.releaseSpirit(c2);
     // Azure's first wave fires at 5s: a1 back up, both Crimson still down
     while (match.waveIn[1] < BG_WAVE_PERIOD - 0.5 || sim.entities.get(a1)!.dead) {
       sim.tick();
@@ -367,8 +520,10 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
     while (sim.entities.get(c1)!.dead && match.timer < 11) sim.tick();
     expect(sim.entities.get(c1)!.dead).toBe(false);
     expect(sim.entities.get(c2)!.dead).toBe(false); // died later, joined the same wave
-    // respawned at the keep spawn ring, not where they fell
+    // risen inside the keep graveyard plot (in place), not where they fell
     expect(isBgPos(sim.entities.get(c1)!.pos.x)).toBe(true);
+    expect(inGraveyard(sim, match, c1, 0)).toBe(true);
+    expect(inGraveyard(sim, match, c2, 0)).toBe(true);
   });
 
   it('a death just after a wave waits for the NEXT wave (never respawns instantly)', () => {
@@ -380,6 +535,7 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
     while (match.timer < BG_WAVE_PERIOD + 0.2) sim.tick();
     kill(sim, victim);
     sim.tick();
+    sim.releaseSpirit(victim);
     expect(sim.entities.get(victim)!.dead).toBe(true);
     // still dead 8s later; alive after the full next tick at 20s
     while (match.timer < BG_WAVE_PERIOD + 8) sim.tick();
@@ -645,10 +801,13 @@ describe('Ravenrift: review-hardening pins', () => {
     kill(sim, match.teams[1][1]);
     const timerBefore = match.timer;
     const before = rngState();
-    for (let i = 0; i < 20 * 15; i++) updateBattleground(sim.ctx);
-    expect(rngState()).toBe(before); // zero draws across 15s of battleground
+    // 20s covers the worst chain: the 6s auto-release just missing a wave,
+    // then the full 10s to the next one (release + ward + revive all inside
+    // this phase, still zero draws).
+    for (let i = 0; i < 20 * 20; i++) updateBattleground(sim.ctx);
+    expect(rngState()).toBe(before); // zero draws across 20s of battleground
     expect(match.timer).toBeGreaterThan(timerBefore + 10); // and the phase really ran
-    expect(sim.entities.get(match.teams[1][1])!.dead).toBe(false); // wave fired
+    expect(sim.entities.get(match.teams[1][1])!.dead).toBe(false); // released + wave-raised
   });
 
   it('a single deserter takes the rating loss and the recorded L; the team fights on', () => {
@@ -700,6 +859,7 @@ describe('Ravenrift: review-hardening pins', () => {
     const sim = makeWorld();
     const a = sim.addPlayer('warrior', 'A');
     tp(sim, a, 0, -40);
+    sim.entities.get(a)!.level = BG_MIN_LEVEL;
     sim.bgQueueJoin(a);
     sim.tick();
     expect(sim.bgInfoFor(a)!.queued).toBe(true);

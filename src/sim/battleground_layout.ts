@@ -89,6 +89,10 @@ export interface BgWallSeg {
    *  clears it from above via its cameraTopY, and it still blocks spell line
    *  of sight (its top is above SIGHT_HEIGHT). Footprint is identical. */
   low?: boolean;
+  /** Graveyard fence rail: a real collider at BG_GRAVEYARD_FENCE_TOP (1.8yd,
+   *  still above SIGHT_HEIGHT so camera and casts stay honest), rendered as a
+   *  low crumbled run. */
+  fence?: boolean;
 }
 
 // Chamber cover: the hollow heart ruin and flanking cover inside the Ruin
@@ -185,6 +189,32 @@ export const BG_KEEP_BARRICADES: BgWallSeg[] = [
   { x: 3, z: 106, hw: 8, hd: 1, low: true },
 ];
 
+// Graveyards: a fenced plot in each keep's postern-OPPOSITE back corner,
+// mirrored. A released spirit rises here and is bound to the plot until its
+// team's respawn wave (social/battleground.ts tickGraveyards). The stone
+// rails are REAL colliders with a corner entrance gap; their top sits above
+// eye height, so the camera clears them and spell sight through them is
+// honestly blocked, per the band's camera/sight contract.
+export const BG_GRAVEYARD_FENCE_TOP = 1.8;
+export interface BgGraveyardPlot {
+  x: number;
+  z: number;
+  hw: number;
+  hd: number;
+}
+export const BG_GRAVEYARDS: [BgGraveyardPlot, BgGraveyardPlot] = [
+  { x: 10.5, z: -123, hw: 4, hd: 3 }, // Crimson: back-east corner (postern is west)
+  { x: -10.5, z: 123, hw: 4, hd: 3 }, // Azure mirror
+];
+export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
+  // Crimson: west rail (entrance gap at its north end) + north rail.
+  { x: 6.5, z: -124, hw: BG_WALL_T, hd: 2, fence: true },
+  { x: 11.5, z: -120, hw: 3, hd: BG_WALL_T, fence: true },
+  // Azure point mirrors.
+  { x: -6.5, z: 124, hw: BG_WALL_T, hd: 2, fence: true },
+  { x: -11.5, z: 120, hw: 3, hd: BG_WALL_T, fence: true },
+];
+
 const PILLAR_R = 1.0;
 const CRATE_R = 0.8;
 
@@ -270,6 +300,7 @@ export function battlegroundWallSegments(): BgWallSeg[] {
     ...BG_CURTAIN_WALLS,
     ...BG_GATEHOUSE_WALLS,
     ...BG_KEEP_BARRICADES,
+    ...BG_GRAVEYARD_FENCES,
   ];
 }
 
@@ -285,7 +316,7 @@ export function battlegroundColliders(): Collider[] {
       hw: w.hw,
       hd: w.hd,
       rot: 0,
-      cameraTopY: w.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT,
+      cameraTopY: w.fence ? BG_GRAVEYARD_FENCE_TOP : w.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT,
     });
   }
   for (const p of BG_COVER_PILLARS) {

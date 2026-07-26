@@ -6,6 +6,9 @@ import {
   BG_CURTAIN_WALLS,
   BG_FLAG_Z,
   BG_GATEHOUSE_WALLS,
+  BG_GRAVEYARD_FENCE_TOP,
+  BG_GRAVEYARD_FENCES,
+  BG_GRAVEYARDS,
   BG_HALF_X,
   BG_HALF_Z,
   BG_KEEP_BARRICADES,
@@ -152,10 +155,12 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
   it('pins the wall/pillar/crate manifest counts (the three-chambers field)', () => {
     // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 11 cover walls
     // + 8 curtain segments + 8 gatehouse walls + 2 barricades
+    // + 4 graveyard fence rails (2 per keep plot)
     expect(BG_CURTAIN_WALLS).toHaveLength(8);
     expect(BG_GATEHOUSE_WALLS).toHaveLength(8);
     expect(BG_KEEP_BARRICADES).toHaveLength(2);
-    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 11 + 8 + 8 + 2);
+    expect(BG_GRAVEYARD_FENCES).toHaveLength(4);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 11 + 8 + 8 + 2 + 4);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
@@ -166,15 +171,20 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     for (const b of BG_KEEP_BARRICADES) expect(b.low).toBe(true);
   });
 
-  it('the low flag never changes a collider footprint, only its visual top', () => {
+  it('the low/fence flags never change a collider footprint, only its visual top', () => {
     const segs = battlegroundWallSegments();
     const obbs = battlegroundColliders().filter((c) => c.type === 'obb');
     expect(obbs).toHaveLength(segs.length);
     segs.forEach((s, i) => {
       const c = obbs[i];
       expect([c.x, c.z, c.hw, c.hd]).toEqual([s.x, s.z, s.hw, s.hd]);
-      expect(c.cameraTopY).toBe(s.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT);
+      expect(c.cameraTopY).toBe(
+        s.fence ? BG_GRAVEYARD_FENCE_TOP : s.low ? BG_WALL_HEIGHT / 2 : BG_WALL_HEIGHT,
+      );
     });
+    // the fence top stays above the eye line: what blocks a cast is never
+    // renderable-below-sight (the band's honesty rule)
+    expect(BG_GRAVEYARD_FENCE_TOP).toBeGreaterThan(SIGHT_HEIGHT);
   });
 
   it('every real wall run is exactly BG_WALL_T thin; the heart is the one thick block', () => {

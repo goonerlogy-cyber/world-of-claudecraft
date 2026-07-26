@@ -831,7 +831,6 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.playerLevelClassTitle': '{name}。{level}级{className}',
   'hudChrome.bg.crimson': '赤红队',
   'hudChrome.bg.azure': '蔚蓝队',
-  'hudChrome.bg.you': '(你)',
   'hudChrome.bg.formUp': '列队:{seconds}',
   'hudChrome.bg.firstTo': '先夺得{caps}次旗帜',
   'hudChrome.bg.flagCarriedBy': '{name}携带中',
@@ -846,6 +845,11 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name}夺走了{team}的旗帜!',
   'hudChrome.bg.flagDroppedLog': '{team}的旗帜掉落了。',
   'hudChrome.bg.flagReturnedLog': '{team}的旗帜已归还。',
+  'hudChrome.bg.yourTeamTitle': '你的队伍',
+  'hudChrome.bg.levelRequirement': '需要等级{level}。',
+  'hudChrome.bg.board.kills': '击杀',
+  'hudChrome.bg.board.deaths': '死亡',
+  'hudChrome.bg.board.captures': '夺旗',
   'hudChrome.bg.flagTakenBanner': '{name}夺走了{team}的旗帜!',
   'hudChrome.bg.flagReturnedBanner': '{team}的旗帜已归还!',
   'hudChrome.bg.capturedBanner': '{name}夺取了{team}的旗帜!{crimson}:{azure}',
@@ -867,11 +871,11 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsHeading': '旗帜',
   'guide.ravenriftPage.flagsBody':
     '每座要塞守着本队军旗。夺取敌旗并送到己方旗座即可得分;先夺得五次者获胜,超时的战斗按比分定胜负。旗手阵亡时旗帜就地掉落:敌人可以再次拾起,而本队队员只需靠近便能立即将其送回。军旗也绝不藏身:拾旗会解除潜行,旗手若以任何方式隐身,旗帜都会当场掉落。',
+  'guide.ravenriftPage.respawnBody':
+    '死亡保留经典仪式:释放灵魂后,它会在你方主堡的围栏墓地中升起,并被结界束缚,直到你方下一波复活潮(停留过久的尸体会在短暂宽限后自动释放)。每波复活潮会同时唤起所有等待的灵魂,并在行动前获得短暂保护;两队的复活潮刻意错开,战斗永远不会同时完全重置。这里没有跑尸,也没有灵魂医者的交易:复活潮是唯一的归途。',
   'guide.ravenriftPage.pickupNote':
     '拾旗永远需要主动按下战场动作键:没有人会因为跑过旗帜而意外成为旗手。',
   'guide.ravenriftPage.respawnHeading': '战场阵亡',
-  'guide.ravenriftPage.respawnBody':
-    '鸦裂谷没有跑坟。每队共享一个复活波次,所有阵亡队友随本队波次在要塞一同复活,并在行动前获得短暂保护。两队波次刻意错开,战局永远不会同时清零。',
   'guide.ravenriftPage.carrierHeading': '扛旗',
   'guide.ravenriftPage.carrierBody':
     '扛着敌旗太久的旗手会越来越脆弱,承受的伤害持续增加,直到旗帜被夺回、掉落或归还。抱旗躲藏是败招;把旗送回家才是胜途。',

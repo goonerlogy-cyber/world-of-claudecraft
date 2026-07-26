@@ -16,6 +16,7 @@
 // the painter localizes; CLASSES is read here only to decide that flag.
 
 import { CLASSES } from '../../../sim/data';
+import { BG_MIN_LEVEL } from '../../../sim/social/battleground';
 import type { BgInfo, PartyInfo } from '../../../world_api';
 
 /** One all-time ladder entry as the HUD caches it (server-fetched, online only). */
@@ -45,7 +46,7 @@ export interface BgAllTimeRow {
 export type BgWindowAction =
   | { kind: 'in-match'; scoreCrimson: number; scoreAzure: number }
   | { kind: 'queued'; queueSize: number; queuedParty: number }
-  | { kind: 'idle'; partySize: number };
+  | { kind: 'idle'; partySize: number; requiredLevel: number; locked: boolean };
 
 /** The full window view-model: the offline/not-synced notice, or the live panel. */
 export type BgWindowView =
@@ -66,6 +67,8 @@ export type BgWindowView =
 export interface BgWindowViewInput {
   info: BgInfo | null;
   playerName: string;
+  /** Own level, for the queue floor (BG_MIN_LEVEL) display + lock. */
+  playerLevel: number;
   party: PartyInfo | null;
   /** The all-time board cache (painter-owned, server-fetched; null until seen). */
   allTime: BgAllTimeEntry[] | null;
@@ -78,7 +81,7 @@ export interface BgWindowViewInput {
  * output for identical snapshots.
  */
 export function buildBgWindowView(input: BgWindowViewInput): BgWindowView {
-  const { info: b, playerName, party, allTime } = input;
+  const { info: b, playerName, playerLevel, party, allTime } = input;
   if (!b) return { kind: 'offline' };
 
   const partySize = party?.members.length ?? 1;
@@ -86,7 +89,12 @@ export function buildBgWindowView(input: BgWindowViewInput): BgWindowView {
     ? { kind: 'in-match', scoreCrimson: b.match.scores[0], scoreAzure: b.match.scores[1] }
     : b.queued
       ? { kind: 'queued', queueSize: b.queueSize, queuedParty: b.queuedParty }
-      : { kind: 'idle', partySize };
+      : {
+          kind: 'idle',
+          partySize,
+          requiredLevel: BG_MIN_LEVEL,
+          locked: playerLevel < BG_MIN_LEVEL,
+        };
 
   const allTimeRows: BgAllTimeRow[] | null = allTime
     ? allTime.map((r, i) => ({

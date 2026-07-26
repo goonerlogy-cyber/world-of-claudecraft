@@ -70,6 +70,10 @@ function joinServer(
   const session = server.join(fc.ws, characterId, characterId, name, cls, null);
   if ('error' in session) throw new Error(session.error);
   session.blockListLoaded = true;
+  // The queue has a level floor (BG_MIN_LEVEL); wire tests stage eligible
+  // champions unless a case is exercising the floor itself.
+  const e = server.sim.entities.get(session.pid);
+  if (e) e.level = 20;
   return session;
 }
 

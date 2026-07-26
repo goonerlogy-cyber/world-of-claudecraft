@@ -857,7 +857,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.playerLevelClassTitle': '{name}。レベル{level} {className}',
   'hudChrome.bg.crimson': 'クリムゾン',
   'hudChrome.bg.azure': 'アズール',
-  'hudChrome.bg.you': '(あなた)',
   'hudChrome.bg.formUp': '整列:{seconds}',
   'hudChrome.bg.firstTo': '先取{caps}キャプチャー',
   'hudChrome.bg.flagCarriedBy': '{name}が運搬中',
@@ -872,6 +871,11 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name}が{team}の旗を奪った!',
   'hudChrome.bg.flagDroppedLog': '{team}の旗が落とされた。',
   'hudChrome.bg.flagReturnedLog': '{team}の旗が戻された。',
+  'hudChrome.bg.yourTeamTitle': 'あなたのチーム',
+  'hudChrome.bg.levelRequirement': 'レベル{level}が必要です。',
+  'hudChrome.bg.board.kills': 'キル',
+  'hudChrome.bg.board.deaths': 'デス',
+  'hudChrome.bg.board.captures': '奪取',
   'hudChrome.bg.flagTakenBanner': '{name}が{team}の旗を奪った!',
   'hudChrome.bg.flagReturnedBanner': '{team}の旗が戻された!',
   'hudChrome.bg.capturedBanner': '{name}が{team}の旗をキャプチャー!{crimson}:{azure}',
@@ -896,11 +900,11 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsHeading': '旗',
   'guide.ravenriftPage.flagsBody':
     '各砦は自軍の旗を守っています。敵の旗を奪って自軍の旗座まで運べば得点。先に5回キャプチャーしたチームの勝利で、時間切れの戦いはスコアで決着します。倒された運び手はその場に旗を落とします。敵は拾い直せますが、旗の持ち主チームは近づくだけで即座に旗を戻せます。また、旗は決して隠れません。旗を拾うとステルスは解除され、運び手がどんな手段であれ姿を消せば、旗はその場に落ちます。',
+  'guide.ravenriftPage.respawnBody':
+    '死は古典の儀式のまま:魂を解放すると、自陣キープの柵に囲まれた墓地に霊体として現れ、次のチーム復活ウェーブまでそこに縛られます(放置された遺体も短い猶予の後に自動で解放されます)。ウェーブは待機中の霊体を全員同時に蘇らせ、行動するまで短時間保護されます。両チームのウェーブは意図的にずらされており、戦いが同時に完全リセットされることはありません。遺体走りも、スピリットヒーラーとの取引もありません:ウェーブこそが唯一の帰り道です。',
   'guide.ravenriftPage.pickupNote':
     '旗を拾うのは常に戦場アクションキーの意図的な押下です。誤って旗の上を走り抜けて運び手になることはありません。',
   'guide.ravenriftPage.respawnHeading': '戦場での死',
-  'guide.ravenriftPage.respawnBody':
-    'レイヴンリフトに墓地走りはありません。各チームは共有の復活ウェーブを持ち、倒れた仲間はチームのウェーブで砦に一斉に蘇り、行動するまで短時間保護されます。2チームのウェーブは意図的にずらされており、戦線が同時に完全リセットされることはありません。',
   'guide.ravenriftPage.carrierHeading': '旗の運搬',
   'guide.ravenriftPage.carrierBody':
     '敵の旗を長く持ちすぎた運び手はどんどん脆くなり、旗がキャプチャー、ドロップ、返還されるまで被ダメージが増え続けます。旗を抱えて隠れるのは負け筋。持ち帰るのが勝ち筋です。',

@@ -7579,16 +7579,15 @@ export class Hud {
     // Healer, carrying just the relevant button. The server re-checks both ranges.
     const ghost = p.dead && p.ghost;
     const deadInArena = p.dead && !!this.sim.arenaInfo?.match;
-    // A battleground death is a timed keep wave-respawn (no graveyard run):
-    // the scoreboard painter shows the countdown instead of the Release modal.
-    const deadInBg = p.dead && !!this.sim.bgInfo?.match;
+    // A battleground corpse releases like the open world (the spirit rises in
+    // the keep graveyard and waits for the wave), so the Release modal shows;
+    // only the corpse-run / Spirit Healer prompts are suppressed in a match
+    // (the wave is the one way back, enforced server-side too).
+    const ghostInBgMatch = !!this.sim.bgInfo?.match;
     if (!p.dead) this.closeResurrectionPrompt();
     document.body.classList.toggle('spirit-mode', ghost);
-    this.setDisplay(
-      this.deathOverlayEl,
-      p.dead && !ghost && !deadInArena && !deadInBg ? 'flex' : 'none',
-    );
-    if (ghost) {
+    this.setDisplay(this.deathOverlayEl, p.dead && !ghost && !deadInArena ? 'flex' : 'none');
+    if (ghost && !ghostInBgMatch) {
       const corpseInRange = !!p.corpsePos && dist2d(p.pos, p.corpsePos) <= GHOST_CORPSE_REZ_RANGE;
       let healerNearby = false;
       for (const ent of this.sim.entities.values()) {

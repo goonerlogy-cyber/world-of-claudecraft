@@ -7444,7 +7444,9 @@ type BgExtraKey =
   | 'errNoFlag'
   | 'errPartyTooLarge'
   | 'errDelveDuringBg'
-  | 'errTalentsDuringBg';
+  | 'errTalentsDuringBg'
+  | 'errLevelTooLow'
+  | 'errMemberLevelTooLow';
 
 const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   joinQueue: 'You join the Ravenrift queue. Need {count} champions to start a match.',
@@ -7462,6 +7464,8 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   errPartyTooLarge: 'Your party is too large for Ravenrift. It queues parties of up to 5.',
   errDelveDuringBg: 'You cannot enter a delve during a battleground.',
   errTalentsDuringBg: 'You cannot change talents during a battleground.',
+  errLevelTooLow: 'Ravenrift requires level {level}.',
+  errMemberLevelTooLow: 'Every party member must be level {level} to queue for Ravenrift.',
 };
 
 const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, string>>>> = {
@@ -7482,6 +7486,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errPartyTooLarge: '你的队伍人数超出鸦裂谷上限。最多5人小队可排队。',
     errDelveDuringBg: '战场进行中无法进入探秘。',
     errTalentsDuringBg: '战场进行中无法更改天赋。',
+    errLevelTooLow: '鸦裂谷需要等级{level}。',
+    errMemberLevelTooLow: '所有小队成员必须达到等级{level}才能加入鸦裂谷队列。',
   },
   zh_TW: {
     joinQueue: '你加入了鴉裂谷佇列。需要{count}名勇士才能開始比賽。',
@@ -7499,6 +7505,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errPartyTooLarge: '你的隊伍人數超出鴉裂谷上限。最多5人隊伍可排隊。',
     errDelveDuringBg: '戰場進行中無法進入探祕。',
     errTalentsDuringBg: '戰場進行中無法更改天賦。',
+    errLevelTooLow: '鴉裂谷需要等級{level}。',
+    errMemberLevelTooLow: '所有隊伍成員必須達到等級{level}才能加入鴉裂谷佇列。',
   },
   ja_JP: {
     joinQueue: 'レイヴンリフトのキューに参加しました。試合開始には{count}人の勇者が必要です。',
@@ -7518,6 +7526,9 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
       'パーティの人数がレイヴンリフトの上限を超えています。参加できるのは最大5人です。',
     errDelveDuringBg: '戦場の最中はディレルヴに入れません。',
     errTalentsDuringBg: '戦場の最中はタレントを変更できません。',
+    errLevelTooLow: 'レイヴンリフトにはレベル{level}が必要です。',
+    errMemberLevelTooLow:
+      'レイヴンリフトのキューに参加するには、パーティ全員がレベル{level}である必要があります。',
   },
   ko_KR: {
     joinQueue:
@@ -7538,6 +7549,9 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
       '파티 인원이 레이븐리프트 제한을 초과합니다. 최대 5인 파티만 참가할 수 있습니다.',
     errDelveDuringBg: '전장 중에는 탐사에 들어갈 수 없습니다.',
     errTalentsDuringBg: '전장 중에는 특성을 변경할 수 없습니다.',
+    errLevelTooLow: '레이븐리프트는 레벨 {level}부터 참가할 수 있습니다.',
+    errMemberLevelTooLow:
+      '레이븐리프트 대기열에 참가하려면 모든 파티원이 레벨 {level} 이상이어야 합니다.',
   },
   ru_RU: {
     joinQueue: 'Вы встали в очередь Вороньего Разлома. Для начала матча нужно {count} бойцов.',
@@ -7557,6 +7571,9 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
       'Ваша группа слишком велика для Вороньего Разлома. В очередь встают группы до 5 бойцов.',
     errDelveDuringBg: 'Нельзя войти в вылазку во время боя на поле боя.',
     errTalentsDuringBg: 'Нельзя менять таланты во время боя на поле боя.',
+    errLevelTooLow: 'Для Вороньего Разлома требуется уровень {level}.',
+    errMemberLevelTooLow:
+      'Чтобы встать в очередь Вороньего Разлома, каждый в группе должен иметь уровень {level}.',
   },
 };
 
@@ -8794,6 +8811,14 @@ const RULES: Rule[] = [
   {
     re: /^You cannot change talents during a battleground\.$/,
     build: () => tBg('errTalentsDuringBg'),
+  },
+  {
+    re: /^Ravenrift requires level (\d+)\.$/,
+    build: (m) => tBg('errLevelTooLow', { level: m[1] }),
+  },
+  {
+    re: /^Every party member must be level (\d+) to queue for Ravenrift\.$/,
+    build: (m) => tBg('errMemberLevelTooLow', { level: m[1] }),
   },
   // Delve / lockpicking sim text. Re-localized through t() against the sim.delve.* /
   // sim.lockpick.* keys (src/ui/i18n.catalog/index.ts). The module-enter banner is two

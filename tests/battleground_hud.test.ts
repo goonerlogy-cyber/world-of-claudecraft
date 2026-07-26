@@ -28,9 +28,39 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
     { state: 'carried', carrierPid: 7, carrierName: 'Ravven', carrierTeam: 0 },
   ],
   players: [
-    { pid: 7, name: 'Ravven', cls: 'warrior', team: 0, carrying: true, dead: false },
-    { pid: 8, name: 'Bryn', cls: 'mage', team: 0, carrying: false, dead: true },
-    { pid: 9, name: 'Cael', cls: 'priest', team: 1, carrying: false, dead: false },
+    {
+      pid: 7,
+      name: 'Ravven',
+      cls: 'warrior',
+      team: 0,
+      carrying: true,
+      dead: false,
+      kills: 3,
+      deaths: 1,
+      captures: 2,
+    },
+    {
+      pid: 8,
+      name: 'Bryn',
+      cls: 'mage',
+      team: 0,
+      carrying: false,
+      dead: true,
+      kills: 0,
+      deaths: 4,
+      captures: 0,
+    },
+    {
+      pid: 9,
+      name: 'Cael',
+      cls: 'priest',
+      team: 1,
+      carrying: false,
+      dead: false,
+      kills: 5,
+      deaths: 0,
+      captures: 1,
+    },
   ],
   countdown: 0,
   timeLeft: 605,
@@ -43,21 +73,40 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
 describe('battleground window view (pure core)', () => {
   it('models offline, idle, queued, and in-match states', () => {
     expect(
-      buildBgWindowView({ info: null, playerName: 'X', party: null, allTime: null }).kind,
+      buildBgWindowView({
+        info: null,
+        playerName: 'X',
+        playerLevel: 20,
+        party: null,
+        allTime: null,
+      }).kind,
     ).toBe('offline');
     const idle = buildBgWindowView({
       info: baseInfo(),
       playerName: 'X',
+      playerLevel: 20,
       party: null,
       allTime: null,
     });
     expect(idle.kind).toBe('live');
     if (idle.kind !== 'live') return;
-    expect(idle.action).toEqual({ kind: 'idle', partySize: 1 });
+    expect(idle.action).toEqual({ kind: 'idle', partySize: 1, requiredLevel: 20, locked: false });
+    // Under the floor: same idle affordance, locked, with the requirement.
+    const low = buildBgWindowView({
+      info: baseInfo(),
+      playerName: 'X',
+      playerLevel: 19,
+      party: null,
+      allTime: null,
+    });
+    if (low.kind !== 'live') throw new Error('expected live');
+    expect(low.action).toEqual({ kind: 'idle', partySize: 1, requiredLevel: 20, locked: true });
+    expect(low.sig).not.toBe(idle.sig); // the lock re-renders
 
     const queued = buildBgWindowView({
       info: baseInfo({ queued: true, queueSize: 7, queuedParty: 3 }),
       playerName: 'X',
+      playerLevel: 20,
       party: null,
       allTime: null,
     });
@@ -67,6 +116,7 @@ describe('battleground window view (pure core)', () => {
     const inMatch = buildBgWindowView({
       info: baseInfo({ match: baseMatch() }),
       playerName: 'X',
+      playerLevel: 20,
       party: null,
       allTime: null,
     });
@@ -79,7 +129,13 @@ describe('battleground window view (pure core)', () => {
       { name: 'High', class: 'mage', level: 20, rating: 1700, wins: 9, losses: 1 },
       { name: 'Me', class: 'not_a_class', level: 12, rating: 1500, wins: 2, losses: 2 },
     ];
-    const v = buildBgWindowView({ info: baseInfo(), playerName: 'Me', party: null, allTime });
+    const v = buildBgWindowView({
+      info: baseInfo(),
+      playerName: 'Me',
+      playerLevel: 20,
+      party: null,
+      allTime,
+    });
     if (v.kind !== 'live') throw new Error('expected live');
     expect(v.allTime).not.toBeNull();
     expect(v.allTime![0]).toMatchObject({ rank: 1, name: 'High', knownClass: true, me: false });
@@ -98,13 +154,13 @@ describe('battleground window view (pure core)', () => {
         '"capsToWin":5,"scores":[1,2],"flags":[{"state":"home","carrierPid":null,' +
         '"carrierName":null,"carrierTeam":null},{"state":"carried","carrierPid":7,' +
         '"carrierName":"Ravven","carrierTeam":0}],"players":[{"pid":7,"name":"Ravven",' +
-        '"cls":"warrior","team":0,"carrying":true,"dead":false},' +
-        '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true},' +
+        '"cls":"warrior","team":0,"carrying":true,"dead":false,"kills":3,"deaths":1,"captures":2},' +
+        '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true,"kills":0,"deaths":4,"captures":0},' +
         '{"pid":9,"name":"Cael","cls":"priest","team":1,' +
-        '"carrying":false,"dead":false}],"countdown":0,' +
+        '"carrying":false,"dead":false,"kills":5,"deaths":0,"captures":1}],"countdown":0,' +
         '"timeLeft":605,"waveIn":[10,5],"respawnIn":0,"protectedFor":0}}',
     ) as BgInfo;
-    const inputRest = { playerName: 'X', party: null, allTime: null };
+    const inputRest = { playerName: 'X', playerLevel: 20, party: null, allTime: null };
     expect(buildBgWindowView({ info: simShaped, ...inputRest })).toEqual(
       buildBgWindowView({ info: wireShaped, ...inputRest }),
     );
@@ -132,6 +188,17 @@ describe('battleground scoreboard view (pure core)', () => {
       { name: 'Bryn', me: false, dead: true, carrying: false },
     ]);
     expect(v.pipsAzure).toHaveLength(1);
+    // The expanded board: both rosters in team order with the match tallies.
+    expect(v.board).toHaveLength(3);
+    expect(v.board[0]).toMatchObject({
+      pid: 7,
+      me: true,
+      team: 0,
+      kills: 3,
+      deaths: 1,
+      captures: 2,
+    });
+    expect(v.board[2]).toMatchObject({ pid: 9, team: 1, kills: 5, captures: 1, me: false });
   });
 
   it('keeps the structural sig stable across score/clock/state changes and moves it on roster changes', () => {

@@ -173,7 +173,10 @@ describe('/dev bg (Ravenrift force-start)', () => {
     const a = sim.addPlayer('warrior', 'Alpha');
     const b = sim.addPlayer('mage', 'Beta');
     const c = sim.addPlayer('priest', 'Gamma');
-    for (const p of [a, b, c]) sim.bgQueueJoin(p);
+    for (const p of [a, b, c]) {
+      sim.entities.get(p)!.level = 20; // the queue floor; /dev bg itself bypasses it
+      sim.bgQueueJoin(p);
+    }
 
     sim.chat('/dev bg', a);
 

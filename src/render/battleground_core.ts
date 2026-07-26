@@ -16,6 +16,7 @@ import {
   BG_CURTAIN_Z,
   BG_FLAG_Z,
   BG_GATEHOUSE_WALLS,
+  BG_GRAVEYARDS,
   BG_HALF_X,
   BG_HALF_Z,
   BG_SPEED_RUNES,
@@ -46,6 +47,9 @@ export const BG_WALL_Y_SCALE = BG_WALL_HEIGHT / WALL_MODULE_H;
  *  head-high-plus, above SIGHT_HEIGHT. The collider matches: same footprint,
  *  camera clears it above 3yd, casts stay blocked (layout cameraTopY). */
 export const BG_LOW_WALL_Y_SCALE = BG_WALL_Y_SCALE * 0.5;
+/** Graveyard fence rails render at BG_GRAVEYARD_FENCE_TOP (1.8yd): a low
+ *  crumbled run around each keep's graveyard plot, matching its collider. */
+export const BG_FENCE_Y_SCALE = BG_WALL_Y_SCALE * 0.3;
 const WALL_CROSS_SCALE = (BG_WALL_T * 2) / WALL_MODULE_T;
 
 /** Banner poles flank each keep's spawn banner point on x by this offset. */
@@ -115,6 +119,8 @@ export interface BattlegroundRenderManifest {
   wallBanners: BgModulePlacement[];
   /** Mounted torches along the ramparts; the builder adds a warm glow at each. */
   torches: BgModulePlacement[];
+  /** Graveyard dressing inside each keep plot: stones, markers, a shrine. */
+  graves: BgModulePlacement[];
 }
 
 /** The heart ruin is the one thick (near-square) segment; every real wall run
@@ -227,6 +233,7 @@ const TORCH_MODULE_SCALE = 1.5;
 const TORCH_WALL_INSET = 1.0;
 export const BG_TORCH_GLOW_H = 3.3;
 
+const GRAVE_MODULE_SCALE = 1.2;
 const CRATE_KINDS: [string, number][] = [
   ['crates_stacked', 2],
   ['box_stacked', 1],
@@ -323,6 +330,9 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       for (const edge of ruinShellSegments(s)) {
         tileWallSegment(ruin, edge, RUIN_KINDS, RUIN_HEIGHT_LEVELS);
       }
+    } else if (s.fence) {
+      // Fixed kind (the mirrored-dressing rule): both plots rail identically.
+      tileWallSegment(walls, s, BARRICADE_KINDS, null, BG_FENCE_Y_SCALE);
     } else if (s.low) {
       tileWallSegment(walls, s, BARRICADE_KINDS, null, BG_LOW_WALL_Y_SCALE);
     } else if (BG_GATEHOUSE_WALLS.includes(s)) {
@@ -441,6 +451,32 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       });
     }
   }
+  // Graveyard dressing: exact point mirrors between the two plots (offsets
+  // negated, yaw rotated a half turn), fixed kinds per spot.
+  const GRAVE_SPOTS: { dx: number; dz: number; kind: string }[] = [
+    { dx: -2.2, dz: -1.6, kind: 'gravestone' },
+    { dx: 0.4, dz: -1.9, kind: 'grave_a' },
+    { dx: 2.6, dz: -1.3, kind: 'gravemarker_A' },
+    { dx: -0.9, dz: 0.9, kind: 'grave_B' },
+    { dx: 2.1, dz: 1.3, kind: 'gravemarker_b' },
+    { dx: -3.1, dz: 1.9, kind: 'shrine_candles' },
+  ];
+  const graves: BgModulePlacement[] = [];
+  for (const base of BG_BASES) {
+    const plot = BG_GRAVEYARDS[base.team];
+    const m = base.team === 0 ? 1 : -1;
+    for (const spot of GRAVE_SPOTS) {
+      graves.push({
+        kind: spot.kind,
+        x: plot.x + m * spot.dx,
+        y: 0,
+        z: plot.z + m * spot.dz,
+        ry: base.team === 0 ? 0 : Math.PI,
+        scale: [GRAVE_MODULE_SCALE, GRAVE_MODULE_SCALE, GRAVE_MODULE_SCALE],
+      });
+    }
+  }
+
   return {
     floors,
     walls,
@@ -453,5 +489,6 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     accents,
     wallBanners,
     torches,
+    graves,
   };
 }

@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   BG_BANNER_FLANK_DX,
+  BG_FENCE_Y_SCALE,
   BG_LOW_WALL_Y_SCALE,
   BG_WALL_Y_SCALE,
   BG_ZONE_KEEP_MIN_Z,
@@ -25,6 +26,7 @@ import {
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
   BG_GATEHOUSE_WALLS,
+  BG_GRAVEYARD_FENCES,
   BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
   BG_SPEED_RUNES,
@@ -216,11 +218,14 @@ describe('battleground render manifest derives from the layout', () => {
       expect(Math.abs(f.z)).toBeLessThan(140);
     }
     // Solid walls render at the collider's full height, EXCEPT the low mouth
-    // barricades, which render at half height (their collider tops match).
+    // barricades (half height) and the graveyard fence rails (fence height);
+    // both collider tops match their render tops.
     const isBarricadeModule = (p: BgModulePlacement) =>
       BG_KEEP_BARRICADES.some(
         (b) => p.z === b.z && Math.abs(p.x - b.x) <= b.hw && (b.low ?? false),
       );
+    const isFenceModule = (p: BgModulePlacement) =>
+      BG_GRAVEYARD_FENCES.some((f) => Math.abs(p.x - f.x) <= f.hw && Math.abs(p.z - f.z) <= f.hd);
     const lowMods = m.walls.filter((p) => p.scale[1] === BG_LOW_WALL_Y_SCALE);
     // exactly two modules per barricade, nothing else low, and the mirrored
     // barricades dress identically (one fixed rubble kind, no hash coin-flip)
@@ -229,13 +234,34 @@ describe('battleground render manifest derives from the layout', () => {
       expect(isBarricadeModule(p)).toBe(true);
       expect(p.kind).toBe('wall_cracked');
     }
+    const fenceMods = m.walls.filter((p) => p.scale[1] === BG_FENCE_Y_SCALE);
+    expect(fenceMods.length).toBeGreaterThanOrEqual(4); // two rails per plot
+    for (const p of fenceMods) {
+      expect(isFenceModule(p)).toBe(true);
+      expect(p.kind).toBe('wall_cracked'); // fixed kind: mirrored plots dress identically
+    }
     for (const p of m.walls) {
-      expect(p.scale[1]).toBe(isBarricadeModule(p) ? BG_LOW_WALL_Y_SCALE : BG_WALL_Y_SCALE);
+      expect(p.scale[1]).toBe(
+        isBarricadeModule(p)
+          ? BG_LOW_WALL_Y_SCALE
+          : isFenceModule(p)
+            ? BG_FENCE_Y_SCALE
+            : BG_WALL_Y_SCALE,
+      );
     }
     expect(BG_LOW_WALL_Y_SCALE).toBeLessThan(BG_WALL_Y_SCALE);
     // the low render height still tops out above the spell sight line, so a
     // barricade that blocks casts is never drawn short enough to see over
     expect(BG_LOW_WALL_Y_SCALE * WALL_MODULE_LEN).toBeGreaterThan(SIGHT_HEIGHT);
+    // ...and so does the graveyard fence: what blocks a cast is never
+    // rendered below the eye line
+    expect(BG_FENCE_Y_SCALE * WALL_MODULE_LEN).toBeGreaterThan(SIGHT_HEIGHT);
+    // the graveyard dressing mirrors exactly, plot to plot
+    const gravePos = new Set(m.graves.map((g) => `${g.x.toFixed(4)}|${g.z.toFixed(4)}`));
+    expect(m.graves.length).toBeGreaterThanOrEqual(12);
+    for (const g of m.graves) {
+      expect(gravePos.has(`${(-g.x).toFixed(4)}|${(-g.z).toFixed(4)}`)).toBe(true);
+    }
     for (const p of m.ruin) {
       expect(p.scale[1]).toBeGreaterThan(0);
       expect(p.scale[1]).toBeLessThanOrEqual(BG_WALL_Y_SCALE);

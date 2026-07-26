@@ -276,7 +276,7 @@ export function handleDevChat(
       ctx.error(pid, '[dev] You are already in a battleground.');
       return null;
     }
-    bgQueueJoin(ctx, pid);
+    bgQueueJoin(ctx, pid, { bypassLevel: true });
     // The join can refuse (dead, inside an instance, oversize party); it
     // already told the caller why, so bail before padding leaks a bot.
     if (!ctx.bgQueue.some((g) => g.pids.includes(pid))) return null;
@@ -298,7 +298,7 @@ export function handleDevChat(
       // player-spawned "/dev bot" dummies; nine tries is plenty.
       for (let i = 1; i <= 9 && botPid < 0; i++)
         botPid = ctx.spawnDevBot(i === 1 ? 'Riftbot' : `Riftbot${i}`);
-      if (botPid >= 0) bgQueueJoin(ctx, botPid);
+      if (botPid >= 0) bgQueueJoin(ctx, botPid, { bypassLevel: true });
     }
     devStartBg(ctx);
     const match = ctx.bgMatches.get(pid);

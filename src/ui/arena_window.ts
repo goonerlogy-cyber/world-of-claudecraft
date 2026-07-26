@@ -223,6 +223,7 @@ export class ArenaWindow {
     const view = buildBgWindowView({
       info: world.bgInfo,
       playerName: world.player.name,
+      playerLevel: world.player.level,
       party: world.partyInfo,
       allTime: this.bgAllTime,
     });
@@ -375,9 +376,22 @@ export class ArenaWindow {
       action.partySize > 1
         ? t('hudChrome.bg.enterQueueParty', { count: num(action.partySize) })
         : t('hudChrome.bg.enterQueue');
+    // The queue floor: under-leveled champions see the requirement and a
+    // disabled button (the sim refuses server-side regardless).
+    if (action.locked) {
+      return (
+        `<button class="btn" data-act="queue" disabled aria-disabled="true">${esc(label)}</button>` +
+        `<div class="bg-note bg-level-req">${esc(
+          t('hudChrome.bg.levelRequirement', { level: num(action.requiredLevel) }),
+        )}</div>`
+      );
+    }
     return (
       `<button class="btn" data-act="queue">${esc(label)}</button>` +
-      `<div class="bg-note">${esc(t('hudChrome.bg.queueNote'))}</div>`
+      `<div class="bg-note">${esc(t('hudChrome.bg.queueNote'))}</div>` +
+      `<div class="bg-note bg-level-req">${esc(
+        t('hudChrome.bg.levelRequirement', { level: num(action.requiredLevel) }),
+      )}</div>`
     );
   }
 

@@ -859,7 +859,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.playerLevelClassTitle': '{name}. Уровень {level}, {className}',
   'hudChrome.bg.crimson': 'Багровые',
   'hudChrome.bg.azure': 'Лазурные',
-  'hudChrome.bg.you': '(вы)',
   'hudChrome.bg.formUp': 'Построение: {seconds}',
   'hudChrome.bg.firstTo': 'До {caps} захватов',
   'hudChrome.bg.flagCarriedBy': 'Несет {name}',
@@ -874,6 +873,11 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name} забирает флаг команды {team}!',
   'hudChrome.bg.flagDroppedLog': 'Флаг команды {team} уронен.',
   'hudChrome.bg.flagReturnedLog': 'Флаг команды {team} возвращен.',
+  'hudChrome.bg.yourTeamTitle': 'Ваша команда',
+  'hudChrome.bg.levelRequirement': 'Требуется уровень {level}.',
+  'hudChrome.bg.board.kills': 'Убийства',
+  'hudChrome.bg.board.deaths': 'Смерти',
+  'hudChrome.bg.board.captures': 'Захваты',
   'hudChrome.bg.flagTakenBanner': '{name} забирает флаг команды {team}!',
   'hudChrome.bg.flagReturnedBanner': 'Флаг команды {team} возвращен!',
   'hudChrome.bg.capturedBanner': '{name} захватывает флаг команды {team}! {crimson}:{azure}',
@@ -898,11 +902,11 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsHeading': 'Флаги',
   'guide.ravenriftPage.flagsBody':
     'Каждая крепость хранит флаг своей команды. Возьмите вражеский флаг и донесите его до своей стойки, чтобы забить: побеждает команда, первой захватившая флаг пять раз, а истекшее время решается по счету. Павший знаменосец роняет флаг на месте: враг может подхватить его снова, а своя команда возвращает его домой мгновенно, просто добравшись до него. Флаг не терпит скрытности: подбирая его, вы выходите из невидимости, а знаменосец, ставший невидимым любым способом, роняет флаг на месте.',
+  'guide.ravenriftPage.respawnBody':
+    'Смерть хранит классический обряд: отпустите дух, и он поднимется на огороженном кладбище вашей крепости, связанный оберегом до следующей волны возрождения вашей команды (залежавшееся тело отпустят за вас после короткой отсрочки). Каждая волна поднимает всех ожидающих духов разом, с краткой защитой до первого действия; волны двух команд нарочно смещены, так что бой никогда не обнуляется целиком. Здесь нет бега за телом и сделки с Целителем душ: волна - единственная дорога назад.',
   'guide.ravenriftPage.pickupNote':
     'Поднять флаг можно только осознанным нажатием клавиши действия на поле боя: никто не станет знаменосцем, случайно пробежав по флагу.',
   'guide.ravenriftPage.respawnHeading': 'Гибель в бою',
-  'guide.ravenriftPage.respawnBody':
-    'В Вороньем Разломе нет пробежки с кладбища. У каждой команды общая волна возрождения: все павшие бойцы поднимаются вместе на волне своей команды в крепости и ненадолго защищены, пока не начнут действовать. Волны двух команд намеренно смещены, так что бой никогда не обнуляется целиком.',
   'guide.ravenriftPage.carrierHeading': 'Ноша знаменосца',
   'guide.ravenriftPage.carrierBody':
     'Знаменосец, слишком долго удерживающий вражеский флаг, становится все уязвимее и получает все больше урона, пока флаг не будет захвачен, уронен или возвращен. Прятаться с флагом значит проиграть; нести его домой значит победить.',

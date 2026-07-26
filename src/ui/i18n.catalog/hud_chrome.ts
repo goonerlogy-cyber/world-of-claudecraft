@@ -673,7 +673,7 @@ export const hudChromeStrings = {
     // the in-match scoreboard strip
     crimson: 'Crimson',
     azure: 'Azure',
-    you: '(you)',
+    yourTeamTitle: 'Your team',
     clock: '{minutes}:{seconds}',
     formUp: 'Form up: {seconds}',
     firstTo: 'First to {caps} captures',
@@ -693,6 +693,12 @@ export const hudChromeStrings = {
     flagDroppedLog: 'The {team} flag was dropped.',
     flagReturnedLog: 'The {team} flag was returned.',
     // Across-screen banner variants (separate sink, separate length budget)
+    levelRequirement: 'Requires level {level}.',
+    board: {
+      kills: 'Kills',
+      deaths: 'Deaths',
+      captures: 'Captures',
+    },
     flagTakenBanner: '{name} has taken the {team} flag!',
     flagReturnedBanner: 'The {team} flag was returned!',
     capturedBanner: '{name} captured the {team} flag! {crimson}:{azure}',

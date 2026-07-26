@@ -8285,7 +8285,10 @@
     transform: translateX(-50%);
     display: none;
     text-align: center;
-    pointer-events: none;
+    /* interactive: hovering (or tapping) the strip reveals the expanded
+       match board; the strip footprint is small and top-center */
+    pointer-events: auto;
+    cursor: pointer;
     z-index: 18;
     min-width: 320px;
     background: linear-gradient(#10131add, #080a0edd);
@@ -8314,9 +8317,60 @@
   .bg-team.azure {
     color: var(--color-team-blue);
   }
-  .bg-team .bg-you {
-    font-size: 10px;
+  .bg-team.mine {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    text-decoration-thickness: 2px;
+  }
+  #bg-scoreboard .bg-board {
+    display: none;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #3a4a66;
+    text-align: left;
+    font-family: var(--ui-font);
+  }
+  #bg-scoreboard:hover .bg-board,
+  #bg-scoreboard:focus-within .bg-board,
+  #bg-scoreboard.expanded .bg-board {
+    display: block;
+  }
+  .bg-brow {
+    display: grid;
+    grid-template-columns: 1fr 52px 52px 60px;
+    gap: 4px;
+    align-items: center;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+  .bg-brow.bg-bhead {
     color: #d8cba0;
+    font-size: 10px;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+  }
+  .bg-brow.crimson .bb-name {
+    color: var(--color-team-red);
+  }
+  .bg-brow.azure .bb-name {
+    color: var(--color-team-blue);
+  }
+  .bg-brow.me .bb-name {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .bg-brow.dead .bb-name {
+    opacity: 0.55;
+  }
+  .bg-brow.flag .bb-name::after {
+    content: "\2691";
+    margin-left: 5px;
+  }
+  .bg-brow .bb-k,
+  .bg-brow .bb-d,
+  .bg-brow .bb-c {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
   }
   .bg-score {
     font-size: 26px;
