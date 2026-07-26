@@ -4,7 +4,7 @@
 // record the collider set reads, so what players collide with is exactly what
 // the builder draws. The one deliberate visual-only divergence: the heart-ruin
 // block (the single thick near-square segment) collides solid but renders as a
-// hollow four-sided ruin shell with an identical 10x10 footprint.
+// hollow four-sided ruin shell with an identical 12x12 footprint.
 // Three-free and deterministic (hash2 is the dungeon.ts position hash), so
 // tests/battleground_render.test.ts pins the geometry headlessly.
 
@@ -12,6 +12,9 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_CURTAIN_Z,
+  BG_FLAG_Z,
+  BG_GATEHOUSE_WALLS,
   BG_HALF_X,
   BG_HALF_Z,
   BG_SPEED_RUNES,
@@ -20,6 +23,7 @@ import {
   type BgTeam,
   type BgWallSeg,
   battlegroundWallSegments,
+  KEEP_MOUTH_DZ,
 } from '../sim/battleground_layout';
 
 // KayKit module dimensions at scale 1 (the dungeon.ts conventions): a wall
@@ -102,7 +106,7 @@ export interface BattlegroundRenderManifest {
   flagPedestals: BgTeamPoint[];
   /** One additive gold ring pad per speed rune. */
   runePads: { x: number; z: number }[];
-  /** Mid-belt rubble/weed accents (small kit tiles laid proud of the floor). */
+  /** Ruin Courtyard rubble/weed accents (small kit tiles laid proud of the floor). */
   accents: BgModulePlacement[];
   /** Team-colored kit banners dressing the keep walls (red south, blue north). */
   wallBanners: BgModulePlacement[];
@@ -122,8 +126,11 @@ const WALL_KINDS: [string, number][] = [
 ];
 // Low barricades read as crumbled rubble walls, not fresh masonry. One fixed
 // kind: with so few modules, a hash mix would dress the two keeps' barricades
-// differently, and the mirrored dressing rule outranks variety here.
+// differently, and the mirrored dressing rule outranks variety here. The
+// gatehouses are landmarks under the same rule: fixed intact masonry, so the
+// two mirrored gatehouses always dress identically.
 const BARRICADE_KINDS: [string, number][] = [['wall_cracked', 1]];
+const GATEHOUSE_KINDS: [string, number][] = [['wall', 1]];
 // The ruin shell reads ruined: cracked-heavy modules at hash-varied heights.
 const RUIN_KINDS: [string, number][] = [
   ['wall_cracked', 2],
@@ -139,8 +146,10 @@ const RUIN_HEIGHT_LEVELS = [1, 0.8, 0.6];
 // rubble. Bands key on |z|, so the two halves stay exact mirrors and neither
 // team's end reads differently in gameplay terms (theme, never information).
 export type BgZone = 'keep' | 'approach' | 'mid';
-export const BG_ZONE_MID_HALF_Z = 20; // the curtain line: the courtyard
-export const BG_ZONE_KEEP_MIN_Z = 42; // past the mouth barricades
+/** The courtyard band ends at the curtain line, DERIVED so it cannot drift. */
+export const BG_ZONE_MID_HALF_Z = BG_CURTAIN_Z;
+/** The garrison band starts at the keep mouth line, past the barricades. */
+export const BG_ZONE_KEEP_MIN_Z = BG_FLAG_Z - KEEP_MOUTH_DZ;
 
 export function bgZoneAt(z: number): BgZone {
   const az = Math.abs(z);
@@ -163,7 +172,7 @@ const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
     ['floor_dirt_large', 2],
     ['floor_dirt_large_rocky', 1],
   ],
-  // the ruin belt: mostly broken earth
+  // the ruin courtyard: mostly broken earth
   mid: [
     ['floor_tile_large', 1],
     ['floor_tile_large_rocks', 2],
@@ -172,7 +181,7 @@ const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
   ],
 };
 
-// Rubble/overgrowth accents scattered over the mid belt (small kit tiles laid
+// Rubble/overgrowth accents scattered over the ruin courtyard (small kit tiles laid
 // proud of the floor). Deliberately clear of the rune pads so the gold rings
 // stay unobstructed reads.
 const ACCENT_KINDS: [string, number][] = [
@@ -200,8 +209,10 @@ const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
 // Torch-lit ramparts: mounted torches along the perimeter side walls plus the
 // keep back walls, mirrored. The builder adds a small warm glow at each
 // BG_TORCH_GLOW_H; no lights, so every tier pays the same nothing.
-// The +-16 pair sits between each side room's short wall and the nearest niche
-// stub, never inside a room or its doorway plane.
+// Rampart torches per side: one at each keep mouth line, one mid-field, and
+// one just courtyard-side of each curtain. The +-16 pair sits 3yd clear of
+// the curtain band (|z| 19..21) and well clear of both flank-arch throats;
+// no torch lands inside a gatehouse footprint (|x| 14..26).
 const TORCH_SIDE_ZS = [-44, -28, -16, 16, 28, 44];
 const TORCH_KEEP_XS = [-10, 10];
 const TORCH_MODULE_SCALE = 1.5;
@@ -275,14 +286,15 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
         ry: Math.floor(hash2(z, x) * 4) * QUARTER,
         scale: [1, 1, 1],
       });
-      // rubble/overgrowth only inside the ruin belt, clear of the rune pads
+      // rubble/overgrowth only inside the courtyard band, clear of the rune
+      // pads (clearance measured at the JITTERED spot, the real position)
       if (zone === 'mid' && hash2(x * 3.7, z * 1.9) < ACCENT_CHANCE) {
+        const jx = (hash2(x, z * 5.1) - 0.5) * 1.6;
+        const jz = (hash2(x * 5.3, z) - 0.5) * 1.6;
         const nearRune = BG_SPEED_RUNES.some(
-          (r) => Math.hypot(r.x - x, r.z - z) < ACCENT_CLEARANCE,
+          (r) => Math.hypot(r.x - (x + jx), r.z - (z + jz)) < ACCENT_CLEARANCE,
         );
         if (!nearRune) {
-          const jx = (hash2(x, z * 5.1) - 0.5) * 1.6;
-          const jz = (hash2(x * 5.3, z) - 0.5) * 1.6;
           accents.push({
             kind: pickKind(ACCENT_KINDS, hash2(x * 7.7, z * 2.3)),
             x: x + jx,
@@ -305,6 +317,8 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       }
     } else if (s.low) {
       tileWallSegment(walls, s, BARRICADE_KINDS, null, BG_LOW_WALL_Y_SCALE);
+    } else if (BG_GATEHOUSE_WALLS.includes(s)) {
+      tileWallSegment(walls, s, GATEHOUSE_KINDS, null);
     } else {
       tileWallSegment(walls, s, WALL_KINDS, null);
     }

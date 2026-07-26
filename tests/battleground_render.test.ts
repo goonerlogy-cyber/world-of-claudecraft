@@ -12,6 +12,7 @@ import {
   BG_BANNER_FLANK_DX,
   BG_LOW_WALL_Y_SCALE,
   BG_WALL_Y_SCALE,
+  BG_ZONE_KEEP_MIN_Z,
   BG_ZONE_MID_HALF_Z,
   type BgModulePlacement,
   battlegroundRenderManifest,
@@ -22,6 +23,7 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_GATEHOUSE_WALLS,
   BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
   BG_SPEED_RUNES,
@@ -95,6 +97,39 @@ describe('battleground render manifest derives from the layout', () => {
         return span.max > gapLo + 1e-6 && span.min < gapHi - 1e-6;
       });
       expect(intruders, `team ${base.team} postern gap must stay open`).toEqual([]);
+    }
+  });
+
+  it('leaves every curtain crossing open and dresses the gatehouses in one kind', () => {
+    // no wall or ruin module may intrude into a crossing span on the curtain
+    // line (the render-side twin of the postern-gap pin)
+    const crossings: { z: number; lo: number; hi: number }[] = [
+      { z: -20, lo: -26, hi: -14 }, // south gatehouse span (its room walls own it)
+      { z: -20, lo: 4, hi: 12 }, // south main gate
+      { z: -20, lo: 26, hi: 30 }, // south flank arch
+      { z: 20, lo: 14, hi: 26 }, // north mirrors
+      { z: 20, lo: -12, hi: -4 },
+      { z: 20, lo: -30, hi: -26 },
+    ];
+    for (const c of crossings) {
+      const intruders = [...m.walls, ...m.ruin].filter((p) => {
+        if (p.z !== c.z) return false;
+        const span = moduleSpan(p);
+        return span.max > c.lo + 1e-6 && span.min < c.hi - 1e-6;
+      });
+      expect(intruders, `crossing at z=${c.z}, x ${c.lo}..${c.hi}`).toEqual([]);
+    }
+    // gatehouse walls dress in the one fixed kind, so the mirrored landmark
+    // pair always reads identically (never a hash coin-flip)
+    for (const s of BG_GATEHOUSE_WALLS) {
+      const alongZ = s.hd >= s.hw;
+      const mods = m.walls.filter((p) =>
+        alongZ
+          ? p.x === s.x && Math.abs(p.z - s.z) <= s.hd
+          : p.z === s.z && Math.abs(p.x - s.x) <= s.hw,
+      );
+      expect(mods.length, `gatehouse wall at (${s.x}, ${s.z})`).toBeGreaterThan(0);
+      for (const p of mods) expect(p.kind).toBe('wall');
     }
   });
 
@@ -208,7 +243,7 @@ describe('zone theming (visual only; colliders never move)', () => {
   const dirtShare = (floors: { kind: string }[]) =>
     floors.filter((f) => f.kind.startsWith('floor_dirt')).length / Math.max(1, floors.length);
 
-  it('the mid ruin belt is decisively more broken than the keep grounds', () => {
+  it('the ruin courtyard is decisively more broken than the keep grounds', () => {
     const mid = m.floors.filter((f) => bgZoneAt(f.z) === 'mid');
     const keep = m.floors.filter((f) => bgZoneAt(f.z) === 'keep');
     expect(mid.length).toBeGreaterThan(0);
@@ -216,7 +251,7 @@ describe('zone theming (visual only; colliders never move)', () => {
     expect(dirtShare(mid)).toBeGreaterThan(dirtShare(keep) + 0.2);
   });
 
-  it('rubble accents stay inside the mid belt and clear of every rune pad', () => {
+  it('rubble accents stay inside the courtyard band and clear of every rune pad', () => {
     expect(m.accents.length).toBeGreaterThan(10);
     for (const a of m.accents) {
       expect(Math.abs(a.z)).toBeLessThanOrEqual(BG_ZONE_MID_HALF_Z + 1);
@@ -224,6 +259,20 @@ describe('zone theming (visual only; colliders never move)', () => {
         expect(Math.hypot(r.x - a.x, r.z - a.z)).toBeGreaterThan(1.4);
       }
     }
+  });
+
+  it('the floor bands land exactly on the chamber lines', () => {
+    // rows are 4yd tiles at |z| = 2 + 4k: the courtyard band's outermost row
+    // sits just inside the curtain line, the approach band starts just outside
+    // it, and the garrison band starts past the keep mouth line. If a zone
+    // constant drifts off a wall line (or off the tile grid), this fails.
+    const mid = m.floors.filter((f) => bgZoneAt(f.z) === 'mid');
+    const approach = m.floors.filter((f) => bgZoneAt(f.z) === 'approach');
+    const keep = m.floors.filter((f) => bgZoneAt(f.z) === 'keep');
+    expect(Math.max(...mid.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_MID_HALF_Z - 2);
+    expect(Math.min(...approach.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_MID_HALF_Z + 2);
+    expect(Math.max(...approach.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_KEEP_MIN_Z - 2);
+    expect(Math.min(...keep.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_KEEP_MIN_Z + 2);
   });
 
   it('torches are point-symmetric, so neither approach is better lit', () => {
