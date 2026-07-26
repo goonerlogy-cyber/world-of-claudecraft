@@ -114,9 +114,32 @@ export interface TownPropPlacement {
  */
 const NPC_CLEARANCE = 0.4;
 
+/**
+ * Never wall off a station anchor either. The anchor point is a gameplay
+ * interaction target: service routes end ON it and the town integration
+ * contract (tests/eastbrook_gameplay_integration.test.ts) demands a body of
+ * any route radius can stand there. The anchor PROP (the anvil, cauldron,
+ * campfire drawn at dx 0, dz 0) is therefore scenery, exactly like a prop
+ * standing on an NPC; the offset clutter still collides. Clearance covers
+ * the widest route body radius (0.8) the contract walks to an anchor.
+ */
+const ANCHOR_CLEARANCE = 0.85;
+
 function standsOnAnNpc(x: number, z: number, r: number, npcs: readonly TownNpcPos[]): boolean {
   for (const n of npcs) {
     if (Math.hypot(n.x - x, n.z - z) < r + NPC_CLEARANCE) return true;
+  }
+  return false;
+}
+
+function coversAnAnchor(
+  x: number,
+  z: number,
+  r: number,
+  anchors: readonly TownStationAnchor[],
+): boolean {
+  for (const a of anchors) {
+    if (Math.hypot(a.x - x, a.z - z) < r + ANCHOR_CLEARANCE) return true;
   }
   return false;
 }
@@ -151,6 +174,7 @@ export function townPropPlacements(
       const x = st.x + prop.dx;
       const z = st.z + prop.dz;
       if (standsOnAnNpc(x, z, size.r, npcs)) continue;
+      if (coversAnAnchor(x, z, size.r, stations)) continue;
       out.push({ x, z, size });
     }
   }

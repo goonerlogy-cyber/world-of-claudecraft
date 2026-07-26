@@ -1141,11 +1141,16 @@ const SERVICES = {
     {
       id: 'eastbrook_graveyard_route',
       bodyRadius: 0.5,
+      // The final approach threads the gap between the headstone columns
+      // (x -14 and -11.8): the stones are solid colliders now, so the walk
+      // may no longer run down the x -14 column straight through the middle
+      // stone. The Spirit Healer's anchor stone itself stays scenery.
       points: [
         { x: -2.85, z: -1.8 },
         { x: -6, z: -6 },
         { x: -10, z: -8 },
-        { x: -14, z: -10 },
+        { x: -12.9, z: -10 },
+        { x: -12.9, z: -12.6 },
         { x: -14, z: -14 },
       ],
     },
