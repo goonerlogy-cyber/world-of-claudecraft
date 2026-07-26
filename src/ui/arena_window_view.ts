@@ -22,8 +22,11 @@ import type { ArenaMapId } from '../sim/dungeon_layout';
 import type { PlayerClass } from '../sim/types';
 import type { ArenaFormat, ArenaInfo, ArenaStanding, PartyInfo } from '../world_api';
 
-/** The five brackets, in display order. */
-const ARENA_BRACKETS: readonly ArenaFormat[] = ['1v1', '2v2', 'fiesta', 'yumi3', 'yumi5'];
+/** The ranked duel brackets the merged PvP window offers, in display order.
+ *  Fiesta and Protect Yumi are retired from the menu (owner call, 2026-07-25);
+ *  their sim modes remain and this builder stays format-complete, so a
+ *  dev-started bout in a retired format still renders its live state. */
+const ARENA_BRACKETS: readonly ArenaFormat[] = ['1v1', '2v2'];
 
 /** Premade-party cap per team bracket (1v1 is partyless). */
 function bracketTeamCap(fmt: ArenaFormat): number {
@@ -102,8 +105,6 @@ export type ArenaView =
       isTeamBracket: boolean;
       party: ArenaPartySection;
       action: ArenaAction;
-      /** The offline Fiesta-vs-bots practice affordance is available + applicable. */
-      practice: boolean;
       /** The fixed map of the live bout's slot; null outside a match and for
        *  the Protect Yumi brackets (their maze band has no arena map). */
       matchMap: ArenaMapId | null;
@@ -123,8 +124,6 @@ export interface ArenaViewInput {
   party: PartyInfo | null;
   /** The all-time ladder cache, by bracket (painter-owned, server-fetched). */
   allTime: Partial<Record<ArenaFormat, ArenaAllTimeEntry[]>>;
-  /** The offline Fiesta practice hook is wired (offline only, hidden online). */
-  practiceAvailable: boolean;
 }
 
 /**
@@ -199,8 +198,6 @@ export function buildArenaView(input: ArenaViewInput): ArenaView {
     action = { kind: 'idle', queueDisabled };
   }
 
-  const practice = bracket === 'fiesta' && input.practiceAvailable && !inMatch;
-
   // The bout's map, shown from queue pop (countdown) through the aftermath;
   // yumi brackets play in their own maze band, so no map row for them. The
   // `?? null` guards a mirrored snapshot from an older server without the
@@ -250,7 +247,6 @@ export function buildArenaView(input: ArenaViewInput): ArenaView {
     isTeamBracket,
     party: partySection,
     action,
-    practice,
     matchMap,
     ladder,
     allTime: allTimeView,

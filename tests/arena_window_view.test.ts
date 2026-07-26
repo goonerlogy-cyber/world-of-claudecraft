@@ -61,7 +61,6 @@ function input(over: Partial<ArenaViewInput> = {}): ArenaViewInput {
     playerName: 'Me',
     party: null,
     allTime: {},
-    practiceAvailable: false,
     ...over,
   };
 }
@@ -130,12 +129,7 @@ describe('buildArenaView: bracket resolution + commit', () => {
     expect(v.canSwitchBracket).toBe(false);
     expect(v.action).toEqual({ kind: 'queued', queueSize: 3 });
     // Locked brackets are the inactive ones while queued.
-    expect(v.brackets.filter((b) => b.locked).map((b) => b.fmt)).toEqual([
-      '1v1',
-      'fiesta',
-      'yumi3',
-      'yumi5',
-    ]);
+    expect(v.brackets.filter((b) => b.locked).map((b) => b.fmt)).toEqual(['1v1']);
   });
 });
 
@@ -206,18 +200,6 @@ describe('buildArenaView: ladder + all-time rows', () => {
 
   it('omits the all-time section when the cache has no rows for the bracket', () => {
     expect(live(buildArenaView(input())).allTime).toBeNull();
-  });
-
-  it('shows the practice affordance only on Fiesta when the hook is wired', () => {
-    expect(
-      live(buildArenaView(input({ selectedBracket: 'fiesta', practiceAvailable: true }))).practice,
-    ).toBe(true);
-    expect(
-      live(buildArenaView(input({ selectedBracket: 'fiesta', practiceAvailable: false }))).practice,
-    ).toBe(false);
-    expect(
-      live(buildArenaView(input({ selectedBracket: '1v1', practiceAvailable: true }))).practice,
-    ).toBe(false);
   });
 });
 

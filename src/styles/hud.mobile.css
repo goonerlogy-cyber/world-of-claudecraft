@@ -2603,7 +2603,6 @@
   body.mobile-touch #mailbox-window,
   body.mobile-touch #emote-editor,
   body.mobile-touch #arena-window,
-  body.mobile-touch #battleground-window,
   body.mobile-touch #dungeon-finder-window,
   body.mobile-touch #valecup-window,
   body.mobile-touch #card-duel-window,
@@ -4213,11 +4212,6 @@
   /* Arena: the small bracket tabs and the join/leave .btn (base .btn is padding-only). */
   body.mobile-touch #arena-window .arena-bracket,
   body.mobile-touch #arena-window .btn {
-    min-height: 40px;
-    box-sizing: border-box;
-  }
-  /* Ravenrift: the queue/leave .btn (base .btn is padding-only). */
-  body.mobile-touch #battleground-window .btn {
     min-height: 40px;
     box-sizing: border-box;
   }

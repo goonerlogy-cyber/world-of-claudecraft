@@ -8226,22 +8226,8 @@
     margin-top: 4px;
   }
 
-  /* ---------- Ravenrift (5v5 capture the flag) ---------- */
-  #battleground-window {
-    width: 380px;
-    padding: 14px;
-  }
-  #battleground-window .btn {
-    width: 100%;
-    margin: 4px 0 0;
-    box-sizing: border-box;
-    text-align: center;
-  }
-  #battleground-window .btn.leave {
-    background: linear-gradient(#3a4a5a, #243140 55%, #1a2430);
-    color: #cfe6ff;
-  }
-  #battleground-window .bg-mode-tag {
+  /* ---------- Ravenrift (the merged PvP window's primary tab) ---------- */
+  #arena-window .bg-mode-tag {
     color: #998d6a;
     font-size: 11px;
   }
