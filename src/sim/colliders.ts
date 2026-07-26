@@ -1,5 +1,10 @@
 import { STATIONS } from './content/professions';
 import {
+  buildingCameraHeight,
+  buildingTerrainEnvelope,
+  isEastbrookGrandArmoury,
+} from './building_layout';
+import {
   arenaOriginAt,
   DUNGEON_FLOOR_Y,
   DUNGEON_X_THRESHOLD,
@@ -21,8 +26,14 @@ import { ROCK_COLLIDER_MIN_SCALE, rockHeight, rockRadius } from './decoration_di
 import { type DelveModuleId, delveModuleColliders } from './delve_layout';
 import { isLitanyModuleId, litanyModuleLosColliders } from './delve_litany_layout';
 import { dungeonInstanceAt, INTERIOR_LAYOUTS } from './dungeon_floor';
-import { ARENA_LAYOUT, CRYPT_LAYOUT, layoutColliders } from './dungeon_layout';
 import {
+  ARENA_LAYOUT,
+  CRYPT_LAYOUT,
+  DROWNED_COURT_LAYOUT,
+  layoutColliders,
+} from './dungeon_layout';
+import {
+  benchDrawnHeight,
   CHAPEL_HALL,
   CHAPEL_HALL_ROOF_EAVE,
   CHAPEL_HALL_ROOF_TOP,
@@ -42,7 +53,7 @@ import {
 import { townPropPlacements } from './town_props';
 import type { WorldContent } from './types';
 import { valeCupColliders } from './vale_cup_layout';
-import { generateDecorations, groundHeight, waterLevelAt } from './world';
+import { generateDecorations, groundHeight, terrainHeight, waterLevelAt } from './world';
 import { yumiMazeColliders } from './yumi_maze_layout';
 
 // Static world collision. Prop placement comes from the per-zone content
@@ -231,6 +242,23 @@ function rotY(lx: number, lz: number, rot: number): { x: number; z: number } {
   return { x: lx * c + lz * s, z: -lx * s + lz * c };
 }
 
+// default backward offset/radius for a mine's spoil mound behind the timber portal,
+// shared with the renderer (src/render/props.ts) so the two can't drift apart
+export const MINE_MOUND_DEFAULT_OFFSET = 3.4;
+export const MINE_MOUND_DEFAULT_RADIUS = 5;
+
+export function mineMoundFootprint(m: {
+  x: number;
+  z: number;
+  rot: number;
+  moundOffset?: number;
+  moundRadius?: number;
+}): { x: number; z: number; r: number } {
+  const r = m.moundRadius ?? MINE_MOUND_DEFAULT_RADIUS;
+  const mound = rotY(0, -(m.moundOffset ?? MINE_MOUND_DEFAULT_OFFSET), m.rot);
+  return { x: m.x + mound.x, z: m.z + mound.z, r };
+}
+
 // ---------------------------------------------------------------------------
 // Collider sets
 // ---------------------------------------------------------------------------
@@ -269,12 +297,13 @@ function staticWorldColliders(seed: number): Collider[] {
   // chase cam no longer pulls in for them; the renderer hides whichever one
   // crosses the eye-to-camera segment instead.
   for (const b of PROPS.buildings) {
-    const height = b.kind === 'chapel' ? 10.8 : b.kind === 'inn' ? 7.8 : 8.0;
-    if (b.kind === 'chapel') {
-      // The chapel is COMPOSED (render/props.ts): full-height bell tower at
-      // the rear, squat entry hall in front. Collide the two shapes it
-      // actually draws: the tower stays a wall, the hall roof is a standable
-      // low roof a jump can grab (the climb's flagship in a town).
+    if (b.kind === 'chapel' && b.assetId === undefined) {
+      // The legacy procedural chapel is COMPOSED (render/props.ts): full-height
+      // bell tower at the rear, squat entry hall in front. Collide the two
+      // shapes it actually draws: the tower stays a wall, the hall roof is a
+      // standable low roof a jump can grab. Buildings with an assetId render
+      // from their own GLB (the Eastbrook rebuild kit) and take the authored
+      // OBB below instead.
       const towerOff = rotY(0, CHAPEL_TOWER.dz, b.rot);
       out.push({
         type: 'obb',
@@ -283,7 +312,7 @@ function staticWorldColliders(seed: number): Collider[] {
         hw: (b.w * CHAPEL_TOWER.wScale) / 2,
         hd: (b.d * CHAPEL_TOWER.dScale) / 2,
         rot: b.rot,
-        cameraTopY: topY(seed, b.x, b.z, height),
+        cameraTopY: topY(seed, b.x, b.z, buildingCameraHeight(b)),
         camGhost: true,
       });
       const hallOff = rotY(0, b.d / 2 - CHAPEL_HALL.dzFromFront, b.rot);
@@ -311,6 +340,9 @@ function staticWorldColliders(seed: number): Collider[] {
       });
       continue;
     }
+    const cameraTopY = isEastbrookGrandArmoury(b)
+      ? buildingTerrainEnvelope(b, (x, z) => terrainHeight(x, z, seed)).cameraTopY
+      : topY(seed, b.x, b.z, buildingCameraHeight(b));
     out.push({
       type: 'obb',
       x: b.x,
@@ -318,7 +350,7 @@ function staticWorldColliders(seed: number): Collider[] {
       hw: b.w / 2,
       hd: b.d / 2,
       rot: b.rot,
-      cameraTopY: topY(seed, b.x, b.z, height),
+      cameraTopY,
       camGhost: true,
     });
   }
@@ -328,42 +360,116 @@ function staticWorldColliders(seed: number): Collider[] {
       x: w.x,
       z: w.z,
       r: w.r,
-      cameraTopY: topY(seed, w.x, w.z, 3.7),
-      camGhost: true,
+      cameraTopY: topY(seed, w.x, w.z, w.height ?? 3.7),
+      camGhost: w.camGhost ?? true,
     });
-  for (const s of PROPS.stalls)
+  for (const s of PROPS.stalls) {
+    const cameraTopY = topY(seed, s.x, s.z, s.height ?? 3.1);
+    if (s.w !== undefined && s.d !== undefined) {
+      // Sized entries (the Eastbrook rebuild's authored market stalls and any
+      // editor-authored stall): the authored OBB drives collision, exactly as
+      // the release renders it. The rebuild stall mesh is scaled so its
+      // bounding box fills the authored w x height x d envelope, and its
+      // tallest element is the flat canopy deck, so the drawn canopy surface
+      // sits at exactly the authored height: a standable roof a jump at the
+      // counter's edge grabs, the rebuild's counterpart of the legacy gable.
+      const canopyTop = s.height !== undefined ? topY(seed, s.x, s.z, s.height) : undefined;
+      out.push({
+        type: 'obb',
+        x: s.x,
+        z: s.z,
+        hw: s.w / 2,
+        hd: s.d / 2,
+        rot: s.rot,
+        cameraTopY,
+        camGhost: s.camGhost ?? true,
+        moveTopY: canopyTop,
+        standable: canopyTop !== undefined,
+      });
+    } else {
+      // Legacy market stand: the mesh is a normalized 3.1 x 2.5 BOX at the
+      // stall's yaw (the old circle both overhung the flat sides and missed
+      // the corners), and its awning is a steep gable ridging along the
+      // stall's local x: vault onto the 1.5 eave at the front or back edge,
+      // walk up the fabric, or grab the higher slope directly. A grounded
+      // walk collides full-height.
+      out.push({
+        type: 'obb',
+        x: s.x,
+        z: s.z,
+        hw: STALL_HALF_W,
+        hd: STALL_HALF_D,
+        rot: s.rot,
+        cameraTopY,
+        camGhost: s.camGhost ?? true,
+        moveTopY: topY(seed, s.x, s.z, STALL_CANOPY_TOP),
+        standable: true,
+        topSlope: {
+          kind: 'ridge',
+          axis: 'x',
+          pitch: (STALL_CANOPY_TOP - STALL_CANOPY_EAVE) / STALL_HALF_D,
+          eaveY: topY(seed, s.x, s.z, STALL_CANOPY_EAVE),
+        },
+      });
+    }
+  }
+  // Civic benches: the rebuild scales bench.glb uniformly to the authored
+  // footprint (height follows the native aspect, eastbrook_town.ts), so the
+  // drawn seat top is a pure function of w x d: town furniture, standable,
+  // and at 0.40 for the civic benches it is a plain stride up.
+  for (const bench of PROPS.benches ?? []) {
+    const top = topY(seed, bench.x, bench.z, benchDrawnHeight(bench.w, bench.d));
     out.push({
-      // The stand mesh is a normalized 3.1 x 2.5 BOX at the stall's yaw (the
-      // old circle both overhung the flat sides and missed the corners), and
-      // its awning is a steep gable ridging along the stall's local x: vault
-      // onto the 1.5 eave at the front or back edge, walk up the fabric, or
-      // grab the higher slope directly. A grounded walk collides full-height.
       type: 'obb',
-      x: s.x,
-      z: s.z,
-      hw: STALL_HALF_W,
-      hd: STALL_HALF_D,
-      rot: s.rot,
-      cameraTopY: topY(seed, s.x, s.z, 3.1),
-      camGhost: true,
-      moveTopY: topY(seed, s.x, s.z, STALL_CANOPY_TOP),
+      x: bench.x,
+      z: bench.z,
+      hw: bench.w / 2,
+      hd: bench.d / 2,
+      rot: bench.rot,
+      cameraTopY: topY(seed, bench.x, bench.z, bench.height),
+      camGhost: bench.camGhost ?? false,
+      moveTopY: top,
       standable: true,
-      topSlope: {
-        kind: 'ridge',
-        axis: 'x',
-        pitch: (STALL_CANOPY_TOP - STALL_CANOPY_EAVE) / STALL_HALF_D,
-        eaveY: topY(seed, s.x, s.z, STALL_CANOPY_EAVE),
-      },
     });
+  }
+  // Town wall segments: a railed parapet (stone slab, open iron railing,
+  // capped pillars). Extruded-2D cannot host a body between the railing and
+  // the coping, so the wall is DELIBERATELY full-height: use the gates. The
+  // same honest-exception reasoning as the murloc mushroom stems.
+  for (const wall of PROPS.walls ?? []) {
+    out.push({
+      type: 'obb',
+      x: wall.x,
+      z: wall.z,
+      hw: wall.w / 2,
+      hd: wall.d / 2,
+      rot: wall.rot,
+      cameraTopY: topY(seed, wall.x, wall.z, wall.height),
+      camGhost: wall.camGhost ?? false,
+    });
+  }
+
+  // Interactable town boards are authored through active WorldContent rather
+  // than PROPS. The same service record drives their spawn and exact OBB, and
+  // custom worlds that omit the service inherit no Eastbrook collision.
+  for (const board of content.services?.noticeboards ?? []) {
+    out.push({
+      type: 'obb',
+      x: board.x,
+      z: board.z,
+      hw: board.width / 2,
+      hd: board.depth / 2,
+      rot: board.rotation,
+      cameraTopY: topY(seed, board.x, board.z, board.height),
+      camGhost: true,
+    });
+  }
 
   // mines: mound behind the timber portal, plus the portal's two upright
   // timber posts (the overhead lintel beams start above head height and
   // never block). Post positions/size mirror the render placement.
   for (const m of PROPS.mines) {
-    const r = m.moundRadius ?? 5;
-    const mound = rotY(0, -(m.moundOffset ?? 3.4), m.rot);
-    const x = m.x + mound.x,
-      z = m.z + mound.z;
+    const { x, z, r } = mineMoundFootprint(m);
     out.push({ type: 'circle', x, z, r, cameraTopY: topY(seed, x, z, r + 0.2), camGhost: true });
     for (const sx of [-1.45, 1.45]) {
       const post = rotY(sx, 0, m.rot);
@@ -577,14 +683,15 @@ function staticWorldColliders(seed: number): Collider[] {
     if (len < 1e-6) continue;
     const x = (f.x1 + f.x2) / 2,
       z = (f.z1 + f.z2) / 2;
+    const halfDepth = (f.width ?? FENCE_HALF_DEPTH * 2) / 2;
     out.push({
       type: 'obb',
       x,
       z,
-      hw: len / 2 + FENCE_END_PAD,
-      hd: FENCE_HALF_DEPTH,
+      hw: len / 2 + (f.width === undefined ? FENCE_END_PAD : halfDepth),
+      hd: halfDepth,
       rot: Math.atan2(-dz, dx),
-      cameraTopY: topY(seed, x, z, FENCE_RAIL_HEIGHT),
+      cameraTopY: topY(seed, x, z, f.height ?? FENCE_RAIL_HEIGHT),
       camGhost: true,
       isFence: true,
     });
@@ -674,7 +781,10 @@ function staticWorldColliders(seed: number): Collider[] {
   // Market-stall dressing and the mine's ore cart: sub-props the renderer
   // draws as loose children of their parent, previously invisible to
   // collision. Local offsets rotate with the parent, exactly as the meshes do.
+  // Sized entries (w/d authored) are the rebuild's own stall mesh, which
+  // carries no legacy dressing children: skip them.
   for (const st of PROPS.stalls) {
+    if (st.w !== undefined && st.d !== undefined) continue;
     for (const d of st.smithy ? SMITHY_DRESSING : STALL_DRESSING) {
       const off = rotY(d.x, d.z, st.rot);
       const x = st.x + off.x;
@@ -758,12 +868,25 @@ function staticWorldColliders(seed: number): Collider[] {
   return out;
 }
 
+/** Test-only visibility into the authored static set so world-layout tests can
+ *  pin real collider extents and camera tops rather than re-testing helpers. */
+export const colliderInternalsForTest = { staticWorldColliders };
+
 // Interior collision sets, in instance-local coordinates. Derived from the
 // SAME plain-data layouts the renderer builds the KayKit modules from
 // (sim/dungeon_layout.ts), so render geometry and collision can no longer
 // drift apart. The boss dais is walkable and deliberately has no collider:
 // its elevation is FLOOR, not obstacle (world.ts groundHeight lifts it).
 const ARENA_COLLIDERS: Collider[] = layoutColliders(ARENA_LAYOUT);
+const DROWNED_COURT_COLLIDERS: Collider[] = layoutColliders(DROWNED_COURT_LAYOUT);
+
+// Arena slots host fixed maps by slot parity (EVEN = Coliseum, ODD = Drowned
+// Court; see ARENA_MAPS in dungeon_layout.ts). Both sets are built once at
+// module load, so per-slot collision stays fully static. Exported for the
+// per-slot layout pin tests.
+export function arenaCollidersForSlot(slot: number): Collider[] {
+  return ((slot % 2) + 2) % 2 === 1 ? DROWNED_COURT_COLLIDERS : ARENA_COLLIDERS;
+}
 
 // Per-DUNGEON interior sets: dungeons sharing a room plan (Hollow Crypt and
 // the Sunken Bastion are both 'crypt') dress their wall-side slots with
@@ -993,7 +1116,7 @@ export function resolvePosition(
   }
   if (isArenaPos(x)) {
     const o = arenaOriginAt(z);
-    const local = resolveAgainst(ARENA_COLLIDERS, x - o.x, z - o.z, r, ignoreFences);
+    const local = resolveAgainst(arenaCollidersForSlot(o.slot), x - o.x, z - o.z, r, ignoreFences);
     return { x: local.x + o.x, z: local.z + o.z };
   }
   if (x > DUNGEON_X_THRESHOLD) {
@@ -1257,7 +1380,8 @@ function crossesFence(fromX: number, fromZ: number, toX: number, toZ: number, r:
     const hitX = fromX + (toX - fromX) * t;
     const hitZ = fromZ + (toZ - fromZ) * t;
     const along = (hitX - f.x1) * ux + (hitZ - f.z1) * uz;
-    if (along >= -FENCE_END_PAD - r && along <= len + FENCE_END_PAD + r) return true;
+    const endPad = f.width === undefined ? FENCE_END_PAD : f.width / 2;
+    if (along >= -endPad - r && along <= len + endPad + r) return true;
   }
   return false;
 }
@@ -1486,7 +1610,7 @@ export function cameraOcclusion(
   if (isArenaPos(ax)) {
     const o = arenaOriginAt(az);
     return sweepColliders(
-      ARENA_COLLIDERS,
+      arenaCollidersForSlot(o.slot),
       ax - o.x,
       ay,
       az - o.z,
@@ -1555,7 +1679,7 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
   }
   if (isArenaPos(x)) {
     const o = arenaOriginAt(z);
-    return overlapsAny(ARENA_COLLIDERS, x - o.x, z - o.z, false);
+    return overlapsAny(arenaCollidersForSlot(o.slot), x - o.x, z - o.z, false);
   }
   if (x > DUNGEON_X_THRESHOLD) {
     const { ox, oz, interior, dungeonId } = instanceLocal(x, z);

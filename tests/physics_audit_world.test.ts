@@ -84,11 +84,14 @@ function maxStoodHeight(sim: Sim, ticks: number): number {
 describe('full-height props reject standing (jump-spam 4s each)', () => {
   const cases: [string, number, number, number][] = [
     // name, startX, startZ, facing toward the prop
-    ['well', 0, 2 - 2.6, 0],
+    ['civic well beacon', -0.75, 2 - 3.1, 0],
     ['tent', 62, -61 - 2.8, 0],
     ['mud hut stem', -3, 292, 0], // zone2 murloc camp (approx; adjust below)
-    ['inn wall', 12, -6 - 4.8, 0],
-    ['house wall', 10, 12 - 4.4, 0],
+    ['inn wall', -12.5, 16.5 - 4.8, 0],
+    ['bank wall', 18 - 5.4, 10.5, Math.PI / 2],
+    ['Grand Armoury wall', 12, -5.5, Math.PI / 2],
+    ['notice board', 10, -8 - 1.6, 0],
+    ['town wall parapet', 0, -25.4, Math.PI],
   ];
   for (const [name, x, z, f] of cases) {
     it(`cannot stand on the ${name}`, () => {
@@ -101,10 +104,72 @@ describe('full-height props reject standing (jump-spam 4s each)', () => {
   }
 });
 
+describe('civic bench (rebuild furniture)', () => {
+  it('strides up onto the seat with no jump, and off again clean', () => {
+    // South bench at (0, -0.9), rot PI, drawn 1.8 x 0.6 x 0.40: the 0.40 seat
+    // sits inside MAX_STEP_HEIGHT, so a plain walk climbs it like a kerb.
+    const sim = makeSim();
+    teleport(sim, 0, -0.9 - 1.3, 0);
+    const p = sim.player;
+    let stood = 0;
+    for (let i = 0; i < 40; i++) {
+      hold(sim, { forward: true }, 1);
+      if (p.onGround) stood = Math.max(stood, p.pos.y - groundHeight(p.pos.x, p.pos.z, SEED));
+    }
+    expect(stood).toBeGreaterThan(0.3);
+    expect(stood).toBeLessThan(0.5);
+    // Keep walking: off the far side, seated back on the terrain, unhurt.
+    const hpBefore = p.hp;
+    hold(sim, { forward: true }, 30);
+    expect(p.hp).toBe(hpBefore);
+    expect(p.pos.y - groundHeight(p.pos.x, p.pos.z, SEED)).toBeLessThan(0.1);
+  });
+});
+
+describe('rebuild market stall (flat canopy at the authored height)', () => {
+  // The World Market stall at (-5.5, 9.5): authored 2.8 x 2.2 OBB whose
+  // canopy deck is the mesh's bounding top, drawn at exactly height 2.7.
+  const sx = -5.5;
+  const sz = 9.5;
+  const srot = 2.508844;
+
+  it('jump at the counter grabs the canopy, stands flat at 2.7, and walks off', () => {
+    const sim = makeSim();
+    // Approach along the stall's local +z (its front face).
+    const fx = Math.sin(srot);
+    const fz = Math.cos(srot);
+    const startX = sx + fx * 2.6;
+    const startZ = sz + fz * 2.6;
+    teleport(sim, startX, startZ, Math.atan2(sx - startX, sz - startZ));
+    const p = sim.player;
+    let onCanopy = false;
+    for (let i = 0; i < 140 && !onCanopy; i++) {
+      hold(sim, { forward: true, jump: true }, 1);
+      const rel = p.pos.y - groundHeight(sx, sz, SEED);
+      if (p.onGround && rel > 2.7 - 0.35) onCanopy = true;
+    }
+    expect(onCanopy).toBe(true);
+    // The deck is FLAT: idling on it holds position exactly.
+    const fy0 = p.pos.y;
+    hold(sim, {}, 40);
+    expect(Math.abs(p.pos.y - fy0)).toBeLessThan(2e-3);
+    // Step off: back to the street, no embedding in the stall body.
+    const hpBefore = p.hp;
+    hold(sim, { forward: true }, 60);
+    expect(p.onGround).toBe(true);
+    expect(p.pos.y - groundHeight(p.pos.x, p.pos.z, SEED)).toBeLessThan(0.1);
+    expect(p.hp).toBe(hpBefore);
+  });
+});
+
 describe('chapel flows', () => {
+  // Re-anchored to the zone3 chapel (Highpass): the v0.31 civic rebuild
+  // replaced the Eastbrook chapel with a kit GLB (full-height OBB); the
+  // composed tower-plus-hall physics now lives wherever the legacy
+  // procedural chapel still stands.
   const rot = 0.9;
   const cx = -16;
-  const cz = -8;
+  const cz = 650;
   const fx = Math.sin(rot);
   const fz = Math.cos(rot);
 
@@ -136,15 +201,22 @@ describe('chapel flows', () => {
   });
 });
 
+// The legacy gabled market stand now lives outside Eastbrook (the rebuild
+// stalls have their own flat-canopy suite above); the zone2 Fenwick stall at
+// (-5, 310.5) rot PI/2 keeps the sloped-canopy physics pinned.
+const LEGACY_STALL = { x: -5, z: 310.5, rot: Math.PI / 2 };
+
 describe('stall rim behavior', () => {
   it('standing dead still on the canopy stays put (no depenetration jitter)', () => {
     const sim = makeSim();
-    teleport(sim, -8.5, -0.3, 0);
+    // The gable's eave faces are the stall's local +-z; rot PI/2 maps local
+    // +z onto world +x, so approach along x.
+    teleport(sim, LEGACY_STALL.x + 2.6, LEGACY_STALL.z, -Math.PI / 2);
     const p = sim.player;
     let onCanopy = false;
     for (let i = 0; i < 120 && !onCanopy; i++) {
       hold(sim, { forward: true, jump: true }, 1);
-      const rel = p.pos.y - groundHeight(-8.5, 3, SEED);
+      const rel = p.pos.y - groundHeight(LEGACY_STALL.x, LEGACY_STALL.z, SEED);
       if (p.onGround && rel > STALL_CANOPY_EAVE - 0.1) onCanopy = true;
     }
     expect(onCanopy).toBe(true);
@@ -197,29 +269,22 @@ describe('dock flows', () => {
 });
 
 describe('abilities x collision', () => {
-  it('Heroic Leap onto the stall canopy seats on the sampled cone, and off again', () => {
+  it('Heroic Leap onto the stall canopy seats on the sampled gable, and off again', () => {
     const sim = makeSim();
-    teleport(sim, -8.5, -2.5, 0);
+    teleport(sim, LEGACY_STALL.x + 5.5, LEGACY_STALL.z, -Math.PI / 2);
     const p = sim.player;
-    sim.castAbility('heroic_leap', p.id, { x: -8.5, z: 3 });
+    sim.castAbility('heroic_leap', p.id, { x: LEGACY_STALL.x, z: LEGACY_STALL.z });
     for (let i = 0; i < 40 && p.leap; i++) sim.tick();
     expect(p.leap ?? null).toBeNull();
-    const g = groundHeight(-8.5, 3, SEED);
+    const g = groundHeight(LEGACY_STALL.x, LEGACY_STALL.z, SEED);
     const rel = p.pos.y - g;
-    console.log(
-      'leap landed rel height',
-      rel.toFixed(2),
-      'at',
-      p.pos.x.toFixed(2),
-      p.pos.z.toFixed(2),
-    );
     expect(rel).toBeGreaterThan(STALL_CANOPY_EAVE - 0.15);
     expect(rel).toBeLessThanOrEqual(STALL_CANOPY_TOP + 0.05);
     // Leap off: back to the street with no embedding (cooldown cleared first).
     p.cooldowns.clear();
     p.resource = 100; // rage for the recast
     p.gcdRemaining = 0;
-    sim.castAbility('heroic_leap', p.id, { x: -8.5, z: -3 });
+    sim.castAbility('heroic_leap', p.id, { x: LEGACY_STALL.x + 5.5, z: LEGACY_STALL.z });
     for (let i = 0; i < 40 && p.leap; i++) sim.tick();
     expect(p.pos.y - groundHeight(p.pos.x, p.pos.z, SEED)).toBeLessThan(0.15);
   });

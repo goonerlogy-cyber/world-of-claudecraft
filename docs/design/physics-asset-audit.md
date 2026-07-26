@@ -34,6 +34,26 @@ may be flat or shaped (`TopSlope`), sampled through `colliderTopAt`.
 | Town/station furniture | standable per `town_props.ts` sizes | Everything except open flame. |
 | Editor placements | full-height circles | Custom maps author `collideRadius` only. |
 
+## Eastbrook civic rebuild (v0.31)
+
+The rebuild replaced Eastbrook's legacy procedural props with authored kit
+GLBs (`eastbrook_layout.ts` owns placement for BOTH render and collision).
+The composed-chapel and gabled-stall physics stay live on the legacy
+procedural path (a building/stall with no `assetId`/`w`), which still ships
+in zone2 and zone3 and in custom worlds; their audit anchors moved there.
+
+| Category | Model | Notes |
+|---|---|---|
+| Kit buildings (bank, smithy, inn, chapel, workshops) + Grand Armoury | full-height authored OBB | Rooftops out of climb reach by design; the Armoury adds the terrain-envelope camera top. |
+| Rebuild market stalls | authored OBB; FLAT standable canopy at exactly the authored height | The mesh's bounding box is scaled to the authored envelope and its tallest element is the canopy deck, so the drawn deck IS the authored height. Grab at the counter, stand, walk off. |
+| Civic benches | standable OBB at the drawn seat height (`benchDrawnHeight`) | The renderer scales `bench.glb` uniformly to the authored footprint, so the seat height is a pure function of w x d (0.40 for the civic three): a stride, not even a vault. |
+| Town wall | full-height OBB per segment | A railed parapet: stone slab, open iron railing, capped pillars. Extruded-2D cannot host a body between railing and coping, so the wall is DELIBERATELY solid: use the gates. Same honest-exception reasoning as the mud-hut stems. |
+| Civic well beacon | full-height circle | Sculpted monument (basin, pole, crystal): the top is statuary, not a platform, the wells rule again. |
+| Notice board | full-height OBB | A thin board; its top edge is no platform. |
+| Ravenpost mailbox | NO static collider | An interactable ground-object ENTITY placed via `findSafePos` (which itself reads the collider set); entities never join static collision in this engine. |
+| Marsh reeds | NO collider | Soft vegetation by the release's own contract (camera-hideable only); a body wades through. |
+| Drowned Court arena | full-height walls, flat floor | The arena-band contract: reliquary tombs stay legacy full-height blocks. |
+
 ## Dungeon interiors
 
 | Category | Model | Notes |
@@ -68,8 +88,12 @@ roof, and the step-smooth easing for the dais rim.
 `tests/dungeon_parkour.test.ts` (dais walk/jump, coffin mantle, cargo climb,
 temple walls, delve inertness), `tests/climb.test.ts` (roof reach pins, the
 stall cone walk), `tests/parkour.test.ts` + `tests/physics_character.test.ts`
-(the ladder itself), captures under `docs/screenshots/dungeon-parkour-roofs/`
-and `docs/screenshots/ledge-climb-roofs/`.
+(the ladder itself), `tests/physics_audit_world.test.ts` (the rebuild suite:
+bench stride, flat-canopy grab, the full-height sweep over the beacon, walls,
+armoury, and notice board, plus the re-anchored legacy chapel and gable
+flows), `tests/town_collision.test.ts` (station furniture + headstones),
+captures under `docs/screenshots/dungeon-parkour-roofs/` and
+`docs/screenshots/ledge-climb-roofs/`.
 
 ## Slope glue: walking up a pitched surface stays grounded
 

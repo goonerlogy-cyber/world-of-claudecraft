@@ -194,3 +194,24 @@ export function graveHeight(i: number): number {
 export function graveOffset(i: number): { x: number; z: number } {
   return { x: (i % 3) * GRAVE_STRIDE_X, z: Math.floor(i / 3) * GRAVE_STRIDE_Z };
 }
+
+// ---------------------------------------------------------------------------
+// Eastbrook civic rebuild furniture (v0.31): measured drawn geometry for the
+// authored OBB placements the rebuild renders through eastbrook_town.ts.
+// ---------------------------------------------------------------------------
+
+/**
+ * bench.glb native bounding proportions, measured from the shipped GLB
+ * (dequantized accessor bounds x node transforms): height and depth as
+ * fractions of the native width. The rebuild renderer scales a bench
+ * uniformly by min(width / nativeX, depth / nativeZ) and lets the height
+ * follow (eastbrook_town.ts), so the drawn seat height is a pure function of
+ * the authored footprint. For the civic 1.8 x 0.6 benches this lands at 0.40.
+ */
+export const BENCH_NATIVE_HEIGHT_PER_WIDTH = 0.28568;
+export const BENCH_NATIVE_DEPTH_PER_WIDTH = 0.42851;
+
+/** Drawn top of an authored bench footprint (yards above its ground). */
+export function benchDrawnHeight(w: number, d: number): number {
+  return BENCH_NATIVE_HEIGHT_PER_WIDTH * Math.min(w, d / BENCH_NATIVE_DEPTH_PER_WIDTH);
+}

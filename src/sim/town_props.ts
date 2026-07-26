@@ -1,15 +1,16 @@
-// The town's furniture: profession-station clusters and Artisan Row, as sim
-// data so the player can actually bump into them.
+// The town's furniture: the profession-station clusters, as sim data so the
+// player can actually bump into them.
 //
 // These objects used to be drawn entirely inside the render layer
-// (`stations_core.ts` owned the cluster offsets, `artisan_row_props.ts` the
-// row placements), which the sim cannot import. The result was the single
-// biggest collision gap in the game: a couple of dozen solid, waist-to-chest
-// objects standing in the starting town that a player walked straight
-// through, including anvils, looms, workbenches, barrels and crates that are
-// visually identical to the `PROPS.crates` barrels a few yards away that DO
-// block. Moving the layout here and letting the renderer read it back is the
-// same fix `decoration_dims.ts` applied to rocks: one owner, no drift.
+// (`stations_core.ts` owned the cluster offsets), which the sim cannot
+// import. The result was a real collision gap: solid, waist-to-chest objects
+// standing in the starting town that a player walked straight through,
+// including anvils, looms, workbenches, barrels and crates that are visually
+// identical to the `PROPS.crates` barrels a few yards away that DO block.
+// Moving the layout here and letting the renderer read it back is the same
+// fix `decoration_dims.ts` applied to rocks: one owner, no drift. (The old
+// Artisan Row lived here too until the v0.31 civic rebuild removed its
+// renderer placements; collision followed it out.)
 //
 // SIZES ARE MEASURED from the shipped GLBs (their authored target heights and
 // bounding footprints), not guessed. Radii are the mean horizontal half-extent
@@ -92,60 +93,10 @@ export const STATION_PROP_CLUSTERS: Readonly<Record<StationType, readonly Statio
   ],
   toolworks: [
     { kind: 'workbench', dx: 0, dz: 0, rot: -0.4 },
-    { kind: 'crate', dx: 1.2, dz: 0.8, rot: 0.2 },
+    { kind: 'crate', dx: -0.9, dz: 0.4, rot: 0.2 },
     { kind: 'barrel', dx: -1.0, dz: 1.1, rot: -0.8 },
   ],
 };
-
-export type ArtisanPropKind =
-  | 'engineering_workbench'
-  | 'alchemy_cauldron'
-  | 'cooking_spit'
-  | 'leatherworking_rack'
-  | 'tailoring_loom'
-  | 'inscription_lectern'
-  | 'enchanting_altar'
-  | 'jewelcrafting_bench'
-  | 'mining_ore_cart'
-  | 'herbalism_drying_rack';
-
-export const ARTISAN_PROP_SIZES: Readonly<Record<ArtisanPropKind, TownPropSize>> = {
-  engineering_workbench: { height: 1.0, r: 0.49, standable: true },
-  alchemy_cauldron: { height: 0.9, r: 0.37, standable: true },
-  cooking_spit: { height: 0.85, r: 0.4, standable: true },
-  leatherworking_rack: { height: 1.5, r: 0.55, standable: true },
-  tailoring_loom: { height: 1.3, r: 0.72, standable: true },
-  inscription_lectern: { height: 1.1, r: 0.33, standable: true },
-  enchanting_altar: { height: 1.0, r: 0.28, standable: true },
-  jewelcrafting_bench: { height: 0.9, r: 0.32, standable: true },
-  mining_ore_cart: { height: 1.1, r: 0.53, standable: true },
-  herbalism_drying_rack: { height: 1.4, r: 0.6, standable: true },
-};
-
-export interface ArtisanPlacement {
-  kind: ArtisanPropKind;
-  x: number;
-  z: number;
-  rot: number;
-}
-
-// Fixed placements around Smith Haldren's market stall (zone1, stall at
-// x=9.5 z=17.5), arced clear of his stall footprint (r=1.7) and the house at
-// x=10 z=12. Hand-authored landmark, not procedural scatter, so exact spots
-// matter more than deterministic variety.
-export const ARTISAN_ROW_PLACEMENTS: readonly ArtisanPlacement[] = [
-  { kind: 'engineering_workbench', x: 2, z: 20, rot: 0.4 },
-  { kind: 'alchemy_cauldron', x: 5, z: 23, rot: -0.6 },
-  { kind: 'cooking_spit', x: 9, z: 25, rot: 0 },
-  { kind: 'leatherworking_rack', x: 13, z: 24, rot: 0.9 },
-  // Nudged off the northeast ruins road: both now sit past 4.0.
-  { kind: 'tailoring_loom', x: 13.5, z: 20.5, rot: 1.6 },
-  { kind: 'inscription_lectern', x: 19.5, z: 14.5, rot: 2.4 },
-  { kind: 'enchanting_altar', x: 16, z: 13, rot: -2.6 },
-  { kind: 'jewelcrafting_bench', x: 15, z: 9, rot: -1.8 },
-  { kind: 'mining_ore_cart', x: 3, z: 12, rot: -0.9 },
-  { kind: 'herbalism_drying_rack', x: 1, z: 16, rot: 0.3 },
-];
 
 /** One piece of town furniture resolved into world space. */
 export interface TownPropPlacement {
@@ -202,11 +153,6 @@ export function townPropPlacements(
       if (standsOnAnNpc(x, z, size.r, npcs)) continue;
       out.push({ x, z, size });
     }
-  }
-  for (const a of ARTISAN_ROW_PLACEMENTS) {
-    const size = ARTISAN_PROP_SIZES[a.kind];
-    if (standsOnAnNpc(a.x, a.z, size.r, npcs)) continue;
-    out.push({ x: a.x, z: a.z, size });
   }
   return out;
 }
