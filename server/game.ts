@@ -18,11 +18,13 @@ import { SPORT_ROLES, VALE_CUP_BALL_TEMPLATE_ID, VC_NATION_IDS } from '../src/si
 import { withWeaponSkinApplied } from '../src/sim/content/weapon_skin_rules';
 import { isWeaponSkinType, WEAPON_SKINS } from '../src/sim/content/weapon_skins';
 import {
+  bgOriginAt,
   DELVES,
   DUNGEON_X_THRESHOLD,
   DUNGEONS,
   delveAt,
   dungeonAt,
+  isBgPos,
   isDelvePos,
   MOBS,
   ZONES,
@@ -235,6 +237,13 @@ const NPC_INTEREST_RADIUS = 120;
 const NPC_DROP_RADIUS = 130;
 // the widest radius any entity kind can be relevant at
 const INTEREST_QUERY_RADIUS = NPC_DROP_RADIUS;
+// Ravenrift: the 100x280 field (diagonal ~297yd) stays fully tracked for its
+// own match, so the whole battle exists in every participant's sim mirror (the
+// CLIENT hides past ~120yd behind the band's distance fog, like the open
+// world's view distance). Applies to SAME-SLOT pairs only: slot spacing (460)
+// keeps cross-slot pairs >= 180yd apart, beyond every default radius.
+const BG_MATCH_INTEREST_RADIUS = 300;
+const BG_MATCH_DROP_RADIUS = 320;
 // Distance-tiered update rates: full snapshot rate inside nameplate range
 // (55yd, beyond every ability range), half rate out to the 80yd draw range,
 // quarter rate beyond. The viewer's target and anything attacking the
@@ -1154,6 +1163,13 @@ function interestLimitSq(e: Entity, known: boolean): number {
 
 function isStealthed(e: Entity): boolean {
   return e.stealthed; // cached in the sim's updateAuras; see Entity.stealthed
+}
+
+// Both endpoints inside the SAME battleground slot: the raised match-wide
+// interest applies (never across slots, never to the open world).
+function inSameBgSlot(a: Entity, b: Entity): boolean {
+  if (!isBgPos(a.pos.x) || !isBgPos(b.pos.x)) return false;
+  return bgOriginAt(a.pos.z).slot === bgOriginAt(b.pos.z).slot;
 }
 
 // full rate close up and for anything the viewer is fighting; mid range
@@ -5493,9 +5509,15 @@ export class GameServer {
     // cutoff. Timed into bcastGridNs (the shared build once), the same counter
     // that brackets the per-session lookup+filter work below.
     const sharedStart = this.perfDetailActive ? process.hrtime.bigint() : 0n;
-    const candidates = buildSharedInterestCandidates(this.sim.grid, anchors, INTEREST_QUERY_RADIUS);
+    const candidates = buildSharedInterestCandidates(
+      this.sim.grid,
+      anchors,
+      INTEREST_QUERY_RADIUS,
+      BG_MATCH_DROP_RADIUS,
+    );
     if (this.perfDetailActive) this.bcastGridNs += process.hrtime.bigint() - sharedStart;
     const queryLimitSq = INTEREST_QUERY_RADIUS * INTEREST_QUERY_RADIUS;
+    const bgQueryLimitSq = BG_MATCH_DROP_RADIUS * BG_MATCH_DROP_RADIUS;
 
     // Build each session's snapshot from its shared candidate list, still guarded
     // per session so one throw cannot starve the rest.
@@ -5515,7 +5537,7 @@ export class GameServer {
           const dx = e.pos.x - anchorEntity.pos.x;
           const dz = e.pos.z - anchorEntity.pos.z;
           const d2 = dx * dx + dz * dz;
-          if (d2 > queryLimitSq) continue;
+          if (d2 > (isBgPos(anchorEntity.pos.x) ? bgQueryLimitSq : queryLimitSq)) continue;
           // bcVisits counts the exact per-viewer in-range set (self included),
           // byte-identical to the old scan: increment only AFTER the exact-d2
           // cutoff, never on the padded per-cell candidate list.
@@ -5528,7 +5550,11 @@ export class GameServer {
           const limitSq =
             anchorEntity.targetId === e.id
               ? NPC_DROP_RADIUS * NPC_DROP_RADIUS
-              : interestLimitSq(e, known !== undefined);
+              : inSameBgSlot(anchorEntity, e)
+                ? known !== undefined
+                  ? BG_MATCH_DROP_RADIUS * BG_MATCH_DROP_RADIUS
+                  : BG_MATCH_INTEREST_RADIUS * BG_MATCH_INTEREST_RADIUS
+                : interestLimitSq(e, known !== undefined);
           if (d2 > limitSq) continue;
           present.add(e.id);
           const cache = this.wireCacheFor(e, stableTimerWire);

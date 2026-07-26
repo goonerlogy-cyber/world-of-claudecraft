@@ -1,3 +1,4 @@
+import { isBgPos } from '../src/sim/data';
 import type { SpatialGrid } from '../src/sim/spatial';
 import type { Entity } from '../src/sim/types';
 
@@ -77,9 +78,13 @@ export function buildSharedInterestCandidates(
   grid: SpatialGrid,
   anchors: Iterable<AnchorRef>,
   baseRadius: number,
+  /** Wider per-cell radius for anchor cells inside the battleground band (the
+   *  raised same-slot match interest); defaults to the base radius. */
+  bgBandRadius: number = baseRadius,
 ): SharedInterestCandidates {
   const cellSize = grid.cellSize;
   const radius = sharedQueryRadius(baseRadius, cellSize);
+  const bgRadius = sharedQueryRadius(bgBandRadius, cellSize);
 
   // First pass: bucket each session into its anchor cell and record the distinct
   // occupied cells (their integer cx/cz, so the center is recovered exactly).
@@ -99,11 +104,12 @@ export function buildSharedInterestCandidates(
   for (const [key, { cx, cz }] of distinctCells) {
     const centerX = (cx + 0.5) * cellSize;
     const centerZ = (cz + 0.5) * cellSize;
+    const cellRadius = isBgPos(centerX) ? bgRadius : radius;
     const list: Entity[] = [];
     // Deliberately ignore the d2 the callback receives: it is measured from the
     // CELL CENTER, not any viewer, so it must not leak into the returned list as
     // if it were a viewer distance. Callers re-apply their own anchor cutoff.
-    grid.forEachInRadius(centerX, centerZ, radius, (e) => {
+    grid.forEachInRadius(centerX, centerZ, cellRadius, (e) => {
       list.push(e);
     });
     cellCandidates.set(key, list);

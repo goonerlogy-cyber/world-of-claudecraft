@@ -156,6 +156,47 @@ describe('the bg self key over the wire', () => {
   });
 });
 
+describe('immersive-scale interest: the whole match stays tracked', () => {
+  it('participants at flag-to-flag distance (236yd) still ship in each other snapshots', () => {
+    const saved = process.env.ALLOW_DEV_COMMANDS;
+    try {
+      process.env.ALLOW_DEV_COMMANDS = '1';
+      const server = new GameServer();
+      const fa = fakeWs();
+      const fb = fakeWs();
+      const a = joinServer(server, fa, 1, 'FarSeerA');
+      const b = joinServer(server, fb, 2, 'FarSeerB');
+      cmd(server, a, { cmd: 'bg_queue' });
+      cmd(server, b, { cmd: 'bg_queue' });
+      cmd(server, a, { cmd: 'dev_bg_start' });
+      const match = server.sim.bgMatchFor(a.pid)!;
+      expect(match).toBeTruthy();
+      // stand each on their own flag: the full 236yd apart, far beyond the
+      // 90yd open-world interest radius
+      const ea = server.sim.entities.get(a.pid)!;
+      const eb = server.sim.entities.get(b.pid)!;
+      const aTeam = match.teams[0].includes(a.pid) ? 0 : 1;
+      const aHome = match.flags[aTeam].home;
+      const bHome = match.flags[1 - aTeam].home;
+      ea.pos = { x: aHome.x, y: ea.pos.y, z: aHome.z };
+      ea.prevPos = { ...ea.pos };
+      server.sim.ctx.rebucket(ea);
+      eb.pos = { x: bHome.x, y: eb.pos.y, z: bHome.z };
+      eb.prevPos = { ...eb.pos };
+      server.sim.ctx.rebucket(eb);
+      expect(Math.abs(ea.pos.z - eb.pos.z)).toBeGreaterThan(230);
+      (server as any).broadcastSnapshots();
+      const idsForA = (lastSnap(fa.sent).ents as { id: number }[]).map((row) => row.id);
+      const idsForB = (lastSnap(fb.sent).ents as { id: number }[]).map((row) => row.id);
+      expect(idsForA).toContain(b.pid);
+      expect(idsForB).toContain(a.pid);
+    } finally {
+      if (saved === undefined) delete process.env.ALLOW_DEV_COMMANDS;
+      else process.env.ALLOW_DEV_COMMANDS = saved;
+    }
+  });
+});
+
 describe('dev_bg_start env gate', () => {
   it('is inert without ALLOW_DEV_COMMANDS=1 and force-starts a match with it', () => {
     const saved = process.env.ALLOW_DEV_COMMANDS;
