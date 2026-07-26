@@ -8,7 +8,13 @@ import {
   dockSurfaceLine,
   dockSurfaceYAt,
 } from '../sim/dock_layout';
-import { CHAPEL_HALL, CHAPEL_TOWER, DOCK_BOAT, DOCK_DRESSING } from '../sim/prop_layout';
+import {
+  CHAPEL_HALL,
+  CHAPEL_TOWER,
+  DOCK_BOAT,
+  DOCK_DRESSING,
+  propPlacementRoll,
+} from '../sim/prop_layout';
 import { hash2 } from '../sim/rng';
 import { terrainHeight, waterLevel } from '../sim/world';
 import { loadGltf, releaseGltf } from './assets/loader';
@@ -437,9 +443,10 @@ export function buildPropMaterialPrewarmGroup(): THREE.Group {
 // with colliders/tests via the world seed)
 // ---------------------------------------------------------------------------
 
-function propRand(x: number, z: number, n: number): number {
-  return hash2(Math.round(x * 37), Math.round(z * 37) + n * 7919, 0x517cc1);
-}
+// The shared per-prop placement roll (sim/prop_layout.ts): colliders derive
+// per-point shapes (camp crate kind and scale, relic poses) from the SAME
+// draw, so mesh and physics agree per placement.
+const propRand = propPlacementRoll;
 
 function keyRand(key: number, n: number): number {
   return hash2(Math.round(key * 97), n * 7919, 0x9e3779);

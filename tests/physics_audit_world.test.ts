@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   type Collider,
-  CRATE_TOP,
+  campCrateShape,
   colliderTopAt,
   DOCK_HUT_ROOF_EAVE,
   DOCK_HUT_ROOF_TOP,
@@ -266,13 +266,16 @@ describe('dungeon deep sweep', () => {
     expect(crateSlot && boxSlot).toBeTruthy();
     if (!crateSlot || !boxSlot) return;
     for (const { t, r } of [crateSlot, boxSlot]) {
-      const stackTop = r < 0.5 ? 2.14 : 1.99;
-      teleport(sim, o.x + t.x, o.z + t.z - 1.0 - 0.95 - 1.5, 0);
+      // Two tiers: vault the broad lower tier; the crates variant then
+      // strides to its wide top crate. (The box variant's top box is a tiny
+      // finial you can bump but not sanely stand on: the tier is the stand.)
+      const standTop = r < 0.5 ? 2.14 : 1.2;
+      teleport(sim, o.x + t.x, o.z + t.z - 1.0 - 1.0 - 1.5, 0);
       const p = sim.player;
       let onStack = false;
-      for (let i = 0; i < 140 && !onStack; i++) {
+      for (let i = 0; i < 160 && !onStack; i++) {
         hold(sim, { forward: true, jump: true }, 1);
-        if (p.onGround && Math.abs(p.pos.y - stackTop) < 0.05) onStack = true;
+        if (p.onGround && Math.abs(p.pos.y - standTop) < 0.05) onStack = true;
       }
       expect(onStack).toBe(true);
       // Walk the gap between stack and cask at floor level.

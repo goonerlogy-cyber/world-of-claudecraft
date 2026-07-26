@@ -8,9 +8,13 @@ import {
   layoutColliders,
   NYTHRAXIS_LAYOUT,
   TEMPLE_LAYOUT,
+  TOMB_CARGO_BOX_TIER,
   TOMB_CARGO_BOX_TOP,
+  TOMB_CARGO_STACK_TIER,
   TOMB_CARGO_STACK_TOP,
+  TOMB_COFFIN_DECORATED_EAVE,
   TOMB_COFFIN_DECORATED_TOP,
+  TOMB_COFFIN_PLAIN_EAVE,
   TOMB_COFFIN_PLAIN_TOP,
   tombSlotRoll,
 } from '../src/sim/dungeon_layout';
@@ -116,40 +120,48 @@ describe('dungeon furniture is standable per its real dressing', () => {
     for (const t of tombs) expect(t.moveTopY).toBeUndefined();
   });
 
-  it('a jumping player mantles onto a Hollow Crypt coffin lid', () => {
+  it('a jumping player mantles onto a Hollow Crypt coffin lid hump', () => {
     const o = instanceOrigin(DUNGEONS.hollow_crypt.index, 0);
     const t = CRYPT_LAYOUT.tombs[0]; // (-19, 16), against the west wall
     const roll = tombSlotRoll(t.x, t.z);
-    const top = roll < 0.55 ? TOMB_COFFIN_PLAIN_TOP : TOMB_COFFIN_DECORATED_TOP;
-    // Approach from the aisle side, facing the wall (-x).
+    const plain = roll < 0.55;
+    const top = plain ? TOMB_COFFIN_PLAIN_TOP : TOMB_COFFIN_DECORATED_TOP;
+    const eave = plain ? TOMB_COFFIN_PLAIN_EAVE : TOMB_COFFIN_DECORATED_EAVE;
+    // Approach from the aisle side, facing the wall (-x): the lid is a hump
+    // ridging along the coffin's length, so the body lands somewhere on the
+    // slope between the plinth edge and the crest and can walk up it.
     const sim = simWithPlayerAt(o.x + t.x + 3.2, o.z + t.z, -Math.PI / 2);
     const p = sim.player;
     let onLid = false;
     for (let i = 0; i < 100 && !onLid; i++) {
       hold(sim, { forward: true, jump: true }, 1);
-      if (p.onGround && Math.abs(p.pos.y - (DUNGEON_FLOOR_Y + top)) < 0.05) onLid = true;
+      const rel = p.pos.y - DUNGEON_FLOOR_Y;
+      if (p.onGround && rel > eave - 0.05 && rel <= top + 0.05) onLid = true;
     }
     expect(onLid).toBe(true);
   });
 
-  it('a jumping player grabs and climbs the Sunken Bastion cargo stack', () => {
+  it('a jumping player climbs the Sunken Bastion cargo staircase to its top crate', () => {
     const o = instanceOrigin(DUNGEONS.sunken_bastion.index, 0);
     const t = CRYPT_LAYOUT.tombs[0];
     const roll = tombSlotRoll(t.x, t.z);
-    const stackTop = roll < 0.5 ? TOMB_CARGO_STACK_TOP : TOMB_CARGO_BOX_TOP;
-    // The stack sits at (t.x, t.z - 1.0); approach it along -z from the aisle
-    // opening so the probe meets the stack face, not the cask behind it.
-    const sim = simWithPlayerAt(o.x + t.x, o.z + t.z - 1.0 - 0.95 - 1.6, 0);
+    const crates = roll < 0.5;
+    const tierTop = crates ? TOMB_CARGO_STACK_TIER : TOMB_CARGO_BOX_TIER;
+    const stackTop = crates ? TOMB_CARGO_STACK_TOP : TOMB_CARGO_BOX_TOP;
+    // The stack is a natural staircase: vault the broad lower tier, then
+    // stride (or hop) onto the top crate. Approach along -z from the aisle.
+    const sim = simWithPlayerAt(o.x + t.x, o.z + t.z - 1.0 - 1.0 - 1.6, 0);
     const p = sim.player;
-    let climbed = false;
-    let onStack = false;
-    for (let i = 0; i < 120 && !onStack; i++) {
+    let onTier = false;
+    let onTop = false;
+    for (let i = 0; i < 160 && !onTop; i++) {
       hold(sim, { forward: true, jump: true }, 1);
-      if (p.climb) climbed = true;
-      if (p.onGround && Math.abs(p.pos.y - (DUNGEON_FLOOR_Y + stackTop)) < 0.05) onStack = true;
+      const rel = p.pos.y - DUNGEON_FLOOR_Y;
+      if (p.onGround && Math.abs(rel - tierTop) < 0.05) onTier = true;
+      if (p.onGround && Math.abs(rel - stackTop) < 0.05) onTop = true;
     }
-    expect(climbed).toBe(true);
-    expect(onStack).toBe(true);
+    expect(onTier).toBe(true);
+    expect(onTop).toBe(true);
   });
 
   it('support queries stay inert in the delve band', () => {

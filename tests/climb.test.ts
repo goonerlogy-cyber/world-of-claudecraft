@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { advanceClimb, climbDuration, tryStartClimb } from '../src/sim/climb';
 import {
+  campCrateShape,
   DOCK_HUT_ROOF_TOP,
   isBlocked,
   MANTLE_REACH,
@@ -65,7 +66,7 @@ describe('ledge detection', () => {
   });
 
   it('grabs a crate stack that is too tall to vault', () => {
-    // A crate top sits 1.35 above its ground: above the step height, so a
+    // A camp crate top sits ~1.14-1.27 above its ground (per-point roll):
     // walking body is stopped by it, and this is exactly what a climb is for.
     const cz = SPOT.z + 1.4;
     setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
@@ -82,7 +83,12 @@ describe('ledge detection', () => {
     setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
     const g = groundHeight(SPOT.x, cz, SEED);
     // Feet already level with most of the crate: the gap is under the minimum.
-    const grab = findLedgeGrab(q(), SPOT.x, g + 1.35 - LEDGE_GRAB_MIN + 0.05, SPOT.z);
+    const grab = findLedgeGrab(
+      q(),
+      SPOT.x,
+      g + campCrateShape(SPOT.x, cz, 0).top - LEDGE_GRAB_MIN + 0.05,
+      SPOT.z,
+    );
     expect(grab).toBeNull();
   });
 
@@ -232,7 +238,7 @@ describe('the climb through a live Sim', () => {
     p.onGround = true;
     const meta = sim.players.get(p.id);
     if (!meta) throw new Error('missing meta');
-    const crateTop = groundHeight(SPOT.x, cz, SEED) + 1.35;
+    const crateTop = groundHeight(SPOT.x, cz, SEED) + campCrateShape(SPOT.x, cz, 0).top;
     let reachedTop = false;
     for (let i = 0; i < 60; i++) {
       Object.assign(meta.moveInput, {
@@ -326,7 +332,7 @@ describe('the climb onto the town roofs', () => {
     expect(climbDuration(LEDGE_GRAB_MAX)).toBeLessThanOrEqual(0.75);
   });
 
-  it('carries a jumping player from the street onto a stall canopy, then up its cone', () => {
+  it('vaults the stall awning edge, walks up the gable, and climbs the gable end', () => {
     const sz = SPOT.z + 2.6;
     setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: sz, rot: 0, r: 1.7 }] }));
     const g = groundHeight(SPOT.x, sz, SEED);
@@ -334,12 +340,6 @@ describe('the climb onto the town roofs', () => {
     const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
     sim.setPlayerLevel(60);
     const p = sim.player;
-    p.pos.x = SPOT.x;
-    p.pos.z = sz - 1.7 - 1.4; // outside the canopy rim, a run-up away
-    p.pos.y = terrainHeight(p.pos.x, p.pos.z, SEED);
-    p.prevPos = { ...p.pos };
-    p.facing = 0; // +z, at the stall
-    p.onGround = true;
     const meta = sim.players.get(p.id);
     if (!meta) throw new Error('missing meta');
 
@@ -361,30 +361,53 @@ describe('the climb onto the town roofs', () => {
         sim.tick();
       }
     };
+    const teleportTo = (x: number, z: number, facing: number) => {
+      p.pos.x = x;
+      p.pos.z = z;
+      p.pos.y = terrainHeight(x, z, SEED);
+      p.prevPos = { ...p.pos };
+      p.fallStartY = p.pos.y;
+      p.facing = facing;
+      p.onGround = true;
+      p.vx = 0;
+      p.vy = 0;
+      p.vz = 0;
+      p.climb = null;
+    };
 
-    // Jump at the canopy until the grab lands the body on the pitched fabric.
+    // FRONT approach (+z at the awning's low edge): the 1.5 eave is a vault,
+    // and the gable then walks up toward the 2.54 ridge.
+    teleportTo(SPOT.x, sz - 1.25 - 1.4, 0);
+    let onAwning = false;
+    for (let i = 0; i < 100 && !onAwning; i++) {
+      step({ forward: true, jump: true }, 1);
+      const rel = p.pos.y - g;
+      if (p.onGround && rel > STALL_CANOPY_EAVE - 0.05 && rel <= STALL_CANOPY_TOP + 0.05) {
+        onAwning = true;
+      }
+    }
+    expect(onAwning).toBe(true);
+    const before = p.pos.y - g;
+    step({ forward: true }, 3);
+    const after = p.pos.y - g;
+    expect(p.onGround).toBe(true);
+    expect(after).toBeGreaterThan(before + 0.1); // riding the gable upward
+    expect(after).toBeLessThanOrEqual(STALL_CANOPY_TOP + 0.01);
+
+    // SIDE approach (the gable END face, +x): the surface at the ridge line
+    // is the full 2.54 there, out of vault reach, so the grab-and-climb is
+    // the way up.
+    teleportTo(SPOT.x - 1.55 - 1.4, sz, Math.PI / 2);
     let climbed = false;
-    let onCanopy = false;
-    for (let i = 0; i < 100 && !onCanopy; i++) {
+    let onRoofFromSide = false;
+    for (let i = 0; i < 120 && !onRoofFromSide; i++) {
       step({ forward: true, jump: true }, 1);
       if (p.climb) climbed = true;
       const rel = p.pos.y - g;
-      if (p.onGround && rel > STALL_CANOPY_EAVE - 0.05 && rel <= STALL_CANOPY_TOP + 0.05) {
-        onCanopy = true;
-      }
+      if (p.onGround && rel > STALL_CANOPY_EAVE - 0.05) onRoofFromSide = true;
     }
     expect(climbed).toBe(true);
-    expect(onCanopy).toBe(true);
-
-    // The top is a CONE, not a plane: walking toward the centre pole climbs
-    // the fabric toward the peak (the landing sits ~1.2 yd from the centre;
-    // four ticks of run cover it without carrying over the far rim).
-    const before = p.pos.y - g;
-    step({ forward: true }, 4);
-    const after = p.pos.y - g;
-    expect(p.onGround).toBe(true);
-    expect(after).toBeGreaterThan(before + 0.1);
-    expect(after).toBeLessThanOrEqual(STALL_CANOPY_TOP + 0.01);
+    expect(onRoofFromSide).toBe(true);
   });
 
   it('a grounded walk still collides with the stall full-height', () => {

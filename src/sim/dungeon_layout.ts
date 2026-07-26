@@ -46,20 +46,33 @@ export const DAIS_HEIGHT = 0.6;
  * draw the renderer uses to pick the prop, so collider and mesh can never
  * disagree about which piece fills a slot.
  */
-// Hollow Crypt / Nythraxis corners: coffin 1.322 native x 1.3 = 1.72;
-// coffin_decorated 0.902 x 1.3 = 1.17.
+// Hollow Crypt / Nythraxis corners: coffin lids are HUMPS, not slabs. The
+// plain coffin (1.322 native x 1.3 y-scale) crests 1.72 along its centre
+// line and falls to a 1.10 plinth at the sides; the decorated one crests
+// 1.17 over a 0.71 plinth. Ridge runs along the coffin's LENGTH (local z).
 export const TOMB_COFFIN_PLAIN_TOP = 1.72;
+export const TOMB_COFFIN_PLAIN_EAVE = 1.1;
 export const TOMB_COFFIN_DECORATED_TOP = 1.17;
-// Sunken Bastion cargo, front stack: crates_stacked 2.142 x 1.0 = 2.14;
-// box_stacked 3.309 x 0.6 = 1.99. Rear cask: barrel_large 2.0 x 0.85 = 1.70;
-// keg 2.051 x 0.9 = 1.85.
+export const TOMB_COFFIN_DECORATED_EAVE = 0.71;
+// Sunken Bastion cargo. The stacks are TWO TIERS, a natural staircase: a
+// broad lower tier at stride-up height from the floor's jump, then a smaller
+// top crate a stride above it (crates_stacked: 1.35 then 2.14 at 1.0 scale;
+// box_stacked: 1.20 then 1.99 at 0.6). Tier offsets are the measured GLB
+// top-crate centres. Rear casks: barrel_large 1.70 tall x 0.76 half-width at
+// 0.85, keg 1.85 x 0.81 at 0.9 (radii trimmed slightly, as everywhere).
 export const TOMB_CARGO_STACK_TOP = 2.14;
+export const TOMB_CARGO_STACK_TIER = 1.35;
 export const TOMB_CARGO_BOX_TOP = 1.99;
+export const TOMB_CARGO_BOX_TIER = 1.2;
 export const TOMB_CARGO_BARREL_TOP = 1.7;
 export const TOMB_CARGO_KEG_TOP = 1.85;
-/** Cargo sub-collider footprints (the crate stack and the cask behind it). */
-export const TOMB_CARGO_STACK_HW = 0.95;
-export const TOMB_CARGO_CASK_R = 0.55;
+export const TOMB_CARGO_STACK_HW = 1.0;
+export const TOMB_CARGO_BARREL_R = 0.7;
+export const TOMB_CARGO_KEG_R = 0.75;
+/** Top-crate footprint and centre offset within each stack (GLB-measured,
+ *  scaled): [dx, dz, halfW, halfD]. */
+export const TOMB_CARGO_STACK_TIER2 = [-0.15, -0.38, 0.5, 0.33] as const;
+export const TOMB_CARGO_BOX_TIER2 = [-0.48, -0.21, 0.21, 0.11] as const;
 
 /**
  * How a dungeon dresses its wall-side obstacle slots, and therefore what the
@@ -330,7 +343,11 @@ export function layoutColliders(
   for (const t of layout.tombs) {
     const r = tombSlotRoll(t.x, t.z);
     if (dressing === 'coffins') {
-      const top = r < 0.55 ? TOMB_COFFIN_PLAIN_TOP : TOMB_COFFIN_DECORATED_TOP;
+      // The lid is a hump ridging along the coffin's length: standing feet
+      // ride the crest at the centre line and the plinth at the sides.
+      const plain = r < 0.55;
+      const top = plain ? TOMB_COFFIN_PLAIN_TOP : TOMB_COFFIN_DECORATED_TOP;
+      const eave = plain ? TOMB_COFFIN_PLAIN_EAVE : TOMB_COFFIN_DECORATED_EAVE;
       out.push({
         type: 'obb',
         x: t.x,
@@ -340,12 +357,21 @@ export function layoutColliders(
         rot: 0,
         moveTopY: floorY + top,
         standable: true,
+        topSlope: {
+          kind: 'ridge',
+          axis: 'z',
+          pitch: (top - eave) / TOMB_HW,
+          eaveY: floorY + eave,
+        },
       });
     } else if (dressing === 'cargo') {
-      // Front stack and rear cask, at the exact offsets the renderer uses,
-      // with the walkable gap between them the player can now see AND use.
-      const stackTop = r < 0.5 ? TOMB_CARGO_STACK_TOP : TOMB_CARGO_BOX_TOP;
-      const caskTop = r < 0.5 ? TOMB_CARGO_BARREL_TOP : TOMB_CARGO_KEG_TOP;
+      // Front stack (two tiers, the measured natural staircase) and the rear
+      // cask, at the offsets the renderer uses, with the walkable gap
+      // between them the player can now see AND use.
+      const crates = r < 0.5;
+      const tierTop = crates ? TOMB_CARGO_STACK_TIER : TOMB_CARGO_BOX_TIER;
+      const stackTop = crates ? TOMB_CARGO_STACK_TOP : TOMB_CARGO_BOX_TOP;
+      const tier2 = crates ? TOMB_CARGO_STACK_TIER2 : TOMB_CARGO_BOX_TIER2;
       out.push({
         type: 'obb',
         x: t.x,
@@ -353,15 +379,25 @@ export function layoutColliders(
         hw: TOMB_CARGO_STACK_HW,
         hd: TOMB_CARGO_STACK_HW,
         rot: 0,
+        moveTopY: floorY + tierTop,
+        standable: true,
+      });
+      out.push({
+        type: 'obb',
+        x: t.x + tier2[0],
+        z: t.z - 1.0 + tier2[1],
+        hw: tier2[2],
+        hd: tier2[3],
+        rot: 0,
         moveTopY: floorY + stackTop,
         standable: true,
       });
       out.push({
         type: 'circle',
-        x: t.x + (r < 0.5 ? 0.1 : -0.1),
+        x: t.x + (crates ? 0.1 : -0.1),
         z: t.z + 1.3,
-        r: TOMB_CARGO_CASK_R,
-        moveTopY: floorY + caskTop,
+        r: crates ? TOMB_CARGO_BARREL_R : TOMB_CARGO_KEG_R,
+        moveTopY: floorY + (crates ? TOMB_CARGO_BARREL_TOP : TOMB_CARGO_KEG_TOP),
         standable: true,
       });
     } else {

@@ -1,3 +1,5 @@
+import { hash2 } from './rng';
+
 // Layout and size of the SUB-PROPS that dress the world's composite props:
 // the clutter around a market stall, the ore cart at a mine, the headstones in
 // a graveyard. Plain data, shared by `src/sim/colliders.ts` (which turns it
@@ -77,9 +79,12 @@ export const DOCK_BOAT = {
   x: 3.1,
   z: -5.6,
   rot: 0.35,
-  hw: 1.8,
-  hd: 0.72,
-  deckHeight: 0.3,
+  // rowboat.glb hull at the placed 0.85 scale: ~2.3 long, ~0.9 across the
+  // beam (the raw bounds include the shipped oars; the hull is what a body
+  // meets). Deck sits just under the 0.72 gunwale, so a body stands IN it.
+  hw: 1.15,
+  hd: 0.45,
+  deckHeight: 0.4,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -113,8 +118,34 @@ export const CHAPEL_HALL = {
 } as const;
 /** The hall roof's standable ridge above its ground: height minus the sink. */
 export const CHAPEL_HALL_ROOF_TOP = CHAPEL_HALL.height - CHAPEL_HALL.sink;
-/** The hall roof's eave height: the gable falls this low at the long edges. */
-export const CHAPEL_HALL_ROOF_EAVE = CHAPEL_HALL_ROOF_TOP - 0.5;
+/** The hall roof's eave height: house_3's measured eave line sits at 60.5
+ *  percent of its height (walls below, roof above), scaled to 2.5 and sunk. */
+export const CHAPEL_HALL_ROOF_EAVE = 1.39;
+
+// ---------------------------------------------------------------------------
+// Camp crates (parent: PROPS.crates entries, one prop per point)
+// ---------------------------------------------------------------------------
+// The renderer draws every third camp "crate" as a barrel, and jitters the
+// wooden crates' scale per point. These are the SAME rolls the renderer
+// draws (its propRand), so the collider always matches the mesh actually
+// placed: kind, footprint, and top height per point.
+
+/** The renderer's per-prop placement roll (props.ts propRand), shared. */
+export function propPlacementRoll(x: number, z: number, n: number): number {
+  return hash2(Math.round(x * 37), Math.round(z * 37) + n * 7919, 0x517cc1);
+}
+
+/** Physical shape of the i-th camp crate at (x, z): barrel or wooden crate,
+ *  with the measured GLB extents at the exact per-point render scale. */
+export function campCrateShape(x: number, z: number, index: number): { r: number; top: number } {
+  if (index % 3 === 2) {
+    // barrel.glb: 0.898 tall, 0.70 wide, placed at 1.25.
+    return { r: 0.44, top: 1.13 };
+  }
+  // crate_wooden.glb: top face at 0.878, ~0.88 wide, scale 1.3 + roll * 0.15.
+  const s = 1.3 + propPlacementRoll(x, z, 5) * 0.15;
+  return { r: 0.44 * s, top: 0.878 * s };
+}
 
 /** The ore cart parked at a mine mouth. Tall enough to want climbing. */
 export const MINE_CART: SubProp = {

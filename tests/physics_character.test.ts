@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
-  CRATE_TOP,
+  campCrateShape,
   isBlocked,
   lineOfSightClear,
   MANTLE_REACH,
@@ -191,7 +191,9 @@ describe('swept collision and sliding', () => {
     setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
     const g = groundHeight(SPOT.x, cz, SEED);
     moveCharacter(params(), SPOT.x, g, cz, 0, 0, out);
-    expect(Math.hypot(out.x - SPOT.x, out.z - cz)).toBeGreaterThanOrEqual(0.65 + R - 1e-6);
+    expect(Math.hypot(out.x - SPOT.x, out.z - cz)).toBeGreaterThanOrEqual(
+      campCrateShape(SPOT.x, cz, 0).r + R - 1e-6,
+    );
   });
 });
 
@@ -319,7 +321,7 @@ describe('step up: walking over low obstacles', () => {
     const cz = SPOT.z + 2;
     setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
     const g = groundHeight(SPOT.x, cz, SEED);
-    expect(CRATE_TOP).toBeGreaterThan(MAX_STEP_HEIGHT); // fixture premise
+    expect(0.878 * 1.3).toBeGreaterThan(MAX_STEP_HEIGHT); // min crate top, fixture premise
     moveCharacter(params(), SPOT.x, g, SPOT.z, 0, 4, out);
     expect(out.stepped).toBe(0);
     expect(out.y).toBe(g);
@@ -418,7 +420,9 @@ describe('floor query', () => {
       groundHeight(SPOT.x, SPOT.z, SEED),
       6,
     );
-    expect(floorHeightAt(SEED, SPOT.x, cz, R, g + CRATE_TOP + 0.01)).toBeCloseTo(g + CRATE_TOP, 6);
+    expect(
+      floorHeightAt(SEED, SPOT.x, cz, R, g + campCrateShape(SPOT.x, cz, 0).top + 0.01),
+    ).toBeCloseTo(g + campCrateShape(SPOT.x, cz, 0).top, 6);
   });
 });
 

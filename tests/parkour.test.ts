@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   CAMPFIRE_MOVE_TOP,
-  CRATE_TOP,
+  campCrateShape,
   isBlocked,
   MANTLE_REACH,
   moverHeight,
@@ -155,7 +155,7 @@ describe('supportHeightAt: standable prop tops', () => {
 
   it('reports a crate top under the body, gated by maxY', () => {
     setActiveWorldContent(world({ crates: [[CX, CZ]] }));
-    const top = groundHeight(CX, CZ, SEED) + CRATE_TOP;
+    const top = groundHeight(CX, CZ, SEED) + campCrateShape(CX, CZ, 0).top;
     expect(supportHeightAt(SEED, CX, CZ, 0.5, top + 1)).toBeCloseTo(top, 6);
     // A top above the allowed reach never supports (no levitation).
     expect(supportHeightAt(SEED, CX, CZ, 0.5, top - 0.2)).toBe(-Infinity);
@@ -168,7 +168,7 @@ describe('supportHeightAt: standable prop tops', () => {
 
   it('supports only when the center meaningfully overlaps the top', () => {
     setActiveWorldContent(world({ crates: [[CX, CZ]] }));
-    const top = groundHeight(CX, CZ, SEED) + CRATE_TOP;
+    const top = groundHeight(CX, CZ, SEED) + campCrateShape(CX, CZ, 0).top;
     // Inside the support reach (crate r 0.65 + half body 0.25).
     expect(supportHeightAt(SEED, CX, CZ + 0.8, 0.5, top + 1)).toBeCloseTo(top, 6);
     // Outside the support reach but inside the collision radius: a graze, no capture.
@@ -193,7 +193,7 @@ describe('seatGroundedAt: instant-relocation end points', () => {
 
   it('seats on a crate top the mover previously stood level with', () => {
     setActiveWorldContent(world({ crates: [[CX, CZ]] }));
-    const top = groundHeight(CX, CZ, SEED) + CRATE_TOP;
+    const top = groundHeight(CX, CZ, SEED) + campCrateShape(CX, CZ, 0).top;
     const seat = seatGroundedAt(SEED, CX, CZ, 0.5, top);
     expect(seat.x).toBe(CX);
     expect(seat.z).toBe(CZ);
@@ -244,7 +244,7 @@ describe('height-gated prop collision', () => {
 
   it('crate passes a mover standing on its top and an airborne mantle within reach', () => {
     setActiveWorldContent(world({ crates: [[CX, CZ]] }));
-    const top = groundHeight(CX, CZ, SEED) + CRATE_TOP;
+    const top = groundHeight(CX, CZ, SEED) + campCrateShape(CX, CZ, 0).top;
     const onTop = resolvePosition(SEED, CX, CZ, 0.5, false, undefined, { y: top, lift: 0 });
     expect(onTop.x).toBe(CX);
     expect(onTop.z).toBe(CZ);
@@ -301,7 +301,7 @@ describe('parkour kernel: jump-over, mantle, momentum, coyote, air control', () 
     const deps = clientDeps(SEED);
     teleport(sim, CX, crateZ - 2.5);
     const actor = mirrorActor(sim);
-    const top = groundHeight(CX, crateZ, SEED) + CRATE_TOP;
+    const top = groundHeight(CX, crateZ, SEED) + campCrateShape(CX, crateZ, 0).top;
 
     let stoodOnTop = false;
     for (let i = 0; i < 80; i++) {
@@ -311,7 +311,7 @@ describe('parkour kernel: jump-over, mantle, momentum, coyote, air control', () 
     }
     // The raw apex (JUMP_VELOCITY^2 / 2g ~ 1.125) cannot clear the 1.35 rim:
     // only the mantle assist puts the body on top.
-    expect(JUMP_VELOCITY ** 2 / (2 * GRAVITY)).toBeLessThan(CRATE_TOP);
+    expect(JUMP_VELOCITY ** 2 / (2 * GRAVITY)).toBeLessThan(0.878 * 1.3); // min crate top
     expect(stoodOnTop).toBe(true);
     // ...and momentum carried the run over and beyond the crate.
     expect(actor.pos.z).toBeGreaterThan(crateZ + 1.2);
@@ -326,7 +326,7 @@ describe('parkour kernel: jump-over, mantle, momentum, coyote, air control', () 
     const deps = clientDeps(SEED);
     teleport(sim, CX, crateZ);
     const actor = mirrorActor(sim);
-    actor.pos.y = groundHeight(CX, crateZ, SEED) + CRATE_TOP;
+    actor.pos.y = groundHeight(CX, crateZ, SEED) + campCrateShape(CX, crateZ, 0).top;
     actor.prevPos = { ...actor.pos };
     actor.fallStartY = actor.pos.y;
 
@@ -356,7 +356,7 @@ describe('parkour kernel: jump-over, mantle, momentum, coyote, air control', () 
     const walkOff = (jumpDelay: number): Entity => {
       teleport(sim, CX, crateZ);
       const actor = mirrorActor(sim);
-      actor.pos.y = groundHeight(CX, crateZ, SEED) + CRATE_TOP;
+      actor.pos.y = groundHeight(CX, crateZ, SEED) + campCrateShape(CX, crateZ, 0).top;
       actor.prevPos = { ...actor.pos };
       actor.fallStartY = actor.pos.y;
       let airborneTicks = -1;

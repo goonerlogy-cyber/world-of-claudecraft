@@ -27,6 +27,7 @@ import {
   CHAPEL_HALL_ROOF_EAVE,
   CHAPEL_HALL_ROOF_TOP,
   CHAPEL_TOWER,
+  campCrateShape,
   DOCK_BOAT,
   DOCK_DRESSING,
   GRAVE_COUNT,
@@ -34,6 +35,7 @@ import {
   graveHeight,
   graveOffset,
   MINE_CART,
+  propPlacementRoll,
   SMITHY_DRESSING,
   STALL_DRESSING,
 } from './prop_layout';
@@ -117,9 +119,13 @@ export type Collider = CircleCollider | ObbCollider;
  * there, clamped at the eaves. `colliderTopAt` is the one sampler.
  */
 export interface TopSlope {
-  /** 'ridge': gable whose high line runs along the OBB's local x axis;
-   *  'cone': radial peak at the circle's centre (stall canopies). */
+  /** 'ridge': gable with a straight high line; 'cone': radial peak at the
+   *  circle's centre. */
   kind: 'ridge' | 'cone';
+  /** Which LOCAL axis the ridge's high line runs along ('x' default): the
+   *  surface falls across the other axis. Measured per asset (house_3 and
+   *  the coffins ridge along their local z, the market stands along x). */
+  axis?: 'x' | 'z';
   /** surface drop per yard of run away from the ridge line / peak */
   pitch: number;
   /** lowest surface height (absolute Y); the slope clamps here (the eaves) */
@@ -142,7 +148,10 @@ export function colliderTopAt(c: Collider, x: number, z: number): number {
   } else {
     const cos = Math.cos(-c.rot);
     const sin = Math.sin(-c.rot);
-    run = Math.abs(-(x - c.x) * sin + (z - c.z) * cos);
+    const lx = (x - c.x) * cos + (z - c.z) * sin;
+    const lz = -(x - c.x) * sin + (z - c.z) * cos;
+    // The surface falls across the axis PERPENDICULAR to the ridge line.
+    run = s.axis === 'z' ? Math.abs(lx) : Math.abs(lz);
   }
   return Math.max(s.eaveY, top - run * s.pitch);
 }
@@ -171,16 +180,24 @@ export const SUPPORT_OVERLAP = 0.5;
 // Exported so tests pin against the one authoritative value.
 export const CRATE_TOP = 1.35;
 export const CAMPFIRE_MOVE_TOP = 0.55;
-// Standable roofs: the market stall's canopy and the dock hut's stone roof.
-// Both meshes are scaled to 2.6 tall by `src/render/props.ts` (the stall
-// group sinks 0.06). The tops are SHAPED, not flat: the canopy is a cone
-// falling from its peak to the rim, the hut roof a gable falling from its
-// ridge to the eaves, so feet track the pitched surface the eye sees.
-// Above vault reach, inside climb reach: these are what the ledge grab is FOR.
+export { campCrateShape } from './prop_layout';
+// Standable roofs, all MEASURED from the shipped GLBs at the scales the
+// renderer places them (dequantized bounds; see docs/design/physics-asset-audit.md).
+// The tops are SHAPED: gables falling from a ridge line to real eaves, so
+// feet track the pitched surface the eye sees.
+// Market stand (market_stand_1/2 scaled to 3.1 x 2.6 x 2.5, group sunk 0.06):
+// a 3.1 x 2.5 BOX whose steep awning ridges along the stall's local x axis,
+// falling from 2.54 at the ridge to 1.50 at the front/back edges. The eave is
+// vault height (jump on at the edge), the ridge climb height.
+export const STALL_HALF_W = 1.55;
+export const STALL_HALF_D = 1.25;
 export const STALL_CANOPY_TOP = 2.54;
-export const STALL_CANOPY_EAVE = 2.1;
+export const STALL_CANOPY_EAVE = 1.5;
+// Dock hut / chapel hall use house_3, whose roof ridges along the model's
+// local z (the OBB depth) and whose eaves sit at 60 percent of the height:
+// walls to ~1.57, then the big pitched roof. The hut is scaled to 2.6 tall.
 export const DOCK_HUT_ROOF_TOP = 2.6;
-export const DOCK_HUT_ROOF_EAVE = 2.05;
+export const DOCK_HUT_ROOF_EAVE = 1.57;
 
 /** The mover's feet altitude plus how much standable lift it gets (the
  * airborne mantle assist). Both hosts derive it from the SAME entity fields so
@@ -283,9 +300,12 @@ function staticWorldColliders(seed: number): Collider[] {
         camGhost: true,
         moveTopY: topY(seed, hx, hz, CHAPEL_HALL_ROOF_TOP),
         standable: true,
+        // house_3 again: the ridge runs along the hall's local z (front to
+        // back), falling across its width to the measured eave line.
         topSlope: {
           kind: 'ridge',
-          pitch: (CHAPEL_HALL_ROOF_TOP - CHAPEL_HALL_ROOF_EAVE) / (CHAPEL_HALL.depth / 2),
+          axis: 'z',
+          pitch: (CHAPEL_HALL_ROOF_TOP - CHAPEL_HALL_ROOF_EAVE) / ((b.w * CHAPEL_HALL.wScale) / 2),
           eaveY: topY(seed, hx, hz, CHAPEL_HALL_ROOF_EAVE),
         },
       });
@@ -313,32 +333,51 @@ function staticWorldColliders(seed: number): Collider[] {
     });
   for (const s of PROPS.stalls)
     out.push({
-      type: 'circle',
+      // The stand mesh is a normalized 3.1 x 2.5 BOX at the stall's yaw (the
+      // old circle both overhung the flat sides and missed the corners), and
+      // its awning is a steep gable ridging along the stall's local x: vault
+      // onto the 1.5 eave at the front or back edge, walk up the fabric, or
+      // grab the higher slope directly. A grounded walk collides full-height.
+      type: 'obb',
       x: s.x,
       z: s.z,
-      r: s.r,
+      hw: STALL_HALF_W,
+      hd: STALL_HALF_D,
+      rot: s.rot,
       cameraTopY: topY(seed, s.x, s.z, 3.1),
       camGhost: true,
-      // The canopy is a roof you can climb onto and stand on: too tall to
-      // vault (a grounded walk still collides full-height), reachable by the
-      // ledge grab from a jump at the counter. Coned: feet follow the fabric
-      // from the rim up to the peak.
       moveTopY: topY(seed, s.x, s.z, STALL_CANOPY_TOP),
       standable: true,
       topSlope: {
-        kind: 'cone',
-        pitch: (STALL_CANOPY_TOP - STALL_CANOPY_EAVE) / s.r,
+        kind: 'ridge',
+        axis: 'x',
+        pitch: (STALL_CANOPY_TOP - STALL_CANOPY_EAVE) / STALL_HALF_D,
         eaveY: topY(seed, s.x, s.z, STALL_CANOPY_EAVE),
       },
     });
 
-  // mines: mound behind the timber portal
+  // mines: mound behind the timber portal, plus the portal's two upright
+  // timber posts (the overhead lintel beams start above head height and
+  // never block). Post positions/size mirror the render placement.
   for (const m of PROPS.mines) {
     const r = m.moundRadius ?? 5;
     const mound = rotY(0, -(m.moundOffset ?? 3.4), m.rot);
     const x = m.x + mound.x,
       z = m.z + mound.z;
     out.push({ type: 'circle', x, z, r, cameraTopY: topY(seed, x, z, r + 0.2), camGhost: true });
+    for (const sx of [-1.45, 1.45]) {
+      const post = rotY(sx, 0, m.rot);
+      const px = m.x + post.x;
+      const pz = m.z + post.z;
+      out.push({
+        type: 'circle',
+        x: px,
+        z: pz,
+        r: 0.27,
+        cameraTopY: topY(seed, px, pz, 3.4),
+        camGhost: true,
+      });
+    }
   }
 
   // Dock decks are raised walkable ground in world.ts; only the hut blocks.
@@ -355,14 +394,16 @@ function staticWorldColliders(seed: number): Collider[] {
       rot: d.rot,
       cameraTopY: topY(seed, x, z, 2.9),
       camGhost: true,
-      // The hut's low stone roof is a climbable perch, same deal as the stall
-      // canopy: full-height to a walk, a ledge grab away from a jump. Gabled:
-      // the ridge runs along the hut's long (local x) axis.
+      // The hut's roof is a climbable perch: full-height to a walk, a ledge
+      // grab away from a jump. house_3's ridge runs along its local z (the
+      // OBB depth axis), so the surface falls across |local x| to real eaves
+      // at 60 percent of the height (measured GLB profile).
       moveTopY: topY(seed, x, z, DOCK_HUT_ROOF_TOP),
       standable: true,
       topSlope: {
         kind: 'ridge',
-        pitch: (DOCK_HUT_ROOF_TOP - DOCK_HUT_ROOF_EAVE) / d.hutLocal.hd,
+        axis: 'z',
+        pitch: (DOCK_HUT_ROOF_TOP - DOCK_HUT_ROOF_EAVE) / d.hutLocal.hw,
         eaveY: topY(seed, x, z, DOCK_HUT_ROOF_EAVE),
       },
     });
@@ -423,17 +464,22 @@ function staticWorldColliders(seed: number): Collider[] {
       cameraTopY: topY(seed, t.x, t.z, 3.4 * t.scale),
       camGhost: true,
     });
-  for (const [x, z] of PROPS.crates)
+  PROPS.crates.forEach(([x, z], i) => {
+    // Camp clutter renders as a wooden crate OR (every third) a barrel, with
+    // a per-point scale roll: the collider takes the SAME roll, so its
+    // footprint and top match the exact mesh drawn at this point.
+    const shape = campCrateShape(x, z, i);
     out.push({
       type: 'circle',
       x,
       z,
-      r: 0.65,
-      cameraTopY: topY(seed, x, z, 1.35),
+      r: shape.r,
+      cameraTopY: topY(seed, x, z, shape.top),
       camGhost: true,
-      moveTopY: topY(seed, x, z, CRATE_TOP),
+      moveTopY: topY(seed, x, z, shape.top),
       standable: true,
     });
+  });
   for (const [x, z] of PROPS.campfires)
     out.push({
       type: 'circle',
@@ -454,8 +500,75 @@ function staticWorldColliders(seed: number): Collider[] {
       const ang = (i / ruin.columns) * Math.PI * 2;
       const x = ruin.x + Math.sin(ang) * ruin.ringR,
         z = ruin.z + Math.cos(ang) * ruin.ringR;
-      out.push({ type: 'circle', x, z, r: 0.6, cameraTopY: topY(seed, x, z, 4.3), camGhost: true });
+      // The renderer keeps every fourth column intact (a tall monolith) and
+      // breaks the rest into STUMPS of three deterministic heights. A stump
+      // is a standable pillar a jump can grab, not an infinite wall: top =
+      // column_broken's 0.65 native top x the render's y-scale, minus the
+      // 0.1 the group sinks.
+      const intact = i % 4 === 1;
+      if (intact) {
+        const sy = 3.5 + (i % 2) * 0.5;
+        out.push({
+          type: 'circle',
+          x,
+          z,
+          r: 0.6,
+          cameraTopY: topY(seed, x, z, sy - 0.1),
+          camGhost: true,
+        });
+      } else {
+        const sy = 1.7 + (i % 3) * 0.85;
+        const top = topY(seed, x, z, 0.65 * sy - 0.1);
+        out.push({
+          type: 'circle',
+          x,
+          z,
+          r: 0.6,
+          cameraTopY: top,
+          camGhost: true,
+          moveTopY: top,
+          standable: true,
+        });
+      }
     }
+    // Toppled relics at the ring's heart (render offsets from props.ts): the
+    // half-buried statue head, the carved block, and the fallen column lying
+    // across the grass, all solid and all standable. The column's yaw takes
+    // the SAME placement roll the renderer draws.
+    const hx = ruin.x - 2;
+    const hz = ruin.z - 3;
+    out.push({
+      type: 'circle',
+      x: hx - 0.4,
+      z: hz + 0.3,
+      r: 0.7,
+      cameraTopY: topY(seed, hx - 0.4, hz + 0.3, 1.35),
+      camGhost: true,
+      moveTopY: topY(seed, hx - 0.4, hz + 0.3, 1.35),
+      standable: true,
+    });
+    out.push({
+      type: 'circle',
+      x: hx + 2.1,
+      z: hz - 1.3,
+      r: 0.42,
+      cameraTopY: topY(seed, hx + 2.1, hz - 1.3, 0.64),
+      camGhost: true,
+      moveTopY: topY(seed, hx + 2.1, hz - 1.3, 0.64),
+      standable: true,
+    });
+    out.push({
+      type: 'obb',
+      x: hx - 1.2,
+      z: hz - 2.2,
+      hw: 1.6,
+      hd: 0.48,
+      rot: 0.6 + (propPlacementRoll(ruin.x, ruin.z, 32) - 0.5) * 0.4,
+      cameraTopY: topY(seed, hx - 1.2, hz - 2.2, 1.1),
+      camGhost: true,
+      moveTopY: topY(seed, hx - 1.2, hz - 2.2, 1.1),
+      standable: true,
+    });
   }
   for (const f of PROPS.fences) {
     const dx = f.x2 - f.x1,
@@ -996,6 +1109,60 @@ export function supportHeightAt(
   const list = grid.cells.get(cellKeyAt(x, z));
   if (!list) return -Infinity;
   return bestStandableTop(list, x, z, r, maxY);
+}
+
+/**
+ * Slope glue: the standable surface the body is STANDING ON (its sampled top
+ * at the previous position within a small tolerance of the feet) sampled at
+ * the NEW position. This is what lets a grounded body walk UP a pitched roof
+ * without the strict support query (capped at the feet, the anti-levitation
+ * rule) flickering it airborne every other tick. Only surfaces underfoot at
+ * the start qualify, so a taller prop BESIDE the body still never lifts it.
+ * Returns -Infinity when the body was not standing on any prop top.
+ */
+export function slopeGlueHeight(
+  seed: number,
+  fromX: number,
+  fromZ: number,
+  x: number,
+  z: number,
+  r: number,
+  feetY: number,
+): number {
+  let list: Collider[] | undefined;
+  let ox = 0;
+  let oz = 0;
+  if (isYumiMazePos(x) || isDelvePos(x) || isArenaPos(x)) return -Infinity;
+  if (x > DUNGEON_X_THRESHOLD) {
+    const inst = instanceLocal(x, z);
+    list = interiorCollidersFor(inst.dungeonId, inst.interior);
+    ox = inst.ox;
+    oz = inst.oz;
+  } else {
+    const grid = gridFor(seed);
+    list = grid.cells.get(cellKeyAt(fromX, fromZ));
+  }
+  if (!list) return -Infinity;
+  const reachR = r * SUPPORT_OVERLAP;
+  let best = -Infinity;
+  for (const c of list) {
+    if (!c.standable || c.moveTopY === undefined) continue;
+    const startTop = colliderTopAt(c, fromX - ox, fromZ - oz);
+    if (Math.abs(startTop - feetY) > 0.05) continue; // not the surface underfoot
+    const lx = x - ox;
+    const lz = z - oz;
+    if (c.type === 'circle') {
+      const dx = lx - c.x,
+        dz = lz - c.z;
+      const reach = c.r + reachR;
+      if (dx * dx + dz * dz >= reach * reach) continue;
+    } else {
+      const local = rotY(lx - c.x, lz - c.z, -c.rot);
+      if (Math.abs(local.x) >= c.hw + reachR || Math.abs(local.z) >= c.hd + reachR) continue;
+    }
+    best = Math.max(best, colliderTopAt(c, lx, lz));
+  }
+  return best;
 }
 
 /**
