@@ -336,7 +336,8 @@ describe('signed Pristine specimens (#1145)', () => {
     const slot = meta.inventory.find((s) => s.itemId === 'wolf_fang');
     expect(slot).toBeDefined();
     expect(slot?.instance?.signer).toBe('Alpha');
-    expect(sim.countItem('wolf_fang', a)).toBe(1);
+    // The whole rolled quantity, stamped (#2473), not a single token unit.
+    expect(sim.countItem('wolf_fang', a)).toBe(3);
   });
 
   it('every other specimen family grants its own jackpot beside the plain component (seed 5)', () => {
@@ -395,7 +396,10 @@ describe('signed Pristine specimens (#1145)', () => {
     const slot = meta.inventory.find((s) => s.itemId === 'homespun_cloth');
     expect(slot).toBeDefined();
     expect(slot?.instance?.signer).toBe('Alpha');
-    expect(sim.countItem('homespun_cloth', a)).toBe(1);
+    // This corpse's own rolled quantity (#2473): the bandit's cloth tier rolls
+    // two where the wolf's fang rolls three at the same seed, so the count
+    // tracks the ROLL rather than any constant the arm could hardcode.
+    expect(sim.countItem('homespun_cloth', a)).toBe(2);
   });
 
   it('a slot-full signed-family harvest falls back to the plain stack, never over capacity (seed 5)', () => {
@@ -627,12 +631,14 @@ describe('corpse signed-guard capacity vs merge room (#2139)', () => {
     sim.drainEvents();
     sim.harvestCorpse(mob.id, ['fang'], a);
     expect(mob.harvestClaimedBy).toBe(a);
-    // The signed grant merged into the same-signer stack: one unit, no new
-    // slot, no overflow, and the plain stack was never topped up.
+    // The signed grant merged into the same-signer stack: no new slot, no
+    // overflow, and the plain stack was never topped up. The stack absorbs the
+    // whole three-unit roll (#2473) because seventeen units of merge room
+    // cover it; the partial-room case is its own pin below.
     expect(m.inventory.length).toBe(cap);
     const signed = m.inventory.find((s) => s.itemId === 'wolf_fang' && s.instance);
     expect(signed?.instance?.signer).toBe('Alpha');
-    expect(signed?.count).toBe(4);
+    expect(signed?.count).toBe(6);
     const plain = m.inventory.find((s) => s.itemId === 'wolf_fang' && !s.instance);
     expect(plain?.count).toBe(1);
     // The signature survived: no downgrade notice fires.
@@ -686,6 +692,239 @@ describe('corpse signed-guard capacity vs merge room (#2139)', () => {
     // The plain component still arrived through its reserved top-up room.
     expect(sim.countItem('rough_hide', a)).toBeGreaterThan(1);
     expect(sim.drainEvents().filter((e) => e.type === 'gatherDowngrade')).toHaveLength(0);
+  });
+});
+
+// #2473: on a specimen-less family the component ITSELF is the signed grant,
+// so the signature and the yield ride one call. That call used to pass a
+// hardcoded count of 1 while the downgrade fallback right beneath it granted
+// the whole rolled quantity, so a rare roll was a yield LOSS and a fuller bag
+// was a yield GAIN. The premium arm must never be the smaller grant: it lands
+// the rolled quantity signed, or it does not land signed at all.
+describe('a signed specimen-less grant carries its rolled quantity (#2473)', () => {
+  it('draws no rng of its own: the count comes from the tier roll already taken', () => {
+    // The draw pin ON the arm the change touched. The sibling cases in
+    // tests/corpse_harvest_result_event.test.ts cover the plain and specimen
+    // paths; a counted grant that re-rolled anything per unit would show up
+    // here as more than the one tier roll plus one rarity roll.
+    const { sim, a, mob } = setup(5);
+    let draws = 0;
+    sim.rng.setObserver(() => draws++);
+    try {
+      sim.harvestCorpse(mob.id, ['fang'], a);
+    } finally {
+      sim.rng.setObserver(null);
+    }
+    // Never vacuous: this seed really does reach the multi-unit signed arm.
+    expect(sim.countItem('wolf_fang', a)).toBe(3);
+    expect(draws).toBe(2);
+  });
+
+  it('grants exactly the units its own downgrade fallback would, signed (seed 5, fang)', () => {
+    // Same seed, same corpse, same roll: the ONLY difference between the two
+    // runs is whether the bags can hold the instance. Rolling rare must not
+    // cost the player units, so the two counts have to agree.
+    const roomy = setup(5);
+    roomy.sim.harvestCorpse(roomy.mob.id, ['fang'], roomy.a);
+    const signedSlot = roomy.internals.players
+      .get(roomy.a)!
+      .inventory.find((s) => s.itemId === 'wolf_fang');
+    // The premium arm really is the one under test: the units landed stamped.
+    expect(signedSlot?.instance?.signer).toBe('Alpha');
+    const signedQty = roomy.sim.countItem('wolf_fang', roomy.a);
+
+    const full = setup(5);
+    fillBags(full.sim, full.internals, full.a);
+    const m = full.internals.players.get(full.a)!;
+    m.inventory[0] = { itemId: 'wolf_fang', count: 1 };
+    expect(m.inventory.length).toBe(bagCapacity(m.bags));
+    full.sim.harvestCorpse(full.mob.id, ['fang'], full.a);
+    expect(m.inventory.some((s) => s.itemId === 'wolf_fang' && s.instance)).toBe(false);
+    // Minus the unit seeded into the partial stack the fallback tops up.
+    const downgradedQty = full.sim.countItem('wolf_fang', full.a) - 1;
+
+    expect(signedQty).toBe(downgradedQty);
+    // Bound to the roll's own tier quantity too, so a future change that made
+    // BOTH arms grant one unit could not pass the equality above alone.
+    expect(downgradedQty).toBe(3);
+  });
+
+  it('grants the whole rolled quantity into ONE signed slot, never a unit per slot (seed 5)', () => {
+    // A mergeable signer payload stacks (#1165), so three units are one slot,
+    // not three: the counted grant must not cost the player bag space that a
+    // plain grant of the same size would not.
+    const { sim, internals, a, mob } = setup(5);
+    const m = internals.players.get(a)!;
+    const before = m.inventory.length;
+    sim.drainEvents();
+    sim.harvestCorpse(mob.id, ['fang'], a);
+    const signed = m.inventory.filter((s) => s.itemId === 'wolf_fang');
+    expect(signed).toHaveLength(1);
+    expect(signed[0].count).toBe(3);
+    expect(m.inventory.length).toBe(before + 1);
+    // The slot's count is the ledger's count is the roll: bound to the event
+    // rather than to the literal alone, so a change that moved the grant and
+    // the report together could not pass by agreeing with itself.
+    const result = sim
+      .drainEvents()
+      .find((e): e is Extract<typeof e, { type: 'harvestResult' }> => e.type === 'harvestResult');
+    expect(result?.yields).toEqual([
+      { itemId: 'wolf_fang', qty: signed[0].count, rarity: 'rare', kind: 'signed' },
+    ]);
+  });
+
+  it('the cloth family carries its rolled quantity the same way (seed 5)', () => {
+    // The second specimen-less family, so the fix is the ARM's behavior and not
+    // a fang-shaped special case. Its roll is TWO where the fang above is
+    // three, which is what proves the count is read off the roll.
+    const { sim, internals, a } = setup(5);
+    const template = MOBS.vale_bandit;
+    const corpse = createMob(7775, template, template.maxLevel, { x: 0, y: 0, z: 0 });
+    corpse.dead = true;
+    corpse.aiState = 'dead';
+    corpse.corpseTimer = 9999;
+    corpse.respawnTimer = 9999;
+    internals.entities.set(corpse.id, corpse);
+    sim.harvestCorpse(corpse.id, ['cloth'], a);
+    const slot = internals.players.get(a)!.inventory.find((s) => s.itemId === 'homespun_cloth');
+    expect(slot?.instance?.signer).toBe('Alpha');
+    expect(slot?.count).toBe(2);
+    // The two families really do land on different counts, so neither literal
+    // can be a constant the arm hardcoded.
+    const fang = setup(5);
+    fang.sim.harvestCorpse(fang.mob.id, ['fang'], fang.a);
+    expect(fang.sim.countItem('wolf_fang', fang.a)).not.toBe(slot?.count);
+  });
+
+  it('refuses the signature when only PART of the rolled quantity fits, never overflowing', () => {
+    // The state a "grant plainQty whenever ONE copy fits" fix would break, and
+    // the reason the guard counts the WHOLE quantity: zero free slots and a
+    // same-signer stack with room for exactly one unit LESS than the roll. Two
+    // units would merge and the third would push a fresh slot past capacity
+    // (#2139), so the grant takes the plain fallback and its mark-lost toast
+    // instead. The signature truncates, the yield does not: the same contract
+    // the zero-merge-room boundary above follows.
+    //
+    // Seeded ONE short of the roll on purpose. At any looser distance a guard
+    // that asked for `plainQty - 1` (or for a hardcoded 2) would refuse here
+    // too and the case could not tell it from the real one; at exactly
+    // plainQty - 1 that guard accepts, merges two, opens a slot, and overflows
+    // the bag to 17 of 16. The accept side of the same boundary is the case
+    // below.
+    const { sim, internals, a, mob } = setup(5);
+    fillBags(sim, internals, a);
+    const m = internals.players.get(a)!;
+    const cap = bagCapacity(m.bags);
+    const stack = stackSizeOf(ITEMS.wolf_fang);
+    m.inventory[0] = { itemId: 'wolf_fang', count: 1 };
+    m.inventory[1] = { itemId: 'wolf_fang', count: stack - 2, instance: { signer: 'Alpha' } };
+    expect(m.inventory.length).toBe(cap);
+    sim.drainEvents();
+    sim.harvestCorpse(mob.id, ['fang'], a);
+    expect(mob.harvestClaimedBy).toBe(a);
+    expect(m.inventory.length).toBe(cap);
+    // Untouched: a partially-landed signed grant is not a thing.
+    expect(m.inventory[1].count).toBe(stack - 2);
+    // The yield still arrived WHOLE, through the plain stack's reserved room.
+    expect(m.inventory[0].count).toBe(4);
+    expect(sim.drainEvents().filter((e) => e.type === 'gatherDowngrade')).toEqual([
+      { type: 'gatherDowngrade', pid: a, surface: 'corpse', lost: 'mark' },
+    ]);
+  });
+
+  it('takes the signature when the merge room EXACTLY covers the roll (seed 5)', () => {
+    // The accept side of the same boundary, one unit up from the case above:
+    // room for exactly three against a three-unit roll. A guard that asked for
+    // one unit more than the roll would refuse here and quietly cost players
+    // signatures they earned, which no other case in the suite can see.
+    const { sim, internals, a, mob } = setup(5);
+    fillBags(sim, internals, a);
+    const m = internals.players.get(a)!;
+    const cap = bagCapacity(m.bags);
+    const stack = stackSizeOf(ITEMS.wolf_fang);
+    m.inventory[0] = { itemId: 'wolf_fang', count: 1 };
+    m.inventory[1] = { itemId: 'wolf_fang', count: stack - 3, instance: { signer: 'Alpha' } };
+    expect(m.inventory.length).toBe(cap);
+    sim.drainEvents();
+    sim.harvestCorpse(mob.id, ['fang'], a);
+    expect(m.inventory.length).toBe(cap);
+    // The whole roll merged into the same-signer stack, filling it exactly.
+    expect(m.inventory[1].count).toBe(stack);
+    expect(m.inventory[1].instance?.signer).toBe('Alpha');
+    // The plain stack was never touched: the signature took the whole yield.
+    expect(m.inventory[0].count).toBe(1);
+    expect(sim.drainEvents().filter((e) => e.type === 'gatherDowngrade')).toHaveLength(0);
+  });
+
+  it('a partial-merge spill can cost a pending specimen its slot, deliberately (seed 11)', () => {
+    // The one behavior #2473 trades away, pinned so it stays a decision. With
+    // partial same-signer merge room the counted grant needs a fresh slot
+    // where the one-unit grant it replaced merged for free, so on a corpse
+    // that procs a specimen too the last free slot goes to the component and
+    // the jackpot truncates with its lost: 'find' notice. The component wins
+    // that slot because its loop runs first, not because it holds a claim on
+    // it: the pre-gate reserves PLAIN room, which a signed instance can never
+    // spend. THIS bag has no plain fang stack, so refusing the signature would
+    // route the fallback's uncapped addItem to the same slot and lose the mark
+    // for nothing. The sibling case below is the other half, where refusing
+    // WOULD have saved the jackpot and the trade is still taken.
+    const stack = stackSizeOf(ITEMS.wolf_fang);
+    const { sim, internals, a, mob } = setup(11);
+    const m = internals.players.get(a)!;
+    const cap = bagCapacity(m.bags);
+    // Exactly ONE free slot, and a same-signer fang stack one unit short of
+    // the roll, so the signed grant merges what it can and spills.
+    fillBags(sim, internals, a);
+    m.inventory[0] = { itemId: 'rough_hide', count: 14 };
+    m.inventory[1] = { itemId: 'wolf_fang', count: stack - 1, instance: { signer: 'Alpha' } };
+    m.inventory.pop();
+    expect(m.inventory.length).toBe(cap - 1);
+    sim.drainEvents();
+    sim.harvestCorpse(mob.id, undefined, a);
+    const events = sim.drainEvents();
+    // The signature landed whole, across the filled stack and the free slot.
+    expect(m.inventory.length).toBe(cap);
+    expect(sim.countItem('wolf_fang', a)).toBe(stack - 1 + 2);
+    expect(m.inventory.every((s) => s.itemId !== 'wolf_fang' || !!s.instance)).toBe(true);
+    // ... and the jackpot had nowhere left to go, so it truncated and said so.
+    expect(m.inventory.some((s) => s.itemId === 'pristine_hide')).toBe(false);
+    expect(events.filter((e) => e.type === 'gatherDowngrade')).toEqual([
+      { type: 'gatherDowngrade', pid: a, surface: 'corpse', lost: 'find' },
+    ]);
+  });
+
+  it('and it costs the specimen even when a plain stack could have taken the yield', () => {
+    // The refuting half of the case above, and the one the trade is actually
+    // argued on: the same spill, but with a PLAIN fang stack holding room for
+    // the whole roll. Refusing the signature here would have parked the yield
+    // in that stack for free and left the slot to the jackpot, so this is the
+    // state where holding back would genuinely have saved a Pristine Hide. It
+    // is still not held back, because a rule that refuses whenever a jackpot
+    // is pending costs tens of signatures for each specimen it saves. Pinning
+    // the losing side too, so the trade cannot be mistaken for an oversight.
+    const stack = stackSizeOf(ITEMS.wolf_fang);
+    const { sim, internals, a, mob } = setup(11);
+    const m = internals.players.get(a)!;
+    const cap = bagCapacity(m.bags);
+    fillBags(sim, internals, a);
+    m.inventory[0] = { itemId: 'rough_hide', count: 14 };
+    m.inventory[1] = { itemId: 'wolf_fang', count: 14 };
+    m.inventory[2] = { itemId: 'wolf_fang', count: stack - 1, instance: { signer: 'Alpha' } };
+    m.inventory.pop();
+    expect(m.inventory.length).toBe(cap - 1);
+    sim.drainEvents();
+    sim.harvestCorpse(mob.id, undefined, a);
+    const events = sim.drainEvents();
+    // The signature took the free slot: the plain stack it could have merged
+    // into on the downgrade arm is untouched.
+    expect(m.inventory.length).toBe(cap);
+    expect(m.inventory[1].count).toBe(14);
+    expect(m.inventory[2].count).toBe(stack);
+    // ... and the jackpot paid for it.
+    expect(m.inventory.some((s) => s.itemId === 'pristine_hide')).toBe(false);
+    expect(events.filter((e) => e.type === 'gatherDowngrade')).toEqual([
+      { type: 'gatherDowngrade', pid: a, surface: 'corpse', lost: 'find' },
+    ]);
   });
 });
 

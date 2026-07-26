@@ -2333,6 +2333,26 @@ export const hudChromeStrings = {
     // pin: tests/gather_event_i18n.test.ts).
     gatherLine: 'You gather: {name}.',
     gatherLineQty: 'You gather: {name} x{qty}.',
+    // Corpse-harvest feedback lines (#2457), rendered from the id-based
+    // harvestResult SimEvent. One line per DISTINCT item the harvest granted,
+    // and the SOLE lines for those grants: corpse harvest reaches the grant
+    // hub from six call sites and every one of them now stands its
+    // "You receive:" line down (the loot event's callerLogs flag), where it
+    // used to print one line and one ding per component. Like gatherLine
+    // above, these carry the quantity and splice {name} as a clickable,
+    // quality-colored item link, and stay worded APART from the loot family
+    // whose "You receive:" wording Hud.localizeLootText still matches on
+    // (contract pin: tests/gather_event_i18n.test.ts).
+    harvestLine: 'You harvest: {name}.',
+    harvestLineQty: 'You harvest: {name} x{qty}.',
+    // The Pristine specimen jackpot (#1145) takes its own line: it is a pure
+    // extra granted BESIDE its family's own plain component, so folding it
+    // into the line above would read as the same yield reported twice. The
+    // wording follows the rare-or-better disenchant's typed secondary
+    // (hudChrome.enchanting.disenchantedAlso), the shipped precedent for a
+    // second distinct yield on its own line. Always exactly one unit, so this
+    // family has no Qty sibling.
+    harvestSpecimenLine: 'You also recover {name}.',
     // Reel-in feedback line (Professions 2.0), rendered from the
     // id-based fishingResult SimEvent. Like gatherLine above, the sole line
     // for a landed catch and worded apart from both the loot family and the

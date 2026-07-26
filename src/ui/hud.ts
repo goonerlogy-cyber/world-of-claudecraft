@@ -241,7 +241,13 @@ import {
   gatherRareTierFor,
   gatherToolNoNodeKey,
 } from './gathering_view';
-import { craftedLineKey, gatherLineKey, grantItemToken, grantQtyText } from './grant_line_view';
+import {
+  craftedLineKey,
+  gatherLineKey,
+  grantItemToken,
+  grantQtyText,
+  harvestLineKey,
+} from './grant_line_view';
 import { isSelfOnlyAbility } from './hud/action_bar/ability_self_only';
 import {
   handleShiftClearContextMenu,
@@ -5040,6 +5046,10 @@ export class Hud {
     // The keyed-pool party rows reuse their DOM, so a rebuild never re-runs t() on
     // their badge tooltips / leave label; re-localize them in place on a switch.
     this.partyFramesPainter.relocalize();
+    // The world map rasterizes its labels into sprites keyed on the RESOLVED
+    // string, so a switch can never draw the old language; clearing is about not
+    // carrying dead rasters in the sprite budget.
+    this.mapPainter.relocalize();
     // The unit-frame move/lock buttons' labels are set once at construction + on
     // toggle, so re-localize them in place on a language switch (same reason as
     // the party rows above).
@@ -9153,8 +9163,12 @@ export class Hud {
             this.lootRolls.closeForItem(ev.text);
           // silent: the audio half of the same idea, and independent of it (a
           // caller can own the cue without owning the line). A professions
-          // grant with its own dedicated cue sets this so the generic ding
-          // doesn't stack on top of it.
+          // grant sets this when it owns the cue for the same grant: it has a
+          // dedicated one and the generic ding would stack on top, or it
+          // replays that same ding itself exactly once for a whole multi-item
+          // command (the harvestResult arm below), or its result event is
+          // cue-free by contract and the ding would be the only sound at all
+          // (the Maker's Bond unbind, #2458).
           if (!ev.silent) {
             if (
               ev.text.includes('loot') ||
@@ -9379,6 +9393,41 @@ export class Hud {
           audio.gather(ev.nodeType);
           const gatherRareTier = gatherRareTierFor(ev.rarity, ev.rareEvent);
           if (gatherRareTier) audio.gatherRareTier(gatherRareTier);
+          break;
+        }
+        case 'harvestResult': {
+          // Corpse-harvest feedback (#2457): ONE line per distinct granted
+          // item and exactly ONE cue for the whole command. Corpse harvest is
+          // the only profession flow whose single command grants several
+          // distinct items, so the sim sends a LIST and this arm walks it;
+          // before the event existed each of the six internal grants printed
+          // its own hub "You receive:" line and its own generic ding, so a
+          // two-component harvest burst two of each and a specimen proc four.
+          // Every grant behind this event is emitted silent + callerLogs
+          // (src/sim/interaction.ts harvestCorpse), so these lines and the one
+          // cue below are the whole of the harvest's feedback. The list is
+          // never empty (the sim skips the emit on a harvest that landed
+          // nothing), so the cue never fires for a no-op.
+          //
+          // Line color is the ROLLED material rarity, the gatherResult rule:
+          // the item link inside paints from the item's own def quality,
+          // because the same Rough Hide is granted at every roll and the link
+          // must not claim the hide itself got rarer.
+          for (const y of ev.yields) {
+            this.log(
+              t(harvestLineKey(y), {
+                name: grantItemToken(y.itemId),
+                qty: grantQtyText(y.qty),
+              }),
+              QUALITY_COLOR[y.rarity],
+            );
+          }
+          // The generic pickup ding, played ONCE for the command rather than
+          // once per component. A node harvest has a dedicated per-node-type
+          // recording (audio.gather above); a corpse harvest has never had one
+          // of its own, so it keeps the sound it has always made and the fix
+          // here is purely that it stops stacking.
+          audio.lootItem();
           break;
         }
         case 'gatherDenied': {

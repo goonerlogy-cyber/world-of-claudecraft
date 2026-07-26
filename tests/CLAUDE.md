@@ -31,7 +31,8 @@ Subdirectories (plus one shared fixture):
   `npm run test:browser`) for WebKit/Safari CSS, axe, target-size; never a bare `vitest run`.
 - `progression/`: mirrors `src/sim/progression/` (unit tests for the extracted modules).
 - `helpers/` + `util/`: shared cross-suite utilities (`fake_dom.ts`, the reusable
-  hand-rolled fake DOM for controller suites, `i18n_determinism.ts`, `alloc_probe.ts`).
+  hand-rolled fake DOM for controller suites, `i18n_determinism.ts`, `ts_files_under.ts`,
+  `alloc_probe.ts`).
 - `global_setup.ts`: runs on every vitest invocation (`vite.config.ts` `test.globalSetup`);
   mints the SFX Studio temp root (`WOC_SFX_STUDIO_TEST_ROOT`).
 
@@ -64,6 +65,15 @@ transport (see `social_system.test.ts`) rather than mocking. REST/RouteDef endpo
 use the `tests/server/helpers/` fakes (see Map), not a bespoke GameServer rig.
 
 ## Coverage & guards
+- **A guard that scans a directory of sources walks it with `helpers/ts_files_under.ts`,
+  never its own `readdirSync`.** A single-level read is a defect, not a style choice: the
+  day the scanned root grows a subdirectory, everything inside leaves the scan and the
+  guard stays green over a quietly smaller surface (#2485, then #2489 three times over).
+  Apart from `src/ui`, every scan root is flat today, so no assertion over the real tree
+  can tell a recursive walk from a flat one: pin the recursion with a `mkdtemp` fixture
+  that drives the guard's OWN producer, and keep the vacuity floor near the real count (a
+  floor sitting under it is what lets a moved file hide). Where the root IS deep, a
+  file-count floor over the real tree pins it directly, as `mobile_window_coverage` does.
 - `tests/parity/` is the golden-trace gate: ANY sim behavior change turns it red by
   design. Read `tests/parity/CLAUDE.md` first; regenerate only deliberately via
   `UPDATE_PARITY=1 npx vitest run tests/parity`, in its own reviewed commit.
@@ -71,13 +81,27 @@ use the `tests/server/helpers/` fakes (see Map), not a bespoke GameServer rig.
   render/ui/game/net/three import, a DOM global, or `Math.random`/`Date.now`/`performance.now`;
   run it after any `src/sim/` change. It ALSO completeness-checks the UI/render pure cores: a NEW
   pure core MUST follow the `*_view`/`*_core` naming (a bare name escapes the reverse sweep) and
-  be registered in `UI_PURE_CORES`/`RENDER_PURE_CORES`, or the guard fails.
+  be registered in `UI_PURE_CORES`/`RENDER_PURE_CORES`, or the guard fails. It then classifies
+  every REMAINING `src/ui` module (the ones the pure-core and `*_painter` name families miss,
+  window painters included: a `*_window.ts` is covered here AND by the painter gate below): one
+  that reaches for a browser global must be registered in `UI_PAINTER_HELPERS` (a host-agnostic
+  painter-side helper, which then may only mint its own canvas and must stay deterministic and
+  colorless) or in `UI_DOM_MODULES` (it owns browser state), and anything unregistered must touch
+  no browser global at all.
 - `guide.test.ts` is the wiki freshness gate: new/changed player-facing content in
   `src/sim/content/` fails it until `npm run wiki:content` regenerates (auto in `pretest`).
 - `css_corpus.test.ts` guards the CSS union corpus + brace balance (a dropped closing
   brace silently discards all later CSS); re-run after touching `src/styles/` or entry inline styles.
 - Perf budgets: `hud_perf_budget` (baseline in `hud_perf_budget.baseline.md`), `render_budget`,
   `tests/server/perf_gate` + `tick_perf_capture`, `alloc_probe` (probe in `tests/util/`).
+  `hud_perf_budget` also owns the painter half of the `src/ui` classification, over all three
+  DOM-adapter names (`*_painter.ts`, `*_window.ts`, `*_controller.ts`): a painter is facet-routed
+  (`HOT_PAINTERS`, no raw per-frame write and no forced-reflow read), canvas
+  (`CANVAS_PAINTERS`, same scans plus an identity proof that it really draws on a 2D context),
+  or cold, the registration-free default for a window (no forced-reflow read and no repeating
+  driver of its own, at any cadence). The raw-write scan is waived for cold NOT because a
+  window is cold, which this tree contradicts, but because a COUNT cannot tell a build-time
+  write from a repeated one; see the bucket 3 comment for the cadences involved.
 - SFX gates: the `sfx_*` suites (`sfx_conform`, `sfx_studio_server_security`,
   `tests/server/static_sfx_serving`, ...) mirror `npm run sfx:check`.
 - `malware_scan.test.ts` is the release-gate backstop (signatures from `scripts/malware_scan.mjs`,

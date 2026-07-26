@@ -13,6 +13,7 @@ import {
   gatherLineKey,
   grantItemToken,
   grantQtyText,
+  harvestLineKey,
   isMultiUnitGrant,
 } from '../src/ui/grant_line_view';
 import { parseChatSegments } from '../src/ui/hud/quest/quest_link';
@@ -114,5 +115,54 @@ describe('the quantity-variant key selectors', () => {
     expect(craftedLineKey(undefined)).toBe('hudChrome.crafting.craftedToast');
     expect(craftedLineKey(1)).toBe('hudChrome.crafting.craftedToast');
     expect(craftedLineKey(3)).toBe('hudChrome.crafting.craftedToastQty');
+  });
+
+  it('harvestLineKey switches families exactly at 2 for a component yield', () => {
+    // #2457: the corpse-harvest family. Its selector runs PER ENTRY, not per
+    // command, because one harvest grants several distinct items.
+    expect(harvestLineKey({ kind: 'plain', qty: 1 })).toBe('hudChrome.gathering.harvestLine');
+    expect(harvestLineKey({ kind: 'plain', qty: 2 })).toBe('hudChrome.gathering.harvestLineQty');
+    expect(harvestLineKey({ kind: 'plain', qty: 6 })).toBe('hudChrome.gathering.harvestLineQty');
+  });
+
+  it('harvestLineKey renders a SIGNED component with the same line as a plain one', () => {
+    // Deliberate, and the reason the discriminant is three-valued rather than
+    // a specimen boolean: the node-gather windfall's signed batch has never
+    // had a line of its own either, so two gathering surfaces must not
+    // announce the same mark differently. Both quantity variants are bound so
+    // a future divergence has to re-pin this on purpose.
+    expect(harvestLineKey({ kind: 'signed', qty: 1 })).toBe(
+      harvestLineKey({ kind: 'plain', qty: 1 }),
+    );
+    expect(harvestLineKey({ kind: 'signed', qty: 3 })).toBe(
+      harvestLineKey({ kind: 'plain', qty: 3 }),
+    );
+  });
+
+  it('harvestLineKey gives the specimen its own key, at every quantity', () => {
+    // A Pristine specimen is a pure extra granted BESIDE its family's own
+    // plain component, so it must never share that component's wording. It is
+    // always exactly one unit today, and the quantity arm is pinned anyway so
+    // a future multi-unit specimen cannot silently fall back to the component
+    // family's Qty key.
+    expect(harvestLineKey({ kind: 'specimen', qty: 1 })).toBe(
+      'hudChrome.gathering.harvestSpecimenLine',
+    );
+    expect(harvestLineKey({ kind: 'specimen', qty: 4 })).toBe(
+      'hudChrome.gathering.harvestSpecimenLine',
+    );
+  });
+
+  it('the harvest family never collides with the gather family', () => {
+    // Two gathering surfaces, two wordings: a copy/paste that pointed the
+    // corpse arm at the node-harvest keys would leave every other pin green.
+    const harvestKeys = [
+      harvestLineKey({ kind: 'plain', qty: 1 }),
+      harvestLineKey({ kind: 'plain', qty: 2 }),
+      harvestLineKey({ kind: 'specimen', qty: 1 }),
+    ];
+    expect(new Set(harvestKeys).size).toBe(3);
+    expect(harvestKeys).not.toContain(gatherLineKey(1));
+    expect(harvestKeys).not.toContain(gatherLineKey(2));
   });
 });

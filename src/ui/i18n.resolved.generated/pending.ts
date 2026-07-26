@@ -21,7 +21,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "es_ES": [
     "hudChrome.crafting.craftedToastQty",
@@ -35,7 +38,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "fr_FR": [
     "hudChrome.crafting.craftedToastQty",
@@ -49,7 +55,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "fr_CA": [
     "hudChrome.crafting.craftedToastQty",
@@ -63,7 +72,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "en_CA": [],
   "it_IT": [
@@ -78,7 +90,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "de_DE": [
     "hudChrome.crafting.craftedToastQty",
@@ -92,7 +107,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "zh_CN": [],
   "zh_TW": [],
@@ -110,7 +128,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "ru_RU": [],
   "cs_CZ": [
@@ -125,7 +146,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "nl_NL": [
     "hudChrome.crafting.craftedToastQty",
@@ -139,7 +163,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "pl_PL": [
     "hudChrome.crafting.craftedToastQty",
@@ -153,7 +180,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "id_ID": [
     "hudChrome.crafting.craftedToastQty",
@@ -167,7 +197,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "tr_TR": [
     "hudChrome.crafting.craftedToastQty",
@@ -181,7 +214,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "sv_SE": [
     "hudChrome.crafting.craftedToastQty",
@@ -195,7 +231,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "vi_VN": [
     "hudChrome.crafting.craftedToastQty",
@@ -209,7 +248,10 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ],
   "da_DK": [
     "hudChrome.crafting.craftedToastQty",
@@ -223,6 +265,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.replaceConfirmKeepsMasterwork",
     "hudChrome.enchanting.replaceConfirmKeepsSigner",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.gathering.harvestLine",
+    "hudChrome.gathering.harvestLineQty",
+    "hudChrome.gathering.harvestSpecimenLine"
   ]
 };

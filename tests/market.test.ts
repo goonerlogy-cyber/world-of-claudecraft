@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ITEMS } from '../src/sim/data';
+import { MARKET_PLAYER_LISTING_ID_BASE } from '../src/sim/market_listing_ids';
 import type { MarketQuery } from '../src/sim/market_query';
 import { Sim } from '../src/sim/sim';
 import type { Entity } from '../src/sim/types';
@@ -594,6 +595,177 @@ describe('the World Market — the Merchant', () => {
     expect(new Set(ids).size).toBe(ids.length); // no id collisions
   });
 
+  // ---------------------------------------------------------------------------
+  // Listing-id bands (#2463). House stock is reseeded from the id counter every
+  // boot and is never persisted; player listings are replayed from the save with
+  // the ids an OLDER build issued them. Growing the stock table therefore used to
+  // reissue ids the save still held, and the duplicate resolved to the house row.
+  // ---------------------------------------------------------------------------
+
+  it('reserves the low id band for house stock so growing it cannot reach player ids', () => {
+    const sim = makeWorld();
+    const house = sim.marketListings.filter((l) => l.house);
+    expect(house.length).toBeGreaterThan(0);
+    // every seeded row sits below the base, with room for the table to grow
+    expect(Math.max(...house.map((l) => l.id))).toBeLessThan(MARKET_PLAYER_LISTING_ID_BASE);
+    // and the room is real, not one row's worth: the stock table can grow to ten
+    // times its current size and still not reach the player band. "Below the
+    // base" alone would hold just as well with a base of house.length + 1, which
+    // is the state #2463 was filed about.
+    expect(house.length * 10).toBeLessThan(MARKET_PLAYER_LISTING_ID_BASE);
+
+    const seller = sim.addPlayer('warrior', 'Seller');
+    standAtMerchant(sim, seller);
+    sim.addItem('wolf_fang', 2, seller);
+    sim.marketList('wolf_fang', 1, 100, seller);
+    sim.marketList('wolf_fang', 1, 120, seller);
+
+    const mine = sim.marketListings.filter((l) => !l.house);
+    expect(mine.length).toBe(2);
+    expect(mine.every((l) => l.id >= MARKET_PLAYER_LISTING_ID_BASE)).toBe(true);
+  });
+
+  it('replays a healthy save with its listing ids untouched and resumes past it', () => {
+    const sim = makeWorld();
+    const row = (id: number) => ({
+      id,
+      sellerKey: 'legacy',
+      sellerName: 'Legacy',
+      itemId: 'wolf_fang',
+      count: 1,
+      price: 100,
+      secondsLeft: 600,
+    });
+    // Off-sequence ids, the shape a live save takes once sales and expiries have
+    // punched holes in it. They matter: an id the counter would have handed out
+    // anyway cannot tell "kept verbatim" apart from "renumbered off the counter".
+    sim.loadMarket({ listings: [row(1000), row(1007)], collections: [], nextListingId: 1008 });
+
+    // no gratuitous renumbering: only a real collision reissues an id
+    expect(sim.marketListings.filter((l) => !l.house).map((l) => l.id)).toEqual([1000, 1007]);
+
+    // and the counter resumed past the whole save, so the next listing cannot reuse one
+    const seller = sim.addPlayer('warrior', 'Seller');
+    standAtMerchant(sim, seller);
+    sim.addItem('wolf_fang', 1, seller);
+    sim.marketList('wolf_fang', 1, 50, seller);
+    const fresh = sim.marketListings.find((l) => l.sellerKey === marketSellerKey(seller))!;
+    expect(fresh.id).toBeGreaterThanOrEqual(1008);
+    const ids = sim.marketListings.map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('reissues a persisted listing id the reseeded house band has taken', () => {
+    const sim = makeWorld();
+    const seller = sim.addPlayer('warrior', 'Seller');
+    const buyer = sim.addPlayer('mage', 'Buyer');
+    standAtMerchant(sim, seller);
+    standAtMerchant(sim, buyer);
+    sim.players.get(buyer)!.copper = 1000;
+
+    // A save written by a build whose stock table was smaller: this id was a
+    // real player listing then and names a house row now.
+    const houseIds = sim.marketListings.filter((l) => l.house).map((l) => l.id);
+    const collidingId = houseIds[houseIds.length - 1];
+    sim.loadMarket({
+      listings: [
+        {
+          id: collidingId,
+          sellerKey: marketSellerKey(seller),
+          sellerName: 'Seller',
+          itemId: 'wolf_fang',
+          count: 2,
+          price: 300,
+          secondsLeft: 600,
+        },
+      ],
+      collections: [],
+      nextListingId: collidingId + 1,
+    });
+
+    const ids = sim.marketListings.map((l) => l.id);
+    expect(new Set(ids).size).toBe(ids.length); // one row per id
+    const mine = sim.marketListings.find(
+      (l) => !l.house && l.sellerKey === marketSellerKey(seller),
+    );
+    expect(mine).toBeTruthy();
+    expect(mine!.id).not.toBe(collidingId);
+    expect(mine!.id).toBeGreaterThanOrEqual(MARKET_PLAYER_LISTING_ID_BASE);
+    // the id-resolving call sites now land on the PLAYER row, not a house row
+    expect(sim.marketListings[sim.marketListings.findIndex((l) => l.id === mine!.id)].house).toBe(
+      false,
+    );
+    // and the house row that owns the old id is untouched
+    expect(sim.marketListings.filter((l) => l.house).length).toBe(houseIds.length);
+    expect(sim.marketListings.find((l) => l.id === collidingId)!.house).toBe(true);
+
+    // buying the player row hands over the player's goods, consumes the row, and
+    // pays the seller (the house arm paid no one and never depleted)
+    sim.marketBuy(mine!.id, buyer);
+    expect(sim.countItem('wolf_fang', buyer)).toBe(2);
+    expect(copperOf(sim, buyer)).toBe(700);
+    expect(sim.marketListings.some((l) => l.id === mine!.id)).toBe(false);
+    expect(sim.marketInfoFor(seller)!.collectionCopper).toBe(285); // 300 - 5%
+  });
+
+  it('lets the owner reclaim a listing whose saved id the house band had taken', () => {
+    const sim = makeWorld();
+    const seller = sim.addPlayer('warrior', 'Seller');
+    standAtMerchant(sim, seller);
+
+    const houseIds = sim.marketListings.filter((l) => l.house).map((l) => l.id);
+    const collidingId = houseIds[houseIds.length - 1];
+    sim.loadMarket({
+      listings: [
+        {
+          id: collidingId,
+          sellerKey: marketSellerKey(seller),
+          sellerName: 'Seller',
+          itemId: 'wolf_fang',
+          count: 2,
+          price: 300,
+          secondsLeft: 600,
+        },
+      ],
+      collections: [],
+      nextListingId: collidingId + 1,
+    });
+
+    const mine = sim.marketListings.find(
+      (l) => !l.house && l.sellerKey === marketSellerKey(seller),
+    )!;
+    expect(sim.marketInfoFor(seller)!.myListingCount).toBe(1);
+    sim.events.length = 0;
+
+    sim.marketCancel(mine.id, seller);
+
+    expect(errorsSince(sim)).toEqual([]); // no "That is not your listing"
+    expect(sim.countItem('wolf_fang', seller)).toBe(2); // escrow came back
+    expect(sim.marketListings.some((l) => l.id === mine.id)).toBe(false);
+    expect(sim.marketListings.filter((l) => l.house).length).toBe(houseIds.length);
+  });
+
+  it('burns no listing ids on save rows it cannot replay at all', () => {
+    // A row with no usable item id is dropped, so it must not consume a planned
+    // id on the way out: the id plan has to describe what actually lands in the
+    // book, or the boot log reports reissues for rows nobody ever sees and the
+    // counter skips ids for no reason.
+    const sim = makeWorld();
+    const before = sim.serializeMarket().nextListingId;
+    sim.loadMarket({
+      listings: [
+        // malformed id AND no item id: unusable on both counts
+        { id: Number.NaN, sellerKey: '12', sellerName: 'Seller', count: 1, price: 10 },
+        null,
+      ],
+      collections: [],
+      nextListingId: 1,
+    } as never);
+
+    expect(sim.marketListings.filter((l) => !l.house).length).toBe(0);
+    expect(sim.serializeMarket().nextListingId).toBe(before);
+  });
+
   it('keeps listings and collection items whose item id is no longer known', () => {
     // A content edit (rename/retire/typo of an item id) must NOT vaporize every
     // in-flight copy of that item sitting on the market at the next restart.
@@ -602,7 +774,10 @@ describe('the World Market — the Merchant', () => {
     const save = {
       listings: [
         {
-          id: 7,
+          // A player-band id, so this case stays about the unknown ITEM id: an
+          // id inside the reseeded house band would also be reissued by the
+          // #2463 repair, which is a different test's charter.
+          id: 1007,
           sellerKey: '12',
           sellerName: 'Seller',
           itemId: 'retired_relic', // not in ITEMS
@@ -621,7 +796,7 @@ describe('the World Market — the Merchant', () => {
           ],
         },
       ],
-      nextListingId: 8,
+      nextListingId: 1008,
     };
 
     const sim = makeWorld();
@@ -693,10 +868,13 @@ describe('World Market: a now-soulbound listing is returned to the seller', () =
     // A save from BEFORE heroic_mark became soulbound can still hold a listing of
     // it (the list-time gate only blocks NEW listings). loadMarket must not keep a
     // soulbound item on the market; it returns it to the seller's collection.
+    // Player-band ids (>= MARKET_PLAYER_LISTING_ID_BASE): ids inside the
+    // reseeded house band would be reissued by the #2463 repair, which would
+    // leave this case quietly testing the reclaim over a renumbered book.
     const save = {
       listings: [
         {
-          id: 1,
+          id: 1001,
           sellerKey,
           sellerName: 'Ada',
           itemId: 'heroic_mark',
@@ -705,7 +883,7 @@ describe('World Market: a now-soulbound listing is returned to the seller', () =
           secondsLeft: 1000,
         },
         {
-          id: 2,
+          id: 1002,
           sellerKey,
           sellerName: 'Ada',
           itemId: 'wolf_fang',
@@ -715,7 +893,7 @@ describe('World Market: a now-soulbound listing is returned to the seller', () =
         },
       ],
       collections: [],
-      nextListingId: 3,
+      nextListingId: 1003,
     };
     sim.market.loadMarket(save as never);
 
