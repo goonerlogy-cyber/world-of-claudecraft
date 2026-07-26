@@ -1,11 +1,12 @@
 import { STATIONS } from './content/professions';
 import {
   arenaOriginAt,
+  DUNGEON_FLOOR_Y,
   DUNGEON_X_THRESHOLD,
+  DUNGEONS,
   defaultDelveModules,
   delveAt,
   delveModuleLocal,
-  dungeonAt,
   getActiveWorldContent,
   INSTANCE_SLOT_COUNT,
   instanceOrigin,
@@ -19,15 +20,13 @@ import {
 import { ROCK_COLLIDER_MIN_SCALE, rockHeight, rockRadius } from './decoration_dims';
 import { type DelveModuleId, delveModuleColliders } from './delve_layout';
 import { isLitanyModuleId, litanyModuleLosColliders } from './delve_litany_layout';
+import { dungeonInstanceAt, INTERIOR_LAYOUTS } from './dungeon_floor';
+import { ARENA_LAYOUT, CRYPT_LAYOUT, layoutColliders } from './dungeon_layout';
 import {
-  ARENA_LAYOUT,
-  CRYPT_LAYOUT,
-  layoutColliders,
-  NYTHRAXIS_LAYOUT,
-  SANCTUM_LAYOUT,
-  TEMPLE_LAYOUT,
-} from './dungeon_layout';
-import {
+  CHAPEL_HALL,
+  CHAPEL_HALL_ROOF_EAVE,
+  CHAPEL_HALL_ROOF_TOP,
+  CHAPEL_TOWER,
   GRAVE_COUNT,
   GRAVE_RADIUS,
   graveHeight,
@@ -74,6 +73,8 @@ export interface CircleCollider {
    * mantle lift, so a jump at the rim hoists the body onto the top.
    */
   standable?: boolean;
+  /** Optional pitched surface for the standable top (see {@link TopSlope}). */
+  topSlope?: TopSlope;
   /** Engine bookkeeping: index into the owning grid's dedupe stamp buffer. */
   gridIndex?: number;
 }
@@ -93,6 +94,8 @@ export interface ObbCollider {
   moveTopY?: number;
   /** See {@link CircleCollider.standable}. */
   standable?: boolean;
+  /** See {@link CircleCollider.topSlope}. */
+  topSlope?: TopSlope;
   /**
    * Low fence rail: a grounded mover collides normally, but a mover that is
    * airborne above the rail (see `FENCE_RAIL_HEIGHT`) jumps clear of it. Set on
@@ -104,6 +107,43 @@ export interface ObbCollider {
 }
 
 export type Collider = CircleCollider | ObbCollider;
+
+/**
+ * A shaped (non-flat) standable top: real roofs pitch. `moveTopY` stays the
+ * MAXIMUM surface height (the ridge line or cone peak), so blocking logic can
+ * keep using it conservatively; the sampled surface only ever falls from
+ * there, clamped at the eaves. `colliderTopAt` is the one sampler.
+ */
+export interface TopSlope {
+  /** 'ridge': gable whose high line runs along the OBB's local x axis;
+   *  'cone': radial peak at the circle's centre (stall canopies). */
+  kind: 'ridge' | 'cone';
+  /** surface drop per yard of run away from the ridge line / peak */
+  pitch: number;
+  /** lowest surface height (absolute Y); the slope clamps here (the eaves) */
+  eaveY: number;
+}
+
+/**
+ * The standable surface height of a collider at a point: `moveTopY` for flat
+ * tops, the pitched surface for sloped ones (never above `moveTopY`, never
+ * below the eaves). Infinity for full-height colliders, which have no top.
+ */
+export function colliderTopAt(c: Collider, x: number, z: number): number {
+  const top = c.moveTopY;
+  if (top === undefined) return Infinity;
+  const s = c.topSlope;
+  if (!s) return top;
+  let run: number;
+  if (s.kind === 'cone' || c.type === 'circle') {
+    run = Math.hypot(x - c.x, z - c.z);
+  } else {
+    const cos = Math.cos(-c.rot);
+    const sin = Math.sin(-c.rot);
+    run = Math.abs(-(x - c.x) * sin + (z - c.z) * cos);
+  }
+  return Math.max(s.eaveY, top - run * s.pitch);
+}
 
 // ---------------------------------------------------------------------------
 // Parkour heights (movement-blocking tops, mantle, standable support)
@@ -130,12 +170,15 @@ export const SUPPORT_OVERLAP = 0.5;
 export const CRATE_TOP = 1.35;
 export const CAMPFIRE_MOVE_TOP = 0.55;
 // Standable roofs: the market stall's canopy and the dock hut's stone roof.
-// Both meshes stand 2.6 units tall at their peak (`src/render/props.ts` scales
-// them to exactly that); the standable plane sits a touch below the ridge so
-// feet read as ON the sloped surface rather than hovering at its very tip.
+// Both meshes are scaled to 2.6 tall by `src/render/props.ts` (the stall
+// group sinks 0.06). The tops are SHAPED, not flat: the canopy is a cone
+// falling from its peak to the rim, the hut roof a gable falling from its
+// ridge to the eaves, so feet track the pitched surface the eye sees.
 // Above vault reach, inside climb reach: these are what the ledge grab is FOR.
-export const STALL_CANOPY_TOP = 2.45;
-export const DOCK_HUT_ROOF_TOP = 2.45;
+export const STALL_CANOPY_TOP = 2.54;
+export const STALL_CANOPY_EAVE = 2.1;
+export const DOCK_HUT_ROOF_TOP = 2.6;
+export const DOCK_HUT_ROOF_EAVE = 2.05;
 
 /** The mover's feet altitude plus how much standable lift it gets (the
  * airborne mantle assist). Both hosts derive it from the SAME entity fields so
@@ -149,11 +192,13 @@ export function moverHeight(e: { pos: { y: number }; onGround: boolean }): Mover
   return { y: e.pos.y, lift: e.onGround ? 0 : MANTLE_REACH };
 }
 
-// Does the mover pass clean over this collider? Full-height colliders
-// (moveTopY undefined) never pass; standable tops grant the mantle lift.
-function passesOver(c: Collider, mover: MoverHeight | undefined): boolean {
+// Does the mover pass clean over this collider at (x, z)? Full-height
+// colliders (moveTopY undefined) never pass; standable tops grant the mantle
+// lift. Sloped tops are sampled at the mover's own point, so the eaves of a
+// roof pass a body the ridge would still wall.
+function passesOver(c: Collider, mover: MoverHeight | undefined, x: number, z: number): boolean {
   if (!mover || c.moveTopY === undefined) return false;
-  return c.moveTopY <= mover.y + (c.standable ? mover.lift : 0) + MOVE_TOP_EPS;
+  return colliderTopAt(c, x, z) <= mover.y + (c.standable ? mover.lift : 0) + MOVE_TOP_EPS;
 }
 
 function topY(seed: number, x: number, z: number, height: number): number {
@@ -206,6 +251,44 @@ function staticWorldColliders(seed: number): Collider[] {
   // crosses the eye-to-camera segment instead.
   for (const b of PROPS.buildings) {
     const height = b.kind === 'chapel' ? 10.8 : b.kind === 'inn' ? 7.8 : 8.0;
+    if (b.kind === 'chapel') {
+      // The chapel is COMPOSED (render/props.ts): full-height bell tower at
+      // the rear, squat entry hall in front. Collide the two shapes it
+      // actually draws: the tower stays a wall, the hall roof is a standable
+      // low roof a jump can grab (the climb's flagship in a town).
+      const towerOff = rotY(0, CHAPEL_TOWER.dz, b.rot);
+      out.push({
+        type: 'obb',
+        x: b.x + towerOff.x,
+        z: b.z + towerOff.z,
+        hw: (b.w * CHAPEL_TOWER.wScale) / 2,
+        hd: (b.d * CHAPEL_TOWER.dScale) / 2,
+        rot: b.rot,
+        cameraTopY: topY(seed, b.x, b.z, height),
+        camGhost: true,
+      });
+      const hallOff = rotY(0, b.d / 2 - CHAPEL_HALL.dzFromFront, b.rot);
+      const hx = b.x + hallOff.x;
+      const hz = b.z + hallOff.z;
+      out.push({
+        type: 'obb',
+        x: hx,
+        z: hz,
+        hw: (b.w * CHAPEL_HALL.wScale) / 2,
+        hd: CHAPEL_HALL.depth / 2,
+        rot: b.rot,
+        cameraTopY: topY(seed, hx, hz, CHAPEL_HALL_ROOF_TOP + 0.2),
+        camGhost: true,
+        moveTopY: topY(seed, hx, hz, CHAPEL_HALL_ROOF_TOP),
+        standable: true,
+        topSlope: {
+          kind: 'ridge',
+          pitch: (CHAPEL_HALL_ROOF_TOP - CHAPEL_HALL_ROOF_EAVE) / (CHAPEL_HALL.depth / 2),
+          eaveY: topY(seed, hx, hz, CHAPEL_HALL_ROOF_EAVE),
+        },
+      });
+      continue;
+    }
     out.push({
       type: 'obb',
       x: b.x,
@@ -236,9 +319,15 @@ function staticWorldColliders(seed: number): Collider[] {
       camGhost: true,
       // The canopy is a roof you can climb onto and stand on: too tall to
       // vault (a grounded walk still collides full-height), reachable by the
-      // ledge grab from a jump at the counter.
+      // ledge grab from a jump at the counter. Coned: feet follow the fabric
+      // from the rim up to the peak.
       moveTopY: topY(seed, s.x, s.z, STALL_CANOPY_TOP),
       standable: true,
+      topSlope: {
+        kind: 'cone',
+        pitch: (STALL_CANOPY_TOP - STALL_CANOPY_EAVE) / s.r,
+        eaveY: topY(seed, s.x, s.z, STALL_CANOPY_EAVE),
+      },
     });
 
   // mines: mound behind the timber portal
@@ -265,9 +354,15 @@ function staticWorldColliders(seed: number): Collider[] {
       cameraTopY: topY(seed, x, z, 2.9),
       camGhost: true,
       // The hut's low stone roof is a climbable perch, same deal as the stall
-      // canopy: full-height to a walk, a ledge grab away from a jump.
+      // canopy: full-height to a walk, a ledge grab away from a jump. Gabled:
+      // the ridge runs along the hut's long (local x) axis.
       moveTopY: topY(seed, x, z, DOCK_HUT_ROOF_TOP),
       standable: true,
+      topSlope: {
+        kind: 'ridge',
+        pitch: (DOCK_HUT_ROOF_TOP - DOCK_HUT_ROOF_EAVE) / d.hutLocal.hd,
+        eaveY: topY(seed, x, z, DOCK_HUT_ROOF_EAVE),
+      },
     });
   }
 
@@ -505,20 +600,26 @@ function staticWorldColliders(seed: number): Collider[] {
 // Interior collision sets, in instance-local coordinates. Derived from the
 // SAME plain-data layouts the renderer builds the KayKit modules from
 // (sim/dungeon_layout.ts), so render geometry and collision can no longer
-// drift apart. The boss dais is walkable and deliberately has no collider.
-const CRYPT_COLLIDERS: Collider[] = layoutColliders(CRYPT_LAYOUT);
-const SANCTUM_COLLIDERS: Collider[] = layoutColliders(SANCTUM_LAYOUT);
-const TEMPLE_COLLIDERS: Collider[] = layoutColliders(TEMPLE_LAYOUT);
+// drift apart. The boss dais is walkable and deliberately has no collider:
+// its elevation is FLOOR, not obstacle (world.ts groundHeight lifts it).
 const ARENA_COLLIDERS: Collider[] = layoutColliders(ARENA_LAYOUT);
-const NYTHRAXIS_COLLIDERS: Collider[] = layoutColliders(NYTHRAXIS_LAYOUT);
 
-// Interior collider sets keyed by DungeonDef.interior.
-const INTERIOR_COLLIDERS: Record<string, Collider[]> = {
-  crypt: CRYPT_COLLIDERS,
-  sanctum: SANCTUM_COLLIDERS,
-  temple: TEMPLE_COLLIDERS,
-  nythraxis: NYTHRAXIS_COLLIDERS,
-};
+// Per-DUNGEON interior sets: dungeons sharing a room plan (Hollow Crypt and
+// the Sunken Bastion are both 'crypt') dress their wall-side slots with
+// different furniture, so the standable tops differ per dungeon even where
+// the walls do not. Built lazily, cached by dungeon id.
+const interiorSetByDungeon = new Map<string, Collider[]>();
+function interiorCollidersFor(dungeonId: string | null, interior: string): Collider[] {
+  const key = dungeonId ?? `interior:${interior}`;
+  let set = interiorSetByDungeon.get(key);
+  if (!set) {
+    const layout = INTERIOR_LAYOUTS[interior] ?? CRYPT_LAYOUT;
+    const dressing = dungeonId ? DUNGEONS[dungeonId]?.tombDressing : undefined;
+    set = layoutColliders(layout, dressing, DUNGEON_FLOOR_Y);
+    interiorSetByDungeon.set(key, set);
+  }
+  return set;
+}
 
 // ---------------------------------------------------------------------------
 // Spatial grid + movement resolution
@@ -661,7 +762,7 @@ function resolveAgainst(
     let moved = false;
     for (const c of list) {
       if (ignoreFences && c.type === 'obb' && c.isFence) continue;
-      if (passesOver(c, mover)) continue;
+      if (passesOver(c, mover, px, pz)) continue;
       const res = pushOut(c, px, pz, r);
       if (res) {
         px = res.x;
@@ -674,21 +775,33 @@ function resolveAgainst(
   return { x: px, z: pz };
 }
 
-function instanceLocal(x: number, z: number): { ox: number; oz: number; interior: string } {
-  const dungeon = dungeonAt(x);
-  const index = dungeon?.index ?? 0;
+function instanceLocal(
+  x: number,
+  z: number,
+): {
+  ox: number;
+  oz: number;
+  interior: string;
+  dungeonId: string | null;
+} {
+  const inst = dungeonInstanceAt(x, z);
+  if (inst) {
+    return { ox: inst.ox, oz: inst.oz, interior: inst.interior, dungeonId: inst.dungeonId };
+  }
+  // Past the threshold but outside every dungeon band (legacy fallback):
+  // resolve against index 0's slots as a plain crypt, as before.
   let best = 0,
     bestD = Infinity;
   for (let i = 0; i < INSTANCE_SLOT_COUNT; i++) {
-    const o = instanceOrigin(index, i);
+    const o = instanceOrigin(0, i);
     const d = Math.abs(z - o.z);
     if (d < bestD) {
       bestD = d;
       best = i;
     }
   }
-  const o = instanceOrigin(index, best);
-  return { ox: o.x, oz: o.z, interior: dungeon?.interior ?? 'crypt' };
+  const o = instanceOrigin(0, best);
+  return { ox: o.x, oz: o.z, interior: 'crypt', dungeonId: null };
 }
 
 // Resolve a movement destination against all static geometry. Movers slide
@@ -723,9 +836,11 @@ export function resolvePosition(
     return { x: local.x + o.x, z: local.z + o.z };
   }
   if (x > DUNGEON_X_THRESHOLD) {
-    const { ox, oz, interior } = instanceLocal(x, z);
-    const colliders = INTERIOR_COLLIDERS[interior] ?? CRYPT_COLLIDERS;
-    const local = resolveAgainst(colliders, x - ox, z - oz, r, ignoreFences);
+    const { ox, oz, interior, dungeonId } = instanceLocal(x, z);
+    const colliders = interiorCollidersFor(dungeonId, interior);
+    // `mover` rides through so a jumping body passes over (and lands on) the
+    // standable furniture tops, exactly as it does in the open world.
+    const local = resolveAgainst(colliders, x - ox, z - oz, r, ignoreFences, mover);
     return { x: local.x + ox, z: local.z + oz };
   }
   const grid = gridFor(seed);
@@ -819,28 +934,59 @@ export function supportHeightAt(
   r: number,
   maxY: number,
 ): number {
-  if (isYumiMazePos(x) || isDelvePos(x) || isArenaPos(x) || x > DUNGEON_X_THRESHOLD) {
-    return -Infinity;
+  // Region order matters: every instanced band sits past the dungeon
+  // threshold, so the specific bands must be ruled out FIRST (the same
+  // routing resolvePosition uses).
+  if (isYumiMazePos(x) || isDelvePos(x) || isArenaPos(x)) return -Infinity;
+  if (x > DUNGEON_X_THRESHOLD) {
+    // Dungeon interiors: the furniture tops (coffin lids, cargo stacks) are
+    // standable surfaces exactly like the open world's crates and canopies.
+    const { ox, oz, interior, dungeonId } = instanceLocal(x, z);
+    return bestStandableTop(interiorCollidersFor(dungeonId, interior), x - ox, z - oz, r, maxY);
   }
   const grid = gridFor(seed);
   const list = grid.cells.get(cellKeyAt(x, z));
   if (!list) return -Infinity;
+  return bestStandableTop(list, x, z, r, maxY);
+}
+
+/**
+ * The interior collider set and instance frame at a dungeon-interior world
+ * point, for queries that scan colliders directly (the ledge grab's fit and
+ * headroom checks). Null everywhere else, including the delve/arena/yumi
+ * bands, which keep their own contracts.
+ */
+export function interiorColliderFrame(
+  x: number,
+  z: number,
+): { list: Collider[]; ox: number; oz: number } | null {
+  if (x <= DUNGEON_X_THRESHOLD) return null;
+  if (isYumiMazePos(x) || isDelvePos(x) || isArenaPos(x)) return null;
+  const { ox, oz, interior, dungeonId } = instanceLocal(x, z);
+  return { list: interiorCollidersFor(dungeonId, interior), ox, oz };
+}
+
+/** The highest standable `moveTopY` at or below `maxY` under (x, z) in a
+ *  collider list (coordinates in the list's own frame). */
+function bestStandableTop(list: Collider[], x: number, z: number, r: number, maxY: number): number {
   let best = -Infinity;
   const reachR = r * SUPPORT_OVERLAP;
   for (const c of list) {
     if (!c.standable || c.moveTopY === undefined) continue;
-    if (c.moveTopY > maxY + MOVE_TOP_EPS || c.moveTopY <= best) continue;
+    // The SAMPLED surface (a pitched roof supports at its local height, not
+    // its ridge) both gates against maxY and becomes the support height.
     if (c.type === 'circle') {
       const dx = x - c.x,
         dz = z - c.z;
       const reach = c.r + reachR;
-      if (dx * dx + dz * dz < reach * reach) best = c.moveTopY;
+      if (dx * dx + dz * dz >= reach * reach) continue;
     } else {
       const local = rotY(x - c.x, z - c.z, -c.rot);
-      if (Math.abs(local.x) < c.hw + reachR && Math.abs(local.z) < c.hd + reachR) {
-        best = c.moveTopY;
-      }
+      if (Math.abs(local.x) >= c.hw + reachR || Math.abs(local.z) >= c.hd + reachR) continue;
     }
+    const top = colliderTopAt(c, x, z);
+    if (top > maxY + MOVE_TOP_EPS || top <= best) continue;
+    best = top;
   }
   return best;
 }
@@ -1137,8 +1283,8 @@ export function cameraOcclusion(
     );
   }
   if (ax > DUNGEON_X_THRESHOLD) {
-    const { ox, oz, interior } = instanceLocal(ax, az);
-    const colliders = INTERIOR_COLLIDERS[interior] ?? CRYPT_COLLIDERS;
+    const { ox, oz, interior, dungeonId } = instanceLocal(ax, az);
+    const colliders = interiorCollidersFor(dungeonId, interior);
     return sweepColliders(colliders, ax - ox, ay, az - oz, bx - ox, by, bz - oz, pad, true);
   }
   const grid = gridFor(seed);
@@ -1197,8 +1343,8 @@ function sightBlockedAt(seed: number, x: number, z: number, r: number, sightY: n
     return overlapsAny(ARENA_COLLIDERS, x - o.x, z - o.z, false);
   }
   if (x > DUNGEON_X_THRESHOLD) {
-    const { ox, oz, interior } = instanceLocal(x, z);
-    return overlapsAny(INTERIOR_COLLIDERS[interior] ?? CRYPT_COLLIDERS, x - ox, z - oz, false);
+    const { ox, oz, interior, dungeonId } = instanceLocal(x, z);
+    return overlapsAny(interiorCollidersFor(dungeonId, interior), x - ox, z - oz, false);
   }
   const grid = gridFor(seed);
   const list = grid.cells.get(cellKeyAt(x, z));

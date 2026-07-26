@@ -18,7 +18,13 @@
 // No rng, no wall clock, no allocation beyond the single result object the
 // caller owns.
 
-import { type Collider, queryOpenWorldColliders, supportHeightAt } from '../colliders';
+import {
+  type Collider,
+  colliderTopAt,
+  interiorColliderFrame,
+  queryOpenWorldColliders,
+  supportHeightAt,
+} from '../colliders';
 import { groundHeight, terrainSteepnessAt } from '../world';
 
 /** A ledge must be at least this far above the feet, or it is a step. */
@@ -60,10 +66,12 @@ export interface LedgeQuery {
 
 // Is the body clear at (x, z) with its feet on `feetY`, allowing for the
 // headroom a climb needs? Anything whose top rises above the feet blocks.
+// Sloped tops are sampled at the fit point: the eave a climb lands on sits
+// below the ridge, and must not veto its own grab.
 function fitsOn(x: number, z: number, feetY: number, radius: number): boolean {
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
-    if (c.moveTopY !== undefined && c.moveTopY <= feetY + 1e-3) continue;
+    if (c.moveTopY !== undefined && colliderTopAt(c, x, z) <= feetY + 1e-3) continue;
     if (c.type === 'circle') {
       const dx = x - c.x;
       const dz = z - c.z;
@@ -101,9 +109,21 @@ export function findLedgeGrab(q: LedgeQuery, x: number, y: number, z: number): L
   const minY = y + LEDGE_GRAB_MIN;
   const maxY = y + LEDGE_GRAB_MAX;
 
+  // Fit/headroom candidates: the open-world grid, or the dungeon interior's
+  // collider set in its instance-local frame (a crypt pillar must veto a
+  // climb exactly like a town wall does).
   candidates.length = 0;
-  const pad = q.radius + LEDGE_GRAB_FORWARD + 1;
-  queryOpenWorldColliders(q.seed, px - pad, pz - pad, px + pad, pz + pad, candidates);
+  const interior = interiorColliderFrame(px, pz);
+  let fx = px;
+  let fz = pz;
+  if (interior) {
+    for (const c of interior.list) candidates.push(c);
+    fx = px - interior.ox;
+    fz = pz - interior.oz;
+  } else {
+    const pad = q.radius + LEDGE_GRAB_FORWARD + 1;
+    queryOpenWorldColliders(q.seed, px - pad, pz - pad, px + pad, pz + pad, candidates);
+  }
 
   // The best surface under the hands: a standable prop top, or the terrain
   // itself where it steps up (a natural ledge or a bank).
@@ -123,8 +143,9 @@ export function findLedgeGrab(q: LedgeQuery, x: number, y: number, z: number): L
   if (topY === -Infinity) return null;
 
   // The body must fit where it is going to end up, with room over its head.
-  if (!fitsOn(px, pz, topY + 1e-3, q.radius)) return null;
-  if (!fitsOn(px, pz, topY + LEDGE_HEADROOM, q.radius)) return null;
+  // (fx, fz) is the candidates' own frame: world outside, instance-local in.
+  if (!fitsOn(fx, fz, topY + 1e-3, q.radius)) return null;
+  if (!fitsOn(fx, fz, topY + LEDGE_HEADROOM, q.radius)) return null;
 
   result.topY = topY;
   result.x = px;

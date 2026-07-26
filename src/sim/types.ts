@@ -2371,6 +2371,14 @@ export interface DungeonDef {
   spawns: DungeonSpawn[];
   objects?: DungeonObjectSpawn[];
   interior: 'crypt' | 'sanctum' | 'temple' | 'nythraxis'; // renderer + collider interior builder key
+  /**
+   * What dresses this dungeon's wall-side obstacle slots (matches the render
+   * variant): coffins get one standable lid, cargo splits into the crate
+   * stack and cask the renderer draws. Absent, slots stay full-height walls
+   * (the temple's altars). Drives the physical colliders in
+   * `dungeon_layout.ts` layoutColliders.
+   */
+  tombDressing?: 'coffins' | 'cargo';
   suggestedPlayers: number;
   enterText: string;
   leaveText: string;

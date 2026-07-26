@@ -312,13 +312,18 @@ function stepInstancedRegion(
     // cliffs, steep mountainsides, and the world rim are walls, not ramps:
     // an uphill step is blocked when the step itself is too steep OR when it
     // lands on ground whose true gradient is unwalkable (so approaching at an
-    // angle cannot cheat the limit)
+    // angle cannot cheat the limit). A rise within MAX_STEP_HEIGHT is a
+    // STRIDE, never a wall: the only interior elevation is the boss dais, a
+    // single discrete plateau, so the step allowance cannot ladder the way a
+    // per-tick allowance on continuous terrain would (the open-world kerb
+    // rule, applied to the one kerb interiors have).
     if (p.onGround && !swimming) {
       const h0 = groundHeight(p.pos.x, p.pos.z, deps.seed);
       const h1 = groundHeight(nx, nz, deps.seed);
       const run = Math.hypot(nx - p.pos.x, nz - p.pos.z);
       if (
         h1 > h0 &&
+        h1 - h0 > MAX_STEP_HEIGHT &&
         run > 1e-5 &&
         ((h1 - h0) / run > MAX_CLIMB_SLOPE ||
           terrainSteepnessAt(nx, nz, deps.seed) > MAX_CLIMB_SLOPE)
@@ -330,8 +335,11 @@ function stepInstancedRegion(
       // Airborne, the same wall rule applies: terrain rising above the body
       // that could not be walked up cannot be jumped into either. The player
       // drops at the base of the face instead of beaching partway up it.
+      // The mantle allowance mirrors the open world: a floor no higher than
+      // the feet plus MANTLE_REACH is something the arc carries onto (the
+      // dais rim), not a face to bounce off.
       const h1 = groundHeight(nx, nz, deps.seed);
-      if (h1 > p.pos.y) {
+      if (h1 > p.pos.y + MANTLE_REACH) {
         const h0 = groundHeight(p.pos.x, p.pos.z, deps.seed);
         const run = Math.hypot(nx - p.pos.x, nz - p.pos.z);
         if (
