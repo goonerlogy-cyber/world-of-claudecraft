@@ -19,7 +19,8 @@ may be flat or shaped (`TopSlope`), sampled through `colliderTopAt`.
 | Wells | full-height circle | Roof (3.6) is deliberately out of climb reach. |
 | Dock decks | raised walkable ground (`world.ts`) | Planks are floor, not colliders. |
 | Dock hut | OBB with a standable gabled roof | Ridge along the hut's long axis. |
-| Dock loose dressing (two barrels, one crate) | none (walk-through) | KNOWN GAP: visual-only, low-traffic; smallest footprints on the dock. |
+| Dock loose dressing (two barrels, one crate) | standable circles at measured heights | Stride/vault; tops ride the deck surface via groundHeight. |
+| Moored rowboat | standable OBB deck (stride height) | Afloat at the waterline or hauled on the bank, same predicate the renderer seats the mesh with; you can step in and stand. |
 | Tents | full-height circle | Cloth cones are not standable on purpose. |
 | Crates | standable circle (CRATE_TOP 1.35) | The classic vault. |
 | Campfires | pass-over top, NOT standable | A jump clears the flame; nobody perches in it. |
@@ -47,6 +48,18 @@ Delves, the arena, and the Yumi maze keep flat floors and full-height wall
 sets (their own `CLAUDE.md` contracts). KNOWN GAP: the delve finale rooms
 draw the same dais platform visually but their floor stays flat; lifting it
 means extending `dungeon_floor.ts` to the delve module frames, a follow-up.
+
+## Forced movement obeys the same ladder
+
+Heroic Leap's landing sweep re-resolves diverted points at the arc's crest
+(takeoff feet + FLIGHT_APEX), so a canopy or crate stack under the crest is
+flown over and landed ON (at its sampled sloped height), while a full-height
+wall still ends the sweep at its face; knockback seats keep the mover's own
+feet height and can never embed a body in a prop; warrior Charge requires
+line of sight and paths around standable props at ground level (they are
+walls to a runner). Pinned by `tests/physics_audit_interactions.test.ts`,
+which also pins client-predictor parity inside dungeons, persistence on a
+roof, and the step-smooth easing for the dais rim.
 
 ## Verification anchors
 
