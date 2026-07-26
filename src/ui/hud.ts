@@ -1838,7 +1838,8 @@ export class Hud {
     // every other touch-facing HUD button; desktop mouse/keyboard is preserved.
     bindTouchTap(this.releaseSpiritBtnEl, () => {
       if (this.sim.arenaInfo?.match) return;
-      if (this.sim.bgInfo?.match) return; // Ravenrift: the wave clock revives
+      // Ravenrift releases like the open world: the spirit rises in the keep
+      // graveyard and waits for the wave (the sim routes the destination).
       this.sim.releaseSpirit();
     });
     bindTouchTap(this.resurrectCorpseBtnEl, () => this.sim.resurrectAtCorpse());
