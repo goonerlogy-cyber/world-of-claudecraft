@@ -80,11 +80,15 @@ describe('battleground render manifest derives from the layout', () => {
 
   it('keeps the postern gap columns open: no wall module inside the gap span', () => {
     for (const base of BG_BASES) {
-      // The postern wall column: Crimson's west (x=-14), Azure's east (x=+14),
+      // The postern wall column: Crimson's west (x=-16), Azure's east (x=+16),
       // recovered from the layout (the segment column split into TWO runs).
-      const sideX = base.team === 0 ? -14 : 14;
+      const sideX = base.team === 0 ? -16 : 16;
       const column = battlegroundWallSegments().filter(
-        (s) => !isRuinBlock(s) && s.x === sideX && Math.sign(s.z) === Math.sign(base.flag.z),
+        (s) =>
+          !isRuinBlock(s) &&
+          s.hd > s.hw && // a z-run: courtyard x-runs sharing the x are not walls of this column
+          s.x === sideX &&
+          Math.sign(s.z) === Math.sign(base.flag.z),
       );
       expect(column.length, `team ${base.team} postern column`).toBe(2);
       const [a, b] = [...column].sort((s1, s2) => s1.z - s2.z);
@@ -104,12 +108,12 @@ describe('battleground render manifest derives from the layout', () => {
     // no wall or ruin module may intrude into a crossing span on the curtain
     // line (the render-side twin of the postern-gap pin)
     const crossings: { z: number; lo: number; hi: number }[] = [
-      { z: -20, lo: -26, hi: -14 }, // south gatehouse span (its room walls own it)
-      { z: -20, lo: 4, hi: 12 }, // south main gate
-      { z: -20, lo: 26, hi: 30 }, // south flank arch
-      { z: 20, lo: 14, hi: 26 }, // north mirrors
-      { z: 20, lo: -12, hi: -4 },
-      { z: 20, lo: -30, hi: -26 },
+      { z: -56, lo: -34, hi: -18 }, // south gatehouse span (its room walls own it)
+      { z: -56, lo: 8, hi: 18 }, // south main gate
+      { z: -56, lo: 38, hi: 43 }, // south flank arch
+      { z: 56, lo: 18, hi: 34 }, // north mirrors
+      { z: 56, lo: -18, hi: -8 },
+      { z: 56, lo: -43, hi: -38 },
     ];
     for (const c of crossings) {
       const intruders = [...m.walls, ...m.ruin].filter((p) => {
@@ -207,8 +211,8 @@ describe('battleground render manifest derives from the layout', () => {
   it('keeps floor tiles inside the walled field and wall heights on the collider height', () => {
     expect(m.floors.length).toBeGreaterThan(0);
     for (const f of m.floors) {
-      expect(Math.abs(f.x)).toBeLessThan(34);
-      expect(Math.abs(f.z)).toBeLessThan(60);
+      expect(Math.abs(f.x)).toBeLessThan(50);
+      expect(Math.abs(f.z)).toBeLessThan(140);
     }
     // Solid walls render at the collider's full height, EXCEPT the low mouth
     // barricades, which render at half height (their collider tops match).

@@ -593,7 +593,9 @@ export const BG_BAND_X_MAX = 20000;
 export const BG_X = 16400; // battleground instances share this x; slots stack along z
 export const BG_SLOT_COUNT = 3; // concurrent 5v5 matches the world can host
 const BG_Z0 = -1500;
-const BG_SLOT_SPACING = 300; // > the 68x120 field footprint so slots never overlap
+const BG_SLOT_SPACING = 460; // > the 100x280 field, with enough margin that
+// cross-slot player pairs (>= 180yd apart) stay beyond the DEFAULT interest
+// radii: the raised in-band radius applies to SAME-slot pairs only
 
 export function battlegroundOrigin(slot: number): { x: number; z: number } {
   return { x: BG_X, z: BG_Z0 + slot * BG_SLOT_SPACING };

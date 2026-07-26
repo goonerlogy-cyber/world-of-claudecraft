@@ -441,7 +441,7 @@ describe('Ravenrift: carrier vulnerability (Focused Assault lineage)', () => {
     tp(sim, carrier, match.flags[1].home.x, match.flags[1].home.z);
     sim.bgFlagAction(carrier);
     sim.tick();
-    tp(sim, carrier, match.flags[1].home.x + 6, match.flags[1].home.z + 10); // off the stand
+    tp(sim, carrier, match.flags[1].home.x + 6, match.flags[1].home.z - 8); // off the stand
     const e = sim.entities.get(carrier)!;
     expect(e.auras.some((a) => a.id === 'bg_carrier_vulnerability')).toBe(false);
     // fast-forward the hold clock to just before the threshold
