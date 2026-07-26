@@ -936,6 +936,8 @@ export const zh_TW: EnTranslations = {
       "flagTakenLog": "{name}奪走了{team}的旗幟!",
       "flagDroppedLog": "{team}的旗幟掉落了。",
       "flagReturnedLog": "{team}的旗幟已歸還。",
+      "flagTakenBanner": "{name}奪走了{team}的旗幟!",
+      "flagReturnedBanner": "{team}的旗幟已歸還!",
       "capturedBanner": "{name}奪取了{team}的旗幟!{crimson}:{azure}",
       "capturedLog": "{name}奪取了{team}的旗幟。比分{crimson}:{azure}。",
       "victoryBanner": "勝利!鴉裂谷{crimson}:{azure}。評分{rating}({delta})",

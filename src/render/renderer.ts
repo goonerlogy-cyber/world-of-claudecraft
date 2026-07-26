@@ -46,6 +46,7 @@ import { AOE_RING_LIFETIME, aoeRingAnim } from './aoe_ring';
 import type { AmbientPointSource, SpatialAudioSink, Surface } from './audio_sink';
 import { attachBankerChestToNpcView } from './banker_chest';
 import { type BattlegroundView, buildBattleground } from './battleground';
+import { BattlegroundFx } from './battleground_fx';
 import { buildBattlegroundObject } from './battleground_props';
 import { type BirdsView, buildBirds } from './birds';
 import { createCameraBoom, stepCameraBoom } from './camera_boom_core';
@@ -1154,6 +1155,9 @@ export class Renderer {
   // gate a freshly-streamed view's draw on readiness instead of stalling the frame.
   private asyncCompileSupported = false;
   vfx: Vfx;
+  // Ravenrift flag/rune per-frame dressing + transition bursts; runs off
+  // bgInfo and view userData only (battleground_fx.ts).
+  private bgFx!: BattlegroundFx;
   private lightPulses: LightPulses;
   // Flash a pooled talent-moment point light at an entity's feet (see
   // light_pulses.ts); bound once in the constructor over the views map.
@@ -1820,6 +1824,7 @@ export class Renderer {
       return new THREE.Vector3(v.group.position.x, v.group.position.y + h, v.group.position.z);
     });
     this.vfx.setViewportScale(this.webgl.domElement.clientHeight * this.webgl.getPixelRatio(), 60);
+    this.bgFx = new BattlegroundFx(this.sim, this.views, this.vfx);
     this.pulseAt = (id, school, intensity, duration) => {
       const v = this.views.get(id);
       if (!v) return;
@@ -6174,6 +6179,7 @@ export class Renderer {
       (this.scene.fog as THREE.Fog).far,
     );
     worldStart = markWorldPhase('water', worldStart);
+    this.bgFx.update(this.time);
     this.vfx.update(dt);
     this.frozenOrbFx.update(dt);
     this.mageGroundFx.update(dt);

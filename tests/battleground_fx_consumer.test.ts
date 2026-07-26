@@ -1,0 +1,220 @@
+// The props<->fx contract: BattlegroundFx.update() driven over REAL groups
+// from buildBattlegroundObject, with a burst-recording Vfx stub and a
+// hand-rolled BgInfo. This is the consumer-side coverage the pure-core test
+// (tests/battleground_fx.test.ts) cannot give: the userData.bg handshake, the
+// carrier ring toggling, lean apply/reset, gem pose application, burst
+// anchors/colors per transition, and the track-invalidation rules. The BgInfo
+// fixture shape is identical for the offline Sim and the wire mirror (one
+// facet type), so a single fixture covers both worlds.
+import { describe, expect, it } from 'vitest';
+import { BattlegroundFx } from '../src/render/battleground_fx';
+import { BG_RUNE_BOB_AMP } from '../src/render/battleground_fx_core';
+import { type BgObjectRefs, buildBattlegroundObject } from '../src/render/battleground_props';
+import type { Vfx } from '../src/render/vfx';
+import { BG_TEAM_COLORS } from '../src/sim/battleground_layout';
+import type { BgFlagInfo, BgInfo } from '../src/world_api/battleground';
+
+function flagInfo(state: BgFlagInfo['state'], carrierPid: number | null = null): BgFlagInfo {
+  return { state, carrierPid, carrierName: carrierPid === null ? null : 'Carrier', carrierTeam: 1 };
+}
+
+function bgInfo(flags: [BgFlagInfo, BgFlagInfo]): BgInfo {
+  return {
+    rating: 1500,
+    wins: 0,
+    losses: 0,
+    captures: 0,
+    queued: false,
+    queueSize: 0,
+    queuedParty: 0,
+    match: {
+      state: 'active',
+      myTeam: 0,
+      capsToWin: 5,
+      scores: [0, 0],
+      flags,
+      players: [],
+      countdown: 0,
+      timeLeft: 800,
+      waveIn: [5, 10],
+      respawnIn: 0,
+      protectedFor: 0,
+    },
+  };
+}
+
+interface Burst {
+  x: number;
+  y: number;
+  z: number;
+  colors: readonly number[];
+  count: number;
+  power: number;
+}
+
+function makeHarness() {
+  const bursts: Burst[] = [];
+  const vfx = {
+    fireworkBurst(
+      at: { x: number; y: number; z: number },
+      colors: readonly number[],
+      count = 46,
+      power = 1,
+    ) {
+      bursts.push({ x: at.x, y: at.y, z: at.z, colors, count, power });
+    },
+  } as unknown as Vfx;
+  const crimsonFlag = buildBattlegroundObject('bg_flag', BG_TEAM_COLORS[0], false);
+  const azureFlag = buildBattlegroundObject('bg_flag', BG_TEAM_COLORS[1], false);
+  const rune = buildBattlegroundObject('bg_rune', 0xffd280, false);
+  const views = new Map([
+    [101, { group: crimsonFlag.group }],
+    [102, { group: azureFlag.group }],
+    [103, { group: rune.group }],
+  ]);
+  const sim: { bgInfo: BgInfo | null } = { bgInfo: bgInfo([flagInfo('home'), flagInfo('home')]) };
+  const fx = new BattlegroundFx(sim, views, vfx);
+  const refs = (g: { userData: Record<string, unknown> }) =>
+    g.userData.bg as Extract<BgObjectRefs, { kind: 'flag' }>;
+  return { bursts, views, sim, fx, crimsonFlag, azureFlag, rune, refs };
+}
+
+describe('props<->fx handshake', () => {
+  it('flags and runes carry typed userData.bg refs; unknown colors carry none', () => {
+    const crimson = buildBattlegroundObject('bg_flag', BG_TEAM_COLORS[0], false);
+    const azure = buildBattlegroundObject('bg_flag', BG_TEAM_COLORS[1], false);
+    const odd = buildBattlegroundObject('bg_flag', 0x123456, false);
+    const rune = buildBattlegroundObject('bg_rune', 0xffd280, false);
+    expect(crimson.group.userData.bg as BgObjectRefs).toMatchObject({ kind: 'flag', team: 0 });
+    expect(azure.group.userData.bg as BgObjectRefs).toMatchObject({ kind: 'flag', team: 1 });
+    expect(odd.group.userData.bg).toBeUndefined();
+    expect(rune.group.userData.bg as BgObjectRefs).toMatchObject({ kind: 'rune' });
+  });
+
+  it('rune nameplate anchor clears the gem at the top of its hover', () => {
+    const rune = buildBattlegroundObject('bg_rune', 0xffd280, false);
+    const refs = rune.group.userData.bg as Extract<BgObjectRefs, { kind: 'rune' }>;
+    // corner-down cube: half space diagonal above the spinner origin
+    const gemTop = refs.gemBaseY + BG_RUNE_BOB_AMP + (0.42 * Math.sqrt(3)) / 2;
+    expect(rune.height).toBeGreaterThan(gemTop);
+  });
+});
+
+describe('BattlegroundFx.update', () => {
+  it('animates the rune gem and leaves it alone outside a match', () => {
+    const h = makeHarness();
+    const gem = (h.rune.group.userData.bg as Extract<BgObjectRefs, { kind: 'rune' }>).gem;
+    h.fx.update(1.25);
+    expect(gem.rotation.y).toBeGreaterThan(0);
+    const spun = gem.rotation.y;
+    h.sim.bgInfo = null;
+    h.fx.update(2.5);
+    expect(gem.rotation.y).toBe(spun); // early return: untouched
+  });
+
+  it('toggles the carrier ring and lean with the carried state, yawed to the carrier', () => {
+    const h = makeHarness();
+    const crimson = h.refs(h.crimsonFlag.group);
+    h.fx.update(0.1);
+    expect(crimson.ring.visible).toBe(false);
+    expect(crimson.lean.rotation.x).toBe(0);
+    // an azure raider (pid 55) picks up the crimson flag
+    const carrier = {
+      group: { position: { x: 0, y: 0, z: 0 }, rotation: { y: 1.2 }, userData: {} },
+    };
+    h.views.set(55, carrier as never);
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.2);
+    expect(crimson.ring.visible).toBe(true);
+    expect(crimson.lean.rotation.x).toBeLessThan(0);
+    expect(crimson.lean.rotation.y).toBeCloseTo(1.2, 5);
+    // carrier view vanishes for a frame: the yaw holds instead of snapping
+    h.views.delete(55);
+    h.fx.update(0.3);
+    expect(crimson.lean.rotation.y).toBeCloseTo(1.2, 5);
+    // dropped: everything resets
+    h.sim.bgInfo = bgInfo([flagInfo('dropped'), flagInfo('home')]);
+    h.fx.update(0.4);
+    expect(crimson.ring.visible).toBe(false);
+    expect(crimson.lean.rotation.x).toBe(0);
+    expect(crimson.lean.rotation.y).toBe(0);
+  });
+
+  it('bursts on pickup at the flag, on capture/return at LAST frame position', () => {
+    const h = makeHarness();
+    h.fx.update(0.1); // first sighting: never a burst
+    expect(h.bursts).toHaveLength(0);
+    // pickup at the stand
+    h.crimsonFlag.group.position.set(3, 0, -118);
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.2);
+    expect(h.bursts).toHaveLength(1);
+    expect(h.bursts[0]).toMatchObject({ x: 3, z: -118 });
+    expect(h.bursts[0].colors).toEqual([BG_TEAM_COLORS[0], 0xffffff]);
+    // the carrier runs it to the azure stand...
+    h.crimsonFlag.group.position.set(0, 0, 118);
+    h.fx.update(0.3);
+    expect(h.bursts).toHaveLength(1);
+    // ...and scores: the flag snaps home THIS frame, the burst stays at the stand
+    h.crimsonFlag.group.position.set(0, 0, -118);
+    h.sim.bgInfo = bgInfo([flagInfo('home'), flagInfo('home')]);
+    h.fx.update(0.4);
+    expect(h.bursts).toHaveLength(2);
+    expect(h.bursts[1]).toMatchObject({ x: 0, z: 118 }); // last frame's position
+    expect(h.bursts[1].colors).toEqual([BG_TEAM_COLORS[1], 0xffd24a]); // capturing team
+    // dropped then returned: the return burst lands where it lay
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.5);
+    h.crimsonFlag.group.position.set(20, 0, -40);
+    h.sim.bgInfo = bgInfo([flagInfo('dropped'), flagInfo('home')]);
+    h.fx.update(0.6); // drop: no burst
+    expect(h.bursts).toHaveLength(3); // pickup at 0.5 fired
+    h.crimsonFlag.group.position.set(0, 0, -118);
+    h.sim.bgInfo = bgInfo([flagInfo('home'), flagInfo('home')]);
+    h.fx.update(0.7);
+    expect(h.bursts).toHaveLength(4);
+    expect(h.bursts[3]).toMatchObject({ x: 20, z: -40 });
+    expect(h.bursts[3].colors).toEqual([BG_TEAM_COLORS[0], 0x9fdc7f]);
+  });
+
+  it('a view gap invalidates the track: no burst for a transition nobody saw', () => {
+    const h = makeHarness();
+    h.fx.update(0.1);
+    const crimsonView = h.views.get(101);
+    if (!crimsonView) throw new Error('missing view');
+    h.views.delete(101);
+    h.fx.update(0.2); // flag view absent this frame
+    // state changed while unseen; the view returns already carried
+    h.views.set(101, crimsonView);
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.3);
+    expect(h.bursts).toHaveLength(0); // first sighting after the gap, silent
+    expect(h.refs(h.crimsonFlag.group).ring.visible).toBe(true); // but the ring shows
+  });
+
+  it('leaving the match resets tracks: re-entry never replays a stale transition', () => {
+    const h = makeHarness();
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.1); // first sighting
+    h.sim.bgInfo = null;
+    h.fx.update(0.2);
+    h.sim.bgInfo = bgInfo([flagInfo('home'), flagInfo('home')]);
+    h.fx.update(0.3); // would be carried->home = capture if the track leaked
+    expect(h.bursts).toHaveLength(0);
+  });
+});
+
+describe('renderer wiring pin', () => {
+  it('bgFx.update runs in the LIVE sync fx block, exactly once', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(new URL('../src/render/renderer.ts', import.meta.url), 'utf8');
+    const calls = src.match(/this\.bgFx\.update\(this\.time\);/g) ?? [];
+    expect(calls).toHaveLength(1);
+    // Anchored inside sync()'s per-frame fx block (the water-phase marker),
+    // NOT the one-time prewarm pass: the exact regression the frontend
+    // reviewer caught on first wiring.
+    expect(src).toMatch(
+      /markWorldPhase\('water', worldStart\);\s*\n\s*this\.bgFx\.update\(this\.time\);/,
+    );
+  });
+});

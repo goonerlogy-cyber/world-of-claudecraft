@@ -10064,11 +10064,19 @@ export class Hud {
             );
             audio.questDone();
           } else if (ev.action === 'taken') {
+            // Match-critical calls ride the across-screen banner (the mail
+            // banner family) with their own banner-sink keys. Drops stay
+            // log-only so a taken/captured banner is never clobbered by the
+            // least urgent call of the three.
+            this.showBanner(t('hudChrome.bg.flagTakenBanner', { name: ev.byName, team }));
             this.combatLog(t('hudChrome.bg.flagTakenLog', { name: ev.byName, team }), '#ff9a3c');
+            audio.fiestaDown();
           } else if (ev.action === 'dropped') {
             this.combatLog(t('hudChrome.bg.flagDroppedLog', { team }), '#cfc6a8');
           } else {
+            this.showBanner(t('hudChrome.bg.flagReturnedBanner', { team }));
             this.combatLog(t('hudChrome.bg.flagReturnedLog', { team }), '#9fdc7f');
+            audio.readyCheck();
           }
           break;
         }

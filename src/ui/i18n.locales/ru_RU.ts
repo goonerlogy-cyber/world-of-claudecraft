@@ -874,6 +874,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name} забирает флаг команды {team}!',
   'hudChrome.bg.flagDroppedLog': 'Флаг команды {team} уронен.',
   'hudChrome.bg.flagReturnedLog': 'Флаг команды {team} возвращен.',
+  'hudChrome.bg.flagTakenBanner': '{name} забирает флаг команды {team}!',
+  'hudChrome.bg.flagReturnedBanner': 'Флаг команды {team} возвращен!',
   'hudChrome.bg.capturedBanner': '{name} захватывает флаг команды {team}! {crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name} захватывает флаг команды {team}. Счет {crimson}:{azure}.',
   'hudChrome.bg.victoryBanner':

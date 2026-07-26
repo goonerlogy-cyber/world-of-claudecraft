@@ -260,6 +260,7 @@ const UI_PURE_CORES = [
 const RENDER_PURE_CORES = [
   'src/render/arena_water_band_core.ts',
   'src/render/battleground_core.ts',
+  'src/render/battleground_fx_core.ts',
   'src/render/camera_boom_core.ts',
   'src/render/camera_director_core.ts',
   'src/render/camera_feel_core.ts',

@@ -692,6 +692,9 @@ export const hudChromeStrings = {
     flagTakenLog: '{name} has taken the {team} flag!',
     flagDroppedLog: 'The {team} flag was dropped.',
     flagReturnedLog: 'The {team} flag was returned.',
+    // Across-screen banner variants (separate sink, separate length budget)
+    flagTakenBanner: '{name} has taken the {team} flag!',
+    flagReturnedBanner: 'The {team} flag was returned!',
     capturedBanner: '{name} captured the {team} flag! {crimson}:{azure}',
     capturedLog: '{name} captured the {team} flag. Score {crimson}:{azure}.',
     victoryBanner: 'Victory! Ravenrift {crimson}:{azure}. Rating {rating} ({delta})',

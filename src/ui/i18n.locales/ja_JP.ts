@@ -872,6 +872,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name}が{team}の旗を奪った!',
   'hudChrome.bg.flagDroppedLog': '{team}の旗が落とされた。',
   'hudChrome.bg.flagReturnedLog': '{team}の旗が戻された。',
+  'hudChrome.bg.flagTakenBanner': '{name}が{team}の旗を奪った!',
+  'hudChrome.bg.flagReturnedBanner': '{team}の旗が戻された!',
   'hudChrome.bg.capturedBanner': '{name}が{team}の旗をキャプチャー!{crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name}が{team}の旗をキャプチャー。スコア{crimson}:{azure}。',
   'hudChrome.bg.victoryBanner':

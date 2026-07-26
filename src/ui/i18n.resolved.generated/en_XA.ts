@@ -936,6 +936,8 @@ export const en_XA: EnTranslations = {
       "flagTakenLog": "[{name} ĥáš ţáķéñ ţĥé {team} ƒļáĝ!]",
       "flagDroppedLog": "[Ţĥé {team} ƒļáĝ ŵáš ðŕóþþéð.]",
       "flagReturnedLog": "[Ţĥé {team} ƒļáĝ ŵáš ŕéţúŕñéð.]",
+      "flagTakenBanner": "[{name} ĥáš ţáķéñ ţĥé {team} ƒļáĝ!]",
+      "flagReturnedBanner": "[Ţĥé {team} ƒļáĝ ŵáš ŕéţúŕñéð!]",
       "capturedBanner": "[{name} çáþţúŕéð ţĥé {team} ƒļáĝ! {crimson}:{azure}]",
       "capturedLog": "[{name} çáþţúŕéð ţĥé {team} ƒļáĝ. Šçóŕé {crimson}:{azure}.]",
       "victoryBanner": "[Ʋíçţóŕý! Ŕáʋéñŕíƒţ {crimson}:{azure}. Ŕáţíñĝ {rating} ({delta})]",

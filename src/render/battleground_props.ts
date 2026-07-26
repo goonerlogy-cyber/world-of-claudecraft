@@ -6,10 +6,19 @@
 // never frees them out from under the next build.
 //
 // Graphics fairness: a carried flag's position is actionable info, so the flag
-// is plainly visible on EVERY tier (unlit pennant + pole). High tiers only
-// boost the pennant color for bloom pop (cosmetic); the rune's point light is
-// likewise cosmetic richness on top of the always-on additive glow.
+// is plainly visible on EVERY tier (unlit pennant + pole), and the carried-state
+// dressing (the lean and the team-color carrier ring) is built and driven
+// unconditionally. High tiers only boost the pennant color for bloom pop
+// (cosmetic); the rune's point light is likewise cosmetic richness on top of
+// the always-on additive glow.
+//
+// Each built group carries `userData.bg` (BgObjectRefs): the per-frame handles
+// battleground_fx.ts animates (the flag lean pivot + carrier ring, the rune gem
+// spinner). The refs point at child objects the renderer never touches; the
+// group's own position/rotation stay renderer-owned.
 import * as THREE from 'three';
+import { BG_TEAM_COLORS } from '../sim/battleground_layout';
+import { BG_RUNE_BOB_AMP } from './battleground_fx_core';
 import { surfaceMat } from './gfx';
 import { markSharedGeometry, markSharedMaterial } from './shared_resource';
 
@@ -18,22 +27,44 @@ const FLAG_POLE_R = 0.055;
 const PENNANT_W = 1.15;
 const PENNANT_H = 0.75;
 const PENNANT_BLOOM_BOOST = 1.6; // high-tier color multiplier (bloom pop only)
+const CARRY_RING_INNER = 0.62;
+const CARRY_RING_OUTER = 0.95;
+const CARRY_RING_Y = 0.06;
 const RUNE_DISC_R = 1.05;
 const RUNE_DISC_Y = 0.08;
-const RUNE_RING_R = 0.55;
-const RUNE_RING_TUBE = 0.06;
-const RUNE_RING_Y = 1.15;
+const RUNE_GEM_SIZE = 0.42;
+const RUNE_GEM_Y = 1.15;
+// Corner-down diamond orientation for the cube gem; the fx spinner then yaws
+// the holder so the tilt never accumulates error.
+const RUNE_GEM_TILT_Z = Math.PI / 4;
+const RUNE_GEM_TILT_X = Math.atan(Math.SQRT2);
 const RUNE_LIGHT_INTENSITY = 1.6;
 const RUNE_LIGHT_DISTANCE = 8;
 
+/** Per-frame animation handles battleground_fx.ts reads off `group.userData.bg`. */
+export type BgObjectRefs =
+  | {
+      kind: 'flag';
+      team: number; // 0 = Crimson, 1 = Azure (bgInfo.match.flags index)
+      color: number;
+      lean: THREE.Group; // pole + pennant pivot: yawed to the carrier, tilted while carried
+      ring: THREE.Mesh; // team-color carrier ring, visible only while carried
+    }
+  | {
+      kind: 'rune';
+      gem: THREE.Group; // the spinner holding the tilted cube gem
+      gemBaseY: number;
+    };
+
 let flagPoleGeo: THREE.CylinderGeometry | null = null;
 let pennantGeo: THREE.PlaneGeometry | null = null;
+let carryRingGeo: THREE.RingGeometry | null = null;
 let runeDiscGeo: THREE.CircleGeometry | null = null;
-let runeRingGeo: THREE.TorusGeometry | null = null;
+let runeGemGeo: THREE.BoxGeometry | null = null;
 
 // Cached per color + tier arm; marked shared so per-view disposal skips them.
 const pennantMats = new Map<string, THREE.MeshBasicMaterial>();
-const runeGlowMats = new Map<number, THREE.MeshBasicMaterial>();
+const glowMats = new Map<number, THREE.MeshBasicMaterial>();
 
 function pennantMaterial(color: number, lowGfx: boolean): THREE.MeshBasicMaterial {
   const key = `${color}:${lowGfx ? 'low' : 'high'}`;
@@ -47,8 +78,8 @@ function pennantMaterial(color: number, lowGfx: boolean): THREE.MeshBasicMateria
   return mat;
 }
 
-function runeGlowMaterial(color: number): THREE.MeshBasicMaterial {
-  let mat = runeGlowMats.get(color);
+function glowMaterial(color: number): THREE.MeshBasicMaterial {
+  let mat = glowMats.get(color);
   if (!mat) {
     mat = new THREE.MeshBasicMaterial({
       color,
@@ -59,7 +90,7 @@ function runeGlowMaterial(color: number): THREE.MeshBasicMaterial {
       blending: THREE.AdditiveBlending,
     });
     markSharedMaterial(mat);
-    runeGlowMats.set(color, mat);
+    glowMats.set(color, mat);
   }
   return mat;
 }
@@ -78,35 +109,64 @@ export function buildBattlegroundObject(
 
   if (templateId === 'bg_rune') {
     runeDiscGeo ??= markSharedGeometry(new THREE.CircleGeometry(RUNE_DISC_R, 24));
-    runeRingGeo ??= markSharedGeometry(new THREE.TorusGeometry(RUNE_RING_R, RUNE_RING_TUBE, 8, 24));
-    const glow = runeGlowMaterial(color);
+    runeGemGeo ??= markSharedGeometry(
+      new THREE.BoxGeometry(RUNE_GEM_SIZE, RUNE_GEM_SIZE, RUNE_GEM_SIZE),
+    );
+    const glow = glowMaterial(color);
     const disc = new THREE.Mesh(runeDiscGeo, glow);
     disc.rotation.x = -Math.PI / 2;
     disc.position.y = RUNE_DISC_Y;
     group.add(disc);
-    const ring = new THREE.Mesh(runeRingGeo, glow);
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = RUNE_RING_Y;
-    group.add(ring);
+    // The gem: a corner-down glowing cube inside a spinner group; the fx pass
+    // yaws and bobs the spinner (battleground_fx_core runeGemPose).
+    const gem = new THREE.Group();
+    gem.position.y = RUNE_GEM_Y;
+    const gemMesh = new THREE.Mesh(runeGemGeo, glow);
+    gemMesh.rotation.z = RUNE_GEM_TILT_Z;
+    gemMesh.rotation.x = RUNE_GEM_TILT_X;
+    gem.add(gemMesh);
+    group.add(gem);
     if (!lowGfx) {
       const light = new THREE.PointLight(color, RUNE_LIGHT_INTENSITY, RUNE_LIGHT_DISTANCE, 2);
-      light.position.y = RUNE_RING_Y;
+      light.position.y = RUNE_GEM_Y;
       group.add(light);
     }
-    return { group, height: RUNE_RING_Y + RUNE_RING_R + 0.3 };
+    group.userData.bg = { kind: 'rune', gem, gemBaseY: RUNE_GEM_Y } satisfies BgObjectRefs;
+    // Nameplate anchor clears the gem's corner-down half-diagonal at the top
+    // of its hover (the bob amplitude lives in battleground_fx_core).
+    return { group, height: RUNE_GEM_Y + BG_RUNE_BOB_AMP + RUNE_GEM_SIZE + 0.3 };
   }
 
   // bg_flag (and any future bg_ object defaults to the flag body): pole +
-  // team-color pennant, bright at every tier.
+  // team-color pennant, bright at every tier. The pole and pennant live on a
+  // lean pivot the fx pass tips over the carrier's shoulder while carried; the
+  // ring under it flags the carrier at a glance from any angle.
   flagPoleGeo ??= markSharedGeometry(
     new THREE.CylinderGeometry(FLAG_POLE_R, FLAG_POLE_R * 1.5, FLAG_POLE_H, 6),
   );
   pennantGeo ??= markSharedGeometry(new THREE.PlaneGeometry(PENNANT_W, PENNANT_H));
+  carryRingGeo ??= markSharedGeometry(
+    new THREE.RingGeometry(CARRY_RING_INNER, CARRY_RING_OUTER, 24),
+  );
+  const lean = new THREE.Group();
+  lean.rotation.order = 'YXZ'; // yaw to the carrier first, then tilt back
   const pole = new THREE.Mesh(flagPoleGeo, surfaceMat({ color: 0x5a4632, roughness: 0.9 }));
   pole.position.y = FLAG_POLE_H / 2;
-  group.add(pole);
+  lean.add(pole);
   const pennant = new THREE.Mesh(pennantGeo, pennantMaterial(color, lowGfx));
   pennant.position.set(PENNANT_W / 2 + FLAG_POLE_R, FLAG_POLE_H - PENNANT_H / 2 - 0.1, 0);
-  group.add(pennant);
+  lean.add(pennant);
+  group.add(lean);
+  const ring = new THREE.Mesh(carryRingGeo, glowMaterial(color));
+  ring.rotation.x = -Math.PI / 2;
+  ring.position.y = CARRY_RING_Y;
+  ring.visible = false; // battleground_fx shows it only while carried
+  group.add(ring);
+  // Explicit team mapping, never a fallback: an unknown color gets NO fx refs
+  // (static upright flag) rather than silently riding the wrong flag's state.
+  const team = color === BG_TEAM_COLORS[0] ? 0 : color === BG_TEAM_COLORS[1] ? 1 : null;
+  if (team !== null) {
+    group.userData.bg = { kind: 'flag', team, color, lean, ring } satisfies BgObjectRefs;
+  }
   return { group, height: FLAG_POLE_H + 0.4 };
 }

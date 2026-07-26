@@ -49,6 +49,11 @@ for (const dir of dirs) {
     const record = JSON.parse(readFileSync(url, 'utf8'));
     if (!record.polishProvenance) continue;
     record.polishProvenance = current;
+    // Each per-capture record nests its own copy of the provenance block
+    // (integrity pins them individually); re-mint those too.
+    for (const rec of record.records ?? []) {
+      if (rec.polishProvenance) rec.polishProvenance = current;
+    }
     writeFileSync(url, `${JSON.stringify(record, null, 2)}\n`);
     reminted++;
     console.log(`reminted ${dir}${name}`);

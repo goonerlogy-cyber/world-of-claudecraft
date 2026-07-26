@@ -41,6 +41,10 @@ export const TARGETS = [
     ],
     variants: [
       { key: 'queue-window', scene: 'queue' },
+      // First staged scene on purpose: the match seating just placed the
+      // player on their real spawn point, and the DEFAULT chase camera is the
+      // honest witness for the spawn-clearance contract (no camDist override).
+      { key: 'spawn-camera', scene: 'spawn' },
       { key: 'field', scene: 'field' },
       { key: 'postern', scene: 'postern' },
       { key: 'gatehouse', scene: 'gatehouse' },
@@ -114,10 +118,17 @@ export const TARGETS = [
           p.pos.z = z;
           p.prevPos = { ...p.pos };
         };
-        if (sceneKey === 'field') {
-          // mid-field, camera pulled up and back over my keep's approach
+        if (sceneKey === 'spawn') {
+          // No teleport: the seating placed us on the spawn ring. Face the
+          // enemy keep and put the chase camera behind at its defaults.
+          p.facing = myTeam === 0 ? 0 : Math.PI;
+          game.input.camYaw = p.facing;
+        } else if (sceneKey === 'field') {
+          // mid-field, camera pulled up and back over my keep's approach;
+          // offset east of the approach rune so the shot shows it LIVE
+          // instead of seizing it by standing on it
           const home = match.flags[myTeam].home;
-          tp(home.x, home.z + (myTeam === 0 ? 26 : -26));
+          tp(home.x + 6, home.z + (myTeam === 0 ? 26 : -26));
           game.input.camYaw = p.facing = myTeam === 0 ? 0 : Math.PI;
           game.input.camDist = 24;
           game.input.camPitch = 0.72;

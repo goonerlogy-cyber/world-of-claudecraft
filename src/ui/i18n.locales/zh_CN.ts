@@ -846,6 +846,8 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name}夺走了{team}的旗帜!',
   'hudChrome.bg.flagDroppedLog': '{team}的旗帜掉落了。',
   'hudChrome.bg.flagReturnedLog': '{team}的旗帜已归还。',
+  'hudChrome.bg.flagTakenBanner': '{name}夺走了{team}的旗帜!',
+  'hudChrome.bg.flagReturnedBanner': '{team}的旗帜已归还!',
   'hudChrome.bg.capturedBanner': '{name}夺取了{team}的旗帜!{crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name}夺取了{team}的旗帜。比分{crimson}:{azure}。',
   'hudChrome.bg.victoryBanner': '胜利!鸦裂谷{crimson}:{azure}。评分{rating}({delta})',

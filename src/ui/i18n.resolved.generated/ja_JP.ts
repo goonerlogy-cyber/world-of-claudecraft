@@ -936,6 +936,8 @@ export const ja_JP: EnTranslations = {
       "flagTakenLog": "{name}が{team}の旗を奪った!",
       "flagDroppedLog": "{team}の旗が落とされた。",
       "flagReturnedLog": "{team}の旗が戻された。",
+      "flagTakenBanner": "{name}が{team}の旗を奪った!",
+      "flagReturnedBanner": "{team}の旗が戻された!",
       "capturedBanner": "{name}が{team}の旗をキャプチャー!{crimson}:{azure}",
       "capturedLog": "{name}が{team}の旗をキャプチャー。スコア{crimson}:{azure}。",
       "victoryBanner": "勝利!レイヴンリフト{crimson}:{azure}。レーティング{rating}({delta})",

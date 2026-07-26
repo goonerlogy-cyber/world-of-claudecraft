@@ -871,6 +871,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagTakenLog': '{name}이(가) {team} 깃발을 빼앗았습니다!',
   'hudChrome.bg.flagDroppedLog': '{team} 깃발이 떨어졌습니다.',
   'hudChrome.bg.flagReturnedLog': '{team} 깃발이 반환되었습니다.',
+  'hudChrome.bg.flagTakenBanner': '{name}이(가) {team} 깃발을 빼앗았습니다!',
+  'hudChrome.bg.flagReturnedBanner': '{team} 깃발이 반환되었습니다!',
   'hudChrome.bg.capturedBanner': '{name}이(가) {team} 깃발을 탈취!{crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name}이(가) {team} 깃발을 탈취했습니다. 점수 {crimson}:{azure}.',
   'hudChrome.bg.victoryBanner': '승리! 레이븐리프트 {crimson}:{azure}. 레이팅 {rating}({delta})',

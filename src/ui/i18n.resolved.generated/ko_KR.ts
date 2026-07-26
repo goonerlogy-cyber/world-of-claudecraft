@@ -936,6 +936,8 @@ export const ko_KR: EnTranslations = {
       "flagTakenLog": "{name}이(가) {team} 깃발을 빼앗았습니다!",
       "flagDroppedLog": "{team} 깃발이 떨어졌습니다.",
       "flagReturnedLog": "{team} 깃발이 반환되었습니다.",
+      "flagTakenBanner": "{name}이(가) {team} 깃발을 빼앗았습니다!",
+      "flagReturnedBanner": "{team} 깃발이 반환되었습니다!",
       "capturedBanner": "{name}이(가) {team} 깃발을 탈취!{crimson}:{azure}",
       "capturedLog": "{name}이(가) {team} 깃발을 탈취했습니다. 점수 {crimson}:{azure}.",
       "victoryBanner": "승리! 레이븐리프트 {crimson}:{azure}. 레이팅 {rating}({delta})",

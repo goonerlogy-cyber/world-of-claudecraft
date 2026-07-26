@@ -936,6 +936,8 @@ export const ru_RU: EnTranslations = {
       "flagTakenLog": "{name} забирает флаг команды {team}!",
       "flagDroppedLog": "Флаг команды {team} уронен.",
       "flagReturnedLog": "Флаг команды {team} возвращен.",
+      "flagTakenBanner": "{name} забирает флаг команды {team}!",
+      "flagReturnedBanner": "Флаг команды {team} возвращен!",
       "capturedBanner": "{name} захватывает флаг команды {team}! {crimson}:{azure}",
       "capturedLog": "{name} захватывает флаг команды {team}. Счет {crimson}:{azure}.",
       "victoryBanner": "Победа! Вороний Разлом {crimson}:{azure}. Рейтинг {rating} ({delta})",
