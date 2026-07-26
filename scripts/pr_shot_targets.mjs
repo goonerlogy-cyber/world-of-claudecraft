@@ -138,8 +138,8 @@ export const TARGETS = [
           tp(home.x - 22.5, home.z + 30);
           p.facing = Math.PI;
           game.input.camYaw = Math.PI;
-          game.input.camDist = 14;
-          game.input.camPitch = 0.5;
+          game.input.camDist = 11;
+          game.input.camPitch = 0.6;
         } else {
           // carry: stand on the ENEMY flag; the deliberate press follows
           const foe = match.flags[myTeam === 0 ? 1 : 0];

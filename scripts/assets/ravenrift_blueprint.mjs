@@ -99,7 +99,7 @@ rect(
 );
 rect(0, 0, BG_HALF_X, BG_ZONE_MID_HALF_Z, '#5e7a3a', 0.12);
 
-// ---- walls (perimeter + keeps incl. posterns + cover + v2 route work) ------
+// ---- walls (perimeter + keeps incl. posterns + curtains + gatehouses) ------
 const LOW_WALL = '#7d6a52';
 for (const s of battlegroundWallSegments()) {
   const ruin = isRuinBlock(s);
@@ -145,7 +145,7 @@ label(0, 52.6, 'AZURE KEEP', 17, AZURE);
 label(0, -54.6, 'CRIMSON KEEP', 17, CRIMSON);
 label(0, 27.4, 'AZURE FIELD', 17, AZURE, 'middle', 700);
 label(0, -29, 'CRIMSON FIELD', 17, CRIMSON, 'middle', 700);
-label(0, 14.2, 'THE RUIN COURTYARD', 18, '#5e7a3a', 'middle', 700);
+label(0, 15.5, 'THE RUIN COURTYARD', 16, '#5e7a3a', 'middle', 700);
 callout(1.6, 48, 38, 45.5, 'flag stand + capture point', AZURE);
 callout(3, 51, 38, 52, 'spawn ring (wave respawn)', AZURE);
 callout(14, 50, 38, 58, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
