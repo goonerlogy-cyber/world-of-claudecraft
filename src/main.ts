@@ -1214,7 +1214,6 @@ async function startGame(
   }, ENTRY_PROBE_STABLE_MS);
 
   // Offline only: expose the dev "2v2 Fiesta vs Bots" practice toggle to the HUD.
-  if (offlineSim) hud.setFiestaPracticeHook(() => offlineSim.startFiestaPractice());
   // The Vale Cup practice-vs-bots button (the window calls world.vcupPracticeStart
   // through IWorld). Private instanced practice works online AND offline, so the
   // button is always available.
@@ -1456,9 +1455,6 @@ async function startGame(
           case 'valecup':
             hud.toggleValeCup();
             break;
-          case 'battleground':
-            hud.toggleBattleground();
-            break;
           case 'bgFlag':
             bgFlagKey();
             break;
@@ -1552,7 +1548,6 @@ async function startGame(
     onArena: () => hud.toggleArena(),
     onDungeonFinder: () => hud.toggleDungeonFinder(),
     onValeCup: () => hud.toggleValeCup(),
-    onBattleground: () => hud.toggleBattleground(),
     onQuestLog: () => hud.toggleQuestLog(),
     onCharacter: () => {
       hud.toggleChar();
@@ -1700,9 +1695,6 @@ async function startGame(
         break;
       case 'valecup':
         hud.toggleValeCup();
-        break;
-      case 'battleground':
-        hud.toggleBattleground();
         break;
       case 'bgFlag':
         bgFlagKey();

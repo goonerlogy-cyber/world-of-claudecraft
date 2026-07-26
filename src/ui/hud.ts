@@ -309,11 +309,7 @@ import {
 } from './hud/action_bar/mobile_action_page_view';
 import { MobileActionRingPainter } from './hud/action_bar/mobile_action_ring_painter';
 import { playerStealthed } from './hud/action_bar/player_stealthed';
-import {
-  BattlegroundScoreboard,
-  BattlegroundWindow,
-  buildBgScoreboardView,
-} from './hud/battleground';
+import { BattlegroundScoreboard, buildBgScoreboardView } from './hud/battleground';
 import { ChatAnnouncer } from './hud/chat/chat_announcer';
 import { chatChannelColor } from './hud/chat/chat_channels';
 import { ChatGeometryController } from './hud/chat/chat_geometry_controller';
@@ -2239,7 +2235,6 @@ export class Hud {
     $('#mm-social').addEventListener('click', () => this.toggleSocial());
     $('#mm-options')?.addEventListener('click', () => this.toggleOptionsMenu());
     $('#mm-arena').addEventListener('click', () => this.toggleArena());
-    $('#mm-battleground')?.addEventListener('click', () => this.toggleBattleground());
     $('#mm-dfinder').addEventListener('click', () => this.toggleDungeonFinder());
     $('#mm-valecup').addEventListener('click', () => this.toggleValeCup());
     $('#mm-cardduel').addEventListener('click', () => this.toggleCardDuel());
@@ -2722,10 +2717,6 @@ export class Hud {
         // Route through the painter so focus returns to the opener (WCAG 2.2 AA),
         // consistent with the toggle / X close path.
         this.arenaWindow.close();
-        break;
-      case 'battleground-window':
-        // Route through the painter so focus returns to the opener (WCAG 2.2 AA).
-        this.bgWindow.close();
         break;
       case 'dungeon-finder-window':
         // Route through the painter so focus returns to the opener (WCAG 2.2 AA).
@@ -3863,14 +3854,6 @@ export class Hud {
     world: () => this.sim,
     closeOthers: () => this.closeOtherWindows('#arena-window'),
     ...this.windowFocus('#arena-window'),
-  });
-
-  // Ravenrift battleground queue window (cold, sig-diffed; hud/battleground/).
-  private readonly bgWindow = new BattlegroundWindow({
-    root: () => $('#battleground-window'),
-    world: () => this.sim,
-    closeOthers: () => this.closeOtherWindows('#battleground-window'),
-    ...this.windowFocus('#battleground-window'),
   });
 
   // Dungeon Finder (cold window; docs/prd/dungeon-finder.md). Composes the
@@ -5097,7 +5080,6 @@ export class Hud {
     // JSON of ids/numbers), so a language switch alone never moves it; relocalize() forces
     // one rebuild with fresh t() (self-gated on isOpen).
     this.arenaWindow.relocalize();
-    this.bgWindow.relocalize();
     this.bgScoreboard.relocalize();
     this.dungeonFinderWindow.relocalize();
     this.dungeonFinderProposalPopup.relocalize();
@@ -6568,7 +6550,6 @@ export class Hud {
       ['#mm-bag', 'bags', 'itemUi.bags.title'],
       ['#mm-crafting', 'crafting', 'hudChrome.crafting.title'],
       ['#mm-arena', 'arena', 'hud.core.mobileArena'],
-      ['#mm-battleground', 'battleground', 'hudChrome.bg.title'],
       ['#mm-dfinder', 'dungeonFinder', 'hudChrome.finder.title'],
       ['#mm-valecup', 'valecup', 'hudChrome.keybinds.valecup'],
       ['#mm-leaderboard', 'leaderboard', 'game.leaderboard.title'],
@@ -7722,7 +7703,6 @@ export class Hud {
       this.updateShootCharge();
       if ($('#map-window').style.display === 'block') this.updateMapWindow();
       if ($('#arena-window').style.display === 'block') this.arenaWindow.render();
-      if ($('#battleground-window').style.display === 'block') this.bgWindow.render();
       if ($('#dungeon-finder-window').style.display === 'flex') this.dungeonFinderWindow.render();
       if (this.dungeonFinderProposalPopup.isOpen) this.dungeonFinderProposalPopup.render();
       if ($('#valecup-window').style.display === 'block') this.valeCupWindow.render();
@@ -7774,10 +7754,10 @@ export class Hud {
       this.valeCupWindow.close();
     }
     this.vcupMatchSeen = inVcupMatch;
-    // Same for Ravenrift: when the match seats, the queue window steps aside.
+    // Same for Ravenrift: when the match seats, the PvP window steps aside.
     const inBgMatch = !!this.sim.bgInfo?.match;
-    if (inBgMatch && !this.bgMatchSeen && $('#battleground-window').style.display === 'block') {
-      this.bgWindow.close();
+    if (inBgMatch && !this.bgMatchSeen && $('#arena-window').style.display === 'block') {
+      this.arenaWindow.close();
     }
     this.bgMatchSeen = inBgMatch;
     if (fastHud) {
@@ -8369,7 +8349,8 @@ export class Hud {
   }
 
   toggleBattleground(): void {
-    this.bgWindow.toggle();
+    // The Ravenrift deep entry into the merged PvP window (its primary tab).
+    this.arenaWindow.openTab('ravenrift');
   }
 
   toggleDungeonFinder(): void {
@@ -11573,10 +11554,6 @@ export class Hud {
   // so it self-heals on reconnect; one-shot juice (word pops, shake, audio)
   // rides the SimEvents handled in handleEvents().
   // -------------------------------------------------------------------------
-
-  setFiestaPracticeHook(fn: (() => void) | null): void {
-    this.arenaWindow.setPracticeHook(fn);
-  }
 
   // Client-side gathering-tool use routing (#2343): main.ts wires the handler
   // (node scan + handleGatherNodeInteract + the #1982 autorun stop) after the

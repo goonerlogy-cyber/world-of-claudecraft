@@ -115,9 +115,7 @@ await sleep(700);
 await hero.screenshot({ path: 'tmp/squad1_panel.png' });
 console.log(
   'panel rendered:',
-  (await hero.evaluate(
-    () => document.querySelector('#battleground-window')?.style.display === 'block',
-  ))
+  (await hero.evaluate(() => document.querySelector('#arena-window')?.style.display === 'block'))
     ? 'OK'
     : 'FAIL',
 );

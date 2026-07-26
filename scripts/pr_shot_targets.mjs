@@ -57,9 +57,9 @@ export const TARGETS = [
           return { ok: true };
         });
         if (!opened.ok) return { skip: opened.reason };
-        const ready = await pollForSize(page, '#battleground-window');
+        const ready = await pollForSize(page, '#arena-window');
         if (!ready) return { skip: 'battleground window never became visible' };
-        return { clip: '#battleground-window' };
+        return { clip: '#arena-window' };
       }
       // Stage a live 5v5 offline: nine bots + the player queue, the form-up is
       // fast-forwarded, and the camera frames the requested scene. Idempotent:

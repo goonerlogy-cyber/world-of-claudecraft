@@ -231,15 +231,6 @@ export const BIND_ACTIONS: BindAction[] = [
     defaults: ['KeyY'],
   },
   {
-    // Every bare letter is claimed, so Ravenrift parks on the shifted layer of
-    // its thematically nearest key (G, the arena), like meters does on H.
-    id: 'battleground',
-    label: 'Ravenrift (Battleground)',
-    category: 'Interface',
-    kind: 'edge',
-    defaults: ['Shift+KeyG'],
-  },
-  {
     id: 'leaderboard',
     label: 'Leaderboard',
     category: 'Interface',
