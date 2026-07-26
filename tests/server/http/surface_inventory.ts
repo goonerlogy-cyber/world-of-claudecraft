@@ -1116,6 +1116,20 @@ export const SURFACE_INVENTORY: readonly SurfaceRoute[] = [
     limiter: null,
     requireOwnedExpected: null,
   },
+  // Ravenrift (server/battleground.ts): a registry-only RouteDef born after
+  // the migration, per the same new-route rule as the deeds family. Public
+  // anonymous ladder read, rate-limited in-handler with publicReadRateLimited
+  // (the deeds-rarity row shape).
+  {
+    dispatcher: DISPATCH.mainApi,
+    method: 'GET',
+    path: '/api/battleground/leaderboard',
+    handler: 'server/battleground.ts bgLeaderboardHandler (registry-only RouteDef)',
+    contentType: PROBLEM_JSON,
+    authScope: AUTH_SCOPE.public,
+    limiter: 'publicReadRateLimited',
+    requireOwnedExpected: null,
+  },
   // Steam link family (server/steam/routes.ts): registry-only RouteDefs, same
   // new-route rule as the deeds pair. The whole trio is env-gated dark
   // (steam.disabled 503 until STEAM_ENABLED=1); the auth scopes below describe
