@@ -143,32 +143,36 @@ label(
 );
 label(0, 52.6, 'AZURE KEEP', 17, AZURE);
 label(0, -54.6, 'CRIMSON KEEP', 17, CRIMSON);
+label(0, 27.4, 'AZURE FIELD', 17, AZURE, 'middle', 700);
+label(0, -29, 'CRIMSON FIELD', 17, CRIMSON, 'middle', 700);
+label(0, 14.2, 'THE RUIN COURTYARD', 18, '#5e7a3a', 'middle', 700);
 callout(1.6, 48, 38, 45.5, 'flag stand + capture point', AZURE);
 callout(3, 51, 38, 52, 'spawn ring (wave respawn)', AZURE);
 callout(14, 50, 38, 58, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
 callout(-14, -50, -38, -55, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
 callout(0, 36, 38, 34, 'flag-approach rune', '#8a6a3c');
-callout(24, 0, 38, -3, 'flank rune', '#8a6a3c');
-callout(-24, 0, -38, 3, 'flank rune', '#8a6a3c');
-callout(5, 3, 38, 10, 'heart ruin (hollow)', '#6b5b45');
-callout(5, 8, 38, 17, 'ruin fragments (slip gaps)', '#6b5b45');
-callout(-13, -16, -38, -19, 'staggered lane walls', INK);
-callout(22, 30, 38, 26, 'wing baffle', INK);
-callout(-27, -5, -38, -8, 'flank side room (two doors)', INK);
-callout(-31.5, -22, -38, -27, 'rampart niche (cover bay)', INK);
+callout(24, 0, 38, -3, 'flank rune + cover', '#8a6a3c');
+callout(-24, 0, -38, 3, 'flank rune + cover', '#8a6a3c');
+callout(6, 3, 38, 8, 'heart ruin 12x12 (hollow)', '#6b5b45');
+callout(10, 10, 38, 16, 'sightline breaker', INK);
+callout(8, -20, 38, -24, 'main gate (8yd)', INK);
+callout(28, -20, 38, -17, 'flank arch (4yd)', INK);
+callout(-20, -20, -38, -13, 'gatehouse (offset doors)', INK);
+callout(-18, -22, -38, -27, 'ambush crate', '#8a6a3c');
+callout(-22, -30, -38, -33, 'wing baffle', INK);
 callout(-2, -42, -38, -45, 'mouth barricade (low wall)', LOW_WALL);
 callout(-9, -56, -38, -61, 'keep banner poles', CRIMSON);
 label(
   0,
   -(BG_HALF_Z + 7.2),
-  'Crimson attacks north through the ruin lanes, the side rooms, or the flanks; Azure mirrors it exactly:',
+  'Every move between chambers passes a crossing: the main gate, the flank arch, or the gatehouse jog.',
   13.5,
   '#6b5b45',
 );
 label(
   0,
   -(BG_HALF_Z + 10.2),
-  'the whole map is point-symmetric, so neither side is favored.',
+  'The whole map is point-symmetric, so neither side is favored.',
   13.5,
   '#6b5b45',
 );
@@ -233,7 +237,7 @@ legend(
 legend(
   (x, y) =>
     `<rect x="${x}" y="${y - 7}" width="18" height="14" fill="#5e7a3a" opacity="0.25" rx="2"/>`,
-  'mid ruin belt (overgrown theme)',
+  'ruin courtyard (overgrown theme)',
 );
 legend(
   (x, y) =>

@@ -43,7 +43,7 @@ export const TARGETS = [
       { key: 'queue-window', scene: 'queue' },
       { key: 'field', scene: 'field' },
       { key: 'postern', scene: 'postern' },
-      { key: 'side-room', scene: 'room' },
+      { key: 'gatehouse', scene: 'gatehouse' },
       { key: 'carry-scoreboard', scene: 'carry' },
       { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
     ],
@@ -129,12 +129,13 @@ export const TARGETS = [
           game.input.camYaw = -Math.PI / 2;
           game.input.camDist = 12;
           game.input.camPitch = 0.42;
-        } else if (sceneKey === 'room') {
-          // mid-length inside the west flank side room (backed by the rampart,
-          // north of the Crimson keep), looking south down it: ambush crate
-          // against the field wall, the south doorway and cover bay beyond
+        } else if (sceneKey === 'gatehouse') {
+          // inside the south gatehouse, on the courtyard-door line (x -22.5,
+          // the 3yd door at x -24..-21), looking south through the room: the
+          // ambush crate, the offset field-side door beyond. The camera backs
+          // out through the courtyard door, so it never clips a wall.
           const home = match.flags[0].home;
-          tp(home.x - 31, home.z + 45);
+          tp(home.x - 22.5, home.z + 30);
           p.facing = Math.PI;
           game.input.camYaw = Math.PI;
           game.input.camDist = 14;
