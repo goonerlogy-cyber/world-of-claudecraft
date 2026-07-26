@@ -2,8 +2,10 @@
 // instance-local coordinates (y up, z along the length), the single source of
 // truth shared by BOTH the collider set (src/sim/colliders.ts) and the renderer
 // (src/render/battleground.ts), so what you fight around is what you see.
-// Sim layer: no three.js imports. Map design ported from Dubtribe11's PR #589;
-// the postern gaps are the one geometry addition of the re-cut.
+// Sim layer: no three.js imports. The field is a v2 rework of Dubtribe11's
+// PR #589 layout: the keeps, flags, runes, and postern gaps are kept, and the
+// open field between them is recut into deliberate routes (flank side rooms,
+// rampart cover bays, mouth barricades, and ruin fragments around the heart).
 import type { Collider } from './colliders';
 
 export type BgTeam = 0 | 1; // 0 = Crimson (south, -z), 1 = Azure (north, +z)
@@ -76,6 +78,9 @@ export interface BgWallSeg {
   z: number;
   hw: number; // half-width (x extent)
   hd: number; // half-depth (z extent)
+  /** Low barricade: collides like any wall but renders waist-high (visual
+   *  height only; the collider set never reads this). */
+  low?: boolean;
 }
 
 // Central cover: staggered walls, a heart ruin, pillars and crate stacks that
@@ -104,6 +109,57 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 8, z: 32 },
   { x: 9, z: -22 },
   { x: -9, z: 22 },
+  { x: -30, z: -8 }, // ambush cover inside each flank side room
+  { x: 30, z: 8 },
+];
+
+// Ruin fragments: two broken L-shapes hugging the heart ruin, mirrored. Each L
+// is deliberately split at its corner (a body-width slip gap), so mid-field
+// threads several distinct paths instead of flowing around one box: the tight
+// 2yd corridor along the heart's face, the 2yd pinch between fragment and lane
+// wall, and the open lanes outside them.
+export const BG_RUIN_FRAGMENTS: BgWallSeg[] = [
+  { x: -9, z: -1, hw: 1, hd: 4 }, // southwest L, upright arm
+  { x: -5, z: -8, hw: 4, hd: 1 }, // southwest L, foot (corner slip gap between)
+  { x: 9, z: 1, hw: 1, hd: 4 }, // northeast mirror
+  { x: 5, z: 8, hw: 4, hd: 1 },
+];
+
+// Flank side rooms: a mirrored pair of three-walled pocket rooms backed by the
+// east and west ramparts at mid-field. Each room has a doorway at BOTH ends
+// beside the rampart, so the flank run threads THROUGH the room: an alternate
+// route with hard cover and ambush corners rather than a bare wall run.
+export const BG_SIDE_ROOM_WALLS: BgWallSeg[] = [
+  { x: -27, z: -5, hw: 1, hd: 9 }, // west room, field-side wall
+  { x: -28, z: 3, hw: 2, hd: 1 }, // west room, north wall (doorway at the rampart)
+  { x: -28, z: -13, hw: 2, hd: 1 }, // west room, south wall (doorway at the rampart)
+  { x: 27, z: 5, hw: 1, hd: 9 }, // east room mirror
+  { x: 28, z: -3, hw: 2, hd: 1 },
+  { x: 28, z: 13, hw: 2, hd: 1 },
+];
+
+// Rampart niches: shallow cover bays notched between stub walls that jut from
+// the perimeter side walls, two bays per rampart, mirrored. A flag runner
+// hugging the wall gets a cover beat to duck behind roughly every 20yd.
+export const BG_RAMPART_NICHES: BgWallSeg[] = [
+  { x: -31.5, z: -25, hw: 1.5, hd: 1 },
+  { x: -31.5, z: -19, hw: 1.5, hd: 1 },
+  { x: -31.5, z: 19, hw: 1.5, hd: 1 },
+  { x: -31.5, z: 25, hw: 1.5, hd: 1 },
+  { x: 31.5, z: -25, hw: 1.5, hd: 1 },
+  { x: 31.5, z: -19, hw: 1.5, hd: 1 },
+  { x: 31.5, z: 19, hw: 1.5, hd: 1 },
+  { x: 31.5, z: 25, hw: 1.5, hd: 1 },
+];
+
+// Mouth barricades: one low wall 2yd field-side of each keep mouth, offset so
+// it splits the approach into a narrow gap on the postern side and a wide gap
+// on the other. It breaks the straight sightline (and the straight charge)
+// into the keep: defenders get a hold point, attackers pick a side. Sits
+// OUTSIDE keepInteriorBounds, so the form-up containment never reads it.
+export const BG_KEEP_BARRICADES: BgWallSeg[] = [
+  { x: -2, z: -42, hw: 5, hd: 1, low: true },
+  { x: 2, z: 42, hw: 5, hd: 1, low: true },
 ];
 
 const PILLAR_R = 1.0;
@@ -173,9 +229,19 @@ export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   return segs;
 }
 
-/** Every wall segment on the field (perimeter + both keeps + cover). */
+/** Every wall segment on the field (perimeter + both keeps + cover + the v2
+ *  route work: ruin fragments, side rooms, rampart niches, mouth barricades). */
 export function battlegroundWallSegments(): BgWallSeg[] {
-  return [...BG_PERIMETER_WALLS, ...keepWallSegments(0), ...keepWallSegments(1), ...BG_COVER_WALLS];
+  return [
+    ...BG_PERIMETER_WALLS,
+    ...keepWallSegments(0),
+    ...keepWallSegments(1),
+    ...BG_COVER_WALLS,
+    ...BG_RUIN_FRAGMENTS,
+    ...BG_SIDE_ROOM_WALLS,
+    ...BG_RAMPART_NICHES,
+    ...BG_KEEP_BARRICADES,
+  ];
 }
 
 /** Full BG collision set in instance-local coordinates. Flag stands and speed

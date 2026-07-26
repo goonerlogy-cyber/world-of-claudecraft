@@ -3,11 +3,17 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_FLAG_Z,
   BG_HALF_X,
   BG_HALF_Z,
+  BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
+  BG_RAMPART_NICHES,
+  BG_RUIN_FRAGMENTS,
+  BG_SIDE_ROOM_WALLS,
   battlegroundColliders,
   battlegroundWallSegments,
+  KEEP_MOUTH_DZ,
   keepWallSegments,
 } from '../src/sim/battleground_layout';
 import { resolveMovement, resolvePosition } from '../src/sim/colliders';
@@ -120,10 +126,164 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     }
   });
 
-  it('pins the wall/pillar/crate manifest counts (the #589 map, plus 4 postern splits)', () => {
+  it('pins the wall/pillar/crate manifest counts (the v2 recut field)', () => {
     // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 7 cover walls
-    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 7);
+    // + 4 ruin fragments + 6 side-room walls + 8 niche stubs + 2 barricades
+    expect(BG_RUIN_FRAGMENTS).toHaveLength(4);
+    expect(BG_SIDE_ROOM_WALLS).toHaveLength(6);
+    expect(BG_RAMPART_NICHES).toHaveLength(8);
+    expect(BG_KEEP_BARRICADES).toHaveLength(2);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 7 + 4 + 6 + 8 + 2);
     expect(BG_COVER_PILLARS).toHaveLength(6);
-    expect(BG_COVER_CRATES).toHaveLength(4);
+    expect(BG_COVER_CRATES).toHaveLength(6);
+  });
+
+  it('only the two mouth barricades are low; every other segment is full height', () => {
+    const low = battlegroundWallSegments().filter((s) => s.low);
+    expect(low).toEqual(BG_KEEP_BARRICADES);
+    for (const b of BG_KEEP_BARRICADES) expect(b.low).toBe(true);
+  });
+});
+
+describe('Ravenrift v2 routes: side rooms, niches, barricades, ruin fragments', () => {
+  const o = battlegroundOrigin(0);
+  // Walk a chain of straight legs with body radius 0.5, asserting every leg
+  // arrives at its waypoint (so the whole route is genuinely traversable).
+  function walk(from: { x: number; z: number }, waypoints: { x: number; z: number }[]) {
+    let at = { x: o.x + from.x, z: o.z + from.z };
+    for (const wp of waypoints) {
+      const res = resolveMovement(SEED, at.x, at.z, o.x + wp.x, o.z + wp.z, 0.5);
+      expect(res.x, `leg to (${wp.x}, ${wp.z}) x`).toBeCloseTo(o.x + wp.x, 1);
+      expect(res.z, `leg to (${wp.x}, ${wp.z}) z`).toBeCloseTo(o.z + wp.z, 1);
+      at = res;
+    }
+    return at;
+  }
+
+  it('the west side room is a through-route: south doorway to north doorway', () => {
+    walk({ x: -31.5, z: -16 }, [
+      { x: -31.5, z: -10 }, // in through the south doorway
+      { x: -32, z: -8 }, // around the ambush crate, hugging the rampart
+      { x: -32, z: -4 },
+      { x: -31.5, z: 0 },
+      { x: -31.5, z: 6 }, // out through the north doorway
+    ]);
+  });
+
+  it('the east side room mirrors it exactly', () => {
+    walk({ x: 31.5, z: 16 }, [
+      { x: 31.5, z: 10 },
+      { x: 32, z: 8 },
+      { x: 32, z: 4 },
+      { x: 31.5, z: 0 },
+      { x: 31.5, z: -6 },
+    ]);
+  });
+
+  it('the side-room field wall blocks entry from the field side', () => {
+    // straight at the west room's field wall (x = -27, faces at -26/-28)
+    const blocked = resolveMovement(SEED, o.x - 22, o.z - 5, o.x - 30, o.z - 5, 0.5);
+    expect(blocked.x).toBeGreaterThan(o.x - 26);
+  });
+
+  it('the mouth barricade blocks the straight charge and both gaps stay open', () => {
+    // Crimson barricade spans x -7..3 at z -43..-41: the flag-line charge stops
+    const blocked = resolveMovement(SEED, o.x, o.z - 38, o.x, o.z - 46, 0.5);
+    expect(blocked.z).toBeGreaterThan(o.z - 41);
+    // postern-side (west) gap: x = -10 threads it
+    walk({ x: -10, z: -38 }, [{ x: -10, z: -45 }]);
+    // wide (east) gap: x = 8 threads it
+    walk({ x: 8, z: -38 }, [{ x: 8, z: -45 }]);
+    // the barricade sits field-side of the form-up containment line (the keep
+    // interior spans |z| in [BG_FLAG_Z - KEEP_MOUTH_DZ, back wall]), with at
+    // least 1yd of clearance so tickCountdown never reads it
+    for (const b of BG_KEEP_BARRICADES) {
+      expect(Math.abs(b.z) + b.hd).toBeLessThanOrEqual(BG_FLAG_Z - KEEP_MOUTH_DZ - 1);
+    }
+  });
+
+  it('a rampart niche bay is enterable cover; its stub walls block the wall-hug line', () => {
+    // duck into the west bay between the stubs at z -24..-20
+    walk({ x: -28, z: -22 }, [{ x: -31.8, z: -22 }]);
+    // hugging the rampart straight through the stub is blocked
+    const blocked = resolveMovement(SEED, o.x - 31.5, o.z - 28, o.x - 31.5, o.z - 22, 0.5);
+    expect(blocked.z).toBeLessThan(o.z - 26);
+  });
+
+  it('the ruin fragments thread the tight heart corridor and block their own line', () => {
+    // the 2yd corridor between the heart's south face (z=-5) and the fragment
+    // foot (z=-7): passable end to end at z=-6
+    walk({ x: -8, z: -6 }, [{ x: 2, z: -6 }]);
+    // crossing the fragment foot head-on is blocked
+    const blocked = resolveMovement(SEED, o.x - 5, o.z - 11, o.x - 5, o.z - 3, 0.5);
+    expect(blocked.z).toBeLessThan(o.z - 9.4);
+    // the corner slip gap between the two fragment arms is passable
+    walk({ x: -11, z: -6 }, [{ x: -6, z: -6 }]);
+  });
+
+  it('each flag is reachable from the enemy keep with body radius 0.5, both routes', () => {
+    // Route A, mid-field: Crimson flag out the wide mouth gap, up the east
+    // lane between the lane walls and the ruin fragments, in through Azure's
+    // postern-side mouth gap to the Azure flag.
+    walk({ x: 0, z: -BG_FLAG_Z }, [
+      { x: 8, z: -46 },
+      { x: 8, z: -38 },
+      { x: 11, z: -24 },
+      { x: 11, z: -8 },
+      { x: 11, z: 6 },
+      { x: 11, z: 12 },
+      { x: 6, z: 20 },
+      { x: -5, z: 27 },
+      { x: -8, z: 34 },
+      { x: -8, z: 44 },
+      { x: -6, z: 46 },
+      { x: 0, z: BG_FLAG_Z },
+    ]);
+    // Route B, west flank: out the narrow gap, past the wing baffle, weaving
+    // the niche stubs, THROUGH the west side room, and in through Azure's
+    // wide western mouth gap.
+    walk({ x: 0, z: -BG_FLAG_Z }, [
+      { x: -8, z: -46 },
+      { x: -10, z: -44 },
+      { x: -10, z: -36 },
+      { x: -30.5, z: -34 },
+      { x: -31, z: -28 }, // hug the rampart past the wing baffle
+      { x: -29, z: -27 }, // step off the wall ahead of the niche stub
+      { x: -29, z: -22 },
+      { x: -31.8, z: -22 }, // duck into the cover bay
+      { x: -29, z: -22 },
+      { x: -29, z: -16 },
+      { x: -31.5, z: -15 },
+      { x: -31.5, z: -10 }, // through the room, south door to north door
+      { x: -32, z: -8 },
+      { x: -32, z: -4 },
+      { x: -31.5, z: 6 },
+      { x: -29, z: 12 },
+      { x: -29, z: 22 },
+      { x: -31.8, z: 22 }, // the northern cover bay
+      { x: -29, z: 22 },
+      { x: -29, z: 27 },
+      { x: -31, z: 29 },
+      { x: -31, z: 40 },
+      { x: -10, z: 40 },
+      { x: -10, z: 46 },
+      { x: -4, z: 47 },
+      { x: 0, z: BG_FLAG_Z },
+    ]);
+  });
+
+  it('the form-up spots and spawn rings stay walkable under the new geometry', () => {
+    for (const base of BG_BASES) {
+      for (const sp of base.spawns) {
+        // The back-row spawn touches the keep back wall face (a #589-era
+        // trait), so allow the face-nudge but never a real embed.
+        const p = resolvePosition(SEED, o.x + sp.x, o.z + sp.z, 0.5);
+        expect(Math.hypot(p.x - (o.x + sp.x), p.z - (o.z + sp.z))).toBeLessThanOrEqual(0.5 + 1e-6);
+      }
+    }
+    // the mechanics suites stage players at (0, -40): 1yd clear of the barricade
+    const p = resolvePosition(SEED, o.x, o.z - 40, 0.5);
+    expect(p.x).toBeCloseTo(o.x, 5);
+    expect(p.z).toBeCloseTo(o.z - 40, 5);
   });
 });
