@@ -189,12 +189,14 @@ export const BG_KEEP_BARRICADES: BgWallSeg[] = [
   { x: 3, z: 106, hw: 8, hd: 1, low: true },
 ];
 
-// Graveyards: a fenced plot in each keep's postern-OPPOSITE back corner,
-// mirrored. A released spirit rises here and is bound to the plot until its
+// Graveyards: a large fenced plot in the map corner BESIDE each keep, on its
+// postern-OPPOSITE flank (out of the flag room, per the owner's direction), so
+// the keep interior stays a clean fight space and the yard reads as a real
+// place. A released spirit rises here and is bound to the plot until its
 // team's respawn wave (social/battleground.ts tickGraveyards). The stone
-// rails are REAL colliders with a corner entrance gap; their top sits above
-// eye height, so the camera clears them and spell sight through them is
-// honestly blocked, per the band's camera/sight contract.
+// rails are REAL colliders with a 4yd entrance at the field-facing corner;
+// their top sits above eye height, so the camera clears them and spell sight
+// through them is honestly blocked, per the band's camera/sight contract.
 export const BG_GRAVEYARD_FENCE_TOP = 1.8;
 export interface BgGraveyardPlot {
   x: number;
@@ -203,16 +205,21 @@ export interface BgGraveyardPlot {
   hd: number;
 }
 export const BG_GRAVEYARDS: [BgGraveyardPlot, BgGraveyardPlot] = [
-  { x: 10.5, z: -123, hw: 4, hd: 3 }, // Crimson: back-east corner (postern is west)
-  { x: -10.5, z: 123, hw: 4, hd: 3 }, // Azure mirror
+  { x: 33, z: -130, hw: 9, hd: 6 }, // Crimson: east corner beside the keep (postern is west)
+  { x: -33, z: 130, hw: 9, hd: 6 }, // Azure mirror
 ];
 export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
-  // Crimson: west rail (entrance gap at its north end) + north rail.
-  { x: 6.5, z: -124, hw: BG_WALL_T, hd: 2, fence: true },
-  { x: 11.5, z: -120, hw: 3, hd: BG_WALL_T, fence: true },
+  // Crimson yard: west + east rails, a south rail butt-joined between them,
+  // and a north rail leaving the 4yd entrance at the keep-side corner.
+  { x: 24, z: -130, hw: BG_WALL_T, hd: 6, fence: true },
+  { x: 42, z: -130, hw: BG_WALL_T, hd: 6, fence: true },
+  { x: 33, z: -136, hw: 8, hd: BG_WALL_T, fence: true },
+  { x: 35, z: -124, hw: 6, hd: BG_WALL_T, fence: true },
   // Azure point mirrors.
-  { x: -6.5, z: 124, hw: BG_WALL_T, hd: 2, fence: true },
-  { x: -11.5, z: 120, hw: 3, hd: BG_WALL_T, fence: true },
+  { x: -24, z: 130, hw: BG_WALL_T, hd: 6, fence: true },
+  { x: -42, z: 130, hw: BG_WALL_T, hd: 6, fence: true },
+  { x: -33, z: 136, hw: 8, hd: BG_WALL_T, fence: true },
+  { x: -35, z: 124, hw: 6, hd: BG_WALL_T, fence: true },
 ];
 
 const PILLAR_R = 1.0;

@@ -300,7 +300,12 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
       const lz = e.pos.z - origin.z;
       const inKeep =
         lx >= bounds.minX && lx <= bounds.maxX && lz >= bounds.minZ && lz <= bounds.maxZ;
-      if (!inKeep) placeInBg(ctx, match, pid, team, i);
+      if (!inKeep) {
+        placeInBg(ctx, match, pid, team, i);
+        // The set-back needs a reason on screen, not just a teleport
+        // (naturally rate-limited: walking back out takes seconds).
+        ctx.error(pid, 'The gates open when the battle begins.');
+      }
     });
   }
   const before = Math.ceil(match.timer);

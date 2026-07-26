@@ -166,8 +166,8 @@ export function bgGraveyardSpot(match: BgMatch, pid: number): { x: number; z: nu
   const plot = BG_GRAVEYARDS[team];
   const idx = Math.max(0, match.teams[team].indexOf(pid));
   const m = team === 0 ? 1 : -1;
-  const dx = ((idx % 2) * 4 - 2) * m;
-  const dz = (Math.floor(idx / 2) - 1) * 1.2 * m;
+  const dx = ((idx % 2) * 6 - 3) * m;
+  const dz = (Math.floor(idx / 2) - 1) * 3 * m;
   return { x: origin.x + plot.x + dx, z: origin.z + plot.z + dz };
 }
 

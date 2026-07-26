@@ -846,13 +846,13 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagDroppedLog': '{team}的旗帜掉落了。',
   'hudChrome.bg.flagReturnedLog': '{team}的旗帜已归还。',
   'hudChrome.bg.yourTeamTitle': '你的队伍',
-  'hudChrome.bg.levelRequirement': '需要等级{level}。',
+  'hudChrome.bg.levelRequirement': '你需要达到{level}级才能解锁此战场的排队。',
   'hudChrome.bg.board.kills': '击杀',
   'hudChrome.bg.board.deaths': '死亡',
   'hudChrome.bg.board.captures': '夺旗',
-  'hudChrome.bg.flagTakenBanner': '{name}夺走了{team}的旗帜!',
+  'hudChrome.bg.capturedTeamBanner': '{takers}夺取了{team}的旗帜!{crimson}:{azure}',
+  'hudChrome.bg.flagTakenBanner': '{takers}夺走了{team}的旗帜!',
   'hudChrome.bg.flagReturnedBanner': '{team}的旗帜已归还!',
-  'hudChrome.bg.capturedBanner': '{name}夺取了{team}的旗帜!{crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name}夺取了{team}的旗帜。比分{crimson}:{azure}。',
   'hudChrome.bg.victoryBanner': '胜利!鸦裂谷{crimson}:{azure}。评分{rating}({delta})',
   'hudChrome.bg.defeatBanner': '战败。鸦裂谷{crimson}:{azure}。评分{rating}({delta})',
@@ -872,7 +872,7 @@ export const zh_CN: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsBody':
     '每座要塞守着本队军旗。夺取敌旗并送到己方旗座即可得分;先夺得五次者获胜,超时的战斗按比分定胜负。旗手阵亡时旗帜就地掉落:敌人可以再次拾起,而本队队员只需靠近便能立即将其送回。军旗也绝不藏身:拾旗会解除潜行,旗手若以任何方式隐身,旗帜都会当场掉落。',
   'guide.ravenriftPage.respawnBody':
-    '死亡保留经典仪式:释放灵魂后,它会在你方主堡的围栏墓地中升起,并被结界束缚,直到你方下一波复活潮(停留过久的尸体会在短暂宽限后自动释放)。每波复活潮会同时唤起所有等待的灵魂,并在行动前获得短暂保护;两队的复活潮刻意错开,战斗永远不会同时完全重置。这里没有跑尸,也没有灵魂医者的交易:复活潮是唯一的归途。',
+    '死亡保留经典仪式:释放灵魂后,它会在你方主堡旁的围栏墓地中升起,并被结界束缚,直到你方下一波复活潮(停留过久的尸体会在短暂宽限后自动释放)。每波复活潮会同时唤起所有等待的灵魂,并在行动前获得短暂保护;两队的复活潮刻意错开,战斗永远不会同时完全重置。这里没有跑尸,也没有灵魂医者的交易:复活潮是唯一的归途。',
   'guide.ravenriftPage.pickupNote':
     '拾旗永远需要主动按下战场动作键:没有人会因为跑过旗帜而意外成为旗手。',
   'guide.ravenriftPage.respawnHeading': '战场阵亡',

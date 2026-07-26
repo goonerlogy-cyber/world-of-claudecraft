@@ -37,6 +37,7 @@ const BG_EXTRA_KIT: readonly string[] = [
   'gravemarker_A',
   'gravemarker_b',
   'shrine_candles',
+  'floor_dirt_grave',
 ];
 
 export function ensureBattlegroundAssets(): Promise<void> {

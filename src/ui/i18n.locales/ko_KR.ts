@@ -871,13 +871,13 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagDroppedLog': '{team} 깃발이 떨어졌습니다.',
   'hudChrome.bg.flagReturnedLog': '{team} 깃발이 반환되었습니다.',
   'hudChrome.bg.yourTeamTitle': '내 팀',
-  'hudChrome.bg.levelRequirement': '레벨 {level} 이상 참가 가능합니다.',
+  'hudChrome.bg.levelRequirement': '이 전장의 대기열은 레벨 {level}에 도달하면 잠금 해제됩니다.',
   'hudChrome.bg.board.kills': '처치',
   'hudChrome.bg.board.deaths': '죽음',
   'hudChrome.bg.board.captures': '탈취',
-  'hudChrome.bg.flagTakenBanner': '{name}이(가) {team} 깃발을 빼앗았습니다!',
+  'hudChrome.bg.capturedTeamBanner': '{takers} 팀이 {team} 깃발을 탈취!{crimson}:{azure}',
+  'hudChrome.bg.flagTakenBanner': '{takers} 팀이 {team} 깃발을 빼앗았습니다!',
   'hudChrome.bg.flagReturnedBanner': '{team} 깃발이 반환되었습니다!',
-  'hudChrome.bg.capturedBanner': '{name}이(가) {team} 깃발을 탈취!{crimson}:{azure}',
   'hudChrome.bg.capturedLog': '{name}이(가) {team} 깃발을 탈취했습니다. 점수 {crimson}:{azure}.',
   'hudChrome.bg.victoryBanner': '승리! 레이븐리프트 {crimson}:{azure}. 레이팅 {rating}({delta})',
   'hudChrome.bg.defeatBanner': '패배. 레이븐리프트 {crimson}:{azure}. 레이팅 {rating}({delta})',
@@ -897,7 +897,7 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsBody':
     '각 요새는 자기 팀의 깃발을 지킵니다. 적 깃발을 빼앗아 아군 깃대까지 가져오면 득점하며, 먼저 5회 탈취한 팀이 승리하고 시간이 다 된 전투는 점수로 판가름납니다. 운반자가 쓰러지면 깃발은 그 자리에 떨어집니다. 적은 다시 주울 수 있지만, 깃발 주인 팀은 가까이 가기만 해도 즉시 되찾아옵니다. 또한 깃발은 결코 숨지 않습니다. 깃발을 주우면 은신이 풀리고, 운반자가 어떤 수단으로든 모습을 감추면 깃발은 그 자리에 떨어집니다.',
   'guide.ravenriftPage.respawnBody':
-    '죽음은 고전 의식을 그대로 따릅니다. 영혼을 해방하면 아군 요새의 울타리 묘지에서 영혼이 일어나, 다음 아군 부활 파도까지 그곳에 결박됩니다(오래 방치된 시신은 짧은 유예 후 자동으로 해방됩니다). 각 파도는 기다리던 모든 영혼을 함께 일으키며, 행동하기 전까지 잠시 보호됩니다. 두 팀의 파도는 의도적으로 엇갈려 있어 전투가 한꺼번에 완전히 초기화되는 일은 없습니다. 시신 달리기도, 영혼 치유사와의 거래도 없습니다. 파도만이 유일한 귀환길입니다.',
+    '죽음은 고전 의식을 그대로 따릅니다. 영혼을 해방하면 아군 요새 옆 울타리 묘지에서 영혼이 일어나, 다음 아군 부활 파도까지 그곳에 결박됩니다(오래 방치된 시신은 짧은 유예 후 자동으로 해방됩니다). 각 파도는 기다리던 모든 영혼을 함께 일으키며, 행동하기 전까지 잠시 보호됩니다. 두 팀의 파도는 의도적으로 엇갈려 있어 전투가 한꺼번에 완전히 초기화되는 일은 없습니다. 시신 달리기도, 영혼 치유사와의 거래도 없습니다. 파도만이 유일한 귀환길입니다.',
   'guide.ravenriftPage.pickupNote':
     '깃발 줍기는 언제나 전장 행동 키를 의도적으로 누르는 행위입니다. 깃발 위를 스쳐 지나갔다고 운반자가 되는 일은 없습니다.',
   'guide.ravenriftPage.respawnHeading': '전장에서의 죽음',

@@ -7446,7 +7446,8 @@ type BgExtraKey =
   | 'errDelveDuringBg'
   | 'errTalentsDuringBg'
   | 'errLevelTooLow'
-  | 'errMemberLevelTooLow';
+  | 'errMemberLevelTooLow'
+  | 'heldAtGate';
 
 const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   joinQueue: 'You join the Ravenrift queue. Need {count} champions to start a match.',
@@ -7466,6 +7467,7 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   errTalentsDuringBg: 'You cannot change talents during a battleground.',
   errLevelTooLow: 'Ravenrift requires level {level}.',
   errMemberLevelTooLow: 'Every party member must be level {level} to queue for Ravenrift.',
+  heldAtGate: 'The gates open when the battle begins.',
 };
 
 const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, string>>>> = {
@@ -7529,6 +7531,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errLevelTooLow: 'レイヴンリフトにはレベル{level}が必要です。',
     errMemberLevelTooLow:
       'レイヴンリフトのキューに参加するには、パーティ全員がレベル{level}である必要があります。',
+    heldAtGate: '門は戦闘開始とともに開かれます。',
   },
   ko_KR: {
     joinQueue:
@@ -7552,6 +7555,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errLevelTooLow: '레이븐리프트는 레벨 {level}부터 참가할 수 있습니다.',
     errMemberLevelTooLow:
       '레이븐리프트 대기열에 참가하려면 모든 파티원이 레벨 {level} 이상이어야 합니다.',
+    heldAtGate: '전투가 시작되면 성문이 열립니다.',
   },
   ru_RU: {
     joinQueue: 'Вы встали в очередь Вороньего Разлома. Для начала матча нужно {count} бойцов.',
@@ -7574,6 +7578,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errLevelTooLow: 'Для Вороньего Разлома требуется уровень {level}.',
     errMemberLevelTooLow:
       'Чтобы встать в очередь Вороньего Разлома, каждый в группе должен иметь уровень {level}.',
+    heldAtGate: 'Ворота откроются с началом битвы.',
   },
 };
 
@@ -8819,6 +8824,10 @@ const RULES: Rule[] = [
   {
     re: /^Every party member must be level (\d+) to queue for Ravenrift\.$/,
     build: (m) => tBg('errMemberLevelTooLow', { level: m[1] }),
+  },
+  {
+    re: /^The gates open when the battle begins\.$/,
+    build: () => tBg('heldAtGate'),
   },
   // Delve / lockpicking sim text. Re-localized through t() against the sim.delve.* /
   // sim.lockpick.* keys (src/ui/i18n.catalog/index.ts). The module-enter banner is two

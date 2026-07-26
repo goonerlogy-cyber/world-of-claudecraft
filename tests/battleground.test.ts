@@ -227,6 +227,30 @@ describe('Ravenrift: match tallies (kills, deaths, captures)', () => {
   });
 });
 
+describe('Ravenrift: the form-up hold', () => {
+  it('a runner slipping out during the countdown is set back and told why', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    expect(match.state).toBe('countdown');
+    const runner = match.teams[0][0];
+    const o = battlegroundOrigin(match.slot);
+    tp(sim, runner, o.x, o.z - 60); // out past the keep, into the field chamber
+    const evs = sim.tick();
+    const e = sim.entities.get(runner)!;
+    const lz = e.pos.z - o.z;
+    expect(lz).toBeGreaterThanOrEqual(-128); // back inside the Crimson keep box
+    expect(lz).toBeLessThanOrEqual(-108);
+    expect(
+      evs.some(
+        (v) =>
+          v.type === 'error' &&
+          v.pid === runner &&
+          v.text === 'The gates open when the battle begins.',
+      ),
+    ).toBe(true);
+  });
+});
+
 describe('Ravenrift: the graveyard rite', () => {
   it('a corpse auto-releases after the grace; a released spirit is warded inside the plot', () => {
     const { sim, pids } = tenInQueue();

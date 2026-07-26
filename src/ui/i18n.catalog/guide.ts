@@ -1086,7 +1086,7 @@ export const guideStrings = {
       'Picking a flag up is always a deliberate press of the battleground action key: nobody ever becomes the carrier by strafing through the wrong spot.',
     respawnHeading: 'Falling in battle',
     respawnBody:
-      "Death keeps the classic rite: release your spirit and it rises in your keep's fenced graveyard plot, warded there until your team's next respawn wave (a corpse that lingers is released for you after a short grace). Each wave raises every waiting spirit together, briefly protected until they act, and the two team waves are deliberately staggered, so the fight never fully resets at once. There is no corpse run and no Spirit Healer bargain: the wave is the one road back.",
+      "Death keeps the classic rite: release your spirit and it rises in the fenced graveyard beside your keep, warded there until your team's next respawn wave (a corpse that lingers is released for you after a short grace). Each wave raises every waiting spirit together, briefly protected until they act, and the two team waves are deliberately staggered, so the fight never fully resets at once. There is no corpse run and no Spirit Healer bargain: the wave is the one road back.",
     carrierHeading: 'Carrying the flag',
     carrierBody:
       'A carrier who holds the enemy flag too long grows more and more vulnerable, taking ever-increasing damage until the flag is captured, dropped, or returned. Hiding with the flag is a losing plan; running it home is the winning one.',

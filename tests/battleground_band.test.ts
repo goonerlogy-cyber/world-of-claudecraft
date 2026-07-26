@@ -157,12 +157,12 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
   it('pins the wall/pillar/crate manifest counts (the three-chambers field)', () => {
     // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 11 cover walls
     // + 8 curtain segments + 8 gatehouse walls + 2 barricades
-    // + 4 graveyard fence rails (2 per keep plot)
+    // + 8 graveyard fence rails (4 per corner yard)
     expect(BG_CURTAIN_WALLS).toHaveLength(8);
     expect(BG_GATEHOUSE_WALLS).toHaveLength(8);
     expect(BG_KEEP_BARRICADES).toHaveLength(2);
-    expect(BG_GRAVEYARD_FENCES).toHaveLength(4);
-    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 11 + 8 + 8 + 2 + 4);
+    expect(BG_GRAVEYARD_FENCES).toHaveLength(8);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 11 + 8 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
@@ -435,11 +435,18 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     expect(BG_GRAVEYARDS[1].hd).toBe(BG_GRAVEYARDS[0].hd);
     for (const team of [0, 1] as const) {
       const plot = BG_GRAVEYARDS[team];
+      // The yard lives in the map corner BESIDE the keep: inside the
+      // perimeter with wall clearance, fully OUTSIDE the keep interior
+      // (never in the flag room), on the postern-opposite flank.
+      expect(Math.abs(plot.x) + plot.hw).toBeLessThanOrEqual(BG_HALF_X - 2);
+      expect(Math.abs(plot.z) + plot.hd).toBeLessThanOrEqual(BG_HALF_Z - 2);
       const bounds = keepInteriorBounds(team);
-      expect(plot.x - plot.hw).toBeGreaterThanOrEqual(bounds.minX);
-      expect(plot.x + plot.hw).toBeLessThanOrEqual(bounds.maxX);
-      expect(plot.z - plot.hd).toBeGreaterThanOrEqual(bounds.minZ);
-      expect(plot.z + plot.hd).toBeLessThanOrEqual(bounds.maxZ);
+      const overlapsKeep =
+        plot.x + plot.hw > bounds.minX &&
+        plot.x - plot.hw < bounds.maxX &&
+        plot.z + plot.hd > bounds.minZ &&
+        plot.z - plot.hd < bounds.maxZ;
+      expect(overlapsKeep).toBe(false);
     }
     // every release spot (5 roster slots x 2 teams) resolves in place at body
     // radius: a spirit is never teleported into a fence rail

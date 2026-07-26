@@ -8349,6 +8349,18 @@
     letter-spacing: 0.6px;
     text-transform: uppercase;
   }
+  .bg-bteam {
+    margin-top: 6px;
+    font-family: var(--title-font);
+    font-size: 11px;
+    letter-spacing: 0.6px;
+  }
+  .bg-bteam.crimson {
+    color: var(--color-team-red);
+  }
+  .bg-bteam.azure {
+    color: var(--color-team-blue);
+  }
   .bg-brow.crimson .bb-name {
     color: var(--color-team-red);
   }

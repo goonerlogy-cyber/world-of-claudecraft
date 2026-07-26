@@ -74,12 +74,14 @@ export class BattlegroundScoreboard {
       this.flagEls = [root.querySelector('.bg-flag.crimson'), root.querySelector('.bg-flag.azure')];
       this.pipEls = [...root.querySelectorAll<HTMLElement>('.bg-pip')];
       this.pipCount = this.pipEls.length;
-      this.boardRows = [...root.querySelectorAll<HTMLElement>('.bg-brow')].map((row) => ({
-        row,
-        k: row.querySelector('.bb-k') as HTMLElement,
-        d: row.querySelector('.bb-d') as HTMLElement,
-        c: row.querySelector('.bb-c') as HTMLElement,
-      }));
+      this.boardRows = [...root.querySelectorAll<HTMLElement>('.bg-brow.bg-bplayer')].map(
+        (row) => ({
+          row,
+          k: row.querySelector('.bb-k') as HTMLElement,
+          d: row.querySelector('.bb-d') as HTMLElement,
+          c: row.querySelector('.bb-c') as HTMLElement,
+        }),
+      );
     }
     if (this.scoreCrimsonEl) w.setText(this.scoreCrimsonEl, num(view.scoreCrimson));
     if (this.scoreAzureEl) w.setText(this.scoreAzureEl, num(view.scoreAzure));
@@ -223,9 +225,11 @@ export class BattlegroundScoreboard {
     );
   }
 
-  // The expanded board: full rosters with kills / deaths / captures, revealed
-  // on hover and pinned by tap. Structural rows only; the stat cells are
-  // written through elided slots each update.
+  // The expanded board: the two rosters in their own team sections under one
+  // Kills / Deaths / Captures label row, revealed on hover and pinned by tap.
+  // Structural rows only; the stat cells are written through elided slots
+  // each update (the collector matches .bg-bplayer ONLY, so the label rows
+  // can never be clobbered by data writes).
   private boardHtml(view: BgScoreboardView): string {
     const teamCls = (team: number): string => (team === 0 ? 'crimson' : 'azure');
     const header =
@@ -234,16 +238,22 @@ export class BattlegroundScoreboard {
       `<span class="bb-k">${esc(t('hudChrome.bg.board.kills'))}</span>` +
       `<span class="bb-d">${esc(t('hudChrome.bg.board.deaths'))}</span>` +
       `<span class="bb-c">${esc(t('hudChrome.bg.board.captures'))}</span></div>`;
-    const rows = view.board
-      .map((r) => {
-        const clsName = classDisplayName(r.cls as PlayerClass) || r.cls;
-        return (
-          `<div class="bg-brow ${teamCls(r.team)}${r.me ? ' me' : ''}">` +
-          `<span class="bb-name" title="${esc(clsName)}">${esc(r.name)}</span>` +
-          `<span class="bb-k"></span><span class="bb-d"></span><span class="bb-c"></span></div>`
-        );
-      })
-      .join('');
-    return `<div class="bg-board">${header}${rows}</div>`;
+    const rowHtml = (r: BgScoreboardView['board'][number]): string => {
+      const clsName = classDisplayName(r.cls as PlayerClass) || r.cls;
+      return (
+        `<div class="bg-brow bg-bplayer ${teamCls(r.team)}${r.me ? ' me' : ''}">` +
+        `<span class="bb-name" title="${esc(clsName)}">${esc(r.name)}</span>` +
+        `<span class="bb-k"></span><span class="bb-d"></span><span class="bb-c"></span></div>`
+      );
+    };
+    const section = (team: number): string =>
+      `<div class="bg-bteam ${teamCls(team)}">${esc(
+        team === 0 ? t('hudChrome.bg.crimson') : t('hudChrome.bg.azure'),
+      )}</div>` +
+      view.board
+        .filter((r) => r.team === team)
+        .map(rowHtml)
+        .join('');
+    return `<div class="bg-board">${header}${section(0)}${section(1)}</div>`;
   }
 }

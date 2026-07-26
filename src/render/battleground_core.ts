@@ -453,13 +453,24 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   }
   // Graveyard dressing: exact point mirrors between the two plots (offsets
   // negated, yaw rotated a half turn), fixed kinds per spot.
-  const GRAVE_SPOTS: { dx: number; dz: number; kind: string }[] = [
-    { dx: -2.2, dz: -1.6, kind: 'gravestone' },
-    { dx: 0.4, dz: -1.9, kind: 'grave_a' },
-    { dx: 2.6, dz: -1.3, kind: 'gravemarker_A' },
-    { dx: -0.9, dz: 0.9, kind: 'grave_B' },
-    { dx: 2.1, dz: 1.3, kind: 'gravemarker_b' },
-    { dx: -3.1, dz: 1.9, kind: 'shrine_candles' },
+  const GRAVE_SPOTS: { dx: number; dz: number; kind: string; y?: number }[] = [
+    // two loose rows of stones with dirt patches under the gaps
+    { dx: -6.2, dz: -3.8, kind: 'gravestone' },
+    { dx: -2.4, dz: -4.2, kind: 'grave_a' },
+    { dx: 1.6, dz: -3.6, kind: 'gravemarker_A' },
+    { dx: 5.4, dz: -4.1, kind: 'grave_B' },
+    { dx: -4.3, dz: -0.4, kind: 'gravemarker_b' },
+    { dx: -0.2, dz: -0.8, kind: 'gravestone' },
+    { dx: 3.8, dz: -0.2, kind: 'grave_a' },
+    { dx: 6.3, dz: 2.9, kind: 'gravemarker_A' },
+    { dx: -6.0, dz: 3.2, kind: 'grave_B' },
+    { dx: -1.9, dz: 3.4, kind: 'gravemarker_b' },
+    { dx: -3.4, dz: -2.3, kind: 'floor_dirt_grave', y: 0.03 },
+    { dx: 0.8, dz: -2.1, kind: 'floor_dirt_grave', y: 0.03 },
+    { dx: 4.6, dz: -2.4, kind: 'floor_dirt_grave', y: 0.03 },
+    { dx: -0.6, dz: 1.6, kind: 'floor_dirt_grave', y: 0.03 },
+    // the shrine anchors the far corner, away from the entrance
+    { dx: 7.1, dz: -4.6, kind: 'shrine_candles' },
   ];
   const graves: BgModulePlacement[] = [];
   for (const base of BG_BASES) {
@@ -469,7 +480,7 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       graves.push({
         kind: spot.kind,
         x: plot.x + m * spot.dx,
-        y: 0,
+        y: spot.y ?? 0,
         z: plot.z + m * spot.dz,
         ry: base.team === 0 ? 0 : Math.PI,
         scale: [GRAVE_MODULE_SCALE, GRAVE_MODULE_SCALE, GRAVE_MODULE_SCALE],

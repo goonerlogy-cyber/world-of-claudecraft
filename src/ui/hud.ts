@@ -10055,8 +10055,11 @@ export class Hud {
             crimson: formatNumber(ev.scoreCrimson, { maximumFractionDigits: 0 }),
             azure: formatNumber(ev.scoreAzure, { maximumFractionDigits: 0 }),
           };
+          // Center-screen calls speak in TEAM voice (owner direction); the
+          // combat log keeps the player's name for detail.
+          const takers = ev.team === 0 ? t('hudChrome.bg.azure') : t('hudChrome.bg.crimson');
           if (ev.action === 'captured') {
-            this.showBanner(t('hudChrome.bg.capturedBanner', { name: ev.byName, team, ...scores }));
+            this.showBanner(t('hudChrome.bg.capturedTeamBanner', { takers, team, ...scores }));
             this.combatLog(
               t('hudChrome.bg.capturedLog', { name: ev.byName, team, ...scores }),
               '#ffd24a',
@@ -10067,7 +10070,7 @@ export class Hud {
             // banner family) with their own banner-sink keys. Drops stay
             // log-only so a taken/captured banner is never clobbered by the
             // least urgent call of the three.
-            this.showBanner(t('hudChrome.bg.flagTakenBanner', { name: ev.byName, team }));
+            this.showBanner(t('hudChrome.bg.flagTakenBanner', { takers, team }));
             this.combatLog(t('hudChrome.bg.flagTakenLog', { name: ev.byName, team }), '#ff9a3c');
             audio.fiestaDown();
           } else if (ev.action === 'dropped') {
