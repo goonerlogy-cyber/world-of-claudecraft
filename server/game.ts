@@ -397,6 +397,22 @@ export function mobZonePhase(mob: Entity): string {
 
 const ARENA_WIRE_HZ = 0.1;
 const ARENA_WIRE_INTERVAL_TICKS = Math.max(1, Math.round(1 / (DT * ARENA_WIRE_HZ)));
+// Ravenrift `bg` self key: 1 Hz covers the in-match clocks (wave respawn,
+// match cap, spawn protection) that tick by whole seconds; queue and match
+// transitions force a fresh readout via lastBgWireTick resets (the arena
+// staleness fix), and the flag/score events ride the event queue instantly.
+const BG_WIRE_HZ = 1;
+const BG_WIRE_INTERVAL_TICKS = Math.max(1, Math.round(1 / (DT * BG_WIRE_HZ)));
+// Personal battleground events that change the throttled `bg` readout the
+// moment they land (found/start/flag plays/result/queue churn).
+const BG_WIRE_RESET_EVENTS = new Set([
+  'bgQueued',
+  'bgUnqueued',
+  'bgFound',
+  'bgStart',
+  'bgFlag',
+  'bgEnd',
+]);
 // Vale Cup readout cadence: the CupInfo payload carries whole-second clocks and
 // queue sizes, so 2 Hz keeps the window/indicator live without re-serializing
 // the rosters at 20 Hz. Instant transitions ride the pid-scoped vcup* events.
@@ -720,6 +736,8 @@ export interface ClientSession {
   timerWireCache: StableSelfTimerWireCache;
   // arena readout is reconciled at UI cadence instead of snapshot cadence
   lastArenaWireTick: number;
+  // Ravenrift battleground readout, same idea at its own cadence (BG_WIRE_HZ)
+  lastBgWireTick: number;
   // Dungeon Finder readout, same idea at its own cadence (DF_WIRE_HZ)
   lastDfWireTick: number;
   // set when a command or sim event that can change a heavy self field (bags,
@@ -2821,6 +2839,7 @@ export class GameServer {
         meta.timerWireVersion === STABLE_TIMER_WIRE_VERSION ? STABLE_TIMER_WIRE_VERSION : 1,
       timerWireCache: new StableSelfTimerWireCache(),
       lastArenaWireTick: -ARENA_WIRE_INTERVAL_TICKS,
+      lastBgWireTick: -BG_WIRE_INTERVAL_TICKS,
       lastDfWireTick: -DF_WIRE_INTERVAL_TICKS,
       selfHeavyDirty: true,
       lastWireRev: -1,
@@ -4812,6 +4831,26 @@ export class GameServer {
         break;
       }
 
+      // Ravenrift (5v5 capture-the-flag). The sim owns every rule; the resets
+      // surface the changed queue/match state on the next snapshot instead of
+      // the throttled BG_WIRE_HZ tick (the arena staleness fix).
+      case 'bg_queue':
+        sim.bgQueueJoin(pid);
+        session.lastBgWireTick = -BG_WIRE_INTERVAL_TICKS;
+        break;
+      case 'bg_leave':
+        sim.bgQueueLeave(pid);
+        session.lastBgWireTick = -BG_WIRE_INTERVAL_TICKS;
+        break;
+      case 'bg_flag':
+        sim.bgFlagAction(pid);
+        session.lastBgWireTick = -BG_WIRE_INTERVAL_TICKS;
+        break;
+      case 'dev_bg_start': {
+        if (process.env.ALLOW_DEV_COMMANDS === '1') sim.devStartBg();
+        break;
+      }
+
       // Card Duel minigame (the Card Master NPC, docs: src/sim/social/card_duel.ts).
       case 'card_queue_join':
         sim.joinCardDuelQueue(pid);
@@ -5868,6 +5907,13 @@ export class GameServer {
       session.lastArenaWireTick = this.sim.tickCount;
       maybe('arena', this.sim.arenaInfoFor(anchorSession.pid));
     }
+    // Ravenrift readout at its own UI cadence (BG_WIRE_HZ). The viewer-identical
+    // match core is memoized per tick inside the sim (sharedMatchView), so ten
+    // in-match viewers share one build; only the per-viewer scalars differ.
+    if (this.sim.tickCount - session.lastBgWireTick >= BG_WIRE_INTERVAL_TICKS) {
+      session.lastBgWireTick = this.sim.tickCount;
+      maybe('bg', this.sim.bgInfoFor(anchorSession.pid));
+    }
     // Vale Cup readout at its own UI cadence (VC_WIRE_HZ). Dueness (`vcupDue`) is
     // decided once per broadcast pass in broadcastSnapshots and realm-global, so the
     // shared bundle is built once per due pass rather than on each session's own
@@ -6545,6 +6591,10 @@ export class GameServer {
               // force it fresh next snapshot instead of leaving the Arena
               // window showing the pre-match rating for up to 10s.
               if (ev.type === 'arenaEnd') session.lastArenaWireTick = -ARENA_WIRE_INTERVAL_TICKS;
+              // Same staleness fix for the Ravenrift readout: queue churn,
+              // match lifecycle, and flag plays refresh `bg` next snapshot.
+              if (BG_WIRE_RESET_EVENTS.has(ev.type))
+                session.lastBgWireTick = -BG_WIRE_INTERVAL_TICKS;
               // remember the last person to whisper us, for /r reply (the
               // recipient copy of a whisper has no `to`; the sender echo does)
               if (

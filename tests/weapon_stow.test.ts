@@ -213,6 +213,7 @@ function bareClient(pid: number): ClientWorld {
   c.selectedDungeonDifficulty = 'normal';
   c.tradeInfo = null;
   c.duelInfo = null;
+  c.bgInfo = null;
   c.lastSnapAt = 0;
   c.snapInterval = 50;
   c.serverTickHz = null;

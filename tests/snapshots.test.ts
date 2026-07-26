@@ -129,6 +129,7 @@ function bareClient(pid: number, playerClass: PlayerClass = 'warrior'): ClientWo
   c.selectedDungeonDifficulty = 'normal';
   c.tradeInfo = null;
   c.duelInfo = null;
+  c.bgInfo = null;
   c.lastSnapAt = 0;
   c.snapInterval = 50;
   c.serverTickHz = null;
@@ -2983,6 +2984,7 @@ const ALL_DELTA_KEYS = [
   'atitle',
   'bags',
   'bank',
+  'bg',
   'buyback',
   'cardDuel',
   'cds',
@@ -3051,6 +3053,7 @@ const TERSE_TO_IWORLD: Record<string, string> = {
   atitle: 'activeTitle',
   bags: 'bags',
   bank: 'bankInfo',
+  bg: 'bgInfo',
   buyback: 'vendorBuyback',
   cds: 'cooldowns',
   cosmetics: 'accountCosmetics',
@@ -3467,6 +3470,7 @@ describe('full self-state snapshot delta fixture', () => {
     expect((client.tradeInfo as any)?.otherPid).toBe(memberPid); // trade -> tradeInfo
     expect((client.duelInfo as any)?.state).toBe('countdown'); // duel -> duelInfo
     expect(client.arenaInfo).not.toBeNull(); // arena -> arenaInfo
+    expect(client.bgInfo).not.toBeNull(); // bg -> bgInfo (queue/standing readout)
     expect(client.marketInfo).not.toBeNull(); // market -> marketInfo
     expect(client.marketCollectPending).toBe(true); // mktU -> marketCollectPending (truthy bit)
     expect(client.bankInfo).not.toBeNull(); // bank -> bankInfo
@@ -3686,8 +3690,8 @@ describe('gather node cooldown wire round trip (ncd)', () => {
 
 describe('delta-key contract pins (anti-drift)', () => {
   it('ALL_DELTA_KEYS contains exactly 56 unique keys in sorted order', () => {
-    expect(ALL_DELTA_KEYS).toHaveLength(56);
-    expect(new Set(ALL_DELTA_KEYS).size).toBe(56);
+    expect(ALL_DELTA_KEYS).toHaveLength(57);
+    expect(new Set(ALL_DELTA_KEYS).size).toBe(57);
     expect([...ALL_DELTA_KEYS]).toEqual([...ALL_DELTA_KEYS].sort());
   });
 
@@ -3706,7 +3710,7 @@ describe('delta-key contract pins (anti-drift)', () => {
     expect(scraped.has('lockouts')).toBe(true); // the multi-line call IS captured
     expect(scraped.has('vcupb')).toBe(true); // the maybeRaw calls ARE captured by the widened regex
     expect(scraped.has('dfb')).toBe(true); // incl. the multi-line maybeRaw('dfb', ...) form
-    expect(scraped.size).toBe(56);
+    expect(scraped.size).toBe(57);
     expect([...scraped].sort()).toEqual([...ALL_DELTA_KEYS].sort());
   });
 
