@@ -236,7 +236,20 @@ const results = {};
   }
 }
 
+// --- Scene 4: ruin stump beside the Hollow Crypt delve ruins -----------------
+{
+  // Ring (-5,-60) r8: column i=2 is a 2.11-tall broken stump at (1.93, -64).
+  // Standing on it must NOT vanish it (hideables register their real height).
+  const arm = await drive(1.93, -64 - 1.1 - 1.5, 0, [
+    { forward: true, jump: true, ticks: 120, stopAboveY: 1.6 },
+  ]);
+  console.log('stump:', JSON.stringify(arm));
+  await cam(0.8, 5.5, 0.3);
+  await shoot('ruin-stump-standing');
+  results.stump = arm[0].onGround && arm[0].y > 1.6;
+}
+
 console.log(`RESULT ${JSON.stringify(results)}`);
 await browser.close();
-const ok = results.dais && results.coffin && results.cargo && results.chapel;
+const ok = results.dais && results.coffin && results.cargo && results.chapel && results.stump;
 process.exit(ok ? 0 : 1);

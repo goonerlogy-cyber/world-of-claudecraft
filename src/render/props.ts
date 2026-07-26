@@ -452,6 +452,13 @@ function keyRand(key: number, n: number): number {
   return hash2(Math.round(key * 97), n * 7919, 0x9e3779);
 }
 
+// Rotate a parent-local XZ offset by the parent's yaw (colliders.rotY twin).
+function rotLocal(lx: number, lz: number, rot: number): { x: number; z: number } {
+  const c = Math.cos(rot),
+    s = Math.sin(rot);
+  return { x: lx * c + lz * s, z: -lx * s + lz * c };
+}
+
 type Scale = number | [number, number, number];
 
 function setScale(o: THREE.Object3D, s: Scale): void {
@@ -817,9 +824,15 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
       // numbers come from sim/prop_layout.ts (CHAPEL_TOWER/CHAPEL_HALL): the
       // collider derives the SAME shapes, so the hall roof a player climbs
       // onto is exactly the roof drawn here.
-      const g = new THREE.Group();
+      //
+      // The two parts are SEPARATE hideables at their own real heights: a
+      // player STANDS on the hall roof, and one whole-chapel footprint at the
+      // tower's top would put their eye inside-and-below it, vanishing the
+      // very roof underfoot. Split, the hall never hides while stood on and
+      // the tower still ghosts when it genuinely blocks the camera.
+      const gTower = new THREE.Group();
       const tower = propAsset('bellTower');
-      addParts(g, 'bellTower', {
+      addParts(gTower, 'bellTower', {
         z: CHAPEL_TOWER.dz,
         scale: [
           (b.w * CHAPEL_TOWER.wScale) / tower.size.x,
@@ -827,8 +840,24 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
           (b.d * CHAPEL_TOWER.dScale) / tower.size.z,
         ],
       });
+      gTower.position.set(b.x, y - CHAPEL_HALL.sink, b.z);
+      gTower.rotation.y = b.rot;
+      group.add(shadowed(gTower));
+      const towerOff = rotLocal(0, CHAPEL_TOWER.dz, b.rot);
+      registerHideable(
+        gTower,
+        obbFootprint(
+          b.x + towerOff.x,
+          b.z + towerOff.z,
+          (b.w * CHAPEL_TOWER.wScale) / 2,
+          (b.d * CHAPEL_TOWER.dScale) / 2,
+          b.rot,
+          roofY,
+        ),
+      );
+      const gHall = new THREE.Group();
       const hall = propAsset('house3');
-      addParts(g, 'house3', {
+      addParts(gHall, 'house3', {
         z: b.d / 2 - CHAPEL_HALL.dzFromFront,
         scale: [
           (b.w * CHAPEL_HALL.wScale) / hall.size.x,
@@ -836,10 +865,21 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
           CHAPEL_HALL.depth / hall.size.z,
         ],
       });
-      g.position.set(b.x, y - CHAPEL_HALL.sink, b.z);
-      g.rotation.y = b.rot;
-      group.add(shadowed(g));
-      registerHideable(g, obbFootprint(b.x, b.z, b.w / 2, b.d / 2, b.rot, roofY));
+      gHall.position.set(b.x, y - CHAPEL_HALL.sink, b.z);
+      gHall.rotation.y = b.rot;
+      group.add(shadowed(gHall));
+      const hallOff = rotLocal(0, b.d / 2 - CHAPEL_HALL.dzFromFront, b.rot);
+      registerHideable(
+        gHall,
+        obbFootprint(
+          b.x + hallOff.x,
+          b.z + hallOff.z,
+          (b.w * CHAPEL_HALL.wScale) / 2,
+          CHAPEL_HALL.depth / 2,
+          b.rot,
+          y + CHAPEL_HALL.height,
+        ),
+      );
       continue;
     }
     const asset: PropKey =
@@ -1081,7 +1121,13 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
       });
       g.position.set(x, y - 0.1, z);
       group.add(shadowed(g));
-      registerHideable(g, circleFootprint(x, z, 0.6, y + 4.3, 2.2));
+      // Hideable at the column's REAL drawn top, not the intact monolith's:
+      // broken stumps are standable now, and registering them tall would put
+      // a standing player's eye inside-and-below the footprint, vanishing
+      // the stump underfoot. Same height math as the collider (native tops
+      // 1.0 intact / 0.65 broken, times the y scale, minus the 0.1 sink).
+      const colTop = intact ? sy - 0.1 : 0.65 * sy - 0.1;
+      registerHideable(g, circleFootprint(x, z, 0.6, y + colTop, 2.2));
     }
     if (lowProps) continue;
     // toppled relics at the ring's heart: half-buried head + fallen column
