@@ -172,9 +172,9 @@ export const GRAVE_STRIDE_Z = 2.6;
 export const GRAVE_SCALE = 2.25;
 /**
  * Native heights of the four headstone models, in the order the renderer
- * cycles them. Collision always uses this full set even though the LOW
- * graphics tier draws only the round stone: graphics settings are
- * gameplay-neutral, so what blocks a player must not depend on their preset.
+ * cycles them. Every tier draws all four shapes (render/props.ts): graphics
+ * settings are gameplay-neutral, so what blocks a player must not depend on
+ * their preset, and the drawn shape must be the one whose height blocks.
  */
 export const GRAVE_NATIVE_HEIGHTS: readonly number[] = [
   0.575, // gravestone_round

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { buildingCameraHeight } from '../sim/building_layout';
 import { mineMoundFootprint, STALL_HALF_D, STALL_HALF_W } from '../sim/colliders';
 import { BUILTIN_WORLD, getActiveWorldContent, WORLD_MIN_Z } from '../sim/data';
 import {
@@ -137,10 +138,12 @@ const loadedProps = new Map<string, GLTF>();
 const ALL_PROP_KEYS = Object.keys(PROP_ASSET_DEFS) as PropKey[];
 
 // The props the renderer actually RENDERS at the low graphics tier: a subset, since
-// low gfx drops the decorative/secondary props (anvils, gravestones beyond the round
-// one, extra rocks, statues, ...). Medium and higher render every entry in
-// PROP_ASSET_DEFS. This list scopes ONLY the per-tier work (material prewarm); it is
-// deliberately NOT the preload set (see preloadPropKeys below).
+// low gfx drops the decorative/secondary props (anvils, extra rocks, statues, ...).
+// Medium and higher render every entry in PROP_ASSET_DEFS. All four headstone
+// shapes stay on every tier: their colliders carry per-shape standable heights,
+// and a tier may never desync what is drawn from what blocks. This list scopes
+// ONLY the per-tier work (material prewarm); it is deliberately NOT the preload
+// set (see preloadPropKeys below).
 const LOW_TIER_PROP_KEYS: readonly PropKey[] = [
   'house1',
   'house2',
@@ -164,6 +167,9 @@ const LOW_TIER_PROP_KEYS: readonly PropKey[] = [
   'dockPlatform',
   'rowboat',
   'graveRound',
+  'graveCross',
+  'graveBevel',
+  'graveDecor',
   'timberPillar',
   'marshReeds',
   'crateWooden',
@@ -838,8 +844,10 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
       continue;
     }
     if (builtInWorld && isEastbrookRebuildBuilding(b)) continue;
-    // roof Y mirrors the camera collider height in colliders.ts
-    const roofY = y + (b.kind === 'chapel' ? 10.8 : b.kind === 'inn' ? 7.8 : 8.0);
+    // roof Y mirrors the camera collider height in colliders.ts, through the
+    // same shared helper, so an authored per-building height override cannot
+    // leave the hideable top and the camera top disagreeing.
+    const roofY = y + buildingCameraHeight(b);
     if (b.kind === 'chapel') {
       // Composed chapel: tall bell tower at the rear + squat stone entry hall
       // in front; the hall door lands on the footprint's +z edge. Composition

@@ -52,7 +52,7 @@ in zone2 and zone3 and in custom worlds; their audit anchors moved there.
 | Notice board | full-height OBB | A thin board; its top edge is no platform. |
 | Ravenpost mailbox | NO static collider | An interactable ground-object ENTITY placed via `findSafePos` (which itself reads the collider set); entities never join static collision in this engine. |
 | Marsh reeds | NO collider | Soft vegetation by the release's own contract (camera-hideable only); a body wades through. |
-| Drowned Court arena | full-height walls, flat floor | The arena-band contract: reliquary tombs stay legacy full-height blocks. |
+| Drowned Court arena | full-height walls, flat floor | The arena-band contract: the reliquary tombs stay legacy full-height blocks DELIBERATELY, because the release's layout authors them as "a reliquary block midway along each aisle as the only extra cover" (dungeon_layout.ts): the cover extent is PvP balance, not scenery, even though the drawn shrine is smaller than the block. |
 
 ## Dungeon interiors
 
