@@ -35,6 +35,7 @@ export const TARGETS = [
     when: [
       'sim/battleground_layout.ts',
       'render/battleground.ts',
+      'render/battleground_core.ts',
       'ui/hud/battleground/',
       'sim/social/battleground.ts',
     ],
@@ -129,9 +130,9 @@ export const TARGETS = [
           game.input.camDist = 12;
           game.input.camPitch = 0.42;
         } else if (sceneKey === 'room') {
-          // inside the west flank side room (backed by the rampart, north of
-          // the Crimson keep), at its north end looking south down its length:
-          // ambush crate mid-room, the south doorway and cover bay beyond
+          // mid-length inside the west flank side room (backed by the rampart,
+          // north of the Crimson keep), looking south down it: ambush crate
+          // against the field wall, the south doorway and cover bay beyond
           const home = match.flags[0].home;
           tp(home.x - 31, home.z + 45);
           p.facing = Math.PI;

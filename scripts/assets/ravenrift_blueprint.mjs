@@ -11,7 +11,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import puppeteer from 'puppeteer-core';
-import { BG_ZONE_KEEP_MIN_Z, BG_ZONE_MID_HALF_Z } from '../../src/render/battleground_core.ts';
+import {
+  BG_ZONE_KEEP_MIN_Z,
+  BG_ZONE_MID_HALF_Z,
+  isRuinBlock,
+} from '../../src/render/battleground_core.ts';
 import {
   BG_BASES,
   BG_COVER_CRATES,
@@ -98,7 +102,7 @@ rect(0, 0, BG_HALF_X, BG_ZONE_MID_HALF_Z, '#5e7a3a', 0.12);
 // ---- walls (perimeter + keeps incl. posterns + cover + v2 route work) ------
 const LOW_WALL = '#7d6a52';
 for (const s of battlegroundWallSegments()) {
-  const ruin = Math.min(s.hw, s.hd) > 1;
+  const ruin = isRuinBlock(s);
   const fill = s.low ? LOW_WALL : ruin ? '#6b5b45' : WALL;
   rect(s.x, s.z, s.hw, s.hd, fill, ruin ? 0.85 : 1, 2);
 }
