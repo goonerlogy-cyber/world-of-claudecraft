@@ -343,7 +343,6 @@ const FRAMES_KEYS = [
   'partyFrameShowAbsorbs',
   'partyFrameShowAuras',
   'partyFrameShowSelf',
-  'aurasOnPlayerFrame',
   'showTargetOfTarget',
 ];
 const CHAT_KEYS = ['chatFontScale', 'chatOpacity', 'compactChat'];

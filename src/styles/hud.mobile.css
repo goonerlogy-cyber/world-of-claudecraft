@@ -1689,12 +1689,12 @@
   body.mobile-touch #player-frame > #debuff-bar {
     position: absolute;
     right: auto;
-    left: 0;
+    left: 80px;
     top: auto;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    max-width: 100%;
+    max-width: calc(100% - 80px);
     transform: none;
     transform-origin: left bottom;
   }

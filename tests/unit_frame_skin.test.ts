@@ -89,9 +89,11 @@ describe('unit frame visual identity', () => {
     );
     expect(hudCss).toMatch(/body\.show-actionbar2 #target-frame \{\s*bottom: 134px;/);
     expect(hudCss).toMatch(
-      /#player-frame #stancebar \{[\s\S]*?position: absolute;[\s\S]*?bottom: calc\(100% \+ 4px\);[\s\S]*?left: 50%;[\s\S]*?padding: 1px;/,
+      /#player-frame #stancebar \{[\s\S]*?position: absolute;[\s\S]*?bottom: calc\(100% \+ 16px\);[\s\S]*?left: 50%;[\s\S]*?padding: 2px;/,
     );
-    expect(hudCss).toMatch(/\.stance-btn \{[\s\S]*?width: 20px;[\s\S]*?height: 20px;/);
+    expect(hudCss).toMatch(
+      /\.stance-btn \{[\s\S]*?width: 24px;[\s\S]*?height: 24px;[\s\S]*?box-sizing: border-box;/,
+    );
     expect(hudTs).not.toContain("document.body.classList.toggle('show-stancebar'");
   });
 
@@ -120,7 +122,10 @@ describe('unit frame visual identity', () => {
 
   it('keeps desktop player auras directly above the health-bar content', () => {
     expect(hudCss).toMatch(
-      /#player-frame > #buff-bar,[\s\S]*?#player-frame > #debuff-bar \{[\s\S]*?left: 76px;[\s\S]*?max-width: 203px;/,
+      /#player-frame > #buff-bar,[\s\S]*?#player-frame > #debuff-bar \{[\s\S]*?left: 80px;[\s\S]*?max-width: 199px;/,
+    );
+    expect(hudMobileCss).toMatch(
+      /body\.mobile-touch #player-frame > #buff-bar,[\s\S]*?body\.mobile-touch #player-frame > #debuff-bar \{[\s\S]*?left: 80px;[\s\S]*?max-width: calc\(100% - 80px\);/,
     );
     expect(hudCss).not.toContain('#player-frame.pf-detached > #buff-bar');
     expect(hudCss).not.toContain('#player-frame.pf-detached > #debuff-bar');

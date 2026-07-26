@@ -2029,14 +2029,14 @@
   #player-frame > #buff-bar,
   #player-frame > #debuff-bar {
     right: auto;
-    /* Align to the health-bar content rather than the portrait/frame edge:
-       68px portrait - 10px overlap + 2px border + 16px left padding. */
-    left: 76px;
+    /* Start over the HP rail, after a four-pixel seam from the widest
+       three-button stance dock in the portrait column. */
+    left: 80px;
     top: auto;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    max-width: 203px;
+    max-width: 199px;
   }
   #player-frame > #debuff-bar {
     bottom: calc(100% + 8px);
@@ -2653,18 +2653,19 @@
     font-weight: bold;
     pointer-events: none;
   }
-  /* Warrior stance dock: up to three compact selectors share the portrait's
-     top edge. It is absolute inside .portrait-wrap, so stances never raise the
-     player frame or break its HP-bar baseline with the target frame. */
+  /* Warrior stance dock: reserve the portrait column in the priority-aura band.
+     The dock is lifted to the vertical centre of the debuff row while the aura
+     rows begin over the HP rail, so up to three selectors and the player's
+     effects can share the band without covering one another. */
   #player-frame #stancebar {
     display: none;
     position: absolute;
     top: auto;
-    bottom: calc(100% + 4px);
+    bottom: calc(100% + 16px);
     left: 50%;
     z-index: 7;
     margin: 0;
-    padding: 1px;
+    padding: 2px;
     border: 1px solid color-mix(in srgb, var(--gold-dim) 48%, #17140d);
     border-radius: 6px;
     background: linear-gradient(180deg, #201d17ed, #090807f2);
@@ -2675,11 +2676,12 @@
   }
   .stancebar-group {
     display: flex;
-    gap: 2px;
+    gap: 3px;
   }
   .stance-btn {
-    width: 20px;
-    height: 20px;
+    width: 24px;
+    height: 24px;
+    box-sizing: border-box;
     padding: 0;
     position: relative;
     border: 1px solid #514a3a;
