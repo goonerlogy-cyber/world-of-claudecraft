@@ -234,6 +234,8 @@ const baseEnTable = {
   'aura.spawnProtection': 'Spawn Protection',
   'aura.carrierFatigue': 'Carrier Fatigue',
   'aura.sprintRune': 'Sprint',
+  'aura.battleRune': 'Battle Rune',
+  'aura.wardRune': 'Ward Rune',
   'mechanic.warStomp': 'Shuddering Stomp',
   // Heroic warrior-mob anti-kite charge (MobTemplate.charge, src/sim/mob/charge.ts):
   // the stun debuff on the player and the {mechanic} in the "unleashes" line.
@@ -3581,6 +3583,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'aura.spawnProtection': '出生保护',
     'aura.carrierFatigue': '旗手疲劳',
     'aura.sprintRune': '疾跑',
+    'aura.battleRune': '战斗符文',
+    'aura.wardRune': '守护符文',
     'mechanic.charge': '突进',
     'aura.bladedEcho': '利刃回响',
     'aura.emboldened': '鼓舞',
@@ -4348,6 +4352,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'aura.spawnProtection': '생성 보호',
     'aura.carrierFatigue': '기수 피로',
     'aura.sprintRune': '질주',
+    'aura.battleRune': '전투 룬',
+    'aura.wardRune': '수호 룬',
     'mechanic.charge': '쇄도',
     'aura.bladedEcho': '칼날의 메아리',
     'aura.emboldened': '대담함',
@@ -4745,6 +4751,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'aura.spawnProtection': 'スポーン保護',
     'aura.carrierFatigue': '旗手の疲弊',
     'aura.sprintRune': 'スプリント',
+    'aura.battleRune': 'バトルルーン',
+    'aura.wardRune': 'ウォードルーン',
     'mechanic.charge': '突撃',
     'aura.bladedEcho': '刃の残響',
     'aura.emboldened': '奮起',
@@ -5531,6 +5539,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'aura.spawnProtection': 'Защита возрождения',
     'aura.carrierFatigue': 'Усталость знаменосца',
     'aura.sprintRune': 'Спринт',
+    'aura.battleRune': 'Руна битвы',
+    'aura.wardRune': 'Руна защиты',
     'mechanic.charge': 'Натиск',
     'aura.bladedEcho': 'Клинковое эхо',
     'aura.emboldened': 'Ободрение',
@@ -7003,6 +7013,8 @@ const AURA_NAME_KEY: Record<string, SimMessageKey> = {
   'Spawn Protection': 'aura.spawnProtection',
   'Carrier Fatigue': 'aura.carrierFatigue',
   Sprint: 'aura.sprintRune',
+  'Battle Rune': 'aura.battleRune',
+  'Ward Rune': 'aura.wardRune',
   'Might of the Bear': 'aura.elixirBear',
   // Crafted alchemy elixir auras (content/profession_items.ts): the
   // buff_sta aura display name each crafted elixir pushes on use.
@@ -7436,6 +7448,8 @@ type BgExtraKey =
   | 'battleBegins'
   | 'fightFor'
   | 'seizeRune'
+  | 'seizeBattleRune'
+  | 'seizeWardRune'
   | 'teamCrimson'
   | 'teamAzure'
   | 'errInBattleground'
@@ -7456,6 +7470,8 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   battleBegins: 'The Ravenrift battle begins: take their flag!',
   fightFor: 'Ravenrift: you fight for the {team}. First to {caps} captures wins.',
   seizeRune: 'You seize a Sprint Rune!',
+  seizeBattleRune: 'You seize a Battle Rune!',
+  seizeWardRune: 'You seize a Ward Rune!',
   teamCrimson: 'Crimson',
   teamAzure: 'Azure',
   errInBattleground: 'You are already in a battleground.',
@@ -7490,6 +7506,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errTalentsDuringBg: '战场进行中无法更改天赋。',
     errLevelTooLow: '鸦裂谷需要等级{level}。',
     errMemberLevelTooLow: '所有小队成员必须达到等级{level}才能加入鸦裂谷队列。',
+    seizeBattleRune: '你夺得了战斗符文!',
+    seizeWardRune: '你夺得了守护符文!',
   },
   zh_TW: {
     joinQueue: '你加入了鴉裂谷佇列。需要{count}名勇士才能開始比賽。',
@@ -7509,6 +7527,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errTalentsDuringBg: '戰場進行中無法更改天賦。',
     errLevelTooLow: '鴉裂谷需要等級{level}。',
     errMemberLevelTooLow: '所有隊伍成員必須達到等級{level}才能加入鴉裂谷佇列。',
+    seizeBattleRune: '你奪得了戰鬥符文!',
+    seizeWardRune: '你奪得了守護符文!',
   },
   ja_JP: {
     joinQueue: 'レイヴンリフトのキューに参加しました。試合開始には{count}人の勇者が必要です。',
@@ -7532,6 +7552,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errMemberLevelTooLow:
       'レイヴンリフトのキューに参加するには、パーティ全員がレベル{level}である必要があります。',
     heldAtGate: '門は戦闘開始とともに開かれます。',
+    seizeBattleRune: 'バトルルーンを手に入れた!',
+    seizeWardRune: 'ウォードルーンを手に入れた!',
   },
   ko_KR: {
     joinQueue:
@@ -7556,6 +7578,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errMemberLevelTooLow:
       '레이븐리프트 대기열에 참가하려면 모든 파티원이 레벨 {level} 이상이어야 합니다.',
     heldAtGate: '전투가 시작되면 성문이 열립니다.',
+    seizeBattleRune: '전투 룬을 차지했습니다!',
+    seizeWardRune: '수호 룬을 차지했습니다!',
   },
   ru_RU: {
     joinQueue: 'Вы встали в очередь Вороньего Разлома. Для начала матча нужно {count} бойцов.',
@@ -7579,6 +7603,8 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errMemberLevelTooLow:
       'Чтобы встать в очередь Вороньего Разлома, каждый в группе должен иметь уровень {level}.',
     heldAtGate: 'Ворота откроются с началом битвы.',
+    seizeBattleRune: 'Вы подобрали руну битвы!',
+    seizeWardRune: 'Вы подобрали руну защиты!',
   },
 };
 
@@ -8798,6 +8824,8 @@ const RULES: Rule[] = [
       }),
   },
   { re: /^You seize a Sprint Rune!$/, build: () => tBg('seizeRune') },
+  { re: /^You seize a Battle Rune!$/, build: () => tBg('seizeBattleRune') },
+  { re: /^You seize a Ward Rune!$/, build: () => tBg('seizeWardRune') },
   { re: /^You are already in a battleground\.$/, build: () => tBg('errInBattleground') },
   { re: /^You cannot queue for Ravenrift while dead\.$/, build: () => tBg('errQueueDead') },
   {

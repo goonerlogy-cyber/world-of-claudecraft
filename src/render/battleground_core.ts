@@ -19,6 +19,7 @@ import {
   BG_GRAVEYARDS,
   BG_HALF_X,
   BG_HALF_Z,
+  BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
@@ -306,7 +307,7 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       if (zone === 'mid' && hash2(x * 3.7, z * 1.9) < ACCENT_CHANCE) {
         const jx = (hash2(x, z * 5.1) - 0.5) * 1.6;
         const jz = (hash2(x * 5.3, z) - 0.5) * 1.6;
-        const nearRune = BG_SPEED_RUNES.some(
+        const nearRune = [...BG_SPEED_RUNES, ...BG_POWER_RUNES].some(
           (r) => Math.hypot(r.x - (x + jx), r.z - (z + jz)) < ACCENT_CLEARANCE,
         );
         if (!nearRune) {
@@ -370,7 +371,7 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     flagPedestals.push({ team: base.team, x: base.flag.x, z: base.flag.z });
   }
 
-  const runePads = BG_SPEED_RUNES.map((r) => ({ x: r.x, z: r.z }));
+  const runePads = [...BG_SPEED_RUNES, ...BG_POWER_RUNES].map((r) => ({ x: r.x, z: r.z }));
 
   // Keep-wall banner dressing + the torch-lit ramparts. Everything derives
   // from the base/team geometry, so the two ends mirror exactly (color aside).

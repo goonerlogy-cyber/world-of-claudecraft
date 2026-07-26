@@ -243,7 +243,7 @@ export class BattlegroundScoreboard {
       return (
         `<div class="bg-brow bg-bplayer ${teamCls(r.team)}${r.me ? ' me' : ''}">` +
         `<span class="bb-name" title="${esc(clsName)}">${esc(r.name)}</span>` +
-        `<span class="bb-k"></span><span class="bb-d"></span><span class="bb-c"></span></div>`
+        `<span class="bb-k">0</span><span class="bb-d">0</span><span class="bb-c">0</span></div>`
       );
     };
     const section = (team: number): string =>

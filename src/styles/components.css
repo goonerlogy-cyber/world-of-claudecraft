@@ -8351,6 +8351,10 @@
   }
   .bg-bteam {
     margin-top: 6px;
+  }
+  /* a clear breath between the two team sections */
+  .bg-bteam.azure {
+    margin-top: 14px;
     font-family: var(--title-font);
     font-size: 11px;
     letter-spacing: 0.6px;

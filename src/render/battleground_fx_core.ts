@@ -10,10 +10,12 @@
 export type BgFlagState = 'home' | 'carried' | 'dropped';
 export type BgFlagFxKind = 'pickup' | 'capture' | 'return';
 
-// Carried flag: leaned back over the carrier's shoulder with a light jog bob.
-export const BG_CARRY_TILT = 0.55; // radians off vertical
-export const BG_CARRY_BOB_AMP = 0.07;
-export const BG_CARRY_BOB_HZ = 2.1;
+// Carried flag: mounted on the carrier's BACK like a war banner (offset
+// behind the body along facing, slight raise) and leaned. No bob: the tiny
+// high-frequency bounce read as jitter against the walk cycle (owner call).
+export const BG_CARRY_TILT = 0.6; // radians off vertical
+export const BG_CARRY_BACK = 0.35; // yards behind the carrier
+export const BG_CARRY_RAISE = 0.1;
 
 // Rune gem: a slow spin with a gentle hover so it reads as a pickup from afar.
 export const BG_RUNE_SPIN_RADS = 0.9; // radians per second
@@ -37,13 +39,6 @@ export function classifyFlagTransition(
   if (next === 'carried') return 'pickup';
   if (next === 'home') return prev === 'carried' ? 'capture' : 'return';
   return null;
-}
-
-export function carriedLean(timeS: number): { tilt: number; bob: number } {
-  return {
-    tilt: BG_CARRY_TILT,
-    bob: Math.abs(Math.sin(timeS * Math.PI * BG_CARRY_BOB_HZ)) * BG_CARRY_BOB_AMP,
-  };
 }
 
 export function runeGemPose(timeS: number): { spin: number; bob: number } {

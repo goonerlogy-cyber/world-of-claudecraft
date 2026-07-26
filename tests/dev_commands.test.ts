@@ -204,7 +204,9 @@ describe('/dev bg (Ravenrift force-start)', () => {
     const botPid = pids.find((p) => p !== sim.playerId);
     expect(botPid).toBeDefined();
     expect(sim.players.get(botPid ?? -1)?.isDevBot).toBe(true);
-    expect(draws).toBe(0);
+    // exactly ONE draw: the power-rune opening face rolled at match start
+    // (startBgMatch); queueing, padding, and team-splitting draw nothing.
+    expect(draws).toBe(1);
   });
 
   it('errors on a repeat call from inside the match', () => {

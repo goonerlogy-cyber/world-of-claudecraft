@@ -23,6 +23,7 @@ import {
   BG_HALF_X,
   BG_HALF_Z,
   BG_POSTERN_GAP,
+  BG_POWER_RUNES,
   BG_SPEED_RUNES,
   battlegroundWallSegments,
 } from '../../src/sim/battleground_layout.ts';
@@ -136,7 +137,7 @@ for (const base of BG_BASES) {
     );
   }
 }
-for (const r of BG_SPEED_RUNES) {
+for (const r of [...BG_SPEED_RUNES, ...BG_POWER_RUNES]) {
   circle(r.x, r.z, 1.1, 'none', GOLD);
   circle(r.x, r.z, 0.5, GOLD);
 }

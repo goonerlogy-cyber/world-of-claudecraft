@@ -12,6 +12,7 @@ import { BG_RUNE_BOB_AMP } from '../src/render/battleground_fx_core';
 import { type BgObjectRefs, buildBattlegroundObject } from '../src/render/battleground_props';
 import type { Vfx } from '../src/render/vfx';
 import { BG_TEAM_COLORS } from '../src/sim/battleground_layout';
+import { RUNE_VISUALS } from '../src/sim/social/battleground';
 import type { BgFlagInfo, BgInfo } from '../src/world_api/battleground';
 
 function flagInfo(state: BgFlagInfo['state'], carrierPid: number | null = null): BgFlagInfo {
@@ -54,7 +55,11 @@ interface Burst {
 
 function makeHarness() {
   const bursts: Burst[] = [];
+  const swirls: { pid: number; color: number }[] = [];
   const vfx = {
+    buffSwirl(pid: number, color: number) {
+      swirls.push({ pid, color });
+    },
     fireworkBurst(
       at: { x: number; y: number; z: number },
       colors: readonly number[],
@@ -72,11 +77,15 @@ function makeHarness() {
     [102, { group: azureFlag.group }],
     [103, { group: rune.group }],
   ]);
-  const sim: { bgInfo: BgInfo | null } = { bgInfo: bgInfo([flagInfo('home'), flagInfo('home')]) };
+  const entities = new Map<number, { auras: { id: string }[] }>();
+  const sim = {
+    bgInfo: bgInfo([flagInfo('home'), flagInfo('home')]) as BgInfo | null,
+    entities,
+  };
   const fx = new BattlegroundFx(sim, views, vfx);
   const refs = (g: { userData: Record<string, unknown> }) =>
     g.userData.bg as Extract<BgObjectRefs, { kind: 'flag' }>;
-  return { bursts, views, sim, fx, crimsonFlag, azureFlag, rune, refs };
+  return { bursts, swirls, views, sim, entities, fx, crimsonFlag, azureFlag, rune, refs };
 }
 
 describe('props<->fx handshake', () => {
@@ -128,6 +137,10 @@ describe('BattlegroundFx.update', () => {
     expect(crimson.ring.visible).toBe(true);
     expect(crimson.lean.rotation.x).toBeLessThan(0);
     expect(crimson.lean.rotation.y).toBeCloseTo(1.2, 5);
+    // the pole mounts BEHIND the carrier along their facing, slightly raised
+    expect(crimson.lean.position.x).toBeCloseTo(-Math.sin(1.2) * 0.35, 5);
+    expect(crimson.lean.position.z).toBeCloseTo(-Math.cos(1.2) * 0.35, 5);
+    expect(crimson.lean.position.y).toBeGreaterThan(0);
     // carrier view vanishes for a frame: the yaw holds instead of snapping
     h.views.delete(55);
     h.fx.update(0.3);
@@ -138,6 +151,35 @@ describe('BattlegroundFx.update', () => {
     expect(crimson.ring.visible).toBe(false);
     expect(crimson.lean.rotation.x).toBe(0);
     expect(crimson.lean.rotation.y).toBe(0);
+    expect(crimson.lean.position.x).toBe(0);
+    expect(crimson.lean.position.z).toBe(0);
+  });
+
+  it('a rune buff swirls the wearer in the rune color, throttled, and stops with the aura', () => {
+    const h = makeHarness();
+    const match = h.sim.bgInfo?.match;
+    if (!match) throw new Error('missing match');
+    match.players.push({
+      pid: 77,
+      name: 'Runner',
+      cls: 'rogue',
+      team: 0,
+      carrying: false,
+      dead: false,
+      kills: 0,
+      deaths: 0,
+      captures: 0,
+    });
+    h.entities.set(77, { auras: [{ id: 'bg_battle_rune' }] });
+    h.fx.update(0.1);
+    h.fx.update(0.2); // inside the throttle window: no second swirl
+    expect(h.swirls).toHaveLength(1);
+    expect(h.swirls[0]).toMatchObject({ pid: 77, color: RUNE_VISUALS.damage.color });
+    h.fx.update(1.1); // past the throttle: swirls again
+    expect(h.swirls).toHaveLength(2);
+    h.entities.set(77, { auras: [] });
+    h.fx.update(2.2);
+    expect(h.swirls).toHaveLength(2); // aura gone, no swirl
   });
 
   it('bursts on pickup at the flag, on capture/return at LAST frame position', () => {

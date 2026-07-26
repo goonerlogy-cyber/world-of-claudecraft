@@ -29,6 +29,7 @@ import {
   BG_GRAVEYARD_FENCES,
   BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
+  BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_WALL_T,
   type BgWallSeg,
@@ -161,8 +162,10 @@ describe('battleground render manifest derives from the layout', () => {
     expect(Math.min(...m.ruin.map((p) => p.x))).toBeCloseTo(block.x - block.hw + BG_WALL_T, 6);
   });
 
-  it('places a rune pad at every speed rune and a pedestal at both flags', () => {
-    expect(m.runePads).toEqual(BG_SPEED_RUNES.map((r) => ({ x: r.x, z: r.z })));
+  it('places a rune pad at every rune (speed + power) and a pedestal at both flags', () => {
+    expect(m.runePads).toEqual(
+      [...BG_SPEED_RUNES, ...BG_POWER_RUNES].map((r) => ({ x: r.x, z: r.z })),
+    );
     expect(m.flagPedestals).toHaveLength(2);
     for (const base of BG_BASES) {
       expect(m.flagPedestals).toContainEqual({

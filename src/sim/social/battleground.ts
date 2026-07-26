@@ -8,13 +8,18 @@
 // reads, leave/disconnect handling, bgInfoFor, the HUD command path, and tests)
 // resolve on the facade.
 //
-// Determinism: this phase draws ZERO rng, shared or otherwise. Team assignment
-// derives from queue order, wave-respawn clocks and rune recharges from tick
-// math, so its tick position can never fork the shared draw order.
+// Determinism: the ACTIVE phase draws ZERO rng, shared or otherwise. Team
+// assignment derives from queue order, wave-respawn clocks and rune recharges
+// from tick math, and a claimed power rune flips its face deterministically.
+// The mode's single draw is at match START (the power runes' seeded opening
+// face in startBgMatch), pinned by the /dev bg one-draw test; the in-match
+// zero-rng pin holds, so the phase's tick position can never fork the shared
+// draw order mid-match.
 
 import {
   BG_BASES,
   BG_GRAVEYARDS,
+  BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_TEAM_COLORS,
   BG_TEAM_NAMES,
@@ -63,10 +68,16 @@ const BG_RUNE_RADIUS = 2.5; // step this close to a speed rune to claim it
 const BG_RUNE_COOLDOWN = 22; // a claimed rune recharges over this
 const BG_RUNE_SPEED = 1.4; // sprint multiplier the rune grants
 const BG_RUNE_DURATION = 10; // seconds of haste per rune
+// Power runes: a short, honest edge worth a detour, never a win condition
+// (owner-tuned: noticeably better than 10, below cooldown-stacking range).
+export const BG_POWER_RUNE_VALUE = 0.15; // +15% dealt / -15% taken
+const BG_POWER_RUNE_DURATION = 10;
 
 const SPAWN_PROTECTION_AURA_ID = 'bg_spawn_protection';
 const CARRIER_VULN_AURA_ID = 'bg_carrier_vulnerability';
-const SPRINT_RUNE_AURA_ID = 'bg_sprint_rune';
+export const SPRINT_RUNE_AURA_ID = 'bg_sprint_rune';
+export const BATTLE_RUNE_AURA_ID = 'bg_battle_rune';
+export const WARD_RUNE_AURA_ID = 'bg_ward_rune';
 
 export interface BgFlagState {
   team: BgTeam; // home team
@@ -80,7 +91,10 @@ export interface BgFlagState {
   entityId: number; // the ground entity that renders the flag
 }
 
+export type BgRuneType = 'sprint' | 'damage' | 'defense';
+
 export interface BgRuneState {
+  type: BgRuneType;
   pos: Vec3; // world
   active: boolean;
   cooldown: number; // seconds until it recharges
@@ -422,12 +436,27 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
       entityId: -1,
     };
   }) as [BgFlagState, BgFlagState];
-  const runes: BgRuneState[] = BG_SPEED_RUNES.map((rp) => ({
-    pos: ctx.groundPos(origin.x + rp.x, origin.z + rp.z),
-    active: true,
-    cooldown: 0,
-    entityId: -1,
-  }));
+  // ONE seeded draw opens both power pads on the same face (mirror fairness);
+  // each pad then alternates per its own claims, deterministically. This is
+  // the mode's single rng draw, at match START: the active phase stays
+  // draw-free (the zero-rng pin).
+  const powerFace: BgRuneType = ctx.rng.int(0, 1) === 0 ? 'damage' : 'defense';
+  const runes: BgRuneState[] = [
+    ...BG_SPEED_RUNES.map((rp) => ({
+      type: 'sprint' as BgRuneType,
+      pos: ctx.groundPos(origin.x + rp.x, origin.z + rp.z),
+      active: true,
+      cooldown: 0,
+      entityId: -1,
+    })),
+    ...BG_POWER_RUNES.map((rp) => ({
+      type: powerFace,
+      pos: ctx.groundPos(origin.x + rp.x, origin.z + rp.z),
+      active: true,
+      cooldown: 0,
+      entityId: -1,
+    })),
+  ];
   const match: BgMatch = {
     id: ctx.nextBgMatchId++,
     slot,
@@ -505,12 +534,19 @@ function spawnFlagEntity(ctx: SimContext, flag: BgFlagState): void {
   flag.entityId = e.id;
 }
 
+export const RUNE_VISUALS: Record<BgRuneType, { name: string; color: number }> = {
+  sprint: { name: 'Sprint Rune', color: 0xff9a3c }, // orange (owner call), not gold-white
+  damage: { name: 'Battle Rune', color: 0xe0392e }, // red
+  defense: { name: 'Ward Rune', color: 0x3ccfe8 }, // cyan
+};
+
 function spawnRuneEntity(ctx: SimContext, rune: BgRuneState): void {
-  const e = createGroundObject(ctx.nextId++, '', 'Sprint Rune', { ...rune.pos });
+  const visual = RUNE_VISUALS[rune.type];
+  const e = createGroundObject(ctx.nextId++, '', visual.name, { ...rune.pos });
   e.templateId = 'bg_rune';
   e.objectItemId = null;
   e.lootable = false;
-  e.color = 0xffd24a;
+  e.color = visual.color;
   ctx.addEntity(e);
   rune.entityId = e.id;
 }
@@ -633,23 +669,52 @@ function tickRunes(ctx: SimContext, match: BgMatch): void {
       const e = ctx.entities.get(pid);
       if (!e || e.dead) continue;
       if (dist2d(e.pos, rune.pos) <= BG_RUNE_RADIUS) {
-        ctx.applyAura(e, {
-          id: SPRINT_RUNE_AURA_ID,
-          name: 'Sprint',
-          kind: 'buff_speed',
-          value: BG_RUNE_SPEED,
-          remaining: BG_RUNE_DURATION,
-          duration: BG_RUNE_DURATION,
-          sourceId: e.id,
-          school: 'physical',
-        });
+        if (rune.type === 'sprint') {
+          ctx.applyAura(e, {
+            id: SPRINT_RUNE_AURA_ID,
+            name: 'Sprint',
+            kind: 'buff_speed',
+            value: BG_RUNE_SPEED,
+            remaining: BG_RUNE_DURATION,
+            duration: BG_RUNE_DURATION,
+            sourceId: e.id,
+            school: 'physical',
+          });
+          ctx.emit({ type: 'log', text: 'You seize a Sprint Rune!', color: '#ff9a3c', pid });
+        } else if (rune.type === 'damage') {
+          ctx.applyAura(e, {
+            id: BATTLE_RUNE_AURA_ID,
+            name: 'Battle Rune',
+            kind: 'buff_dmg_done',
+            value: BG_POWER_RUNE_VALUE,
+            remaining: BG_POWER_RUNE_DURATION,
+            duration: BG_POWER_RUNE_DURATION,
+            sourceId: e.id,
+            school: 'physical',
+          });
+          ctx.emit({ type: 'log', text: 'You seize a Battle Rune!', color: '#ff6a5a', pid });
+        } else {
+          ctx.applyAura(e, {
+            id: WARD_RUNE_AURA_ID,
+            name: 'Ward Rune',
+            kind: 'shield_wall',
+            value: BG_POWER_RUNE_VALUE,
+            remaining: BG_POWER_RUNE_DURATION,
+            duration: BG_POWER_RUNE_DURATION,
+            sourceId: e.id,
+            school: 'physical',
+          });
+          ctx.emit({ type: 'log', text: 'You seize a Ward Rune!', color: '#3ccfe8', pid });
+        }
         rune.active = false;
         rune.cooldown = BG_RUNE_COOLDOWN;
         if (rune.entityId >= 0) {
           ctx.dropEntity(rune.entityId);
           rune.entityId = -1;
         }
-        ctx.emit({ type: 'log', text: 'You seize a Sprint Rune!', color: '#ffd24a', pid });
+        // A claimed power pad flips its face for the next spawn: variety
+        // without a single draw in the active phase.
+        if (rune.type !== 'sprint') rune.type = rune.type === 'damage' ? 'defense' : 'damage';
         break;
       }
     }

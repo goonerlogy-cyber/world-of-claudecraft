@@ -3,10 +3,9 @@
 // rune-gem pose math the thin Three consumer (battleground_fx.ts) applies.
 import { describe, expect, it } from 'vitest';
 import {
-  BG_CARRY_BOB_AMP,
+  BG_CARRY_BACK,
   BG_CARRY_TILT,
   BG_RUNE_BOB_AMP,
-  carriedLean,
   classifyFlagTransition,
   runeGemPose,
 } from '../src/render/battleground_fx_core';
@@ -35,13 +34,10 @@ describe('classifyFlagTransition', () => {
 });
 
 describe('pose math', () => {
-  it('carried lean: constant tilt, bob bounded and always upward', () => {
-    for (const t of [0, 0.1, 0.25, 1.3, 7.77, 100]) {
-      const lean = carriedLean(t);
-      expect(lean.tilt).toBe(BG_CARRY_TILT);
-      expect(lean.bob).toBeGreaterThanOrEqual(0);
-      expect(lean.bob).toBeLessThanOrEqual(BG_CARRY_BOB_AMP + 1e-9);
-    }
+  it('carried mount: a real tilt and a real back offset, no bob constants', () => {
+    expect(BG_CARRY_TILT).toBeGreaterThan(0.3);
+    expect(BG_CARRY_TILT).toBeLessThan(1.2);
+    expect(BG_CARRY_BACK).toBeGreaterThan(0);
   });
 
   it('rune gem: spin advances monotonically, hover stays bounded', () => {

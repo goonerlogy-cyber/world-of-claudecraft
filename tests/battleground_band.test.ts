@@ -13,6 +13,8 @@ import {
   BG_HALF_Z,
   BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
+  BG_POWER_RUNES,
+  BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
   battlegroundColliders,
@@ -152,6 +154,15 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
       expect(p.x).toBeCloseTo(o.x + base.flag.x, 5);
       expect(p.z).toBeCloseTo(o.z + base.flag.z, 5);
     }
+    for (const r of [...BG_SPEED_RUNES, ...BG_POWER_RUNES]) {
+      const p = resolvePosition(SEED, o.x + r.x, o.z + r.z, 0.5);
+      expect(p.x).toBeCloseTo(o.x + r.x, 5);
+      expect(p.z).toBeCloseTo(o.z + r.z, 5);
+    }
+    // the two power pads are exact point mirrors
+    expect(BG_POWER_RUNES).toHaveLength(2);
+    expect(BG_POWER_RUNES[1].x).toBeCloseTo(-BG_POWER_RUNES[0].x, 5);
+    expect(BG_POWER_RUNES[1].z).toBeCloseTo(-BG_POWER_RUNES[0].z, 5);
   });
 
   it('pins the wall/pillar/crate manifest counts (the three-chambers field)', () => {

@@ -71,6 +71,15 @@ export const BG_BASES: BgBaseDef[] = [
 
 // Speed runes: one at each flag approach plus two mid-field flanks. Stepping on
 // an active rune grants a sprint buff; it then recharges (see sim BG_RUNE_*).
+// Power runes: one pad at each curtain's courtyard-side mouth (by the main
+// gate), mirrored. The pad holds either a Battle Rune (outgoing damage) or a
+// Ward Rune (damage taken less); the sim owns the face and its alternation
+// (social/battleground.ts). Both pads open the match on the SAME face.
+export const BG_POWER_RUNES: { x: number; z: number }[] = [
+  { x: 13, z: -48 }, // south main gate's courtyard mouth
+  { x: -13, z: 48 }, // north mirror
+];
+
 export const BG_SPEED_RUNES: { x: number; z: number }[] = [
   { x: 0, z: -91 }, // Crimson flag approach (mid-field of its own chamber)
   { x: 0, z: 91 }, // Azure flag approach

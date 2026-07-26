@@ -11,6 +11,7 @@ import {
   BG_CARRIER_VULN_INTERVAL,
   BG_MAX_DURATION,
   BG_MIN_LEVEL,
+  BG_POWER_RUNE_VALUE,
   BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
@@ -224,6 +225,48 @@ describe('Ravenrift: match tallies (kills, deaths, captures)', () => {
     captureOnce(sim, match, killer);
     rows = sim.bgInfoFor(killer)!.match!.players;
     expect(rows.find((p) => p.pid === killer)).toMatchObject({ kills: 1, captures: 1 });
+  });
+});
+
+describe('Ravenrift: power runes (Battle / Ward)', () => {
+  it('opens both pads on the same seeded face, applies the right buff, and flips per claim', () => {
+    // determinism: the same seed opens the same face
+    const face = (seed: number) => {
+      const sim = new Sim({ seed, playerClass: 'warrior', noPlayer: true });
+      const pids: number[] = [];
+      const classes = ['warrior', 'mage', 'priest', 'rogue', 'hunter'] as const;
+      for (let i = 0; i < 10; i++) {
+        const pid = sim.addPlayer(classes[i % 5], `P${i}`);
+        sim.entities.get(pid)!.level = 20;
+        pids.push(pid);
+        sim.bgQueueJoin(pid);
+      }
+      sim.tick();
+      return { sim, match: sim.bgMatchFor(pids[0])! };
+    };
+    const a = face(42);
+    const b = face(42);
+    expect(a.match.runes[4].type).toBe(b.match.runes[4].type);
+    // the four sprint pads stay sprint; both power pads share one opening face
+    expect(a.match.runes.slice(0, 4).every((r) => r.type === 'sprint')).toBe(true);
+    expect(a.match.runes[4].type).toBe(a.match.runes[5].type);
+    expect(['damage', 'defense']).toContain(a.match.runes[4].type);
+
+    const { sim, match } = a;
+    toActive(sim, match);
+    const runner = match.teams[0][0];
+    const power = match.runes[4];
+    const openingFace = power.type;
+    tp(sim, runner, power.pos.x, power.pos.z);
+    sim.tick();
+    const e = sim.entities.get(runner)!;
+    const expectedKind = openingFace === 'damage' ? 'buff_dmg_done' : 'shield_wall';
+    const buff = e.auras.find((au) => au.kind === expectedKind);
+    expect(buff).toBeTruthy();
+    expect(buff!.value).toBeCloseTo(BG_POWER_RUNE_VALUE, 5);
+    // the claimed pad flips its face for the next spawn
+    expect(power.type).toBe(openingFace === 'damage' ? 'defense' : 'damage');
+    expect(power.active).toBe(false);
   });
 });
 
@@ -880,6 +923,9 @@ describe('Ravenrift: review-hardening pins', () => {
     const rngState = () => (sim.rng as unknown as { s: number }).s;
     const runner = match.teams[0][0];
     tp(sim, runner, match.runes[0].pos.x, match.runes[0].pos.z);
+    // a power-rune claim inside the window proves the alternation draws nothing
+    const powerRunner = match.teams[0][2];
+    tp(sim, powerRunner, match.runes[4].pos.x, match.runes[4].pos.z);
     kill(sim, match.teams[1][1]);
     const timerBefore = match.timer;
     const before = rngState();
