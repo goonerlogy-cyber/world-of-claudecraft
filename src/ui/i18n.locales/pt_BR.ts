@@ -5269,7 +5269,6 @@ export const pt_BR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Tendas do Culto do Wyrm',
   'entities.zones.thornpeak_heights.pois.8.label': 'Campos de revenantes',
   'entities.zones.thornpeak_heights.pois.9.label': 'Santuário do Gravewyrm',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Estábulos de Highwatch',
   'entities.dungeons.hollow_crypt.name': 'A Cripta Vazia',
   'entities.dungeons.hollow_crypt.enterText': 'Você desce para a Cripta Vazia...',
   'entities.dungeons.hollow_crypt.leaveText': 'Você volta à luz do dia.',

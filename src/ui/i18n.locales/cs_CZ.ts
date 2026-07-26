@@ -5748,7 +5748,6 @@ export const cs_CZ: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Stany kultu draka',
   'entities.zones.thornpeak_heights.pois.8.label': 'Pole revenantů',
   'entities.zones.thornpeak_heights.pois.9.label': 'Svatyně Hrobodraka',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Stáje Highwatch',
   'entities.zones.thornpeak_heights.welcome':
     'Kapitánka Thessaly drží zeď u Highwatche, ale sotva.',
   'entities.dungeons.drowned_temple.enterText':

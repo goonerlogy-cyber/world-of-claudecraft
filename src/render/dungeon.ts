@@ -27,6 +27,7 @@ import {
   type DungeonLayout,
   type GridPoint,
   type InteriorStyle,
+  LASTKEEP_LAYOUT,
   NYTHRAXIS_LAYOUT,
   SANCTUM_LAYOUT,
   TEMPLE_LAYOUT,
@@ -34,7 +35,12 @@ import {
   type WallStub,
 } from '../sim/dungeon_layout';
 import { polygonContainsPoint, polygonXAtZ } from '../sim/geometry2d';
-import { authoredLiftAt, authoredWallSegments, doorRampHalf } from '../sim/rift/authored';
+import {
+  authoredLiftAt,
+  authoredWallSegments,
+  doorRampHalf,
+  type WallSeg,
+} from '../sim/rift/authored';
 import { ARENA_WATER_NAVE_HALF_X, arenaWaterBands } from './arena_water_band_core';
 import { loadGltf, releaseGltf } from './assets/loader';
 import { registerPreload } from './assets/preload';
@@ -50,6 +56,7 @@ import {
 } from './delve_marsh_dressing';
 import { rectShellWallSegments, stubFaceSegments } from './dungeon_wall_segments';
 import { sharedUniforms } from './gfx';
+import { buildLastKeepDressing, ensureLastKeepDressing } from './lastkeep_dressing';
 import { buildOrkadiaFieldInterior } from './orkadia_props';
 import { buildInfernalDecor, ensureInfernalDecorAssets } from './rift_decor';
 import { radialGlowTexture } from './textures';
@@ -76,6 +83,10 @@ export type DungeonInteriorVariant =
   // The Drowned Court: the ODD-slot arena map, a flooded-temple pit (temple
   // moonfire palette + water bands over the shared arena wall machinery).
   | 'arena_drowned'
+  // The Last Keep: the lived-in Drakelands castle interior. Clean stone walls,
+  // warm candle torchlight, and the kcas furniture dressing on stories 1-2;
+  // only its undercroft rooms keep the crypt's cracked stone and cold flame.
+  | 'lastkeep'
   | 'nythraxis'
   // Collapsed Reliquary delve sub-themes (share the ember crypt-stone base, see
   // isDelveVariant; differ only in wall-side props, clutter, and the dais).
@@ -139,6 +150,10 @@ const TORCH_COLORS: Record<Variant, TorchColors> = {
   arena: { flame: 0xffb24a, emissive: 0xcc5a14, light: 0xff9a3c },
   // the Drowned Court fights under the temple's cold moonfire (same palette)
   arena_drowned: { flame: 0xd9c9ff, emissive: 0x6a4fd0, light: 0xb79cff },
+  // The Last Keep is a LIVED-IN castle: soft candle-orange hearth light, warmer
+  // and paler than the arena's hard ember (its undercroft alone burns the
+  // crypt's cold blue, split per story in the authored build path).
+  lastkeep: { flame: 0xffc27a, emissive: 0xcc6a1e, light: 0xffa14e },
   nythraxis: { flame: 0x8f5cff, emissive: 0x4b1c9a, light: 0x7b4dff },
   // delve reliquaries burn with grave-ember red: warm coals over cold stone
   delve_ossuary: { flame: 0xff7a3c, emissive: 0xcc3a14, light: 0xff6a3c },
@@ -174,6 +189,14 @@ const MARSH_FLOOR_TINT = 0x3c3830;
 // crushing the stone albedo).
 const DROWNED_WALL_TINT = 0x8b9cb8;
 const DROWNED_FLOOR_TINT = 0x93a2b4;
+
+// The Last Keep multiplies the shared crypt-stone pack toward warm, kept
+// sandstone (walls) and honeyed flags (floors) so the castle reads lived-in
+// rather than sepulchral; deliberately pale so the warm torchlight still
+// carries the mood. Applied through the same tintedMaterial path an authored
+// rift style uses, so no other interior is touched.
+const KEEP_WALL_TINT = 0xe4d6bd;
+const KEEP_FLOOR_TINT = 0xdccdb2;
 
 // The Drowned Temple is flooded — a translucent, self-animating water sheet
 // (driven by the shared uTime so it needs no per-frame plumbing) with cheap
@@ -772,7 +795,12 @@ export class DungeonInteriors {
               arenaMapForSlot(arenaOriginAt(oz).slot).layout
             : interior === 'nythraxis'
               ? NYTHRAXIS_LAYOUT
-              : CRYPT_LAYOUT);
+              : interior === 'lastkeep'
+                ? // The Last Keep: an authored room-graph castle interior; its
+                  // rooms/doors/decor route the build through the authored path
+                  // below, exactly like the citadel's set-piece floors.
+                  LASTKEEP_LAYOUT
+                : CRYPT_LAYOUT);
     const variant = opts?.style?.kit ?? opts?.variant ?? this.variantFor(interior, ox, oz);
     const torch = opts?.style?.torch ?? TORCH_COLORS[variant];
     const daisRaised = opts?.style?.daisRaised;
@@ -790,13 +818,35 @@ export class DungeonInteriors {
       this.placeAuthoredRelief(group, layout);
       const liftAt = (x: number, z: number): number =>
         authoredLiftAt(layout.rooms ?? [], layout.doors ?? [], x, z);
-      buildInfernalDecor(
-        group,
-        layout.decor ?? [],
-        torch,
-        (x, z, color, y, scale) => this.addInfernalLight(group, x, z, color, y, scale),
-        liftAt,
-      );
+      const light = (x: number, z: number, color: number, y?: number, scale?: number): void =>
+        this.addInfernalLight(group, x, z, color, y, scale);
+      if (variant === 'lastkeep') {
+        // The keep's stories light differently: the undercroft (the one
+        // dungeon-flavored story) keeps the crypt's cold blue flame while the
+        // lived-in floors above burn warm candle-orange, so the same decor
+        // list splits by the story its position sits on.
+        const decor = layout.decor ?? [];
+        buildInfernalDecor(
+          group,
+          decor.filter((d) => liftAt(d.x, d.z) < 1.6),
+          TORCH_COLORS.crypt,
+          light,
+          liftAt,
+        );
+        buildInfernalDecor(
+          group,
+          decor.filter((d) => liftAt(d.x, d.z) >= 1.6),
+          torch,
+          light,
+          liftAt,
+        );
+        // The lived-in furnishing: kcas bookcases, tables, benches, kegs,
+        // banners, and mounted torches instanced along the authored room walls.
+        await ensureLastKeepDressing();
+        buildLastKeepDressing(group, light, this.lowGfx);
+      } else {
+        buildInfernalDecor(group, layout.decor ?? [], torch, light, liftAt);
+      }
       this.placeDais(group, p, layout, variant, torch, daisRaised);
       if (opts?.hazards?.length) {
         this.placeBlackwaterPools(group, opts.hazards, opts?.hazardStyle ?? 'lava', liftAt);
@@ -806,10 +856,10 @@ export class DungeonInteriors {
       }
       // The authored floor honours its InteriorStyle's stone grade (the base kit
       // reads as grey crypt otherwise). Scoped to this path: the procedural rift
-      // floors keep the look they shipped with.
+      // floors keep the look they shipped with; the keep grades its stone warm.
       this.emit(group, p, variant, {
-        wall: opts?.style?.wallTint,
-        floor: opts?.style?.floorTint,
+        wall: opts?.style?.wallTint ?? (variant === 'lastkeep' ? KEEP_WALL_TINT : undefined),
+        floor: opts?.style?.floorTint ?? (variant === 'lastkeep' ? KEEP_FLOOR_TINT : undefined),
       });
       group.position.set(ox, 0, oz);
       this.scene.add(group);
@@ -1254,6 +1304,10 @@ export class DungeonInteriors {
     if (interior === 'nythraxis') return 'nythraxis';
     if (interior === 'sanctum') return 'sanctum';
     if (interior === 'temple') return 'temple';
+    // The Last Keep gets its own warm castle grade (clean stone, candle light,
+    // kcas furniture). Explicit so the overflow band's origin x can never
+    // accidentally trip the bastion-band check below.
+    if (interior === 'lastkeep') return 'lastkeep';
     const bastionX = instanceOrigin(1, 0).x;
     if (Math.abs(ox - bastionX) < 250) return 'bastion';
     return 'crypt';
@@ -1466,6 +1520,18 @@ export class DungeonInteriors {
         t,
       );
     }
+    if (variant === 'lastkeep') {
+      // a KEPT castle floor: whole flags with decorated insets, no dirt, no
+      // weeds, no grates (the undercroft cells re-key to the crypt mix)
+      return pickKind(
+        [
+          ['floor_tile_large', 72],
+          ['floor_tile_large_rocks', 3],
+          ['quad', 25],
+        ],
+        t,
+      );
+    }
     if (isDelveVariant(variant)) {
       // collapsed reliquary: grave-dust over cracked flags, more dirt and rubble
       return pickKind(
@@ -1529,6 +1595,20 @@ export class DungeonInteriors {
           ['floor_tile_small_weeds_A', 18],
           ['floor_tile_small_weeds_B', 18],
           ['floor_tile_small_decorated', 6],
+        ],
+        t,
+      );
+    }
+    if (variant === 'lastkeep') {
+      // swept castle flags: mostly whole slabs. The decorated tile carries a
+      // baked candle cluster, so its share stays LOW: a lit votive here and
+      // there reads lived-in, a hall full of them reads like a vigil.
+      return pickKind(
+        [
+          ['floor_tile_small', 70],
+          ['floor_tile_small_decorated', 12],
+          ['floor_tile_small_broken_A', 9],
+          ['floor_tile_small_broken_B', 9],
         ],
         t,
       );
@@ -1608,17 +1688,22 @@ export class DungeonInteriors {
     const maxX = Math.max(...rooms.map((r) => r.x1)) + 2;
     const minZ = Math.min(...rooms.map((r) => r.z0)) - 2;
     const maxZ = Math.max(...rooms.map((r) => r.z1)) + 2;
+    // The Last Keep's undercroft (lift below the state floor) keeps the crypt's
+    // cracked, weeded flags while the lived-in stories above tile clean: the
+    // per-cell room lift already says which story a tile belongs to.
+    const cellVariant = (x: number, z: number): Variant =>
+      variant === 'lastkeep' && roomLift(x, z) < 1.6 ? 'crypt' : variant;
     for (let z = minZ; z <= maxZ; z += FLOOR_CELL) {
       for (let x = minX; x <= maxX; x += FLOOR_CELL) {
         if (!inside(x, z) || inRampBand(x, z)) continue;
         const y = FLOOR_Y + roomLift(x, z);
-        let kind = this.floorKind(variant, hash2(x * 1.31, z));
+        let kind = this.floorKind(cellVariant(x, z), hash2(x * 1.31, z));
         if (kind === 'grate') kind = 'floor_tile_large'; // no pits in an authored floor
         if (kind === 'quad') {
           for (const dx of [-1, 1]) {
             for (const dz of [-1, 1]) {
               if (!inside(x + dx, z + dz) || inRampBand(x + dx, z + dz)) continue;
-              const sub = this.floorQuadKind(variant, hash2(x + dx, z + dz));
+              const sub = this.floorQuadKind(cellVariant(x + dx, z + dz), hash2(x + dx, z + dz));
               const rot = Math.floor(hash2(z + dz, x + dx) * 4) * quarter;
               p.add(sub, x + dx, FLOOR_Y + roomLift(x + dx, z + dz), z + dz, rot);
             }
@@ -1638,33 +1723,76 @@ export class DungeonInteriors {
   // even though the shared sim collider correctly left them open.
   private placeAuthoredWalls(p: Placements, layout: DungeonLayout, variant: Variant): void {
     const rooms = layout.rooms ?? [];
+    const doors = layout.doors ?? [];
     const bannerEvery = variant === 'crypt' ? 4 : 3;
+    const isKeep = variant === 'lastkeep';
     const openAt = (x: number, z: number): boolean =>
       rooms.some((r) => x > r.x0 && x < r.x1 && z > r.z0 && z < r.z1);
+    // Highest lift among the rooms a wall segment borders: says which story the
+    // wall belongs to (the keep's undercroft keeps cracked crypt stone, and the
+    // lookout's parapet row is shortened so it stays an OPEN rooftop).
+    const segMaxLift = (seg: WallSeg): number => {
+      let best = 0;
+      for (const r of rooms) {
+        const touches =
+          seg.axis === 'x'
+            ? (r.z0 === seg.fixed || r.z1 === seg.fixed) && r.x1 > seg.a && r.x0 < seg.b
+            : (r.x0 === seg.fixed || r.x1 === seg.fixed) && r.z1 > seg.a && r.z0 < seg.b;
+        if (touches) best = Math.max(best, r.lift ?? 0);
+      }
+      return best;
+    };
+    const segRy = (seg: WallSeg): number => {
+      const mid = (seg.a + seg.b) / 2;
+      if (seg.axis === 'x') return openAt(mid, seg.fixed + 1.5) ? 0 : Math.PI;
+      return openAt(seg.fixed + 1.5, mid) ? Math.PI / 2 : -Math.PI / 2;
+    };
     let i = 0;
-    for (const seg of authoredWallSegments(rooms, layout.doors ?? [])) {
+    for (const seg of authoredWallSegments(rooms, doors)) {
       const cells = fitAuthoredWallSegment(seg.a, seg.b, 8);
       // Face the wall detail into an adjacent room (either one, when it is shared).
-      let ry: number;
-      if (seg.axis === 'x') {
-        const mid = (seg.a + seg.b) / 2;
-        ry = openAt(mid, seg.fixed + 1.5) ? 0 : Math.PI;
-      } else {
-        const mid = (seg.a + seg.b) / 2;
-        ry = openAt(seg.fixed + 1.5, mid) ? Math.PI / 2 : -Math.PI / 2;
-      }
+      const ry = segRy(seg);
+      const segVariant: Variant = isKeep && segMaxLift(seg) < 1.6 ? 'crypt' : variant;
       for (const cell of cells) {
         const t = cell.center;
         const x = seg.axis === 'x' ? t : seg.fixed;
         const z = seg.axis === 'x' ? seg.fixed : t;
-        const kind = this.wallKind(variant, hash2(x * 13.7, z));
+        const kind = this.wallKind(segVariant, hash2(x * 13.7, z));
         const scale: [number, number, number] = [cell.length / 4, MODULE_SCALE, MODULE_SCALE];
         p.add(kind, x, 0, z, ry, scale);
-        if (i % bannerEvery === 2 && kind !== 'wall_archedwindow_gated') {
+        // The keep hangs its red kcas banners from the lastkeep dressing pass
+        // instead of the kit's crypt hangings.
+        if (!isKeep && i % bannerEvery === 2 && kind !== 'wall_archedwindow_gated') {
           const banner = hash2(z, x * 7.3) < 0.5 ? 'banner_red' : 'banner_triple_red';
           p.add(banner, x, 0, z, ry, scale);
         }
         i++;
+      }
+    }
+    if (!isKeep) return;
+    // ---- The Last Keep's SECOND wall storey ----
+    // One 8u module row is only wall-top 8, which the residence floor (lift 6)
+    // and tower would poke straight through. Stack a second row at y=8 so the
+    // state floor soars (13u of wall over its 3.0 floor) and the residence
+    // keeps 10u. The row is cut by the SAME door openings as the base row:
+    // capping a low doorway looks like a lintel but puts the chase camera
+    // inside the solid cap whenever it trails the player through a door (the
+    // cap carries no collider, so the boom happily enters it and the frame
+    // blacks out). Tall open archways cost that lintel read but keep every
+    // doorway camera-safe. Segments bordering the lookout (lift 9) shorten to
+    // a parapet so the tower top stays an open rooftop.
+    for (const seg of authoredWallSegments(rooms, doors)) {
+      const maxLift = segMaxLift(seg);
+      const ry = segRy(seg);
+      const upperVariant: Variant = maxLift < 1.6 ? 'crypt' : 'lastkeep';
+      const sy = maxLift >= 8 ? 0.75 : MODULE_SCALE; // lookout parapet: 3u, not 8u
+      for (const cell of fitAuthoredWallSegment(seg.a, seg.b, 8)) {
+        const t = cell.center;
+        const x = seg.axis === 'x' ? t : seg.fixed;
+        const z = seg.axis === 'x' ? seg.fixed : t;
+        let kind = this.wallKind(upperVariant, hash2(x * 7.1, z * 3.3));
+        if (kind === 'wall_arched') kind = 'wall'; // no archways floating at mid-wall
+        p.add(kind, x, DUNGEON_WALL_HEIGHT, z, ry, [cell.length / 4, sy, MODULE_SCALE]);
       }
     }
   }
@@ -1704,6 +1832,20 @@ export class DungeonInteriors {
           ['wall_cracked', 18],
           ['wall_arched', 12],
           ['wall_archedwindow_gated', 12],
+        ],
+        t,
+      );
+    }
+    if (variant === 'lastkeep') {
+      // the kept castle: clean coursed masonry, engaged pillars, arched bays
+      // and the odd barred window, and NO cracked stone (the undercroft's wall
+      // runs re-key to the crypt mix in placeAuthoredWalls)
+      return pickKind(
+        [
+          ['wall', 56],
+          ['wall_pillar', 24],
+          ['wall_arched', 13],
+          ['wall_archedwindow_gated', 7],
         ],
         t,
       );

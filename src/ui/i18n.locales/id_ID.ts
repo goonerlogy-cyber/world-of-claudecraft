@@ -4296,7 +4296,6 @@ export const id_ID: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Tenda Wyrmcult',
   'entities.zones.thornpeak_heights.pois.8.label': 'Padang Arwah Gentayangan',
   'entities.zones.thornpeak_heights.pois.9.label': 'Sanktum Gravewyrm',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Kandang Kuda Highwatch',
   'entities.zones.thornpeak_heights.welcome':
     'Kapten Thessaly mempertahankan tembok di Menara Pengawas, nyaris saja.',
   'errors.api.accountBanned': 'Akun ini telah diblokir.',

@@ -18,6 +18,7 @@ import {
   isDelvePos,
   isRiftPos,
   isYumiMazePos,
+  PORTALS,
   RIFT_REGION_HALF_X,
   RIFT_REGION_HALF_Z,
   yumiMazeOriginAt,
@@ -28,11 +29,14 @@ import {
   ARENA_LAYOUT,
   CRYPT_LAYOUT,
   DROWNED_COURT_LAYOUT,
+  LASTKEEP_LAYOUT,
   layoutColliders,
   NYTHRAXIS_LAYOUT,
   SANCTUM_LAYOUT,
   TEMPLE_LAYOUT,
 } from './dungeon_layout';
+import { emberLilySpots } from './ember_lilies';
+import { fenWillowSpots, hollowWillowSpots } from './fen_willows';
 import { ORKADIA_FIELD_COLLIDER_SPECS, ORKADIA_FIELD_WALLS } from './orkadia_field';
 import type { BuildingDef, WorldContent } from './types';
 import { valeCupColliders } from './vale_cup_layout';
@@ -41,6 +45,7 @@ import {
   crossesGardenHedge,
   crossesSealedBorder,
   type Decoration,
+  farshorePalmSpots,
   generateDecorationsInBounds,
   groundHeight,
   reachPalmSpots,
@@ -153,20 +158,95 @@ function staticWorldColliders(seed: number): Collider[] {
       cameraTopY: topY(seed, w.x, w.z, w.height ?? 3.7),
       camGhost: w.camGhost ?? true,
     });
+  // the collider runs wider than the data radius: the modeled trunks flare
+  // at the base, and the r that sizes the tree understates the bark line
   for (const t of PROPS.greatTrees ?? [])
     out.push({
       type: 'circle',
       x: t.x,
       z: t.z,
-      r: t.r,
+      r: t.r * 1.45,
       cameraTopY: topY(seed, t.x, t.z, 7),
       camGhost: true,
     });
+  // The Duskfall Passage's cave mouths: each portal side wears a modeled
+  // cave (render/hollow_gates.ts); two flank circles and a back circle
+  // shape the walk-in so the only way through the rock is the mouth itself.
+  for (const portal of PORTALS) {
+    for (const side of [portal.a, portal.b]) {
+      const f = Math.atan2(side.landing.x - side.x, side.landing.z - side.z);
+      const fx = Math.sin(f);
+      const fz = Math.cos(f);
+      for (const flank of [1, -1])
+        out.push({
+          type: 'circle',
+          x: side.x + fz * 3.4 * flank + fx * 0.6,
+          z: side.z - fx * 3.4 * flank + fz * 0.6,
+          r: 2.3,
+          cameraTopY: topY(seed, side.x, side.z, 9),
+          camGhost: true,
+        });
+      out.push({
+        type: 'circle',
+        x: side.x - fx * 3.8,
+        z: side.z - fz * 3.8,
+        r: 3.2,
+        cameraTopY: topY(seed, side.x, side.z, 9),
+        camGhost: true,
+      });
+    }
+  }
+  // The Willowfen's willows: a trunk collider at the base of every weeping
+  // willow, from the same deterministic list the renderer instances the
+  // models from (sim/fen_willows.ts).
+  for (const w of fenWillowSpots(seed))
+    out.push({
+      type: 'circle',
+      x: w.x,
+      z: w.z,
+      r: w.r,
+      cameraTopY: topY(seed, w.x, w.z, 6),
+      camGhost: true,
+    });
+  // ...and the Veiled Hollow's willows, same one-list contract
+  for (const w of hollowWillowSpots(seed))
+    out.push({
+      type: 'circle',
+      x: w.x,
+      z: w.z,
+      r: w.r,
+      cameraTopY: topY(seed, w.x, w.z, 6),
+      camGhost: true,
+    });
+  // ...and the Drakelands' giant ember lilies: the huge and giant tiers
+  // carry a rocky-bed collider (r 0 skirt lilies stay walk-through
+  // dressing), same one-list contract as the willows
+  for (const lily of emberLilySpots(seed)) {
+    if (lily.r <= 0) continue;
+    out.push({
+      type: 'circle',
+      x: lily.x,
+      z: lily.z,
+      r: lily.r,
+      cameraTopY: topY(seed, lily.x, lily.z, lily.fp * 0.55),
+      camGhost: true,
+    });
+  }
   // The Palmreach strand: a slim trunk collider at the base of every beach
   // palm, from the same deterministic list the renderer instances the models
   // from (world.ts). camGhost so the chase cam passes through instead of
   // slamming in when a palm crosses the eye line.
   for (const p of reachPalmSpots(seed))
+    out.push({
+      type: 'circle',
+      x: p.x,
+      z: p.z,
+      r: p.r,
+      cameraTopY: topY(seed, p.x, p.z, 7),
+      camGhost: true,
+    });
+  // ...and the Farshore strand's palms, the same one-list contract
+  for (const p of farshorePalmSpots(seed))
     out.push({
       type: 'circle',
       x: p.x,
@@ -391,6 +471,11 @@ const TEMPLE_COLLIDERS: Collider[] = layoutColliders(TEMPLE_LAYOUT);
 const ARENA_COLLIDERS: Collider[] = layoutColliders(ARENA_LAYOUT);
 const DROWNED_COURT_COLLIDERS: Collider[] = layoutColliders(DROWNED_COURT_LAYOUT);
 const NYTHRAXIS_COLLIDERS: Collider[] = layoutColliders(NYTHRAXIS_LAYOUT);
+// The Last Keep: an authored room-graph interior, so its walls (minus
+// doorways) and decor footprints all derive from the one shared layout,
+// exactly like the rift citadel floors (layoutColliders routes through
+// authoredColliders).
+const LASTKEEP_COLLIDERS: Collider[] = layoutColliders(LASTKEEP_LAYOUT);
 
 // Orkadia is an OPEN FIELD, not a room kit: a perimeter enclosure (plain obbs
 // that pull the chase cam in like interior walls, so players cannot leave the
@@ -449,6 +534,7 @@ const INTERIOR_COLLIDERS: Record<string, Collider[]> = {
   nythraxis: NYTHRAXIS_COLLIDERS,
   orkadia: ORKADIA_COLLIDERS,
   wildheart: WILDHEART_COLLIDERS,
+  lastkeep: LASTKEEP_COLLIDERS,
 };
 
 // ---------------------------------------------------------------------------

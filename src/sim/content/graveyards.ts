@@ -37,10 +37,15 @@ export const OVERWORLD_GRAVEYARDS: GraveyardDef[] = [
   // strip graveyard across a sealed border.
   { id: 'gy_veiled_hollow', name: 'Eldergleam Rest', x: -60, z: 1004 },
   { id: 'gy_farshore', name: 'Gullhaven Rest', x: 290, z: 86 },
-  { id: 'gy_willowfen', name: 'Willowfen Barrow', x: -346, z: 338 },
+  // At the zone's own graveyard field (willowfen.ts): the old (-346, 338) spot
+  // sits inside Bridgemere's moat ring, below WATER_LEVEL, and the Pale Keeper
+  // spawned underwater there.
+  { id: 'gy_willowfen', name: 'Willowfen Barrow', x: -344, z: 306 },
   { id: 'gy_galecrest', name: 'Galecrest Rest', x: 404, z: 344 },
   { id: 'gy_palmreach', name: 'Palmreach Rest', x: -318, z: 802 },
-  { id: 'gy_evergarden', name: 'Evergarden Rest', x: 302, z: 792 },
+  // inside Hedgewick's churchyard, east of the chapel so the Pale Keeper
+  // hovers over the headstones clear of the chapel's collider
+  { id: 'gy_evergarden', name: 'Evergarden Rest', x: 309, z: 793 },
   { id: 'gy_nightbloom', name: 'Nightbloom Rest', x: -388, z: 1402 },
   { id: 'gy_wraithwood', name: 'Wraithwood Graves', x: 378, z: 1412 },
   { id: 'gy_frostveil', name: 'Frostveil Barrow', x: -34, z: 1576 },

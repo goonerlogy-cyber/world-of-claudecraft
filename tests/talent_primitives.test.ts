@@ -366,7 +366,11 @@ describe('talent primitive P3: empower next', () => {
     // so the free charge must not be consumed at cast start or the player would
     // pay full price anyway. Regression for the start-consume bug.
     const { sim, p } = makeSim('mage');
-    spawnTarget(sim, p);
+    // the fireball's 3s cast gives an idle wander time to stroll the wolf
+    // behind the town well and fail the completion on line of sight (the
+    // question here is the billing, not pathing): root the target in place
+    const wolf = spawnTarget(sim, p);
+    wolf.moveSpeed = 0;
     p.resource = 0;
     p.auras.push(aura('next_cast_free'));
 

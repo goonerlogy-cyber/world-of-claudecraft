@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { DRAKELANDS_FLOWER_MEADOWS } from '../sim/content/drakelands';
+import { GALECREST_FLOWER_MEADOWS } from '../sim/content/galecrest';
+import { STABLE_PADDOCK } from '../sim/content/mounts';
 import { REALM_FLOWER_MEADOWS } from '../sim/content/realm';
 import {
   BUILTIN_WORLD,
@@ -10,6 +13,7 @@ import {
   WORLD_MAX_Z,
   WORLD_MIN_Z,
 } from '../sim/data';
+import { galeDeckSurface } from '../sim/gale_harbor';
 import type { BiomeId } from '../sim/types';
 import { isInSowfieldShell } from '../sim/vale_cup_layout';
 import type { Decoration } from '../sim/world';
@@ -35,6 +39,13 @@ import {
   lodDistsFor,
   treeDetailDistance,
 } from './foliage_lod';
+import {
+  gardenLushGrassAt,
+  gardenMeadowTintAt,
+  inParterrePlot,
+  parterreBushSpots,
+  parterreFlowerTintAt,
+} from './garden_parterre_core';
 import { configureMaskedDoubleSidedVegetationMaterial, GFX, sharedUniforms } from './gfx';
 import { type FlowerKind, flowerTuftTexture, grassTuftTexture } from './textures';
 
@@ -81,7 +92,11 @@ const GRASS_DENSITY_HIGH = 0.5;
 // deep grass instead of flowers, so its forest reads lush, not decorated.
 const GRASS_BIOME_DENSITY: Partial<Record<BiomeId, number>> = {
   frost: 0,
+  ember: 0, // the Drakelands are scorched waste: no blades in the cinders
   haunt: 1.55,
+  // the Evergarden is mown lawn: no wild tufts, its flowers grow in the
+  // authored parterre beds instead (garden_parterre_core.ts)
+  garden: 0,
 };
 const GRASS_DENSITY_MULT_MAX = Math.max(1, ...Object.values(GRASS_BIOME_DENSITY));
 // Ground flowers never grow in these biomes (the Reach loses them with its
@@ -246,8 +261,10 @@ const AMBER_BLOOM_TINTS = [0xffffff, 0xfaf6ec, 0xf4eedd];
 // the Nightbloom's namesake flowers: pale luminous petals that read as
 // glowing under the moon (ice-blue, star-white, violet, mint)
 const NIGHT_BLOOM_TINTS = [0x9fdcff, 0xffffff, 0xc8a8ff, 0xa0ffd8];
-// the Evergarden blooms roses: crimson, blush, white, and tea
-const GARDEN_BLOOM_TINTS = [0xe84a6a, 0xf2a8c8, 0xffffff, 0xf2d0a0];
+// the Evergarden blooms roses in the full bed wheel: crimson, blush, white,
+// tea, gold, violet, and coral (parterre roses carry their bed's tint; this
+// list backs any garden bush without an authored tint)
+const GARDEN_BLOOM_TINTS = [0xe84a6a, 0xf2a8c8, 0xffffff, 0xf2d0a0, 0xf2c94c, 0xb07bd8, 0xf27b62];
 // the Galecrest blooms sea thrift and campion: pink, white, pale violet
 const GALE_BLOOM_TINTS = [0xf29ab0, 0xffffff, 0xd8b0f2];
 const DRESS_TINT: Record<BiomeId, number> = {
@@ -986,7 +1003,13 @@ function buildTrees(
   registry: BucketMesh[],
   hideRegistry: TreeHideable[],
 ): void {
-  const decos = generateDecorations(seed);
+  // The Evergarden curates its trees: no random trees or boulders inside a
+  // parterre bed, and NO wild pines anywhere on the lawns (kind 'tree' is
+  // the pine; the realm keeps its oaks, topiary, and specimen elders)
+  const decos = generateDecorations(seed).filter(
+    (d) =>
+      !inParterrePlot(d.x, d.z, 6) && !(d.kind === 'tree' && zoneBiomeAt(d.x, d.z) === 'garden'),
+  );
   const sourceDecos = !GFX.leanFoliage
     ? decos
     : decos.filter((d) => {
@@ -1207,6 +1230,8 @@ interface DressingSpot {
   z: number;
   kind: DressKind;
   scale: number;
+  /** authored bloom tint (parterre roses); unset spots pick by biome hash */
+  bloomTint?: number;
 }
 
 const DRESS_STEP_HIGH = 12;
@@ -1223,7 +1248,7 @@ const DRESS_DENSITY: Record<BiomeId, number> = {
   ember: 0.18,
   frost: 0.08,
   amber: 0.34,
-  fen: 0.38,
+  fen: 0.8,
   night: 0.32,
   haunt: 0.3,
   jungle: 0.5,
@@ -1322,6 +1347,30 @@ const DRESS_SCALE: Record<DressKind, [number, number]> = {
   mushroom: [0.9, 0.8],
 };
 
+// The Galecrest stable paddock is a worked dirt yard: no grass, flowers, or
+// scrub inside the fences, while the downs immediately around it bloom hard
+// (the flower fields ringing the yard).
+function inStableYard(x: number, z: number): boolean {
+  return (
+    x > STABLE_PADDOCK.x1 - 1.5 &&
+    x < STABLE_PADDOCK.x2 + 1.5 &&
+    z > STABLE_PADDOCK.z1 - 1.5 &&
+    z < STABLE_PADDOCK.z2 + 1.5
+  );
+}
+
+function stableMeadowBand(x: number, z: number): boolean {
+  const dx = Math.max(STABLE_PADDOCK.x1 - x, 0, x - STABLE_PADDOCK.x2);
+  const dz = Math.max(STABLE_PADDOCK.z1 - z, 0, z - STABLE_PADDOCK.z2);
+  const dist = Math.hypot(dx, dz);
+  return dist > 1.5 && dist <= 18;
+}
+
+// nothing sprouts up through Wickharbor's boardwalk and pier planks
+function onHarborDeck(x: number, z: number, seed: number): boolean {
+  return galeDeckSurface(x, z, (sx, sz) => terrainHeight(sx, sz, seed), WATER_LEVEL) !== -Infinity;
+}
+
 function tooSteep(x: number, z: number, seed: number): boolean {
   const hx =
     terrainHeight(x + GRASS_SLOPE_EPS, z, seed) - terrainHeight(x - GRASS_SLOPE_EPS, z, seed);
@@ -1340,6 +1389,9 @@ function generateDressing(seed: number): DressingSpot[] {
     for (let gz = WORLD_MIN_Z + 16; gz < WORLD_MAX_Z - 16; gz += step) {
       const r = hashAt(gx, gz, 41);
       const biome = zoneBiomeAt(gx, gz);
+      // the Evergarden takes NO random dressing: every bush there belongs to
+      // an authored parterre arrangement (appended after this scatter loop)
+      if (biome === 'garden') continue;
       const density = DRESS_DENSITY[biome] * (GFX.leanFoliage ? DRESS_DENSITY_LOW_SCALE : 1);
       if (r > density) continue;
       const x = gx + (hashAt(gx, gz, 42) - 0.5) * step;
@@ -1349,11 +1401,20 @@ function generateDressing(seed: number): DressingSpot[] {
       if (terrainHeight(x, z, seed) < WATER_LEVEL + 1.2) continue;
       if (tooSteep(x, z, seed)) continue;
       if (isInSowfieldShell(x, z)) continue; // keep bushes/plants off the football ground
+      // no scrub in the worked stable yard or up through the harbor decks
+      if (biome === 'gale' && (inStableYard(x, z) || onHarborDeck(x, z, seed))) continue;
+      // the fen's floor dressing grows in CLUMPED patches, not an even
+      // scatter: a coarse cell gate keeps most cells bare and the density
+      // boost below packs the surviving patches tight
+      if (biome === 'fen' && hashAt(Math.floor(x / 16), Math.floor(z / 16), 97) > 0.4) continue;
       const kind = dressKindFor(biome, hashAt(gx, gz, 44));
       const [sMin, sRange] = DRESS_SCALE[kind];
       out.push({ x, z, kind, scale: (sMin + hashAt(gx, gz, 45) * sRange) * scaleBoost });
     }
   }
+  // the Evergarden's clipped hedges and rose centerpieces, laid out by the
+  // parterre plan instead of the hash scatter above
+  out.push(...parterreBushSpots(seed));
   return out;
 }
 
@@ -1423,8 +1484,10 @@ function buildDressing(parent: THREE.Group, seed: number, registry: BucketMesh[]
               NIGHT_BLOOM_TINTS[Math.floor(hashAt(s.x, s.z, 48) * NIGHT_BLOOM_TINTS.length)];
             im.setColorAt(i, c.set(tint));
           } else if (kind === 'bushFlowers' && zoneBiomeAt(s.x, s.z) === 'garden') {
-            // the roses take their tint raw too: a rose bed should read red
+            // the roses take their tint raw too: a rose bed should read red.
+            // Parterre roses carry their bed's authored color.
             const tint =
+              s.bloomTint ??
               GARDEN_BLOOM_TINTS[Math.floor(hashAt(s.x, s.z, 48) * GARDEN_BLOOM_TINTS.length)];
             im.setColorAt(i, c.set(tint));
           } else if (kind === 'bushFlowers' && zoneBiomeAt(s.x, s.z) === 'gale') {
@@ -1671,11 +1734,12 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
       { p: [190, 150, 235], c: [240, 220, 120] },
       { p: [246, 242, 250], c: [244, 200, 70] },
     ],
-    // Drakelands: reds and embers
+    // Drakelands: bright firebloom reds and oranges (the authored meadow
+    // fields around Wyrmwatch read as drifts of flame)
     ember: [
-      { p: [225, 70, 60], c: [120, 30, 20] },
-      { p: [240, 110, 60], c: [140, 60, 20] },
-      { p: [200, 50, 80], c: [90, 20, 30] },
+      { p: [244, 70, 48], c: [130, 28, 16] },
+      { p: [250, 142, 46], c: [150, 72, 20] },
+      { p: [238, 96, 60], c: [125, 40, 22] },
     ],
     // Amberfall: oranges, yellows, whites
     amber: [
@@ -1689,17 +1753,45 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
       { p: [210, 180, 250], c: [245, 240, 200] },
       { p: [250, 240, 250], c: [230, 200, 255] },
     ],
-    // Evergarden: parkland roses, pinks and creams
-    garden: [
-      { p: [240, 120, 150], c: [200, 60, 90] },
-      { p: [250, 200, 220], c: [220, 140, 170] },
-      { p: [245, 245, 240], c: [240, 200, 90] },
-    ],
-    // Willowfen: wetland wildflowers, buttercream, lavender, white
+    // Evergarden: near-white petals on the card; the parterre beds paint
+    // each instance with its bed color (a colored texture would multiply
+    // against the tint and muddy every hue)
+    garden: [{ p: [244, 242, 240], c: [252, 226, 140] }],
+    // Willowfen: wetland wildflower fields in mixed colours; its card is
+    // built in balanced mode (flowerMatFor below), cycling this list so
+    // the blue and orange heads are guaranteed a place among the pastels
     fen: [
+      { p: [130, 160, 235], c: [230, 236, 250] },
       { p: [250, 245, 210], c: [210, 170, 60] },
+      { p: [242, 150, 110], c: [180, 90, 50] },
       { p: [200, 170, 230], c: [160, 120, 200] },
       { p: [245, 250, 255], c: [220, 220, 150] },
+      { p: [244, 168, 200], c: [200, 110, 150] },
+    ],
+    // the Palmreach: tropical blooms, hibiscus orange and morning-glory
+    // blue leading the mix over plumeria white and jungle pink
+    jungle: [
+      { p: [245, 120, 60], c: [200, 70, 30] },
+      { p: [100, 150, 240], c: [225, 235, 252] },
+      { p: [245, 120, 60], c: [200, 70, 30] },
+      { p: [100, 150, 240], c: [225, 235, 252] },
+      { p: [250, 248, 240], c: [245, 200, 80] },
+      { p: [240, 130, 170], c: [200, 80, 120] },
+    ],
+    // Galecrest: harebells lean into the wind among the daisies and
+    // buttercups; the list is weighted so blue heads edge out each of the
+    // white and gold (4 blue to 3 white to 3 gold)
+    gale: [
+      { p: [116, 148, 235], c: [235, 240, 252] }, // harebell blue
+      { p: [116, 148, 235], c: [235, 240, 252] },
+      { p: [96, 126, 220], c: [225, 232, 250] }, // deeper cornflower
+      { p: [96, 126, 220], c: [225, 232, 250] },
+      { p: [246, 246, 250], c: [244, 200, 70] }, // daisy white
+      { p: [246, 246, 250], c: [244, 200, 70] },
+      { p: [246, 246, 250], c: [244, 200, 70] },
+      { p: [245, 195, 60], c: [150, 90, 20] }, // buttercup gold
+      { p: [245, 195, 60], c: [150, 90, 20] },
+      { p: [245, 195, 60], c: [150, 90, 20] },
     ],
   };
   const flowerMatCache = new Map<string, THREE.Material>();
@@ -1707,7 +1799,7 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
     const key = FLOWER_PALETTES[biome] ? biome : 'default';
     let fmMat = flowerMatCache.get(key);
     if (!fmMat) {
-      const tex = flowerTuftTexture(FLOWER_PALETTES[biome]);
+      const tex = flowerTuftTexture(FLOWER_PALETTES[biome], biome === 'fen');
       fmMat = configureMaskedDoubleSidedVegetationMaterial(
         lush
           ? new THREE.MeshStandardMaterial({ map: tex, alphaTest: 0.3, roughness: 0.85 })
@@ -1720,7 +1812,17 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
   };
   // build every palette texture up front: a first-visit texture generation
   // plus shader compile mid-walk reads as a lag spike
-  for (const b of ['vale', 'dusk', 'ember', 'amber', 'night', 'garden', 'fen'] as BiomeId[]) {
+  for (const b of [
+    'vale',
+    'dusk',
+    'ember',
+    'amber',
+    'night',
+    'garden',
+    'fen',
+    'gale',
+    'jungle',
+  ] as BiomeId[]) {
     flowerMatFor(b);
   }
 
@@ -1771,7 +1873,30 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
     im.receiveShadow = true; // tufts must darken inside canopy shade, not glow through it
     im.count = 0;
     const fieldChunk = FIELD_BIOMES.has(chunkBiome);
-    const flowerCap = Math.max(8, Math.floor(maxChunkCount * (fieldChunk ? 0.45 : 0.14)));
+    // a gale chunk that reaches the stable paddock's bloom band needs a
+    // field-sized buffer, or the band's drifts hit the cap and vanish
+    const dxs = Math.max(STABLE_PADDOCK.x1 - chunk.centerX, 0, chunk.centerX - STABLE_PADDOCK.x2);
+    const dzs = Math.max(STABLE_PADDOCK.z1 - chunk.centerZ, 0, chunk.centerZ - STABLE_PADDOCK.z2);
+    const stableBandChunk = chunkBiome === 'gale' && Math.hypot(dxs, dzs) < 18 + chunkHalfDiag;
+    // the Evergarden's parterre beds are dense solid plantings edge to edge,
+    // plus meadow drifts, so its chunks carry the largest flower buffer
+    // the Willowfen floor is all flower field (its grass is suppressed
+    // below), so its chunks carry a near-garden flower buffer
+    // the Drakelands' authored firebloom fields bloom on near-bare ground
+    // (ember grass density is 0), so their chunks need a field-sized buffer
+    const flowerCap = Math.max(
+      8,
+      Math.floor(
+        maxChunkCount *
+          (chunkBiome === 'garden'
+            ? 1.2
+            : chunkBiome === 'fen'
+              ? 0.8
+              : fieldChunk || stableBandChunk || chunkBiome === 'ember'
+                ? 0.45
+                : 0.14),
+      ),
+    );
     const fm = new THREE.InstancedMesh(flowerGeo, flowerMatFor(chunkBiome), flowerCap);
     fm.userData.renderCategory = 'grass';
     fm.frustumCulled = true;
@@ -1787,14 +1912,23 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
     const i1 = Math.ceil(maxX / step) + 1;
     const j0 = Math.floor(minZ / step) - 1;
     const j1 = Math.ceil(maxZ / step) + 1;
-    // authored flower meadows overlapping this chunk (dusk realm only)
-    const meadowsInChunk =
+    // authored flower meadows overlapping this chunk (the dusk realm's
+    // meadow bowls, the Galecrest's house gardens + tarn shore rings, and
+    // the Drakelands' firebloom fields around Wyrmwatch)
+    const meadowSource =
       chunkBiome === 'dusk'
-        ? REALM_FLOWER_MEADOWS.filter(
-            (mw) =>
-              mw.x + mw.r > minX && mw.x - mw.r < maxX && mw.z + mw.r > minZ && mw.z - mw.r < maxZ,
-          )
-        : [];
+        ? REALM_FLOWER_MEADOWS
+        : chunkBiome === 'gale'
+          ? GALECREST_FLOWER_MEADOWS
+          : chunkBiome === 'ember'
+            ? DRAKELANDS_FLOWER_MEADOWS
+            : null;
+    const meadowsInChunk = meadowSource
+      ? meadowSource.filter(
+          (mw) =>
+            mw.x + mw.r > minX && mw.x - mw.r < maxX && mw.z + mw.r > minZ && mw.z - mw.r < maxZ,
+        )
+      : [];
 
     for (let i = i0; i <= i1 && n < chunkCap; i++) {
       for (let j = j0; j <= j1 && n < chunkCap; j++) {
@@ -1808,8 +1942,14 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
         if (Math.abs(x) > WORLD_MAX_X - 16 || z < WORLD_MIN_Z + 16 || z > WORLD_MAX_Z - 16)
           continue;
         const tuftBiome = zoneBiomeAt(x, z);
+        // the Evergarden lawn is mown bare, but around the plantings grass
+        // grows back the way a real bed does: through every parterre bed
+        // and slightly past its hedge line, and across the meadow patches a
+        // little beyond where the flowers stop
+        const gardenBedTuft = tuftBiome === 'garden' && gardenLushGrassAt(x, z);
         const density =
-          (lush ? GRASS_DENSITY_HIGH : GRASS_DENSITY_LOW) * (GRASS_BIOME_DENSITY[tuftBiome] ?? 1);
+          (lush ? GRASS_DENSITY_HIGH : GRASS_DENSITY_LOW) *
+          (gardenBedTuft ? 0.9 : (GRASS_BIOME_DENSITY[tuftBiome] ?? 1));
         if (r > density) continue;
         const h = terrainHeight(x, z, seed);
         if (h < WATER_LEVEL + 1.6) continue;
@@ -1819,18 +1959,27 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
         if (roadDistance(x, z) < 3.2) continue;
         if (insideEastbrookGrassExclusion(townExclusions, x, z, GRASS_BUILDING_PADDING)) continue;
         if (isInSowfieldShell(x, z)) continue; // the Sowfield is a mown pitch, not meadow
-        const s = (lush ? 0.55 : 0.45) + r * (lush ? 1.1 : 1);
-        q.setFromAxisAngle(up, r * 12.4);
-        m.compose(v.set(x, h, z), q, sv.set(s, s, s));
-        im.setMatrixAt(n, m);
-        c.setHex(GRASS_TINT[tuftBiome]);
-        c.offsetHSL(
-          (hashAt(i, j, 3) - 0.5) * 0.05,
-          (hashAt(i, j, 4) - 0.5) * 0.12,
-          (hashAt(i, j, 5) - 0.5) * 0.1,
-        );
-        im.setColorAt(n, c);
-        n++;
+        // the stable yard is worked dirt; deck planks grow nothing through
+        if (tuftBiome === 'gale' && (inStableYard(x, z) || onHarborDeck(x, z, seed))) continue;
+        // the Willowfen grows no grass blades: each would-be tuft stays an
+        // unseen flower anchor (the bloom pass below), so the fen floor
+        // reads as open flower fields instead (density 0 would kill the
+        // anchors too, the frost/garden idiom, which is not what fen wants)
+        const fenTuft = tuftBiome === 'fen';
+        if (!fenTuft) {
+          const s = (lush ? 0.55 : 0.45) + r * (lush ? 1.1 : 1);
+          q.setFromAxisAngle(up, r * 12.4);
+          m.compose(v.set(x, h, z), q, sv.set(s, s, s));
+          im.setMatrixAt(n, m);
+          c.setHex(GRASS_TINT[tuftBiome]);
+          c.offsetHSL(
+            (hashAt(i, j, 3) - 0.5) * 0.05,
+            (hashAt(i, j, 4) - 0.5) * 0.12,
+            (hashAt(i, j, 5) - 0.5) * 0.1,
+          );
+          im.setColorAt(n, c);
+          n++;
+        }
         if (FLOWERLESS_BIOMES.has(tuftBiome)) continue;
         // roughly one tuft in nine sprouts a flower cluster beside it; in
         // the field realms, coarse field cells bloom into dense drifts, and
@@ -1843,9 +1992,27 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
         });
         // meadows bloom harder than hash fields: their ground carries fewer
         // grass tufts (each tuft is a flower anchor), so density compensates
-        const inField = fieldChunk && fieldCell < 0.42;
-        const flowerChance = inMeadow ? 0.9 : inField ? 0.6 : fieldChunk ? 0.05 : 0.11;
-        const reps = inMeadow ? 4 : inField ? 3 : 1;
+        // the fen's field cells run broader and bloom harder: with its grass
+        // gone, the flowers alone carry the ground cover
+        const inField = fieldChunk && fieldCell < (fenTuft ? 0.68 : 0.42);
+        // the downs ringing the stable paddock bloom into full flower fields
+        const stableBloom = tuftBiome === 'gale' && stableMeadowBand(x, z);
+        const flowerChance = inMeadow
+          ? 0.9
+          : stableBloom
+            ? 0.65
+            : inField
+              ? fenTuft
+                ? 0.85
+                : 0.6
+              : fieldChunk
+                ? fenTuft
+                  ? 0.32
+                  : 0.05
+                : tuftBiome === 'jungle'
+                  ? 0.2
+                  : 0.11;
+        const reps = inMeadow ? 4 : stableBloom ? 3 : inField ? (fenTuft ? 4 : 3) : 1;
         if (hashAt(i, j, 6) < flowerChance) {
           for (let rep = 0; rep < reps && fn < flowerCap; rep++) {
             const fx = x + (hashAt(i + rep, j, 7) - 0.5) * (1.4 + rep * 1.3);
@@ -1854,6 +2021,8 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
             if (fh < WATER_LEVEL + 1.6 || tooSteep(fx, fz, seed) || roadDistance(fx, fz) < 3.2) {
               continue;
             }
+            // a band-edge bloom must not stray into the worked yard
+            if (tuftBiome === 'gale' && inStableYard(fx, fz)) continue;
             const fs = 0.55 + hashAt(i + rep, j + rep, 9) * 0.5;
             q.setFromAxisAngle(up, hashAt(i, j, 10 + rep) * 12.4);
             m.compose(v.set(fx, fh, fz), q, sv.set(fs, fs, fs));
@@ -1870,29 +2039,64 @@ function buildGrassRing(parent: THREE.Group, seed: number): GrassRing {
 
     // Authored meadows also bloom independent of grass anchors: the scrubby
     // basin shore carries few tufts (each tuft is a flower anchor above), so
-    // a direct grid pass keeps the drifts solid on bare ground too.
+    // a direct grid pass keeps the drifts solid on bare ground too. The
+    // Drakelands' fields take a second jittered sample per cell: with the
+    // ember ground bare of grass, one sample reads gappy, not a field.
+    const meadowReps = chunkBiome === 'ember' ? 2 : 1;
     for (const mw of meadowsInChunk) {
       for (let i = i0; i <= i1 && fn < flowerCap; i++) {
         for (let j = j0; j <= j1 && fn < flowerCap; j++) {
-          if (hashAt(i, j, 14) > 0.5) continue;
-          const fx = i * step + (hashAt(i, j, 15) - 0.5) * step * 1.6;
-          const fz = j * step + (hashAt(i, j, 16) - 0.5) * step * 1.6;
-          if (fx < minX || fx >= maxX || fz < minZ || fz >= maxZ) continue;
-          const mdx = fx - mw.x;
-          const mdz = fz - mw.z;
-          if (mdx * mdx + mdz * mdz >= mw.r * mw.r) continue;
-          const fh = terrainHeight(fx, fz, seed);
-          if (fh < WATER_LEVEL + 1.6 || tooSteep(fx, fz, seed) || roadDistance(fx, fz) < 3.2) {
-            continue;
+          for (let rep = 0; rep < meadowReps && fn < flowerCap; rep++) {
+            if (hashAt(i + rep * 41, j, 14) > 0.5) continue;
+            const fx = i * step + (hashAt(i + rep * 41, j, 15) - 0.5) * step * 1.6;
+            const fz = j * step + (hashAt(i, j + rep * 41, 16) - 0.5) * step * 1.6;
+            if (fx < minX || fx >= maxX || fz < minZ || fz >= maxZ) continue;
+            const mdx = fx - mw.x;
+            const mdz = fz - mw.z;
+            if (mdx * mdx + mdz * mdz >= mw.r * mw.r) continue;
+            const fh = terrainHeight(fx, fz, seed);
+            if (fh < WATER_LEVEL + 1.6 || tooSteep(fx, fz, seed) || roadDistance(fx, fz) < 3.2) {
+              continue;
+            }
+            const fs = 0.55 + hashAt(i + rep, j, 17) * 0.5;
+            q.setFromAxisAngle(up, hashAt(i, j + rep, 18) * 12.4);
+            m.compose(v.set(fx, fh, fz), q, sv.set(fs, fs, fs));
+            fm.setMatrixAt(fn, m);
+            c.setHex(0xffffff);
+            c.offsetHSL((hashAt(i, j, 19) - 0.5) * 0.04, 0, (hashAt(j, i, 19) - 0.5) * 0.12);
+            fm.setColorAt(fn, c);
+            fn++;
           }
-          const fs = 0.55 + hashAt(i, j, 17) * 0.5;
-          q.setFromAxisAngle(up, hashAt(i, j, 18) * 12.4);
-          m.compose(v.set(fx, fh, fz), q, sv.set(fs, fs, fs));
-          fm.setMatrixAt(fn, m);
-          c.setHex(0xffffff);
-          c.offsetHSL((hashAt(i, j, 19) - 0.5) * 0.04, 0, (hashAt(j, i, 19) - 0.5) * 0.12);
-          fm.setColorAt(fn, c);
-          fn++;
+        }
+      }
+    }
+    // The Evergarden: no grass anchors exist (mown lawn), so the parterre
+    // beds and walk ribbons plant directly from the authored plan. Beds get
+    // a third jittered sample per grid cell so the compact plantings read
+    // lush and full; meadows stay at two (airy by design).
+    if (chunkBiome === 'garden') {
+      for (let i = i0; i <= i1 && fn < flowerCap; i++) {
+        for (let j = j0; j <= j1 && fn < flowerCap; j++) {
+          for (let rep = 0; rep < 3 && fn < flowerCap; rep++) {
+            const fx = i * step + (hashAt(i + rep * 37, j, 15) - 0.5) * step * 1.5;
+            const fz = j * step + (hashAt(i, j + rep * 37, 16) - 0.5) * step * 1.5;
+            if (fx < minX || fx >= maxX || fz < minZ || fz >= maxZ) continue;
+            // beds and walk ribbons first, then the open-lawn meadow drifts
+            let tint = parterreFlowerTintAt(fx, fz);
+            if (tint < 0 && rep < 2) tint = gardenMeadowTintAt(fx, fz);
+            if (tint < 0) continue;
+            const fh = terrainHeight(fx, fz, seed);
+            if (fh < WATER_LEVEL + 1.6 || tooSteep(fx, fz, seed)) continue;
+            const fs = 0.6 + hashAt(i + rep, j, 17) * 0.4;
+            q.setFromAxisAngle(up, hashAt(i, j, 18 + rep) * 12.4);
+            m.compose(v.set(fx, fh, fz), q, sv.set(fs, fs, fs));
+            fm.setMatrixAt(fn, m);
+            // the bed color rides the tint over the near-white petal card
+            c.setHex(tint);
+            c.offsetHSL(0, 0, (hashAt(j + rep, i, 19) - 0.5) * 0.08);
+            fm.setColorAt(fn, c);
+            fn++;
+          }
         }
       }
     }

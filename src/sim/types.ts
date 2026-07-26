@@ -2506,7 +2506,7 @@ export interface DungeonDef {
   exitOffset: { x: number; z: number }; // exit portal (instance-local)
   spawns: DungeonSpawn[];
   objects?: DungeonObjectSpawn[];
-  interior: 'crypt' | 'sanctum' | 'temple' | 'nythraxis' | 'orkadia' | 'wildheart'; // renderer + collider interior builder key
+  interior: 'crypt' | 'sanctum' | 'temple' | 'nythraxis' | 'orkadia' | 'wildheart' | 'lastkeep'; // renderer + collider interior builder key
   suggestedPlayers: number;
   enterText: string;
   leaveText: string;
@@ -2686,6 +2686,9 @@ export interface ZonePropsDef {
   campfires: [number, number][];
   mudHuts: [number, number][];
   ruinRings: { x: number; z: number; ringR: number; columns: number }[];
+  // kind 'stone': the low scalloped KayKit stone wall (garden/path walls);
+  // kind 'palisade': the spiked KayKit log wall (raider camps); both keep
+  // the wood rail's run geometry and the same jumpable OBB
   fences: {
     id?: string;
     assetId?: string;
@@ -2695,6 +2698,7 @@ export interface ZonePropsDef {
     z2: number;
     width?: number;
     height?: number;
+    kind?: 'stone' | 'palisade';
   }[];
   /** Small authored solid OBB props, currently civic benches. */
   benches?: StaticObbPropDef[];
@@ -2732,6 +2736,9 @@ export interface ZonePropsDef {
     r?: number;
     h?: number;
     scale?: number;
+    /** ride the water surface instead of the seabed (moored ships/boats);
+     * sunk this many yd below the waterline (the hull's draft) */
+    float?: number;
   }[];
 }
 

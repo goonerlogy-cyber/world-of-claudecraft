@@ -4254,7 +4254,6 @@ export const tr_TR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Ejder Tarikatı Çadırları',
   'entities.zones.thornpeak_heights.pois.8.label': 'Hortlak Tarlaları',
   'entities.zones.thornpeak_heights.pois.9.label': 'Mezarejderi Mabedi',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Highwatch Ahırları',
   'entities.zones.thornpeak_heights.welcome':
     "Yüzbaşı Thessaly, Yüksek Gözcü'deki duvarı tutuyor, zar zor.",
   'errors.api.accountBanned': 'Bu hesap yasaklandı.',

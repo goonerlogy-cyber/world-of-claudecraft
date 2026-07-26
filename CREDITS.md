@@ -88,7 +88,7 @@ than free, so ask before you rely on it.
 |---|---|---|---|---|
 | Character models + animations (knight, mage, rogue, barbarian, hooded rogue), weapons/shields | Kay Lousberg (KayKit) | https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0 | CC0 1.0 | Yes |
 | Skeleton character models + animations, bone weapons | Kay Lousberg (KayKit) | https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0 | CC0 1.0 | Yes |
-| Dungeon modular kit (walls, floors, pillars, torches, banners, chests, furniture) | Kay Lousberg (KayKit) | https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0 | CC0 1.0 | Yes |
+| Dungeon modular kit (walls, floors, pillars, torches, banners, chests, furniture; also the Drakelands castle structure set) | Kay Lousberg (KayKit) | https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0 | CC0 1.0 | Yes |
 | Graveyard/crypt props, dead trees, lanterns | Kay Lousberg (KayKit) | https://github.com/KayKit-Game-Assets/KayKit-Halloween-Bits-1.0 | CC0 1.0 | Yes |
 | Extra character animation library (Rig_Medium) | Kay Lousberg (KayKit) | https://kaylousberg.itch.io/kaykit-character-animations | CC0 1.0 | Yes |
 | Animated creatures (wolf, bull, fox, stag, alpaca, spider, frog, goblin, orc, yeti, giant, demon, ghost, goleling, glub, tribal, velociraptor, dragon) | Quaternius | https://poly.pizza/u/Quaternius · https://quaternius.com | CC0 1.0 | Yes |
@@ -229,6 +229,9 @@ non-commercial. For commercial use, arrange your own licence with the author.
 | Generated prop model (inscription_lectern) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (enchanting_altar) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (jewelcrafting_bench) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
+| Great Maze prop models (`public/models/props/maze_hedge_wall.glb`, `maze_hedge_arch.glb`, `leafy_fox_statue.glb`) | World of ClaudeCraft | Maintainer-authored generated models, optimized via `scripts/assets/specs/evergarden_maze.json` | Project asset | With the project only |
+| Evergarden flower bed models (`public/models/props/flower_bed_square_a.glb`, `flower_bed_square_b.glb`, `flower_bed_round.glb`) | World of ClaudeCraft | Maintainer-authored generated models, optimized via `scripts/assets/specs/evergarden_beds.json` | Project asset | With the project only |
+| Galecrest monument models (`public/models/props/ship_monument.glb`, `golden_horse_statue.glb`) | World of ClaudeCraft | Maintainer-authored generated models, optimized via `scripts/assets/specs/gale_statues.json` | Project asset | With the project only |
 | Generated prop model (mining_ore_cart) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (herbalism_drying_rack) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (banker_chest) | World of ClaudeCraft | Project-generated via the img2threejs workflow and `scripts/assets/banker_chest` from a user-provided concept reference; reference not redistributed | Project asset | With the project only |

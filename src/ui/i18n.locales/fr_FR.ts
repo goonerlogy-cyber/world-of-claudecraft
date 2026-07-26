@@ -5759,7 +5759,6 @@ export const fr_FR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Tentes du Culte du Wyrm',
   'entities.zones.thornpeak_heights.pois.8.label': 'Champs des revenants',
   'entities.zones.thornpeak_heights.pois.9.label': 'Sanctuaire du Gravewyrm',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Écuries de Highwatch',
   'entities.dungeons.hollow_crypt.name': 'La Crypte creuse',
   'entities.dungeons.hollow_crypt.enterText': 'Vous descendez dans la Crypte creuse...',
   'entities.dungeons.hollow_crypt.leaveText': 'Vous remontez à la lumière du jour.',

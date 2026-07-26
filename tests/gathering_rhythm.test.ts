@@ -995,20 +995,20 @@ describe('rod synergy is literal-pinned on one shared draw (QA pins)', () => {
   // literals pin FISH_BITE_DELAY_MIN_SEC and the 1.5 s/tier max-side
   // reduction in BOTH directions (the sampled-bounds arms above catch only
   // a shrink of the reduction, not a growth).
-  it('first-cast delay ticks at seed 4242: tier-1 pole 145, tier-2 rod 120, tier-3 rod 94', () => {
-    // Re-recorded at the release/v0.30.0 base merge (the merged world content
+  it('first-cast delay ticks at seed 4242: tier-1 pole 65, tier-2 rod 64, tier-3 rod 62', () => {
+    // Re-recorded at the procedural-dungeons merge (the merged CAMPS content
     // extends the construction-time draw sequence, moving the shared-stream
     // delay draw); the pinned property is unchanged: one seed, one hidden
     // draw, monotonically shorter with each rod tier.
     for (const [rod, ticks] of [
-      [null, 145],
-      ['ironreel_fishing_rod', 120],
-      ['silverstream_fishing_rod', 94],
+      [null, 65],
+      ['ironreel_fishing_rod', 64],
+      ['silverstream_fishing_rod', 62],
     ] as [string | null, number][]) {
       const sim = makeSim(4242);
       const meta = mustMeta(sim, sim.playerId);
       // #2343: the base arm carries the tier-1 pole, mechanically identical
-      // to the old bare hands, so the 127 literal is byte-identical.
+      // to the old bare hands, so the base-arm literal is byte-identical.
       sim.addItem(rod ?? 'simple_fishing_pole', 1);
       teleportToValeShore(sim);
       const p = sim.player;

@@ -4297,7 +4297,6 @@ export const pl_PL: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Namioty Kultu Żmija',
   'entities.zones.thornpeak_heights.pois.8.label': 'Pola Upiorów',
   'entities.zones.thornpeak_heights.pois.9.label': 'Sanktuarium Grobowego Żmija',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Stajnie Highwatch',
   'entities.zones.thornpeak_heights.welcome':
     'Kapitan Thessaly utrzymuje mur w Wysokiej Strażnicy, ledwie.',
   'errors.api.accountBanned': 'To konto zostało zbanowane.',

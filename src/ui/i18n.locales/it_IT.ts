@@ -5308,7 +5308,6 @@ export const it_IT: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Tende del Culto del Wyrm',
   'entities.zones.thornpeak_heights.pois.8.label': 'Campi dei revenant',
   'entities.zones.thornpeak_heights.pois.9.label': 'Santuario del Gravewyrm',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Stalle di Highwatch',
   'entities.dungeons.hollow_crypt.name': 'La Cripta Vuota',
   'entities.dungeons.hollow_crypt.enterText': 'Scendi nella Cripta Vuota...',
   'entities.dungeons.hollow_crypt.leaveText': 'Risali alla luce del giorno.',

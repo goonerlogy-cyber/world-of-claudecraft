@@ -3973,7 +3973,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'ワーム教団の天幕',
   'entities.zones.thornpeak_heights.pois.8.label': '亡霊の野',
   'entities.zones.thornpeak_heights.pois.9.label': '墓ワームの聖所',
-  'entities.zones.thornpeak_heights.pois.10.label': 'ハイウォッチの厩舎',
   'entities.zones.veiled_hollow.name': 'ヴェールの幽谷',
   'entities.zones.veiled_hollow.welcome':
     '大気は古の魔力に満ちて震えている。エルダーグリームの大樹の下で、守り手セルウィンを訪ねよ。',
@@ -3998,8 +3997,9 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.zones.drakelands.pois.1.label': 'ゲートウッドの森',
   'entities.zones.drakelands.pois.2.label': 'シンダー砂丘',
   'entities.zones.drakelands.pois.3.label': 'トロールムート',
-  'entities.zones.drakelands.pois.4.label': 'ブラッドグラスの平原',
-  'entities.zones.drakelands.pois.5.label': 'ドレイクモウ火口',
+  'entities.zones.drakelands.pois.4.label': '最後の砦',
+  'entities.zones.drakelands.pois.5.label': 'ブラッドグラスの平原',
+  'entities.zones.drakelands.pois.6.label': 'ドレイクモウ火口',
   'entities.zones.frostveil.name': 'フロストヴェイルの果て',
   'entities.zones.frostveil.welcome':
     '雪がすべての音を呑み込む。揺らめくオーロラの下で、寒さそのものが目覚めているかのようだ。',
@@ -4097,14 +4097,18 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
     '生け垣は今も刈り込まれているのに、庭師の姿は百年も見られていない。迷路には気をつけろ。迷路もお前を見ている。',
   'entities.zones.evergarden.pois.0.label': 'ヘッジウィック',
   'entities.zones.evergarden.pois.1.label': 'ガーデンゲート',
-  'entities.zones.evergarden.pois.2.label': '彫像の並木道',
-  'entities.zones.evergarden.pois.3.label': '野バラの茂み',
+  'entities.zones.evergarden.pois.2.label': '花壇の散歩道',
+  'entities.zones.evergarden.pois.3.label': 'ドーンホールド城',
   'entities.zones.evergarden.pois.4.label': '花びらの池',
   'entities.zones.evergarden.pois.5.label': '大迷路',
   'entities.zones.evergarden.pois.6.label': '噴水の中庭',
+  'entities.zones.evergarden.pois.7.label': '古い風車小屋',
+  'entities.zones.evergarden.pois.8.label': '北の見張り台',
+  'entities.zones.evergarden.pois.9.label': '睡蓮の泉水',
   'entities.mobs.topiary_stag.name': 'トピアリーの雄鹿',
   'entities.mobs.topiary_wolf.name': 'トピアリーの狼',
   'entities.mobs.hedge_gnome.name': '生け垣ノーム',
+  'entities.mobs.hedge_knight.name': 'ドーンホールドの騎士',
   'entities.mobs.the_topiary_bull.name': 'トピアリーの雄牛',
   'entities.zones.galecrest.name': 'ゲイルクレスト',
   'entities.zones.galecrest.welcome':
@@ -4116,6 +4120,7 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.zones.galecrest.pois.4.label': 'ザ・シアー',
   'entities.zones.galecrest.pois.5.label': 'レックフィールズ',
   'entities.zones.galecrest.pois.6.label': 'ミラーターン',
+  'entities.zones.galecrest.pois.7.label': 'ゲイルクレストの厩舎',
   'entities.npcs.warden_coalfast.name': '守将コールファスト',
   'entities.npcs.warden_coalfast.title': '要塞司令官',
   'entities.npcs.warden_coalfast.greeting':
@@ -4157,6 +4162,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.mobs.gale_wisp.name': 'ゲイルウィスプ',
   'entities.mobs.shoal_scuttler.name': 'ショールスカトラー',
   'entities.mobs.the_wreck_warden.name': 'レックウォーデン',
+  'entities.mobs.downs_bandit.name': '丘陵の盗賊',
+  'entities.mobs.wreck_thief.name': '難破船の盗人',
   'entities.mobs.glimmerwisp.name': 'グリマーウィスプ',
   'entities.mobs.duskwisp.name': 'ダスクウィスプ',
   'entities.mobs.veiled_stag.name': 'ヴェールの牡鹿',
@@ -6796,7 +6803,7 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'guide.worldPage.junglePlaceNotes':
     'ドリフトヘイヴンは浜辺の火を守っています。タングルマウスは川が緑の壁とぶつかる場所。パームストランドは白く温かな砂浜となって波打ち際に続きます。エメラルドの密林とヴァインフォールは内陸を飲み込み、サファイアの礁湖は澄んで深く輝き、沈んだ偶像は水の底からこちらを見つめています。',
   'guide.worldPage.gardenPlaceNotes':
-    'ヘッジウィックは庭園の門で待っています。彫像の小径には物言わぬ立ち姿が並び、野薔薇の原はとうの昔に花壇を飛び出しました。花びらの池は一年中桃色に漂い、大迷路は客が来るたびに作法を並べ替え、噴水の中庭は庭園の中心で今も澄んだ水を流し続けています。',
+    'ヘッジウィックは庭園の門で待っています。花壇の散歩道は刈り込まれた彩りに咲き、ドーンホールド城は新しい城壁の内で騎士を鍛えています。花びらの池は一年中桃色に漂い、古い風車小屋は自らの環状花壇の上で回り続けます。大迷路は客が来るたびに作法を並べ替え、そのアーチは葉の狐たちが見張っています。北の見張り台は出口の道を守り、睡蓮の泉水はそのすべての先に静かに横たわり、噴水の中庭は庭園の中心で今も澄んだ水を流し続けています。',
   'guide.worldPage.valeGreeter': 'レッドブルック元帥、イーストブルック',
   'guide.worldPage.valeGreeting': '刃を手放すな。渓谷はかつての姿ではない。',
   'guide.worldPage.valePlaceNotes':
@@ -9799,6 +9806,9 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.dungeons.wildheart_basin.enterText':
     '温かな雨が古い石の上で音を立てる。ワイルドハート盆地が目の前に開けた。',
   'entities.dungeons.wildheart_basin.leaveText': '石の牙の下をくぐり、パームリーチの陽光へ戻った。',
+  'entities.dungeons.the_last_keep.name': '最後の砦',
+  'entities.dungeons.the_last_keep.enterText': '最後の砦の冷たく静まり返った広間へ足を踏み入れた。',
+  'entities.dungeons.the_last_keep.leaveText': '砦の扉を閉め、ドレイクランドの風の中へ戻った。',
   'entities.items.wildheart_tuskblade.name': 'ワイルドハートの牙大剣',
   'entities.items.wildheart_hexwood_staff.name': '盆地の呪木杖',
   'entities.items.wildheart_fangknife.name': 'ズルガーの牙小刀',

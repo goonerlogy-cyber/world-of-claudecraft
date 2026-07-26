@@ -5345,7 +5345,6 @@ export const de_DE: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Wyrmkult-Zelte',
   'entities.zones.thornpeak_heights.pois.8.label': 'Wiedergängerfelder',
   'entities.zones.thornpeak_heights.pois.9.label': 'Gravewyrm-Heiligtum',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Highwatch-Stallungen',
   'entities.dungeons.hollow_crypt.name': 'Die Hohle Gruft',
   'entities.dungeons.hollow_crypt.enterText': 'Du steigst in die Hohle Gruft hinab...',
   'entities.dungeons.hollow_crypt.leaveText': 'Du kletterst zurück ins Tageslicht.',

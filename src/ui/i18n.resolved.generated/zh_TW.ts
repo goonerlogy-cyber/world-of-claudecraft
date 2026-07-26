@@ -3568,7 +3568,7 @@ export const zh_TW: EnTranslations = {
       "hauntPlaceNotes": "絞湖鎮蜷縮在自己的燈籠之中。鴉門是這片森林陰森的正門；寡婦棘叢被蛛網織得密不透風；吊影林地與哀石禮拜堂守著森林最古老的悲慟；獵手林隙則屬於那仍在其中狩獵的東西。",
       "galePlaceNotes": "燭港迎著風而立。風道是進來的懸崖之路；嘯風丘陵在狂風下光禿起伏，寸樹不生；老燈塔燃燒了多久，沒有人說得清；斷崖筆直墜入水中；沉船灘讓這片海岸不敢說謊；鏡湖則是整個國度裡唯一靜止的事物。",
       "junglePlaceNotes": "漂流港在海灘上燃著火堆。纏木隘口是河流與綠牆相會之處；棕櫚長灘沿著浪花鋪展，潔白而溫暖；翠綠叢林與垂藤林吞沒了內陸；藍寶石潟湖清澈幽深地發著光；沉沒神像則自水下注視著一切。",
-      "gardenPlaceNotes": "籬苑鎮候在花園之門前。雕像步道有它沉默的同伴相隨；野薔薇叢早已蔓生出花圃之外；花瓣池終年飄著粉色花瓣；大迷宮會為每位訪客重新安排它的規矩；噴泉庭院則仍在花園中心流淌著清澈的泉水。",
+      "gardenPlaceNotes": "籬苑鎮候在花園之門前。花壇步道綻放著修剪齊整的色彩；晨曦堡在新築的城牆後操練騎士；花瓣池終年飄著粉色花瓣；老磨坊在自己的環形花壇上轉動；大迷宮會為每位訪客重新安排它的規矩，拱門有綠葉狐狸守望；北望哨守著出口之路；睡蓮池在這一切之外靜臥；噴泉庭院則仍在花園中心流淌著清澈的泉水。",
       "gladeTitle": "寧靜一隅：碧木林地",
       "gladeBody": "Vale 裡的故事並不全都關於亡者。北方有一片陽光灑落的林地，名為 Brightwood Glade，保有自己較溫和的節奏：盡是安靜的小徑，以及枝葉下斑駁的光影。它是你所追循之路旁的一段柔和對照，當道路給你餘裕漫遊時，很值得前去一看。",
       "worldBossTitle": "當山峰甦醒：世界首領",
@@ -9686,6 +9686,9 @@ export const zh_TW: EnTranslations = {
       "mantle_of_the_unbroken_shore": {
         "name": "不破海岸披風"
       },
+      "last_keep_signet": {
+        "name": "Signet of the Last Keep"
+      },
       "conjured_water4": {
         "name": "魔法泉水"
       },
@@ -10927,6 +10930,9 @@ export const zh_TW: EnTranslations = {
       "hedge_gnome": {
         "name": "樹籬地精"
       },
+      "hedge_knight": {
+        "name": "晨曦堡騎士"
+      },
       "the_topiary_bull": {
         "name": "綠雕公牛"
       },
@@ -10938,6 +10944,12 @@ export const zh_TW: EnTranslations = {
       },
       "shoal_scuttler": {
         "name": "淺灘蟹"
+      },
+      "downs_bandit": {
+        "name": "丘陵強盜"
+      },
+      "wreck_thief": {
+        "name": "沉船竊賊"
       },
       "the_wreck_warden": {
         "name": "沉船守衛"
@@ -13784,9 +13796,6 @@ export const zh_TW: EnTranslations = {
           },
           "9": {
             "label": "墓龍聖所"
-          },
-          "10": {
-            "label": "高望馬廄"
           }
         }
       },
@@ -13837,9 +13846,12 @@ export const zh_TW: EnTranslations = {
             "label": "巨魔集會"
           },
           "4": {
-            "label": "血玻璃原野"
+            "label": "最後的堡壘"
           },
           "5": {
+            "label": "血玻璃原野"
+          },
+          "6": {
             "label": "龍喉火山口"
           }
         }
@@ -14005,10 +14017,10 @@ export const zh_TW: EnTranslations = {
             "label": "花園之門"
           },
           "2": {
-            "label": "雕像步道"
+            "label": "花壇步道"
           },
           "3": {
-            "label": "野薔薇叢"
+            "label": "晨曦堡"
           },
           "4": {
             "label": "花瓣池"
@@ -14018,6 +14030,15 @@ export const zh_TW: EnTranslations = {
           },
           "6": {
             "label": "噴泉庭院"
+          },
+          "7": {
+            "label": "老磨坊"
+          },
+          "8": {
+            "label": "北望哨"
+          },
+          "9": {
+            "label": "睡蓮池"
           }
         }
       },
@@ -14045,6 +14066,9 @@ export const zh_TW: EnTranslations = {
           },
           "6": {
             "label": "鏡湖"
+          },
+          "7": {
+            "label": "疾風崖馬廄"
           }
         }
       },
@@ -14105,6 +14129,11 @@ export const zh_TW: EnTranslations = {
         "name": "荒野之心盆地",
         "enterText": "溫熱的雨水在古老石面上嘶嘶作響。荒野之心盆地在你眼前展開。",
         "leaveText": "你從石牙之下穿回棕櫚之境的陽光中。"
+      },
+      "the_last_keep": {
+        "name": "最後的堡壘",
+        "enterText": "你踏入最後的堡壘那冰冷而寂靜的大廳。",
+        "leaveText": "你帶上堡門，重新走進龍裔荒原的寒風中。"
       },
       "drowned_temple": {
         "name": "溺亡神殿",

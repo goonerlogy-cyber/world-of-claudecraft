@@ -636,6 +636,7 @@ import {
 } from './types';
 import * as weaponStowMod from './weapon_stow';
 import {
+  crossesGardenHedge,
   groundHeight,
   nearSteepWalls,
   terrainSteepnessAt,
@@ -6813,6 +6814,11 @@ export class Sim {
         if (ride(nx, nz, groundHeight(nx, nz, this.cfg.seed)) > h0) continue;
       }
       const r = this.resolveMovePoint(nx, nz, BODY_RADIUS, e);
+      // The Great Maze's hedge walls are hard for mobs too (the maze patrol
+      // knights pace their dead ends instead of drifting through a hedge);
+      // crossesGardenHedge fast-rejects outside the maze, so the open-world
+      // fan pays two comparisons.
+      if (crossesGardenHedge(e.pos.x, e.pos.z, r.x, r.z)) continue;
       const progress = d - Math.hypot(r.x - dest.x, r.z - dest.z);
       if (progress > bestProgress) {
         bestProgress = progress;

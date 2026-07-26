@@ -194,10 +194,13 @@ const MOB_IDS = [
   'topiary_stag',
   'topiary_wolf',
   'hedge_gnome',
+  'hedge_knight',
   'the_topiary_bull',
   'moor_ram',
   'gale_wisp',
   'shoal_scuttler',
+  'downs_bandit',
+  'wreck_thief',
   'the_wreck_warden',
   'drowned_deckhand',
   'riftspawn',
@@ -563,6 +566,7 @@ const DUNGEON_IDS = [
   'nythraxis_boss_arena',
   'orkadia',
   'wildheart_basin',
+  'the_last_keep',
 ] as const;
 const DELVE_IDS = ['collapsed_reliquary', 'drowned_litany'] as const;
 // Ravenpost authored letters (src/sim/content/letters.ts): the welcome letter

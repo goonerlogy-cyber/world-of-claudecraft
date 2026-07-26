@@ -67,6 +67,7 @@ import {
   stepCameraFeel,
   stepLandingDetector,
 } from './camera_feel_core';
+import { buildCastleFeatures, type CastleFeaturesView } from './castle_features';
 import {
   type CharacterWeaponAura,
   characterRecklessnessActive,
@@ -145,6 +146,7 @@ import { buildEmberFeatures, type EmberFeaturesView } from './ember_features';
 import { objectDisplayName } from './entity_labels';
 import { resolveEnvironmentPrefilterPlan } from './env_prefilter_core';
 import { advanceSelfFacing, releaseSelfFacing } from './facing_smooth';
+import { buildFarshoreFeatures } from './farshore_features';
 import { buildFenFeatures, type FenFeaturesView } from './fen_features';
 import { type FireballTravelVisual, syncFireballTravelVisual } from './fireball_travel_visual';
 import { buildFish, type FishView } from './fish';
@@ -164,6 +166,7 @@ import { buildFrostSky, type FrostSkyView } from './frost_sky';
 import { FrozenOrbFx } from './frozen_orb_fx';
 import { buildGaleFeatures, type GaleFeaturesView } from './gale_features';
 import { buildGardenFeatures, type GardenFeaturesView } from './garden_features';
+import { gardenMazeCameraLift } from './garden_maze_core';
 import { buildGatherNodes } from './gather_nodes';
 import {
   GFX,
@@ -178,6 +181,7 @@ import {
 import { GlacialFrontVisual } from './glacial_front_visual';
 import { GroundAimReticleVisual } from './ground_aim_reticle_visual';
 import { buildHauntFeatures, type HauntFeaturesView } from './haunt_features';
+import { buildHollowGates } from './hollow_gates';
 import { type IceBlockVisual, syncIceBlockVisual } from './ice_block_visual';
 import { idleSlot } from './idle_queue';
 import { buildImpactSite, type ImpactSiteView, MIREFEN_IMPACT_SITE } from './impact_site';
@@ -239,7 +243,13 @@ import { downscaleDims } from './screenshot';
 import { drapeRingLocalY } from './selection_ring';
 import { type SelfMotionFrame, SelfMotionPredictor, updateSelfRenderFallback } from './self_motion';
 import { isSharedGeometry, isSharedMaterial } from './shared_resource';
-import { buildSky, ensureSkyAssetsAt, ensureSkyBiomeAssets, type SkyView } from './sky';
+import {
+  buildSky,
+  ensureSkyAssetsAt,
+  ensureSkyBiomeAssets,
+  type SkyKey,
+  type SkyView,
+} from './sky';
 import { nearestSloppyPickId, type SloppyPickCandidate } from './sloppy_pick';
 import { freezeStaticMatrices } from './static_matrix';
 import { buildStationProps } from './stations';
@@ -273,6 +283,7 @@ import { ViewCreateRetryGate } from './view_create_retry';
 import { type WarriorCastVisualPlan, warriorCastVisualPlan } from './warrior_cast_fx_core';
 import { RecklessSkullPainter } from './warrior_cast_fx_painter';
 import { buildWater, type WaterView } from './water';
+import { buildWaterFlora } from './water_flora';
 import { Weather } from './weather';
 import { buildWorldAmbientSources, crowdAmbienceAt, footstepSurfaceAt } from './world_audio';
 import { buildYumiMaze, type YumiMazeView } from './yumi_maze';
@@ -476,6 +487,18 @@ const WILDHEART_SUN_INTENSITY = 1.55;
 const WILDHEART_HEMI_INTENSITY = 0.68;
 const WILDHEART_ENV_INTENSITY = 0.32;
 const WILDHEART_RIM_BOOST = 1.5;
+// The Last Keep is a LIVED-IN castle interior, not a crypt: a higher, warmed
+// ambient floor (over the candle-orange torch lights the interior itself
+// carries) so its halls read golden and inhabited while staying indoors-dim.
+// Scoped to interior 'lastkeep' only; every other underground interior keeps
+// the DUNGEON_* rig.
+const LASTKEEP_SUN_INTENSITY = 0.55;
+const LASTKEEP_HEMI_INTENSITY = 0.52;
+const LASTKEEP_ENV_INTENSITY = 0.16;
+const LASTKEEP_RIM_BOOST = 1.9;
+const LASTKEEP_SUN_COLOR = 0xffd9a8;
+const LASTKEEP_HEMI_SKY_COLOR = 0xffe4c4;
+const LASTKEEP_HEMI_GROUND_COLOR = 0x4a3826;
 const RENDERER_PHASE_SAMPLE_LIMIT = 720;
 const RENDER_DIAGNOSTICS_SAMPLE_MS = 2000;
 const RENDER_DIAGNOSTICS_IDLE_TIMEOUT_MS = 1000;
@@ -1268,6 +1291,7 @@ export class Renderer {
   private impactSite: ImpactSiteView;
   private realmFlora: RealmFloraView | null = null;
   private emberFeatures: EmberFeaturesView | null = null;
+  private castleFeatures: CastleFeaturesView | null = null;
   private frostSky: FrostSkyView | null = null;
   private fenFeatures: FenFeaturesView | null = null;
   private amberFeatures: AmberFeaturesView | null = null;
@@ -1285,6 +1309,7 @@ export class Renderer {
   private dnColorScratch = new THREE.Color();
   private dnMoonScratch = new THREE.Color();
   private flames: THREE.Mesh[];
+  private windmillFans: THREE.Object3D[] = [];
   private fireLights: THREE.PointLight[];
   // Point lights owned by entity views (e.g. the quest-object glow). These stream
   // in/out with interest, so they are budgeted into the SAME constant count as the
@@ -1312,13 +1337,13 @@ export class Renderer {
   private lightRank: RankedPointLight[] = [];
   private doomedIds: number[] = [];
   private dungeons: DungeonInteriors | null = null;
-  private envRTs = new Map<BiomeId, THREE.WebGLRenderTarget>();
+  private envRTs = new Map<SkyKey, THREE.WebGLRenderTarget>();
   private envRTBySource = new WeakMap<THREE.Texture, THREE.WebGLRenderTarget>();
   // Cached: building a PMREMGenerator compiles the EquirectangularToCubeUV and
   // PMREMGGXConvolution shaders, so a fresh one per biome used to stall travel
   // at every biome boundary. Lives as long as the renderer, like the env RTs.
   private pmremGenerator: THREE.PMREMGenerator | null = null;
-  private envBiome: BiomeId = 'vale';
+  private envBiome: SkyKey = 'vale';
   private envOutdoorIntensity = ENV_INTENSITY;
   private preparedZones = new Set<string>();
   private pendingZonePrepares = new Map<string, Promise<void>>();
@@ -1841,13 +1866,28 @@ export class Renderer {
     );
     setRenderCategory(props.group, 'props');
     this.scene.add(props.group);
+    // world-spanning modeled dressing, all static: the Duskfall cave mouths,
+    // lily-and-reed water flora on every temperate lake, and the Farshore's
+    // palm strand (each module is a no-op away from its ground)
+    for (const staticFeature of [
+      buildHollowGates(this.sim.cfg.seed),
+      buildWaterFlora(this.sim.cfg.seed),
+      buildFarshoreFeatures(this.sim.cfg.seed),
+    ]) {
+      setRenderCategory(staticFeature.group, 'props');
+      this.scene.add(staticFeature.group);
+      freezeStaticMatrices(staticFeature.group);
+    }
     this.flames = props.flames;
-    this.fireLights = props.fireLights;
+    this.windmillFans = props.windmillFans;
     // Props are baked into world space at build and their update() only toggles
     // visibility, so the whole tree is matrix-static, EXCEPT the campfire
-    // flames, whose flicker rescales them every frame: re-enable those.
+    // flames, whose flicker rescales them every frame, and the windmill sail
+    // pivots, which turn: re-enable those.
     freezeStaticMatrices(props.group);
     for (const flame of this.flames) flame.matrixAutoUpdate = true;
+    for (const fan of this.windmillFans) fan.matrixAutoUpdate = true;
+    this.fireLights = props.fireLights;
     // The impact-site light rides the campfire point-light budget so the visible
     // point-light count stays constant as the player travels (constant
     // numPointLights -> materials never recompile for a light-count change).
@@ -2706,6 +2746,10 @@ export class Renderer {
         if (!this.emberFeatures) {
           this.emberFeatures = buildEmberFeatures(this.sim.cfg.seed);
           this.attachZoneFeature(this.emberFeatures);
+        }
+        if (!this.castleFeatures) {
+          this.castleFeatures = buildCastleFeatures();
+          this.attachZoneFeature(this.castleFeatures);
         }
         break;
       case 'frost':
@@ -5999,7 +6043,8 @@ export class Renderer {
     | 'rift'
     | 'practice'
     | 'orkadiaField'
-    | 'wildheartField' = 'outdoor';
+    | 'wildheartField'
+    | 'lastkeep' = 'outdoor';
 
   /** Drop a retired interior's scene nodes and prune its lights/flames out of
    * the per-frame registries. See riftInteriorGroups for why nothing here
@@ -6333,6 +6378,7 @@ export class Renderer {
     // and the daylight rig and only swaps in its own ashen field haze.
     const inOrkadiaField = interior === 'orkadia';
     const inWildheartField = interior === 'wildheart';
+    const inLastKeep = interior === 'lastkeep';
     const desired = inPractice
       ? 'practice'
       : inDelve
@@ -6347,11 +6393,13 @@ export class Renderer {
                 ? 'orkadiaField'
                 : inWildheartField
                   ? 'wildheartField'
-                  : inside
-                    ? 'dungeon'
-                    : camY < waterLevelAt(px, pz) - 0.05
-                      ? 'underwater'
-                      : 'outdoor';
+                  : inLastKeep
+                    ? 'lastkeep'
+                    : inside
+                      ? 'dungeon'
+                      : camY < waterLevelAt(px, pz) - 0.05
+                        ? 'underwater'
+                        : 'outdoor';
     const fog = this.scene.fog as THREE.Fog;
     // Procedural rift: dynamic fog from the generated floor style, re-applied when
     // the floor changes (descent keeps fogState='rift' but swaps the palette).
@@ -6412,6 +6460,13 @@ export class Renderer {
         fog.color.setHex(0x8ca786);
         fog.near = 105;
         fog.far = 430;
+      } else if (desired === 'lastkeep') {
+        // The Last Keep: a warm hearth-lit haze pushed well back, so its
+        // grand three-story halls read golden and inhabited instead of
+        // dissolving into the crypt's cold near-black murk.
+        fog.color.setHex(0x241610);
+        fog.near = 30;
+        fog.far = 150;
       } else if (desired === 'delve') {
         // the collapsed reliquary breathes a warm ember murk, dried-blood
         // charcoal, tighter than the overworld crypt's cold near-black, so the
@@ -6450,6 +6505,7 @@ export class Renderer {
         const mazeNight = desired === 'yumiMaze';
         const orkadiaStorm = desired === 'orkadiaField';
         const wildheartSun = desired === 'wildheartField';
+        const keepHearth = desired === 'lastkeep';
         const underground =
           desired === 'dungeon' ||
           desired === 'temple' ||
@@ -6464,36 +6520,44 @@ export class Renderer {
             ? ORKADIA_SUN_INTENSITY
             : wildheartSun
               ? WILDHEART_SUN_INTENSITY
-              : underground
-                ? DUNGEON_SUN_INTENSITY
-                : SUN_INTENSITY * this.dnGrade.lightScale;
+              : keepHearth
+                ? LASTKEEP_SUN_INTENSITY
+                : underground
+                  ? DUNGEON_SUN_INTENSITY
+                  : SUN_INTENSITY * this.dnGrade.lightScale;
         this.hemi.intensity = mazeNight
           ? YUMI_MAZE_HEMI_INTENSITY
           : orkadiaStorm
             ? ORKADIA_HEMI_INTENSITY
             : wildheartSun
               ? WILDHEART_HEMI_INTENSITY
-              : underground
-                ? DUNGEON_HEMI_INTENSITY
-                : HEMI_INTENSITY * this.dnGrade.lightScale;
+              : keepHearth
+                ? LASTKEEP_HEMI_INTENSITY
+                : underground
+                  ? DUNGEON_HEMI_INTENSITY
+                  : HEMI_INTENSITY * this.dnGrade.lightScale;
         this.scene.environmentIntensity = mazeNight
           ? YUMI_MAZE_ENV_INTENSITY
           : orkadiaStorm
             ? ORKADIA_ENV_INTENSITY
             : wildheartSun
               ? WILDHEART_ENV_INTENSITY
-              : underground
-                ? DUNGEON_ENV_INTENSITY
-                : this.envOutdoorIntensity * this.dnGrade.lightScale;
+              : keepHearth
+                ? LASTKEEP_ENV_INTENSITY
+                : underground
+                  ? DUNGEON_ENV_INTENSITY
+                  : this.envOutdoorIntensity * this.dnGrade.lightScale;
         sharedUniforms.uRimBoost.value = mazeNight
           ? YUMI_MAZE_RIM_BOOST
           : orkadiaStorm
             ? ORKADIA_RIM_BOOST
             : wildheartSun
               ? WILDHEART_RIM_BOOST
-              : underground
-                ? DUNGEON_RIM_BOOST
-                : 1;
+              : keepHearth
+                ? LASTKEEP_RIM_BOOST
+                : underground
+                  ? DUNGEON_RIM_BOOST
+                  : 1;
         if (orkadiaStorm) {
           this.sun.color.setHex(0xa9b8a8);
           this.hemi.color.setHex(0x899b9a);
@@ -6502,6 +6566,12 @@ export class Renderer {
           this.sun.color.setHex(0xffd48c);
           this.hemi.color.setHex(0xd8ebca);
           this.hemi.groundColor.setHex(0x5b4a2d);
+        } else if (keepHearth) {
+          // hearth-gold key and bounce; the outdoor path re-grades these
+          // colors every frame once the player steps back outside
+          this.sun.color.setHex(LASTKEEP_SUN_COLOR);
+          this.hemi.color.setHex(LASTKEEP_HEMI_SKY_COLOR);
+          this.hemi.groundColor.setHex(LASTKEEP_HEMI_GROUND_COLOR);
         }
       }
       return;
@@ -7904,6 +7974,11 @@ export class Renderer {
 
     let worldStart = performance.now();
 
+    // the mill sails turn in the garden breeze, each at its own phase
+    for (let i = 0; i < this.windmillFans.length; i++) {
+      this.windmillFans[i].rotation.z = this.time * 0.55 + i * 2.1;
+    }
+
     // fire flicker + rising embers
     for (let i = 0; i < this.flames.length; i++) {
       const f = this.flames[i];
@@ -8702,6 +8777,10 @@ export class Renderer {
       const floor = generateRiftFloor(rfCam.seed, rfCam.baseLevel, rfCam.floorIndex, rfCam.upgrade);
       groundY += riftLiftAt(floor, cx - rfCam.origin.x, cz - rfCam.origin.z);
     }
+    // The Great Maze's modeled hedges are not terrain, so the ground clamp
+    // alone would sit the camera inside their leaves: ride over them the
+    // way the old terrain walls lifted it.
+    groundY += gardenMazeCameraLift(cx, cz);
     this.camera.position.set(cx, Math.max(cy, groundY), cz);
     // Occlusion-compensated FOV plus the feel kicks (speed widen, landing
     // dip, level-up punch); the offset is 0 under reduced motion.

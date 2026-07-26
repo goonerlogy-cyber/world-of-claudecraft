@@ -38,7 +38,6 @@ export const ZONE3_ZONE: ZoneDef = {
     { x: 55, z: 820, label: 'Wyrmcult Tents', id: 'wyrmcult_tents' },
     { x: -40, z: 830, label: 'Revenant Fields', id: 'revenant_fields' },
     { x: 0, z: 880, label: 'Gravewyrm Sanctum', id: 'gravewyrm_sanctum' },
-    { x: 102, z: 690, label: 'Highwatch Stables', id: 'highwatch_stables' },
   ],
   welcome: 'Captain Thessaly holds the wall at Highwatch - barely.',
 };
@@ -1018,7 +1017,7 @@ export const ZONE3_MOBS: Record<string, MobTemplate> = {
     scale: 0.95,
     color: 0x9fb3c8,
   },
-  // Ambient stable horses at the Highwatch Stables: pure decoration. Held
+  // Ambient stable horses at the Galecrest Stables: pure decoration. Held
   // non-hostile every tick and driven by the ambient locomotion arm (never
   // aggro/combat/evade, un-attackable, un-tameable since taming needs a hostile
   // target), but they DO amble within the paddock (src/sim/mob/ambient.ts). No
@@ -1239,15 +1238,16 @@ export const ZONE3_NPCS: Record<string, NpcDef> = {
     banker: true,
     greeting: 'Every crate, coffer, and trinket is safe with the Gilded Strongbox.',
   },
-  // Relocated from Eastbrook Vale (zone 1): Marla moved her stable up to
-  // Highwatch, where the mountain roads finally justified teaching riding
-  // lessons instead of just selling reins over a fence. Stands beside the barn
-  // notch and faces the race yard (STABLE_PADDOCK, content/mounts.ts).
+  // Twice relocated (Eastbrook Vale, then Highwatch): Marla moved her whole
+  // yard down to the Galecrest downs between the Shear and the Wreckfields,
+  // where the flat headland finally fits a proper arena and the harbor city
+  // keeps her in customers. Stands beside the barn notch and faces the race
+  // yard (STABLE_PADDOCK, content/mounts.ts). Ids stay stable across moves.
   stablemaster_marla: {
     id: 'stablemaster_marla',
     name: 'Marla Hitchen',
     title: 'Stablemaster',
-    pos: { x: 91, z: 708 },
+    pos: { x: 367, z: 608 },
     facing: Math.PI, // face -z, toward the race yard
     color: 0x8b5a2b,
     questIds: ['q_riding_lessons'],
@@ -1257,7 +1257,7 @@ export const ZONE3_NPCS: Record<string, NpcDef> = {
     // (items.ts).
     vendorItems: ['riding_training', 'reins_valorsteed'],
     greeting:
-      'Every rider walks in on two legs, $C. I will not hand you the reins until you can sit the Valorsteed without kissing the dirt, and Highwatch has no menders to spare for broken bones.',
+      'Every rider walks in on two legs, $C. I will not hand you the reins until you can sit the Valorsteed without kissing the dirt, and the Galecrest wind shows no mercy to a bad seat.',
   },
   chronicler_edda_hartwell: {
     // Display name renamed to Zenzie (maintainer call). The template id is
@@ -1977,7 +1977,7 @@ export const ZONE3_QUESTS: Record<string, QuestDef> = {
     shareable: false,
     repeatCadenceTicks: WORK_ORDER_CADENCE_TICKS,
   },
-  // Riding lessons at the Highwatch stable yard: the story path to the
+  // Riding lessons at the Galecrest stable yard: the story path to the
   // Valorsteed. The single interact objective is a sentinel credited by the
   // riding lesson when the player first climbs onto the training steed (see
   // src/sim/mounts_training.ts), not a real placed ground object, so no
@@ -2091,13 +2091,13 @@ export const ZONE3_CAMPS: CampDef[] = [
   // with two zealot drakebinders posted to keep their captive on its chain.
   { mobId: 'voskar_emberwing', center: { x: 80, z: 845 }, radius: 4, count: 1 },
   { mobId: 'wyrmcult_zealot', center: { x: 80, z: 845 }, radius: 7, count: 2 },
-  // Ambient stable horses in the narrower NORTH pasture of the Highwatch Stables
+  // Ambient stable horses in the narrower NORTH pasture of the Galecrest Stables
   // paddock (north of the divider and east of the barn notch). radius 0 (exact spawn,
   // no scatter draw); the ambient wander (clamped to STABLE_PASTURE) keeps them in
   // that fenced extension, so they never enter the south yard.
-  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 114, z: 694 }, radius: 0, count: 1 },
-  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 128, z: 698 }, radius: 0, count: 1 },
-  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 142, z: 702 }, radius: 0, count: 1 },
+  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 390, z: 594 }, radius: 0, count: 1 },
+  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 404, z: 598 }, radius: 0, count: 1 },
+  { mobId: STABLE_HORSE_TEMPLATE_ID, center: { x: 418, z: 602 }, radius: 0, count: 1 },
 ];
 
 export const ZONE3_OBJECTS: GroundObjectDef[] = [
@@ -3800,18 +3800,18 @@ export const ZONE3_PROPS: ZonePropsDef = {
     { kind: 'house', x: 18, z: 660, w: 6, d: 5, rot: 1.2 },
     { kind: 'inn', x: -15, z: 666, w: 6, d: 7, rot: 0.6 },
     { kind: 'chapel', x: -16, z: 650, w: 5, d: 7, rot: 0.9 },
-    // Highwatch Stables barn (Stablemaster Marla): moved into the open notch beside
-    // the narrower north pasture. Reuses the 'inn' kind for a barn-like footprint.
-    { kind: 'inn', x: 76, z: 698, w: 10, d: 8, rot: 2.7 },
+    // The Galecrest Stables barn (Stablemaster Marla): in the open notch
+    // beside the narrower north pasture. 'inn' kind for a barn footprint.
+    { kind: 'inn', x: 352, z: 598, w: 10, d: 8, rot: 2.7 },
   ],
   wells: [
     { x: 0, z: 662, r: 1.5 },
-    { x: 99, z: 703, r: 1.5 }, // stables water trough (beside the pasture entrance)
+    { x: 375, z: 603, r: 1.5 }, // stables water trough (beside the pasture entrance)
   ],
   stalls: [
     { x: -7.5, z: 667, rot: Math.PI / 2, r: 1.7 }, // Quartermaster Bree
     { x: -4.5, z: 673.5, rot: -0.6, r: 1.7, smithy: true }, // Armorer Hode
-    { x: 89, z: 703, rot: 1.2, r: 1.6 }, // stables feed stall (by the barn)
+    { x: 365, z: 603, rot: 1.2, r: 1.6 }, // stables feed stall (by the barn)
   ],
   mines: [
     { x: 88, z: 612, rot: -2.0 }, // Deeprock Burrows
@@ -3836,8 +3836,8 @@ export const ZONE3_PROPS: ZonePropsDef = {
     { x: 58, z: 823, rot: -0.5, scale: 1 },
     { x: 60, z: 812, rot: 2.2, scale: 1 },
     { x: 28, z: 848, rot: 1.5, scale: 1 },
-    // Stables: tack tent moved clear of the race-yard entrance
-    { x: 99, z: 712, rot: 2.2, scale: 1 },
+    // Stables: tack tent clear of the race-yard entrance (Galecrest site)
+    { x: 375, z: 612, rot: 2.2, scale: 1 },
   ],
   crates: [
     [-118, 728],
@@ -3866,7 +3866,7 @@ export const ZONE3_PROPS: ZonePropsDef = {
   fences: [
     { x1: -14, z1: 649, x2: -4, z2: 647 }, // town south gate, east run
     { x1: 4, z1: 647, x2: 14, z2: 649 }, // town south gate, west run
-    // Highwatch Stables paddock (STABLE_PADDOCK, content/mounts.ts): the full-width
+    // The Galecrest Stables paddock (STABLE_PADDOCK, content/mounts.ts): the full-width
     // race yard ends at the divider, while only the east side continues north as
     // the horse pasture. This makes the requested L footprint and leaves the west
     // notch open for the barn cluster. The horses' wander bound reads the same source.

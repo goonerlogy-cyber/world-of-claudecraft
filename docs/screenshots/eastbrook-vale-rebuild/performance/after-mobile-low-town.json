@@ -7,7 +7,7 @@
   "source": {
     "comparison": "feature-worktree",
     "revision": "working-tree",
-    "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
+    "fingerprint": "67b94f54229073070f65f16770ffc65c1e3ab0cdc6ed81591355768bfa363b1f"
   },
   "expectedArmoury": true,
   "expectedTown": true,

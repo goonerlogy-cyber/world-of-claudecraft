@@ -1737,8 +1737,7 @@ export const GUIDE_ZONES: GuideZoneInfo[] = [
       "The Glimmermere",
       "Wyrmcult Tents",
       "Revenant Fields",
-      "Gravewyrm Sanctum",
-      "Highwatch Stables"
+      "Gravewyrm Sanctum"
     ],
     "welcome": "Captain Thessaly holds the wall at Highwatch - barely.",
     "families": [
@@ -1788,6 +1787,7 @@ export const GUIDE_ZONES: GuideZoneInfo[] = [
       "The Gatewood",
       "Cinder Dunes",
       "Trollmoot",
+      "The Last Keep",
       "Bloodglass Fields",
       "Drakemaw Caldera"
     ],
@@ -1940,16 +1940,20 @@ export const GUIDE_ZONES: GuideZoneInfo[] = [
     "pois": [
       "Hedgewick",
       "The Garden Gate",
-      "The Statuary Walk",
-      "The Rose Wilds",
+      "The Parterre Walk",
+      "Dawnhold Castle",
       "The Petal Pond",
       "The Great Maze",
-      "The Fountain Court"
+      "The Fountain Court",
+      "The Old Mill",
+      "The North Watch",
+      "The Lily Basin"
     ],
     "welcome": "Someone is still trimming the hedges, though no gardener has been seen for a hundred years. Mind the maze: it minds you back.",
     "families": [
       "beast",
-      "kobold"
+      "kobold",
+      "humanoid"
     ]
   },
   {
@@ -1966,13 +1970,14 @@ export const GUIDE_ZONES: GuideZoneInfo[] = [
       "The Old Beacon",
       "The Shear",
       "The Wreckfields",
-      "The Mirror Tarn"
+      "The Mirror Tarn",
+      "The Galecrest Stables"
     ],
     "welcome": "The wind has never once stopped here, and the Old Beacon has never once gone out. Wickharbor asks only that you close the inn door behind you.",
     "families": [
       "beast",
-      "undead",
-      "elemental"
+      "kobold",
+      "undead"
     ]
   },
   {
@@ -2291,16 +2296,6 @@ export const GUIDE_FAMILIES: GuideFamily[] = [
         "still": "/guide-stills/mob_alpaca__d8d0c0.webp"
       },
       {
-        "name": "Shoal Scuttler",
-        "min": 20,
-        "max": 20,
-        "rare": false,
-        "templateId": "shoal_scuttler",
-        "model": "mob_crab",
-        "tint": "#8898a8",
-        "still": "/guide-stills/mob_crab__8898a8.webp"
-      },
-      {
         "name": "Thicket Boar",
         "min": 20,
         "max": 20,
@@ -2546,11 +2541,31 @@ export const GUIDE_FAMILIES: GuideFamily[] = [
         "still": "/guide-stills/mob_bandit__6b3a32.webp"
       },
       {
+        "name": "Downs Bandit",
+        "min": 20,
+        "max": 20,
+        "rare": false,
+        "templateId": "downs_bandit",
+        "model": "mob_bandit",
+        "tint": "#6b3a32",
+        "still": "/guide-stills/mob_bandit__6b3a32.webp"
+      },
+      {
         "name": "Hedge Gnome",
         "min": 20,
         "max": 20,
         "rare": false,
         "templateId": "hedge_gnome",
+        "model": "mob_bandit",
+        "tint": "#6b3a32",
+        "still": "/guide-stills/mob_bandit__6b3a32.webp"
+      },
+      {
+        "name": "Wreckfield Thief",
+        "min": 20,
+        "max": 20,
+        "rare": false,
+        "templateId": "wreck_thief",
         "model": "mob_bandit",
         "tint": "#6b3a32",
         "still": "/guide-stills/mob_bandit__6b3a32.webp"
@@ -2619,6 +2634,15 @@ export const GUIDE_FAMILIES: GuideFamily[] = [
         "model": "mob_dark_caster",
         "tint": "#533566",
         "still": "/guide-stills/mob_dark_caster__533566.webp"
+      },
+      {
+        "name": "Dawnhold Knight",
+        "min": 20,
+        "max": 20,
+        "rare": false,
+        "templateId": "hedge_knight",
+        "model": "npc_knight",
+        "still": "/guide-stills/npc_knight.webp"
       }
     ]
   },
@@ -2837,16 +2861,6 @@ export const GUIDE_FAMILIES: GuideFamily[] = [
         "model": "mob_ghost",
         "tint": "#d0f2c8",
         "still": "/guide-stills/mob_ghost__d0f2c8.webp"
-      },
-      {
-        "name": "Gale Wisp",
-        "min": 20,
-        "max": 20,
-        "rare": false,
-        "templateId": "gale_wisp",
-        "model": "mob_elemental",
-        "tint": "#bfe0e8",
-        "still": "/guide-stills/mob_elemental__bfe0e8.webp"
       },
       {
         "name": "Nightkin Stargazer",
@@ -10076,5 +10090,20 @@ export const GUIDE_MODELS: Record<string, GuideModelSpec> = {
     "idle": "Idle",
     "height": 1.7,
     "tintStrength": 0.35
+  },
+  "npc_knight": {
+    "url": "models/chars/players/knight.glb",
+    "idle": "Idle",
+    "height": 2.6,
+    "show": [
+      "Knight_Helmet",
+      "Knight_Cape"
+    ],
+    "attach": [
+      {
+        "url": "models/weapons/sword_1handed.glb",
+        "bone": "handslot.r"
+      }
+    ]
   }
 };

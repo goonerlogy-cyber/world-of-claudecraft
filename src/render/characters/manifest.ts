@@ -1711,6 +1711,9 @@ const MOB_KEYS: Record<string, string> = {
   // Ambient Highwatch stable horse: the Valorsteed mount model (mob_stable_horse
   // above) so it renders as an animated horse, not a humanoid.
   stable_horse: 'mob_stable_horse',
+  // Dawnhold's garrison: the armored knight body (helmet, cape, sword), not
+  // the humanoid family's hooded outlaw fallback.
+  hedge_knight: 'npc_knight',
   // Protect Yumi objective cat: the dedicated Meshy familiar
   // (docs/prd/protect-yumi-assets.md item 1, delivered).
   yumi_cat: 'mob_yumi_cat',
@@ -1832,7 +1835,8 @@ const MOB_KEYS: Record<string, string> = {
   the_topiary_bull: 'mob_bull',
   moor_ram: 'mob_alpaca',
   shoal_scuttler: 'mob_crab',
-  the_wreck_warden: 'skel_golem',
+  // The Wreck Warden walks as Mogger's hulking bruiser body, not a skeleton.
+  the_wreck_warden: 'mob_bruiser',
   // The Infernal Citadel: the pact cult reads as robed casters, not the `undead`
   // family's default skeleton minion. Its demons keep the family fallback
   // (mob_demonalt), re-tinted deep red by the templates.

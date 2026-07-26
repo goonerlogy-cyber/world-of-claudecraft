@@ -4394,7 +4394,6 @@ export const nl_NL: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Wyrmcultus-Tenten',
   'entities.zones.thornpeak_heights.pois.8.label': 'Revenantenvelden',
   'entities.zones.thornpeak_heights.pois.9.label': 'Grafwurm-Heiligdom',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Stallen van Highwatch',
   'entities.zones.thornpeak_heights.welcome':
     'Kapitein Thessaly houdt de muur bij Hoogwacht, ternauwernood.',
   'errors.api.accountBanned': 'Dit account is verbannen.',

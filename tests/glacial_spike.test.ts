@@ -122,7 +122,11 @@ describe('Glacial Spike content def', () => {
 
 describe('Icicles build-up', () => {
   it('a Rimelance impact banks one Icicle, capped at ICICLE_MAX', () => {
-    const { sim, p } = makeSim();
+    // Seed hunted (post-merge camp order) so the first 10 Rimelance casts all
+    // LAND (a resisted bolt never impacts, so it banks nothing); the loop only
+    // needs 7, the extra landed casts are margin. Under seed 90210 the merged
+    // stream resists cast 5.
+    const { sim, p } = makeSim({ seed: 11 });
     spawnTarget(sim, p);
     expect(frostIcicleCharges(p.auras)).toBe(0);
     for (let n = 1; n <= ICICLE_MAX + 2; n++) {

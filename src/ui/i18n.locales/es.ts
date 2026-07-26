@@ -5186,7 +5186,6 @@ export const es: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Tiendas del Culto del Wyrm',
   'entities.zones.thornpeak_heights.pois.8.label': 'Campos de aparecidos',
   'entities.zones.thornpeak_heights.pois.9.label': 'Santuario del Gravewyrm',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Establos de Highwatch',
   'entities.dungeons.hollow_crypt.name': 'La Cripta Hueca',
   'entities.dungeons.hollow_crypt.enterText': 'Desciendes a la Cripta Hueca...',
   'entities.dungeons.hollow_crypt.leaveText': 'Vuelves a subir a la luz del día.',

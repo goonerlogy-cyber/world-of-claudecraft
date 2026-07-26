@@ -30,9 +30,12 @@ import { delvePropsPreloadInternalsForTest } from '../src/render/delve_props';
 import { doorPortalPreloadInternalsForTest } from '../src/render/door_portal';
 import { eastbrookGrandArmouryInternalsForTest } from '../src/render/eastbrook_grand_armoury';
 import { fishPreloadInternalsForTest } from '../src/render/fish';
+import { galeFeaturesPreloadInternalsForTest } from '../src/render/gale_features';
+import { gardenFeaturesPreloadInternalsForTest } from '../src/render/garden_features';
 import { gatherNodePreloadInternalsForTest } from '../src/render/gather_nodes';
 import { mailboxPreloadInternalsForTest } from '../src/render/mailbox';
 import { orkadiaPropsPreloadInternalsForTest } from '../src/render/orkadia_props';
+import { propPreloadInternalsForTest } from '../src/render/props';
 import { questObjectPreloadInternalsForTest } from '../src/render/quest_objects';
 import { stationsPreloadInternalsForTest } from '../src/render/stations';
 import { wildheartPropsPreloadInternalsForTest } from '../src/render/wildheart_props';
@@ -69,7 +72,7 @@ const armouryFinalPipelineEnabled =
     item.src?.endsWith('eastbrook_grand_armoury-final.glb'),
   ) ?? false;
 const ARMOURY_SHIPPING_BYTE_CEILING = 160 * 1024;
-const ARMOURY_SHIPPING_SHA256 = '822d6c9df6e8aa6e139e62e6c87ceb841431998f72b8b134de607c78c81fca32';
+const ARMOURY_SHIPPING_SHA256 = '39b7d13a0298c502199bd601a5be8470feb86d517907ebe172dbe441f7eb16c7';
 const MANIFEST_HASH_LENGTH = 12;
 
 function expectAssetExistsAndManifested(url: string): void {
@@ -701,6 +704,24 @@ describe('GLB-replacement asset preload sets resolve to real, manifested files',
         readGlbJson(path.join(publicDir, url.replace(/^\//, ''))).extensionsUsed,
         `${url} should use Meshopt`,
       ).toContain('EXT_meshopt_compression');
+    }
+  });
+
+  it('Great Maze hedge wall and arch assets', () => {
+    for (const url of Object.values(gardenFeaturesPreloadInternalsForTest.mazeAssetUrl)) {
+      expectAssetExistsAndManifested(url);
+    }
+  });
+
+  it('Old Beacon tower drum assets', () => {
+    for (const url of galeFeaturesPreloadInternalsForTest.towerAssetUrl) {
+      expectAssetExistsAndManifested(url);
+    }
+  });
+
+  it('every decor prop asset (the full PROP_ASSET_DEFS catalog)', () => {
+    for (const url of Object.values(propPreloadInternalsForTest.propAssetUrl)) {
+      expectAssetExistsAndManifested(url);
     }
   });
 });

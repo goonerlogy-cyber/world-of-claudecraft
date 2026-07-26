@@ -4171,7 +4171,6 @@ export const da_DK: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Ormekultens Telte',
   'entities.zones.thornpeak_heights.pois.8.label': 'Genfærdsmarkerne',
   'entities.zones.thornpeak_heights.pois.9.label': 'Gravormens Helligdom',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Highwatch-stalden',
   'entities.zones.thornpeak_heights.welcome':
     'Kaptajn Thessaly holder muren ved Højvagten, knap nok.',
   'errors.api.accountBanned': 'Denne konto er blevet udelukket.',

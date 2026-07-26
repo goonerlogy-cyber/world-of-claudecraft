@@ -4172,7 +4172,6 @@ export const sv_SE: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Lindormskultens tält',
   'entities.zones.thornpeak_heights.pois.8.label': 'Gengångarfälten',
   'entities.zones.thornpeak_heights.pois.9.label': 'Gravlindormens helgedom',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Highwatchs stall',
   'entities.zones.thornpeak_heights.welcome':
     'Kapten Thessaly håller muren vid Högvakten - knappt.',
   'errors.api.accountBanned': 'Detta konto har bannlysts.',

@@ -12,7 +12,7 @@ import {
 } from '../sim/data';
 import { fbm2 } from '../sim/rng';
 import type { BiomeId, ZoneDef } from '../sim/types';
-import { inGardenMaze, roadDistance, terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
+import { roadDistance, terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import { loadTexture } from './assets/loader';
 import { registerPreload } from './assets/preload';
 import { GFX } from './gfx';
@@ -333,7 +333,6 @@ const emberBasaltC = new THREE.Color(0x4e3c34); // the cones' dark volcanic rock
 const cobbleC = new THREE.Color(0x8f8c86); // the Amberfall's laid stone
 const cobbleDarkC = new THREE.Color(0x6e6b66); // ...its mortar-shadow cells
 const duskCliffC = new THREE.Color(0x544d58); // dark weathered sea-cliff stone
-const hedgeC = new THREE.Color(0x2e5c30); // the Great Maze's clipped hedge walls
 const duskStrataC = new THREE.Color(0x8d7d76); // pale strata bands in the face
 const snowCapC = new THREE.Color(0xedf3fa);
 const lowSunC = new THREE.Color(0xe7d9a5);
@@ -524,12 +523,8 @@ function sampleVertex(x: number, z: number, seed: number): VertexSample {
     cTmp.lerp(rockC, t);
     cTmp.lerp(dirtDarkC, t * (rockStreak - 0.5) * 0.35);
     lerpSplat(w, 2, t);
-    // the Great Maze's walls are hedges, not cliffs: inside the maze the
-    // steep faces take clipped evergreen instead of rock
-    if (biome === 'garden' && inGardenMaze(x, z)) {
-      cTmp.lerp(hedgeC, t);
-      lerpSplat(w, 0, t * 0.7); // lean back toward the grass splat
-    }
+    // (the Great Maze's hedge walls are modeled props over flat lawn now:
+    // no steep terrain faces remain inside the maze to restyle)
     // dusk sea cliffs read as dark weathered stone with pale strata bands, so
     // the coast walls look like rugged wave-cut rock instead of smooth clay
     if (biome === 'dusk') {

@@ -4364,7 +4364,6 @@ export const vi_VN: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Lều Giáo Phái Cuồng Long',
   'entities.zones.thornpeak_heights.pois.8.label': 'Cánh Đồng Vong Linh',
   'entities.zones.thornpeak_heights.pois.9.label': 'Thánh Đường Mộ Long',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Chuồng ngựa Highwatch',
   'entities.zones.thornpeak_heights.welcome':
     'Đội Trưởng Thessaly đang trấn giữ bức tường ở Vọng Đài Cao, vất vả lắm mới giữ nổi.',
   'errors.api.accountBanned': 'Tài khoản này đã bị cấm.',

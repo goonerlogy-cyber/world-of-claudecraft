@@ -4001,7 +4001,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': 'Шатры Культа Вирма',
   'entities.zones.thornpeak_heights.pois.8.label': 'Поля ревенантов',
   'entities.zones.thornpeak_heights.pois.9.label': 'Святилище Могильного Вирма',
-  'entities.zones.thornpeak_heights.pois.10.label': 'Конюшни Хайвотча',
   'entities.zones.veiled_hollow.name': 'Сокрытая лощина',
   'entities.zones.veiled_hollow.welcome':
     'Воздух гудит от древней магии. Найдите хранительницу Сэльвин под великим древом Элдерглима.',
@@ -4026,8 +4025,9 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.zones.drakelands.pois.1.label': 'Привратный лес',
   'entities.zones.drakelands.pois.2.label': 'Пепельные дюны',
   'entities.zones.drakelands.pois.3.label': 'Тролльмут',
-  'entities.zones.drakelands.pois.4.label': 'Кровостеклянные поля',
-  'entities.zones.drakelands.pois.5.label': 'Кальдера Дрейкмо',
+  'entities.zones.drakelands.pois.4.label': 'Последний оплот',
+  'entities.zones.drakelands.pois.5.label': 'Кровостеклянные поля',
+  'entities.zones.drakelands.pois.6.label': 'Кальдера Дрейкмо',
   'entities.zones.frostveil.name': 'Морозный Предел',
   'entities.zones.frostveil.welcome':
     'Снег глотает каждый звук. Под танцующим сиянием сам холод кажется живым.',
@@ -4125,14 +4125,18 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
     'Кто-то до сих пор подстригает живые изгороди, хотя садовника не видели уже сто лет. Берегись лабиринта: он тоже следит за тобой.',
   'entities.zones.evergarden.pois.0.label': 'Хеджвик',
   'entities.zones.evergarden.pois.1.label': 'Садовые Врата',
-  'entities.zones.evergarden.pois.2.label': 'Аллея Статуй',
-  'entities.zones.evergarden.pois.3.label': 'Дикие Розы',
+  'entities.zones.evergarden.pois.2.label': 'Аллея Цветников',
+  'entities.zones.evergarden.pois.3.label': 'Замок Донхолд',
   'entities.zones.evergarden.pois.4.label': 'Лепестковый Пруд',
   'entities.zones.evergarden.pois.5.label': 'Великий Лабиринт',
   'entities.zones.evergarden.pois.6.label': 'Фонтанный Двор',
+  'entities.zones.evergarden.pois.7.label': 'Старая Мельница',
+  'entities.zones.evergarden.pois.8.label': 'Северный Дозор',
+  'entities.zones.evergarden.pois.9.label': 'Лилейная Заводь',
   'entities.mobs.topiary_stag.name': 'Фигурный олень',
   'entities.mobs.topiary_wolf.name': 'Фигурный волк',
   'entities.mobs.hedge_gnome.name': 'Гном живой изгороди',
+  'entities.mobs.hedge_knight.name': 'Рыцарь Донхолда',
   'entities.mobs.the_topiary_bull.name': 'Фигурный бык',
   'entities.zones.galecrest.name': 'Гейлкрест',
   'entities.zones.galecrest.welcome':
@@ -4144,6 +4148,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.zones.galecrest.pois.4.label': 'Отвесный Срез',
   'entities.zones.galecrest.pois.5.label': 'Поля Кораблекрушений',
   'entities.zones.galecrest.pois.6.label': 'Зеркальное Озеро',
+  'entities.zones.galecrest.pois.7.label': 'Конюшни Гейлкреста',
   'entities.npcs.warden_coalfast.name': 'Смотритель Хладоуголь',
   'entities.npcs.warden_coalfast.title': 'Комендант редута',
   'entities.npcs.warden_coalfast.greeting':
@@ -4185,6 +4190,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.mobs.gale_wisp.name': 'Штормовой дух',
   'entities.mobs.shoal_scuttler.name': 'Отмельный краб',
   'entities.mobs.the_wreck_warden.name': 'Страж Кораблекрушений',
+  'entities.mobs.downs_bandit.name': 'Бандит с холмов',
+  'entities.mobs.wreck_thief.name': 'Расхититель кораблекрушений',
   'entities.mobs.glimmerwisp.name': 'Мерцающий огонёк',
   'entities.mobs.duskwisp.name': 'Сумеречный огонёк',
   'entities.mobs.veiled_stag.name': 'Скрытый олень',
@@ -6898,7 +6905,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'guide.worldPage.junglePlaceNotes':
     'Дрифтхейвен держит костёр на берегу. Заросшее Устье, это место, где река встречает зелёную стену; Пальмовая Коса тянется белой тёплой полосой вдоль прибоя; Изумрудная Чаща и Лианопад поглощают всё, что дальше от берега; Сапфировая Лагуна светится, прозрачная и глубокая; а Затонувший Идол наблюдает из-под воды.',
   'guide.worldPage.gardenPlaceNotes':
-    'Хеджвик ждёт у Садовых Врат. Аллея Статуй хранит своё безмолвное общество; Дикие Розы давно переросли свои клумбы; Лепестковый Пруд круглый год розовеет от лепестков; Великий Лабиринт меняет свои манеры под каждого гостя; а Фонтанный Двор всё так же бежит чистой водой в самом сердце сада.',
+    'Хеджвик ждёт у Садовых Врат. Аллея Цветников цветёт подстриженными красками; Замок Донхолд муштрует рыцарей за новыми стенами; Лепестковый Пруд круглый год розовеет от лепестков; Старая Мельница вертится над собственными кольцевыми клумбами; Великий Лабиринт меняет свои манеры под каждого гостя, а за его арками следят лиственные лисы; Северный Дозор стережёт дорогу от выхода; Лилейная Заводь покоится за всем этим; а Фонтанный Двор всё так же бежит чистой водой в самом сердце сада.',
   'guide.worldPage.valeGreeter': 'Маршал Редбрук, Истврук',
   'guide.worldPage.valeGreeting': 'Держите клинок наготове. Долина уже не та, что прежде.',
   'guide.worldPage.valePlaceNotes':
@@ -9972,6 +9979,9 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
     'Тёплый дождь шипит на древнем камне. Перед вами открывается Котловина Дикого Сердца.',
   'entities.dungeons.wildheart_basin.leaveText':
     'Вы проходите под каменными клыками и возвращаетесь к солнцу Палмрича.',
+  'entities.dungeons.the_last_keep.name': 'Последний оплот',
+  'entities.dungeons.the_last_keep.enterText': 'Вы входите в холодные безмолвные залы Последнего оплота.',
+  'entities.dungeons.the_last_keep.leaveText': 'Вы затворяете дверь оплота и возвращаетесь под ветер Земель Драконов.',
   'entities.items.wildheart_tuskblade.name': 'Клыкастый клинок Дикого Сердца',
   'entities.items.wildheart_hexwood_staff.name': 'Посох колдовского дерева из Котловины',
   'entities.items.wildheart_fangknife.name': 'Клыковый нож Зулгара',

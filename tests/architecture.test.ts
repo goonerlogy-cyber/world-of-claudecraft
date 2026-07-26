@@ -281,6 +281,8 @@ const RENDER_PURE_CORES = [
   'src/render/water_core.ts',
   'src/render/day_night_core.ts',
   'src/render/authored_walls_core.ts',
+  'src/render/garden_maze_core.ts',
+  'src/render/garden_parterre_core.ts',
   'src/render/foliage_lod.ts',
   'src/render/prewarm_pass.ts',
   'src/render/prewarm_policy.ts',

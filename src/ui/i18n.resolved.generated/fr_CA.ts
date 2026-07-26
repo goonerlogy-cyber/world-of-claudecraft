@@ -3568,7 +3568,7 @@ export const fr_CA: EnTranslations = {
       "hauntPlaceNotes": "Gallowmere huddles inside its lanterns. The Crowgate is the wood's grim front door; Widow's Thicket is spun thick with web; the Hanging Glade and the Mournstone Chapel keep the forest's oldest griefs; and the Huntsman's Clearing belongs to whatever still hunts there.",
       "galePlaceNotes": "Wickharbor leans into the wind. The Windway is the cliff road in; the Howling Downs roll treeless under the gale; the Old Beacon has burned for as long as anyone can say; the Shear drops sheer to the water; the Wreckfields keep the coast honest; and the Mirror Tarn is the one still thing in the whole realm.",
       "junglePlaceNotes": "Drifthaven keeps its fire on the beach. The Tanglemouth is where the river meets the green wall; the Palmstrand runs white and warm along the surf; the Emerald Tangle and the Vinefall swallow the interior; the Sapphire Lagoon glows clear and deep; and the Sunken Idol watches from beneath the water.",
-      "gardenPlaceNotes": "Hedgewick waits at the Garden Gate. The Statuary Walk keeps its silent company; the Rose Wilds have long outgrown their beds; the Petal Pond drifts pink the year round; the Great Maze rearranges its manners for every guest; and the Fountain Court still runs clear at the garden heart.",
+      "gardenPlaceNotes": "Hedgewick waits at the Garden Gate. The Parterre Walk blooms in clipped color; Dawnhold Castle drills its knights behind new walls; the Petal Pond drifts pink the year round; the Old Mill turns over its own ring beds; the Great Maze rearranges its manners for every guest, its arches watched by leafy foxes; the North Watch keeps the exit road; the Lily Basin rests beyond it all; and the Fountain Court still runs clear at the garden heart.",
       "gladeTitle": "Un coin paisible : la clairière de Brightwood",
       "gladeBody": "Toutes les histoires du Val ne parlent pas des morts. Au nord, un bosquet ensoleillé appelé Brightwood Glade garde son propre rythme plus doux, tout en sentiers calmes et en lumière mouchetée sous les frondaisons. C'est un contrepoint apaisé à la piste que vous suivez, et il mérite le détour quand la route vous laisse le temps de flâner.",
       "worldBossTitle": "Quand le pic s'éveille : le boss de monde",
@@ -9686,6 +9686,9 @@ export const fr_CA: EnTranslations = {
       "mantle_of_the_unbroken_shore": {
         "name": "Mantle of the Unbroken Shore"
       },
+      "last_keep_signet": {
+        "name": "Signet of the Last Keep"
+      },
       "conjured_water4": {
         "name": "Eau de source conjurée"
       },
@@ -10927,6 +10930,9 @@ export const fr_CA: EnTranslations = {
       "hedge_gnome": {
         "name": "Hedge Gnome"
       },
+      "hedge_knight": {
+        "name": "Dawnhold Knight"
+      },
       "the_topiary_bull": {
         "name": "The Topiary Bull"
       },
@@ -10938,6 +10944,12 @@ export const fr_CA: EnTranslations = {
       },
       "shoal_scuttler": {
         "name": "Shoal Scuttler"
+      },
+      "downs_bandit": {
+        "name": "Downs Bandit"
+      },
+      "wreck_thief": {
+        "name": "Wreckfield Thief"
       },
       "the_wreck_warden": {
         "name": "The Wreck Warden"
@@ -13784,9 +13796,6 @@ export const fr_CA: EnTranslations = {
           },
           "9": {
             "label": "Sanctuaire du Gravewyrm"
-          },
-          "10": {
-            "label": "Écuries de Highwatch"
           }
         }
       },
@@ -13837,9 +13846,12 @@ export const fr_CA: EnTranslations = {
             "label": "Trollmoot"
           },
           "4": {
-            "label": "Bloodglass Fields"
+            "label": "The Last Keep"
           },
           "5": {
+            "label": "Bloodglass Fields"
+          },
+          "6": {
             "label": "Drakemaw Caldera"
           }
         }
@@ -14005,10 +14017,10 @@ export const fr_CA: EnTranslations = {
             "label": "The Garden Gate"
           },
           "2": {
-            "label": "The Statuary Walk"
+            "label": "The Parterre Walk"
           },
           "3": {
-            "label": "The Rose Wilds"
+            "label": "Dawnhold Castle"
           },
           "4": {
             "label": "The Petal Pond"
@@ -14018,6 +14030,15 @@ export const fr_CA: EnTranslations = {
           },
           "6": {
             "label": "The Fountain Court"
+          },
+          "7": {
+            "label": "The Old Mill"
+          },
+          "8": {
+            "label": "The North Watch"
+          },
+          "9": {
+            "label": "The Lily Basin"
           }
         }
       },
@@ -14045,6 +14066,9 @@ export const fr_CA: EnTranslations = {
           },
           "6": {
             "label": "The Mirror Tarn"
+          },
+          "7": {
+            "label": "The Galecrest Stables"
           }
         }
       },
@@ -14105,6 +14129,11 @@ export const fr_CA: EnTranslations = {
         "name": "The Wildheart Basin",
         "enterText": "Warm rain hisses on old stone. The Wildheart Basin opens before you.",
         "leaveText": "You pass back beneath the stone fangs into the Palmreach sun."
+      },
+      "the_last_keep": {
+        "name": "The Last Keep",
+        "enterText": "You step into the cold, silent halls of the Last Keep.",
+        "leaveText": "You pull the keep door shut and step back into the Drakelands wind."
       },
       "drowned_temple": {
         "name": "Le Temple noyé",

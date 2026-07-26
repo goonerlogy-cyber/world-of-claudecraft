@@ -3956,7 +3956,6 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.thornpeak_heights.pois.7.label': '고룡교단 천막',
   'entities.zones.thornpeak_heights.pois.8.label': '망령 들판',
   'entities.zones.thornpeak_heights.pois.9.label': '무덤고룡 성소',
-  'entities.zones.thornpeak_heights.pois.10.label': '하이워치 마구간',
   'entities.zones.veiled_hollow.name': '장막의 골짜기',
   'entities.zones.veiled_hollow.welcome':
     '대기가 오래된 마법으로 웅웅거린다. 엘더글림의 큰 나무 아래에서 수호자 샐윈을 찾아가라.',
@@ -3981,8 +3980,9 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.drakelands.pois.1.label': '관문숲',
   'entities.zones.drakelands.pois.2.label': '잿빛 사구',
   'entities.zones.drakelands.pois.3.label': '트롤무트',
-  'entities.zones.drakelands.pois.4.label': '핏빛유리 벌판',
-  'entities.zones.drakelands.pois.5.label': '드레이크모 화산구',
+  'entities.zones.drakelands.pois.4.label': '마지막 요새',
+  'entities.zones.drakelands.pois.5.label': '핏빛유리 벌판',
+  'entities.zones.drakelands.pois.6.label': '드레이크모 화산구',
   'entities.zones.frostveil.name': '서리장막 봉우리',
   'entities.zones.frostveil.welcome':
     '눈이 모든 소리를 삼킨다. 춤추는 오로라 아래, 추위 그 자체가 깨어 있는 듯하다.',
@@ -4080,14 +4080,18 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
     '산울타리는 여전히 다듬어지고 있지만, 정원사를 본 사람은 백 년 동안 없었다. 미로를 조심하라. 미로도 너를 지켜보고 있다.',
   'entities.zones.evergarden.pois.0.label': '헤지윅',
   'entities.zones.evergarden.pois.1.label': '정원 문',
-  'entities.zones.evergarden.pois.2.label': '조각상 산책로',
-  'entities.zones.evergarden.pois.3.label': '들장미 수풀',
+  'entities.zones.evergarden.pois.2.label': '화단 산책로',
+  'entities.zones.evergarden.pois.3.label': '던홀드 성',
   'entities.zones.evergarden.pois.4.label': '꽃잎 연못',
   'entities.zones.evergarden.pois.5.label': '대미로',
   'entities.zones.evergarden.pois.6.label': '분수 안뜰',
+  'entities.zones.evergarden.pois.7.label': '오래된 풍차',
+  'entities.zones.evergarden.pois.8.label': '북쪽 감시초소',
+  'entities.zones.evergarden.pois.9.label': '수련 연못',
   'entities.mobs.topiary_stag.name': '토피어리 수사슴',
   'entities.mobs.topiary_wolf.name': '토피어리 늑대',
   'entities.mobs.hedge_gnome.name': '산울타리 노움',
+  'entities.mobs.hedge_knight.name': '던홀드 기사',
   'entities.mobs.the_topiary_bull.name': '토피어리 황소',
   'entities.zones.galecrest.name': '게일크레스트',
   'entities.zones.galecrest.welcome':
@@ -4099,6 +4103,7 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.zones.galecrest.pois.4.label': '절단 절벽',
   'entities.zones.galecrest.pois.5.label': '난파선 벌판',
   'entities.zones.galecrest.pois.6.label': '거울 호수',
+  'entities.zones.galecrest.pois.7.label': '게일크레스트 마구간',
   'entities.npcs.warden_coalfast.name': '숯불 워든',
   'entities.npcs.warden_coalfast.title': '보루 지휘관',
   'entities.npcs.warden_coalfast.greeting':
@@ -4140,6 +4145,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.mobs.gale_wisp.name': '돌풍 정령',
   'entities.mobs.shoal_scuttler.name': '여울 게',
   'entities.mobs.the_wreck_warden.name': '난파선 감시자',
+  'entities.mobs.downs_bandit.name': '구릉 도적',
+  'entities.mobs.wreck_thief.name': '난파선 도둑',
   'entities.mobs.glimmerwisp.name': '미광 위습',
   'entities.mobs.duskwisp.name': '황혼 위습',
   'entities.mobs.veiled_stag.name': '장막 수사슴',
@@ -6792,7 +6799,7 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'guide.worldPage.junglePlaceNotes':
     '드리프트헤이븐은 해변에 불을 피워 둡니다. 덩굴 어귀는 강이 초록 장벽과 만나는 곳이고, 야자 백사장은 파도를 따라 희고 따뜻하게 이어집니다. 에메랄드 밀림과 덩굴폭포 숲은 내륙을 삼키고, 사파이어 석호는 맑고 깊게 빛나며, 가라앉은 신상은 물밑에서 지켜봅니다.',
   'guide.worldPage.gardenPlaceNotes':
-    '헤지윅은 정원 문 앞에서 기다립니다. 조각상 산책로는 말없는 동행을 지키고, 들장미 수풀은 화단을 벗어난 지 오래입니다. 꽃잎 연못은 일 년 내내 분홍빛으로 떠다니고, 대미로는 손님이 올 때마다 제 예법을 새로 고쳐 짜며, 분수 안뜰은 정원의 심장에서 여전히 맑게 흐릅니다.',
+    '헤지윅은 정원 문 앞에서 기다립니다. 화단 산책로는 잘 다듬어진 빛깔로 피어나고, 던홀드 성은 새 성벽 뒤에서 기사들을 조련합니다. 꽃잎 연못은 일 년 내내 분홍빛으로 떠다니고, 오래된 풍차는 제 둘레의 고리 화단 위에서 돌아갑니다. 대미로는 손님이 올 때마다 제 예법을 새로 고쳐 짜며, 그 아치는 잎사귀 여우들이 지킵니다. 북쪽 감시초소는 출구 길을 지키고, 수련 연못은 그 너머에 고요히 쉬며, 분수 안뜰은 정원의 심장에서 여전히 맑게 흐릅니다.',
   'guide.worldPage.valeGreeter': '레드브룩 원수, 이스트브룩',
   'guide.worldPage.valeGreeting': '칼을 가까이 두시오. 골짜기는 예전 같지 않으니.',
   'guide.worldPage.valePlaceNotes':
@@ -9789,6 +9796,10 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
     '따뜻한 비가 오래된 돌 위에서 치익 소리를 냅니다. 야생심장 분지가 눈앞에 펼쳐집니다.',
   'entities.dungeons.wildheart_basin.leaveText':
     '돌송곳니 아래를 지나 팜리치의 햇살 속으로 돌아갑니다.',
+  'entities.dungeons.the_last_keep.name': '마지막 요새',
+  'entities.dungeons.the_last_keep.enterText': '마지막 요새의 차갑고 고요한 회랑에 발을 들입니다.',
+  'entities.dungeons.the_last_keep.leaveText':
+    '요새의 문을 닫고 드레이크랜드의 바람 속으로 돌아갑니다.',
   'entities.items.wildheart_tuskblade.name': '야생심장 엄니대검',
   'entities.items.wildheart_hexwood_staff.name': '분지의 사술나무 지팡이',
   'entities.items.wildheart_fangknife.name': '줄가르의 송곳니칼',
