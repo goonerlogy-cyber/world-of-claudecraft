@@ -55,3 +55,9 @@ for (const dir of dirs) {
   }
 }
 console.log(`fingerprint ${current.fingerprint} written to ${reminted} after records`);
+console.log(
+  'Two committed test literals ride along and need hand-updating when they fail:\n' +
+    '  tests/eastbrook_polish_capture_contract.test.ts (the composite fingerprint above)\n' +
+    '  tests/eastbrook_polish_artifact_integrity.test.ts (the accepted-files byte digest;\n' +
+    '  the failing assertion prints the new value)',
+);

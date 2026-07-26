@@ -235,7 +235,8 @@ const INTEREST_DROP_RADIUS = 100;
 // radius; once known they cost a handful of bytes per snapshot anyway.
 const NPC_INTEREST_RADIUS = 120;
 const NPC_DROP_RADIUS = 130;
-// the widest radius any entity kind can be relevant at
+// the widest OPEN-WORLD radius any entity kind can be relevant at (the
+// battleground band widens past this: BG_MATCH_DROP_RADIUS below)
 const INTEREST_QUERY_RADIUS = NPC_DROP_RADIUS;
 // Ravenrift: the 100x280 field (diagonal ~297yd) stays fully tracked for its
 // own match, so the whole battle exists in every participant's sim mirror (the
@@ -5616,11 +5617,14 @@ export class GameServer {
         );
         if (this.perfDetailActive) this.bcastSelfNs += process.hrtime.bigint() - selfStart;
         const keepJson = keep.length > 0 ? `,"keep":[${keep.join(',')}]` : '';
+        // Ground-AoE warnings ship to the same horizon as the entities that
+        // cast them: the widened match radius inside the battleground band.
+        const aoeBase = isBgPos(anchorEntity.pos.x) ? BG_MATCH_DROP_RADIUS : INTEREST_QUERY_RADIUS;
         const frostRings = activeFrostRings
           .filter((ring) => {
             const dx = ring.x - anchorEntity.pos.x;
             const dz = ring.z - anchorEntity.pos.z;
-            const limit = INTEREST_QUERY_RADIUS + ring.radius;
+            const limit = aoeBase + ring.radius;
             return dx * dx + dz * dz <= limit * limit;
           })
           .map(
@@ -5632,7 +5636,7 @@ export class GameServer {
           .filter((hourglass) => {
             const dx = hourglass.x - anchorEntity.pos.x;
             const dz = hourglass.z - anchorEntity.pos.z;
-            const limit = INTEREST_QUERY_RADIUS + hourglass.radius;
+            const limit = aoeBase + hourglass.radius;
             return dx * dx + dz * dz <= limit * limit;
           })
           .map(

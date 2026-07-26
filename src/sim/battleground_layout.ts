@@ -27,8 +27,9 @@ export const BG_FLAG_Z = 118; // |z| of each team's flag stand
 // the field. One side wall carries the postern gap (see keepWallSegments).
 export const KEEP_HALF_X = 16;
 export const KEEP_BACK_DZ = 10; // back wall sits this far behind the flag
-const KEEP_SIDE_DZ = 1; // side-wall centre offset behind the flag
-const KEEP_SIDE_HD = 9; // side-wall half-depth
+const KEEP_SIDE_DZ = 0; // side walls centre on the flag line: they span the
+const KEEP_SIDE_HD = 10; // full back-wall-to-mouth-line depth, so the form-up
+// containment box (keepInteriorBounds) coincides exactly with the walls
 export const BG_POSTERN_GAP = 3; // width of the postern opening in one side wall
 
 export interface BgBaseDef {
@@ -126,8 +127,8 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: -41, z: 4 },
   { x: -26, z: -58 }, // the ambush crates inside each gatehouse: one mid-room
   { x: 26, z: 58 }, // on the straight door-to-door line, one beside the
-  { x: -27, z: -50 }, // courtyard door (clear of the door line itself)
-  { x: 27, z: 50 },
+  { x: -27, z: -51 }, // courtyard door (clear of the door line and jamb)
+  { x: 27, z: 51 },
 ];
 
 /** The z line of each curtain wall: the chamber boundaries. On the 4yd floor

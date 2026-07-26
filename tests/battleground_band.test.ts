@@ -113,6 +113,22 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     expect(hi.z - hi.hd - (lo.z + lo.hd)).toBeCloseTo(BG_POSTERN_GAP, 5);
   });
 
+  it('the keep side walls span back wall to mouth line exactly (containment = walls)', () => {
+    for (const team of [0, 1] as const) {
+      const solidSide = keepWallSegments(team).find(
+        (s) => s.hd > s.hw && s.x === (team === 0 ? 16 : -16),
+      )!;
+      const mouthLine = BG_FLAG_Z - KEEP_MOUTH_DZ;
+      const backLine = BG_FLAG_Z + 10; // KEEP_BACK_DZ
+      expect(
+        Math.min(Math.abs(solidSide.z - solidSide.hd), Math.abs(solidSide.z + solidSide.hd)),
+      ).toBe(mouthLine);
+      expect(
+        Math.max(Math.abs(solidSide.z - solidSide.hd), Math.abs(solidSide.z + solidSide.hd)),
+      ).toBe(backLine);
+    }
+  });
+
   it('a path exists through the postern gap; the wall blocks everywhere else', () => {
     const o = battlegroundOrigin(0);
     const sideZ = o.z + BG_BASES[0].flag.z - 1; // Crimson west-wall midline (z - 119 local)
@@ -412,10 +428,10 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     // pin the two staging spots nearest new geometry: the mouth line and the
     // carrier's off-stand spot inside the keep
     for (const [sx2, sz2] of [
-      [0, -104],
-      [6, -110],
-      [10, -98],
-      [12, -93],
+      [0, -104], // the mouth line
+      [6, 110], // the carrier's off-stand spot (battleground.test.ts:444)
+      [10, -98], // home + (10, 20) staging
+      [12, -93], // home + (12, 25) staging
     ]) {
       const p = resolvePosition(SEED, o.x + sx2, o.z + sz2, 0.5);
       expect(p.x).toBeCloseTo(o.x + sx2, 5);
