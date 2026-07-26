@@ -88,9 +88,7 @@ export const GARDEN = {
   hAbs: 9,
   th: 1.6,
   /** the two doorway gaps in the south wall (x spans) */
-  gates: [
-    { a0: 365, a1: 368.5 },
-  ],
+  gates: [{ a0: 365, a1: 368.5 }],
 } as const;
 
 // Towers: four corner bastions (the SE is the tall watch) plus three

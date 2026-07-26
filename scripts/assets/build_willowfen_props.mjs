@@ -11,14 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { NodeIO } from '@gltf-transform/core';
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
-import {
-  dedup,
-  meshopt,
-  prune,
-  simplify,
-  textureCompress,
-  weld,
-} from '@gltf-transform/functions';
+import { dedup, meshopt, prune, simplify, textureCompress, weld } from '@gltf-transform/functions';
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
@@ -59,5 +52,7 @@ for (const item of ITEMS) {
   const outPath = path.join(OUT_DIR, item.out);
   await io.write(outPath, doc);
   const kb = Math.round(fs.statSync(outPath).size / 1024);
-  console.log(`${item.out}: ${Math.round(tris / 1000)}k -> target ${item.target / 1000}k (ratio ${ratio.toFixed(3)}), ${kb}KB`);
+  console.log(
+    `${item.out}: ${Math.round(tris / 1000)}k -> target ${item.target / 1000}k (ratio ${ratio.toFixed(3)}), ${kb}KB`,
+  );
 }
