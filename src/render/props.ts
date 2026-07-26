@@ -8,6 +8,7 @@ import {
   dockSurfaceLine,
   dockSurfaceYAt,
 } from '../sim/dock_layout';
+import { CHAPEL_HALL, CHAPEL_TOWER } from '../sim/prop_layout';
 import { hash2 } from '../sim/rng';
 import { terrainHeight, waterLevel } from '../sim/world';
 import { loadGltf, releaseGltf } from './assets/loader';
@@ -804,20 +805,31 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
     // roof Y mirrors the camera collider height in colliders.ts
     const roofY = y + (b.kind === 'chapel' ? 10.8 : b.kind === 'inn' ? 7.8 : 8.0);
     if (b.kind === 'chapel') {
-      // composed chapel: tall bell tower at the rear + squat stone entry hall
-      // in front; the hall door lands on the footprint's +z edge.
+      // Composed chapel: tall bell tower at the rear + squat stone entry hall
+      // in front; the hall door lands on the footprint's +z edge. Composition
+      // numbers come from sim/prop_layout.ts (CHAPEL_TOWER/CHAPEL_HALL): the
+      // collider derives the SAME shapes, so the hall roof a player climbs
+      // onto is exactly the roof drawn here.
       const g = new THREE.Group();
       const tower = propAsset('bellTower');
       addParts(g, 'bellTower', {
-        z: -0.75,
-        scale: [(b.w * 0.98) / tower.size.x, 10.6 / tower.size.y, (b.d * 0.72) / tower.size.z],
+        z: CHAPEL_TOWER.dz,
+        scale: [
+          (b.w * CHAPEL_TOWER.wScale) / tower.size.x,
+          CHAPEL_TOWER.height / tower.size.y,
+          (b.d * CHAPEL_TOWER.dScale) / tower.size.z,
+        ],
       });
       const hall = propAsset('house3');
       addParts(g, 'house3', {
-        z: b.d / 2 - 1.62,
-        scale: [(b.w * 0.9) / hall.size.x, 2.5 / hall.size.y, 3.2 / hall.size.z],
+        z: b.d / 2 - CHAPEL_HALL.dzFromFront,
+        scale: [
+          (b.w * CHAPEL_HALL.wScale) / hall.size.x,
+          CHAPEL_HALL.height / hall.size.y,
+          CHAPEL_HALL.depth / hall.size.z,
+        ],
       });
-      g.position.set(b.x, y - 0.12, b.z);
+      g.position.set(b.x, y - CHAPEL_HALL.sink, b.z);
       g.rotation.y = b.rot;
       group.add(shadowed(g));
       registerHideable(g, obbFootprint(b.x, b.z, b.w / 2, b.d / 2, b.rot, roofY));

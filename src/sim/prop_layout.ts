@@ -54,6 +54,40 @@ export const STALL_DRESSING: readonly SubProp[] = [
 // Mine dressing (parent: PROPS.mines, unrotated local offsets)
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Chapel composition (parent: PROPS.buildings kind 'chapel')
+// ---------------------------------------------------------------------------
+// The chapel is COMPOSED: a tall bell tower at the rear plus a squat stone
+// entry hall in front. These numbers are the single source for BOTH the
+// renderer's part placement (src/render/props.ts) and the compound collider
+// (src/sim/colliders.ts): the tower stays a full-height wall, the hall roof
+// is a standable, climbable low roof section.
+export const CHAPEL_TOWER = {
+  /** local z offset of the tower's centre */
+  dz: -0.75,
+  /** tower footprint as fractions of the building's w/d */
+  wScale: 0.98,
+  dScale: 0.72,
+  /** visual height the tower asset is scaled to */
+  height: 10.6,
+} as const;
+export const CHAPEL_HALL = {
+  /** the hall's centre sits this far back from the footprint's front edge */
+  dzFromFront: 1.62,
+  /** hall width as a fraction of the building's w */
+  wScale: 0.9,
+  /** visual height the hall asset is scaled to */
+  height: 2.5,
+  /** hall depth in yards (absolute, not a fraction) */
+  depth: 3.2,
+  /** buildings sink this far into the ground (render group y offset) */
+  sink: 0.12,
+} as const;
+/** The hall roof's standable ridge above its ground: height minus the sink. */
+export const CHAPEL_HALL_ROOF_TOP = CHAPEL_HALL.height - CHAPEL_HALL.sink;
+/** The hall roof's eave height: the gable falls this low at the long edges. */
+export const CHAPEL_HALL_ROOF_EAVE = CHAPEL_HALL_ROOF_TOP - 0.5;
+
 /** The ore cart parked at a mine mouth. Tall enough to want climbing. */
 export const MINE_CART: SubProp = {
   // cart.glb: 0.927 tall natively, placed at 1.9
