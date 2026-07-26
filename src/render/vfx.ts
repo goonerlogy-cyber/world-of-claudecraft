@@ -1238,7 +1238,6 @@ export class Vfx {
     }
   }
 
-
   campfireEmber(at: THREE.Vector3, dt: number): void {
     if (!this.emitChance(6, dt)) return;
     if (Math.random() < 0.3) {

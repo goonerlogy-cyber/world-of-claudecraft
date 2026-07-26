@@ -68,8 +68,10 @@ describe('town furniture is traversable, not a maze of walls', () => {
     for (const prop of townPropPlacements(anchors(), townNpcs())) {
       if (!prop.size.standable) continue;
       const expected = groundHeight(prop.x, prop.z, SEED) + prop.size.height;
-      expect(supportHeightAt(SEED, prop.x, prop.z, R, expected + 0.01), `${prop.x},${prop.z}`)
-        .toBeCloseTo(expected, 6);
+      expect(
+        supportHeightAt(SEED, prop.x, prop.z, R, expected + 0.01),
+        `${prop.x},${prop.z}`,
+      ).toBeCloseTo(expected, 6);
       pinned++;
     }
     expect(pinned).toBeGreaterThan(10);

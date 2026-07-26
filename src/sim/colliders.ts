@@ -1,9 +1,9 @@
-import { STATIONS } from './content/professions';
 import {
   buildingCameraHeight,
   buildingTerrainEnvelope,
   isEastbrookGrandArmoury,
 } from './building_layout';
+import { STATIONS } from './content/professions';
 import {
   arenaOriginAt,
   DUNGEON_FLOOR_Y,
