@@ -18,8 +18,9 @@ export interface BgPlayerInfo {
   team: number; // 0 = Crimson, 1 = Azure
   carrying: boolean;
   dead: boolean;
-  hp: number;
-  mhp: number;
+  // Deliberately NO hp/mhp: the scoreboard reads dead/carrying only, and the
+  // bg self key is match-wide (never interest-scoped), so shipping enemy
+  // health here would leak actionable state past the ~120yd interest rule.
 }
 
 export interface BgMatchInfo {

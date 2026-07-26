@@ -28,6 +28,125 @@ async function pollForSize(page, selector, attempts = 20, intervalMs = 500) {
 
 export const TARGETS = [
   {
+    key: 'ravenrift',
+    label: 'Ravenrift 5v5 battleground: field, postern, carry, queue window, mobile scoreboard',
+    // Match the SOURCE files (the `.ts` suffixes keep the sim/render tests from
+    // classifying as visual).
+    when: [
+      'sim/battleground_layout.ts',
+      'render/battleground.ts',
+      'ui/hud/battleground/',
+      'sim/social/battleground.ts',
+    ],
+    variants: [
+      { key: 'queue-window', scene: 'queue' },
+      { key: 'field', scene: 'field' },
+      { key: 'postern', scene: 'postern' },
+      { key: 'carry-scoreboard', scene: 'carry' },
+      { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
+    ],
+    async capture(page, variant) {
+      const scene = variant?.scene ?? 'field';
+      if (scene === 'queue') {
+        const opened = await page.evaluate(() => {
+          const game = window.__game;
+          if (!game?.sim) return { ok: false, reason: 'offline world is unavailable' };
+          game.hud.toggleBattleground();
+          return { ok: true };
+        });
+        if (!opened.ok) return { skip: opened.reason };
+        const ready = await pollForSize(page, '#battleground-window');
+        if (!ready) return { skip: 'battleground window never became visible' };
+        return { clip: '#battleground-window' };
+      }
+      // Stage a live 5v5 offline: nine bots + the player queue, the form-up is
+      // fast-forwarded, and the camera frames the requested scene. Idempotent:
+      // a match already staged by an earlier variant is reused.
+      const staged = await page.evaluate(() => {
+        const game = window.__game;
+        const sim = game?.sim;
+        if (!sim || !sim.player) return { ok: false, reason: 'offline world is unavailable' };
+        if (!sim.bgMatchFor(sim.player.id)) {
+          const classes = [
+            'warrior',
+            'paladin',
+            'hunter',
+            'rogue',
+            'mage',
+            'priest',
+            'shaman',
+            'warlock',
+            'druid',
+          ];
+          const names = ['Bryn', 'Cael', 'Dax', 'Eira', 'Finn', 'Gust', 'Hale', 'Ivo', 'Jor'];
+          for (let i = 0; i < 9; i++) {
+            const pid = sim.addPlayer(classes[i], names[i]);
+            const e = sim.entities.get(pid);
+            e.level = 12;
+            sim.bgQueueJoin(pid);
+          }
+          sim.bgQueueJoin();
+        }
+        return { ok: true };
+      });
+      if (!staged.ok) return { skip: staged.reason };
+      await wait(400); // one tick seats the match
+      const live = await page.evaluate(() => {
+        const game = window.__game;
+        const sim = game.sim;
+        const match = sim.bgMatchFor(sim.player.id);
+        if (!match) return { ok: false, reason: 'match never seated' };
+        if (match.state === 'countdown') match.timer = 0.05; // skip the form-up
+        return { ok: true };
+      });
+      if (!live.ok) return { skip: live.reason };
+      await wait(600);
+      await page.evaluate((sceneKey) => {
+        const game = window.__game;
+        const sim = game.sim;
+        const match = sim.bgMatchFor(sim.player.id);
+        const myTeam = match.teams[0].includes(sim.player.id) ? 0 : 1;
+        const p = sim.player;
+        const tp = (x, z) => {
+          p.pos.x = x;
+          p.pos.z = z;
+          p.prevPos = { ...p.pos };
+        };
+        if (sceneKey === 'field') {
+          // mid-field, camera pulled up and back over my keep's approach
+          const home = match.flags[myTeam].home;
+          tp(home.x, home.z + (myTeam === 0 ? 26 : -26));
+          game.input.camYaw = p.facing = myTeam === 0 ? 0 : Math.PI;
+          game.input.camDist = 24;
+          game.input.camPitch = 0.72;
+        } else if (sceneKey === 'postern') {
+          // just inside the Crimson keep, looking at its west postern gap
+          const home = match.flags[0].home;
+          tp(home.x - 8, home.z - 2);
+          p.facing = -Math.PI / 2;
+          game.input.camYaw = -Math.PI / 2;
+          game.input.camDist = 12;
+          game.input.camPitch = 0.42;
+        } else {
+          // carry: stand on the ENEMY flag; the deliberate press follows
+          const foe = match.flags[myTeam === 0 ? 1 : 0];
+          tp(foe.pos.x, foe.pos.z);
+        }
+      }, scene);
+      if (scene === 'carry') {
+        await wait(300);
+        await page.evaluate(() => {
+          window.__game.sim.bgFlagAction();
+          window.__game.input.camDist = 11;
+          window.__game.input.camPitch = 0.4;
+        });
+        await wait(800);
+      }
+      await wait(2600); // let the field build + banners settle
+      return {};
+    },
+  },
+  {
     key: 'player-tooltip',
     label: 'Player hover tooltip',
     when: ['player_tooltip'],

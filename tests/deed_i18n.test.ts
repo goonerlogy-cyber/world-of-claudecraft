@@ -46,8 +46,8 @@ describe('deed_i18n English resolution', () => {
     const manifest = deedTranslationManifest();
     // 219 deeds x (name + desc) + the 30 shipped title rewards (both counts
     // pinned by tests/deeds_content.test.ts).
-    expect(manifest.length).toBe(219 * 2 + 30);
-    expect(manifest.filter((row) => row.field === 'title').length).toBe(30);
+    expect(manifest.length).toBe(223 * 2 + 31);
+    expect(manifest.filter((row) => row.field === 'title').length).toBe(31);
     expect(manifest).toContainEqual({
       id: 'prog_veteran',
       field: 'title',

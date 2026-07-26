@@ -3493,6 +3493,7 @@ export type SimEvent = { pid?: number } & (
     }
   // Ravenrift 5v5 capture-the-flag: queue state, match lifecycle, flag plays,
   // and the rating result. All personal (each carries a pid).
+  // position: the group's 1-based place in the queue line
   | { type: 'bgQueued'; position: number }
   | { type: 'bgUnqueued' }
   | { type: 'bgFound'; team: number }

@@ -28,18 +28,9 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
     { state: 'carried', carrierPid: 7, carrierName: 'Ravven', carrierTeam: 0 },
   ],
   players: [
-    {
-      pid: 7,
-      name: 'Ravven',
-      cls: 'warrior',
-      team: 0,
-      carrying: true,
-      dead: false,
-      hp: 90,
-      mhp: 100,
-    },
-    { pid: 8, name: 'Bryn', cls: 'mage', team: 0, carrying: false, dead: true, hp: 0, mhp: 80 },
-    { pid: 9, name: 'Cael', cls: 'priest', team: 1, carrying: false, dead: false, hp: 70, mhp: 70 },
+    { pid: 7, name: 'Ravven', cls: 'warrior', team: 0, carrying: true, dead: false },
+    { pid: 8, name: 'Bryn', cls: 'mage', team: 0, carrying: false, dead: true },
+    { pid: 9, name: 'Cael', cls: 'priest', team: 1, carrying: false, dead: false },
   ],
   countdown: 0,
   timeLeft: 605,
@@ -95,20 +86,31 @@ describe('battleground window view (pure core)', () => {
     expect(v.allTime![1]).toMatchObject({ rank: 2, name: 'Me', knownClass: false, me: true });
   });
 
-  it('is identical for Sim-shaped and mirror-shaped snapshots (same input, same output)', () => {
-    const a = buildBgWindowView({
-      info: baseInfo({ rating: 1616, wins: 4 }),
-      playerName: 'X',
-      party: null,
-      allTime: null,
-    });
-    const b = buildBgWindowView({
-      info: JSON.parse(JSON.stringify(baseInfo({ rating: 1616, wins: 4 }))),
-      playerName: 'X',
-      party: null,
-      allTime: null,
-    });
-    expect(a).toEqual(b);
+  it('is identical for a Sim-built and a wire-mirror-shaped snapshot', () => {
+    // The Sim-shaped input comes from the typed literal; the mirror-shaped one
+    // is authored as the JSON the server actually ships on the `bg` self key
+    // (plain parsed JSON, string keys, no prototypes), including the wire's
+    // online-only null carrier fields.
+    const simShaped = baseInfo({ rating: 1616, wins: 4, match: baseMatch() });
+    const wireShaped = JSON.parse(
+      '{"rating":1616,"wins":4,"losses":0,"captures":0,"queued":false,' +
+        '"queueSize":0,"queuedParty":1,"match":{"state":"active","myTeam":0,' +
+        '"capsToWin":5,"scores":[1,2],"flags":[{"state":"home","carrierPid":null,' +
+        '"carrierName":null,"carrierTeam":null},{"state":"carried","carrierPid":7,' +
+        '"carrierName":"Ravven","carrierTeam":0}],"players":[{"pid":7,"name":"Ravven",' +
+        '"cls":"warrior","team":0,"carrying":true,"dead":false},' +
+        '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true},' +
+        '{"pid":9,"name":"Cael","cls":"priest","team":1,' +
+        '"carrying":false,"dead":false}],"countdown":0,' +
+        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0,"protectedFor":0}}',
+    ) as BgInfo;
+    const inputRest = { playerName: 'X', party: null, allTime: null };
+    expect(buildBgWindowView({ info: simShaped, ...inputRest })).toEqual(
+      buildBgWindowView({ info: wireShaped, ...inputRest }),
+    );
+    // The per-tick scoreboard core gets the same dual-shape arm: it reads the
+    // deepest nested wire structure (flags, players, personal readouts).
+    expect(buildBgScoreboardView(simShaped, 7)).toEqual(buildBgScoreboardView(wireShaped, 7));
   });
 });
 

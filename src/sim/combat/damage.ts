@@ -141,9 +141,21 @@ export function dealDamage(
   // early; both checks are gated on a live match existing so the overworld
   // hot path never scans for them.
   if (ctx.bgMatches.size > 0) {
-    if (target.auras.some((a) => a.kind === 'spawn_protection')) return;
-    if (source && source.kind === 'player' && source.id !== target.id)
-      ctx.bgBreakSpawnProtection(source);
+    // Scoped to participants so overworld combat never pays the aura scans.
+    if (ctx.bgMatches.has(target.id) && target.auras.some((a) => a.kind === 'spawn_protection'))
+      return;
+    if (source && source.id !== target.id) {
+      // A pet/guardian resolves to its owning player: the owner's own first
+      // hostile action includes damage their pet deals on command.
+      const owner =
+        source.kind === 'player'
+          ? source
+          : source.ownerId !== null
+            ? ctx.entities.get(source.ownerId)
+            : undefined;
+      if (owner && owner.kind === 'player' && ctx.bgMatches.has(owner.id))
+        ctx.bgBreakSpawnProtection(owner);
+    }
   }
   // A wild mob that broke leash is in 'evade': it has dropped its hate table
   // and walks home without fighting back, healing to full only on arrival.

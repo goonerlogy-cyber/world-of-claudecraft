@@ -356,6 +356,7 @@ export const SIM_LAP_PHASES = [
   'instances',
   'delves',
   'valecup',
+  'battleground',
   'dfinder',
   'market',
   'postOffice',
@@ -542,6 +543,7 @@ const LANE_DROP_CAUSE = {
 } as const satisfies Record<MsgLane, WsDropCause>;
 const JAILED_BLOCKED_COMMANDS = new Set<string>([
   'arena_queue',
+  'bg_queue',
   'vcup_queue',
   'vcup_ready',
   'vcup_practice',
@@ -1710,6 +1712,11 @@ export class GameServer {
     this.sim.vcupQueueLeave(target.pid);
     this.sim.vcupResolveDesertion(target.pid);
     this.sim.leaveCardMinigameEntirely(target.pid);
+    // Ravenrift: leave the queue and desert any live match (the deserter takes
+    // the rating loss; the team fights on) so the jail sweep never fights the
+    // battleground for control of the prisoner's entity.
+    this.sim.bgQueueLeave(target.pid);
+    this.sim.bgResolveDesertion(target.pid);
     this.teleportJailedSession(target);
     // System notice (chat log), not the fading error toast: the prisoner must be
     // able to read the sentence after alt-tabbing back, like other moderation
@@ -3146,6 +3153,10 @@ export class GameServer {
     // Card Duel: drop the queue slot and forfeit any live match on disconnect,
     // same idempotent-before-persistence shape as the two lines above.
     this.sim.leaveCardMinigameEntirely(session.pid);
+    // Ravenrift desertion also resolves before the leave save so the leaver's
+    // recorded loss and rating delta are in the persisted state (idempotent;
+    // removePlayer repeats it harmlessly).
+    this.sim.bgResolveDesertion(session.pid);
     // Freeze reward eligibility and reconcile pending loot before the leave
     // snapshot. saveCharacterOnLeave awaits the database; without this
     // synchronous prefix, a roll or boss death can mutate the character after

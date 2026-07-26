@@ -3026,6 +3026,12 @@ export class Sim {
               fiestaCompletionsByOpponent: {
                 ...meta.honorArenaDaily.fiestaCompletionsByOpponent,
               },
+              // Optional Ravenrift DR window: omitted when empty so pre-Ravenrift
+              // saves stay byte-equal (mirrors normalizeHonorDailyState).
+              ...(meta.honorArenaDaily.bgResultsByOpponent &&
+              Object.keys(meta.honorArenaDaily.bgResultsByOpponent).length > 0
+                ? { bgResultsByOpponent: { ...meta.honorArenaDaily.bgResultsByOpponent } }
+                : {}),
               totalWins: meta.honorArenaDaily.totalWins,
             },
           }
@@ -5420,22 +5426,38 @@ export class Sim {
       !isUnbreakableControlAura(aura)
     )
       return;
-    // Ravenrift spawn protection rejects every hostile control effect (the
-    // broad Ice Block set: stuns, roots, silences, snares, ...) for its few
-    // seconds; and a protected player CASTING a control effect on someone
-    // else ends their own protection early (a hostile action).
+    // Ravenrift spawn protection. The caster-side break runs FIRST (a protected
+    // player CASTING any hostile control effect, via a pet included, ends their
+    // own protection even when the target's own protection then rejects the
+    // aura), and uses the SAME broad predicate as the rejection arm so a
+    // silence/blind/disarm/snare breaks it exactly like a stun would.
+    if (
+      this.bgMatches.size > 0 &&
+      this.isIceBlockCrowdControlAura(aura.kind) &&
+      aura.sourceId !== target.id
+    ) {
+      const src = this.entities.get(aura.sourceId);
+      const owner =
+        src?.kind === 'player'
+          ? src
+          : src?.ownerId != null
+            ? this.entities.get(src.ownerId)
+            : undefined;
+      if (owner && owner.kind === 'player' && this.bgMatches.has(owner.id)) {
+        bgMod.bgBreakSpawnProtection(this.ctx, owner);
+      }
+    }
+    // The rejection arm: a protected player shrugs off every hostile control
+    // effect (the broad Ice Block set) for the few protected seconds.
     if (
       target.kind === 'player' &&
+      this.bgMatches.has(target.id) &&
       target.auras.some((a) => a.kind === 'spawn_protection') &&
       this.isIceBlockCrowdControlAura(aura.kind) &&
       aura.sourceId !== target.id &&
       !isUnbreakableControlAura(aura)
     )
       return;
-    if (this.bgMatches.size > 0 && this.isControlAura(aura.kind) && aura.sourceId !== target.id) {
-      const src = this.entities.get(aura.sourceId);
-      if (src && src.kind === 'player') bgMod.bgBreakSpawnProtection(this.ctx, src);
-    }
     if (
       target.kind === 'mob' &&
       (MOBS[target.templateId]?.ccImmune || target.ccImmune) &&
@@ -8331,6 +8353,13 @@ export class Sim {
 
   bgInfoFor(pid: number): import('../world_api').BgInfo | null {
     return bgMod.bgInfoFor(this.ctx, pid);
+  }
+
+  // Resolve a mid-match leave/jail/disconnect before the server's leave save:
+  // the deserter takes the rating loss, drops any carried flag, and leaves the
+  // roster (idempotent; removePlayer repeats it harmlessly).
+  bgResolveDesertion(pid: number): void {
+    bgMod.bgResolveDesertion(this.ctx, pid);
   }
 
   // Dev/test only: force-start a match from whoever is queued (server-gated

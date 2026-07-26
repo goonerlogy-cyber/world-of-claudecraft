@@ -18,11 +18,12 @@ import {
   BG_TEAM_COLORS,
   BG_TEAM_NAMES,
   type BgTeam,
+  keepInteriorBounds,
 } from '../battleground_layout';
 import { BG_SLOT_COUNT, battlegroundOrigin, DUNGEON_X_THRESHOLD } from '../data';
 import { createGroundObject } from '../entity';
 import { awardBattlegroundHonor, honorTeamIdentity } from '../pvp';
-import type { ArenaReturnPools, PlayerMeta } from '../sim';
+import type { ArenaReturnPools } from '../sim';
 import type { SimContext } from '../sim_context';
 import { type Aura, DT, type Entity, type Vec3 } from '../types';
 import { eloDelta, snapshotArenaReturnPools } from './arena';
@@ -148,14 +149,20 @@ export function bgQueueJoin(ctx: SimContext, pid?: number): void {
     ctx.error(id, 'You cannot queue from inside an instance.');
     return;
   }
-  if (bgGroupContaining(ctx, id)) {
-    ctx.emit({ type: 'bgQueued', position: bgQueueSize(ctx), pid: id });
+  const existing = bgGroupContaining(ctx, id);
+  if (existing) {
+    ctx.emit({ type: 'bgQueued', position: ctx.bgQueue.indexOf(existing) + 1, pid: id });
     return;
   }
   // Queue the whole party as one group (kept together by matchmaking); solo
-  // players queue alone. Any eligible member can put the party in.
+  // players queue alone. Any eligible member can put the party in. An
+  // over-size party is refused outright rather than silently truncated.
   const party = ctx.partyOf(id);
-  const members = party ? party.members.slice(0, BG_TEAM_SIZE) : [id];
+  if (party && party.members.length > BG_TEAM_SIZE) {
+    ctx.error(id, 'Your party is too large for Ravenrift. It queues parties of up to 5.');
+    return;
+  }
+  const members = party ? [...party.members] : [id];
   for (const m of members) {
     if (ctx.bgMatches.has(m) || bgGroupContaining(ctx, m)) {
       ctx.error(id, 'A party member is already queued or in a match.');
@@ -163,8 +170,9 @@ export function bgQueueJoin(ctx: SimContext, pid?: number): void {
     }
   }
   ctx.bgQueue.push({ pids: [...members] });
+  const position = ctx.bgQueue.length;
   for (const m of members) {
-    ctx.emit({ type: 'bgQueued', position: bgQueueSize(ctx), pid: m });
+    ctx.emit({ type: 'bgQueued', position, pid: m });
     ctx.emit({
       type: 'log',
       text:
@@ -206,7 +214,7 @@ function freeBgSlot(ctx: SimContext): number | null {
 // The deliberate battleground action press. Validated eagerly for feedback,
 // then queued and resolved inside the next update pass AFTER proximity
 // auto-returns run, so an automatic return beats a same-tick pickup press
-// (pinned by tests/battleground_flags.test.ts).
+// (pinned by tests/battleground.test.ts).
 export function bgFlagAction(ctx: SimContext, pid?: number): void {
   const r = ctx.resolve(pid);
   if (!r) return;
@@ -259,13 +267,14 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
   // Hold the form-up: a player who slips out of their keep (the mouth or the
   // postern) before the gates open is set back on their spawn ring.
   for (const team of [0, 1] as BgTeam[]) {
+    const bounds = keepInteriorBounds(team);
     match.teams[team].forEach((pid, i) => {
       const e = ctx.entities.get(pid);
       if (!e) return;
       const lx = e.pos.x - origin.x;
       const lz = e.pos.z - origin.z;
       const inKeep =
-        Math.abs(lx) <= 14 && (team === 0 ? lz >= -56 && lz <= -44 : lz >= 44 && lz <= 56);
+        lx >= bounds.minX && lx <= bounds.maxX && lz >= bounds.minZ && lz <= bounds.maxZ;
       if (!inKeep) placeInBg(ctx, match, pid, team, i);
     });
   }
@@ -299,11 +308,23 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
 function matchmakeBg(ctx: SimContext): void {
   let guard = BG_SLOT_COUNT + 1;
   while (guard-- > 0) {
-    // drop members who went offline, died, or entered a match while waiting
+    // Drop members who went offline, died, entered a match, or walked into
+    // instanced content while waiting; tell the survivors they fell out of
+    // line instead of silently flipping their window back to idle.
     for (const g of ctx.bgQueue) {
       g.pids = g.pids.filter((p) => {
         const e = ctx.entities.get(p);
-        return e && !e.dead && !ctx.bgMatches.has(p);
+        if (e && !e.dead && !ctx.bgMatches.has(p) && e.pos.x <= DUNGEON_X_THRESHOLD) return true;
+        if (e && !ctx.bgMatches.has(p)) {
+          ctx.emit({ type: 'bgUnqueued', pid: p });
+          ctx.emit({
+            type: 'log',
+            text: 'You leave the Ravenrift queue.',
+            color: '#7fd4ff',
+            pid: p,
+          });
+        }
+        return false;
       });
     }
     ctx.bgQueue = ctx.bgQueue.filter((g) => g.pids.length > 0);
@@ -341,7 +362,10 @@ function bgTeamAvg(ctx: SimContext, pids: number[]): number {
 export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]): void {
   const slot = freeBgSlot(ctx);
   if (slot === null) {
-    ctx.bgQueue.unshift({ pids: [...teamA, ...teamB] });
+    // Hand the seats back as two TEAM-SIZED groups: a single welded ten-group
+    // could never be packed into 5v5 teams again by the matchmaker.
+    ctx.bgQueue.unshift({ pids: [...teamB] });
+    ctx.bgQueue.unshift({ pids: [...teamA] });
     return;
   }
   ctx.bgBusySlots.add(slot);
@@ -782,7 +806,9 @@ export function bgOnPlayerDeath(ctx: SimContext, e: Entity, _killer: Entity | nu
   }
 }
 
-/** Disconnect/leave mid-match: drop any flag, leave the roster (the team
+/** Disconnect/leave/jail mid-match: the deserter takes the rating loss and a
+ *  recorded L on the spot (a rated ladder must never reward pulling the plug
+ *  while losing), drops any carried flag, and leaves the roster (the team
  *  fights on a player down); a fully vacated side forfeits. */
 export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   const match = ctx.bgMatches.get(pid);
@@ -791,6 +817,15 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
     if (flag.carrier === pid) dropFlag(ctx, match, flag, ctx.entities.get(pid) ?? null);
   }
   const team = bgTeamOf(match, pid);
+  const deserter = ctx.players.get(pid);
+  if (deserter && !match.resultRecorded) {
+    const other = team === 0 ? 1 : 0;
+    // The loss delta at score 0 from the deserter's side; no honor (forfeit rule).
+    const delta = eloDelta(match.ratingAvg[team], match.ratingAvg[other], 0);
+    deserter.bgRating = Math.max(BG_MIN_RATING, deserter.bgRating + delta);
+    deserter.bgLosses++;
+    ctx.markDeedsDirty(pid);
+  }
   match.teams[team] = match.teams[team].filter((p) => p !== pid);
   match.returns.delete(pid);
   match.preMatchPools.delete(pid);
@@ -953,8 +988,6 @@ function sharedMatchView(ctx: SimContext, match: BgMatch): import('../../world_a
         team,
         carrying: match.flags.some((f) => f.carrier === mp),
         dead: e.dead,
-        hp: e.hp,
-        mhp: e.maxHp,
       });
     }
   }

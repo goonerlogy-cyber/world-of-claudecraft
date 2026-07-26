@@ -8361,16 +8361,34 @@
   .bg-flag.azure {
     background: var(--color-team-blue);
   }
+  /* Non-color state channel (fairness: state must survive colorblindness and
+     forced-colors): home stands upright and dim, carried waves at a tilt,
+     dropped lies on its side. */
   .bg-flag.home {
     opacity: 0.45;
   }
   .bg-flag.carried {
     opacity: 1;
+    transform: rotate(-18deg) translateY(-1px);
     filter: drop-shadow(0 0 4px #ffd24a);
   }
   .bg-flag.dropped {
     opacity: 1;
+    transform: rotate(80deg) translateY(2px);
     filter: drop-shadow(0 0 4px #ff9a3c);
+  }
+  @media (forced-colors: active) {
+    .bg-flag {
+      background: CanvasText;
+    }
+    .bg-flag.home {
+      opacity: 0.5;
+    }
+    .bg-flag.carried,
+    .bg-flag.dropped {
+      opacity: 1;
+      outline: 2px solid Highlight;
+    }
   }
   .bg-under {
     display: flex;

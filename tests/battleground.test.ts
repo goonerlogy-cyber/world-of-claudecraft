@@ -10,6 +10,7 @@ import {
   BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
+  updateBattleground,
 } from '../src/sim/social/battleground';
 import { groundHeight } from '../src/sim/world';
 
@@ -566,6 +567,154 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(sim.meta(winners[0])!.bgRating).toBeGreaterThan(1500);
     expect(sim.meta(winners[0])!.bgWins).toBe(1);
     expect(sim.meta(winners[0])!.honor).toBe(honorBefore); // forfeits pay nothing
+  });
+});
+
+describe('Ravenrift: review-hardening pins', () => {
+  it('the battleground phase draws ZERO rng (the tick-position justification)', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    // Drive the phase DIRECTLY (not sim.tick, whose other phases draw) across
+    // countdown tail, wave respawns, a rune claim, and a capture: the shared
+    // rng state must not move by a single draw.
+    const rngState = () => (sim.rng as unknown as { s: number }).s;
+    const runner = match.teams[0][0];
+    tp(sim, runner, match.runes[0].pos.x, match.runes[0].pos.z);
+    kill(sim, match.teams[1][1]);
+    const timerBefore = match.timer;
+    const before = rngState();
+    for (let i = 0; i < 20 * 15; i++) updateBattleground(sim.ctx);
+    expect(rngState()).toBe(before); // zero draws across 15s of battleground
+    expect(match.timer).toBeGreaterThan(timerBefore + 10); // and the phase really ran
+    expect(sim.entities.get(match.teams[1][1])!.dead).toBe(false); // wave fired
+  });
+
+  it('a single deserter takes the rating loss and the recorded L; the team fights on', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const leaver = match.teams[1][0];
+    const stayer = match.teams[1][1];
+    const before = sim.meta(leaver)!.bgRating;
+    // the server's pre-save path resolves the desertion while the meta is live
+    sim.bgResolveDesertion(leaver);
+    expect(sim.meta(leaver)!.bgRating).toBeLessThan(before); // the loss delta landed
+    expect(sim.meta(leaver)!.bgLosses).toBe(1);
+    const afterFirst = sim.meta(leaver)!.bgRating;
+    sim.bgResolveDesertion(leaver); // idempotent: already off the roster
+    expect(sim.meta(leaver)!.bgRating).toBe(afterFirst);
+    // the match continues a player down; nobody else was scored yet
+    expect(sim.bgMatchFor(stayer)).toBe(match);
+    expect(sim.bgMatchFor(leaver)).toBe(null);
+    expect(match.teams[1]).toHaveLength(4);
+    expect(sim.meta(stayer)!.bgLosses).toBe(0);
+  });
+
+  it('an over-size group (a raid) is refused with a message, never silently truncated', () => {
+    const sim = makeWorld();
+    const leader = sim.addPlayer('warrior', 'Leader');
+    tp(sim, leader, 0, -40);
+    const members = [leader];
+    for (let i = 0; i < 5; i++) {
+      const m = sim.addPlayer('priest', `Mate${i}`);
+      tp(sim, m, 0, -40);
+      members.push(m);
+    }
+    // assemble a six-member group directly on the PartyMachine (raid-size
+    // groups exceed the normal invite cap; the offline staging precedent)
+    const machine = (
+      sim as unknown as {
+        party: { parties: Map<number, unknown>; partyByPid: Map<number, number> };
+      }
+    ).party;
+    machine.parties.set(77, { id: 77, leader, members: [...members] });
+    for (const m of members) machine.partyByPid.set(m, 77);
+    sim.bgQueueJoin(leader); // group of six
+    expect(sim.bgInfoFor(leader)!.queued).toBe(false);
+    expect(sim.bgInfoFor(leader)!.queueSize).toBe(0);
+  });
+
+  it('a queued player who walks into an instance is evicted with the leave notice', () => {
+    const sim = makeWorld();
+    const a = sim.addPlayer('warrior', 'A');
+    tp(sim, a, 0, -40);
+    sim.bgQueueJoin(a);
+    sim.tick();
+    expect(sim.bgInfoFor(a)!.queued).toBe(true);
+    tp(sim, a, 900, -1250); // a dungeon instance band
+    const evs = sim.tick();
+    expect(sim.bgInfoFor(a)!.queued).toBe(false);
+    expect(evs.some((e) => e.type === 'bgUnqueued' && e.pid === a)).toBe(true);
+  });
+
+  it('spawn protection breaks on a hostile SILENCE too (the broad control set), and on pet damage', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const caster = match.teams[0][0];
+    const target = match.teams[1][0];
+    const e = sim.entities.get(caster)!;
+    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
+    // casting a silence (not a stun: the broad Ice Block predicate) breaks it
+    sim.ctx.applyAura(sim.entities.get(target)!, {
+      id: 'test_silence',
+      name: 'Test Silence',
+      kind: 'silence',
+      value: 0,
+      remaining: 2,
+      duration: 2,
+      sourceId: caster,
+      school: 'shadow',
+    });
+    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
+    // and pet damage resolves to the owning player (the gate protection every
+    // fighter still carries right after gates-open is the fixture)
+    const owner = match.teams[1][1];
+    const oe = sim.entities.get(owner)!;
+    expect(oe.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
+    const pet = sim.entities.get(match.teams[0][1])!;
+    const petLike = { ...pet, kind: 'mob' as const, ownerId: owner, id: 999999 };
+    sim.ctx.dealDamage(
+      petLike as typeof pet,
+      sim.entities.get(caster)!,
+      5,
+      false,
+      'physical',
+      null,
+      'hit',
+    );
+    expect(oe.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
+  });
+
+  it('a live participant cannot enter a delve mid-match', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const pid = match.teams[0][0];
+    sim.enterDelve('collapsed_reliquary', 'tier1', pid);
+    sim.tick();
+    expect(sim.bgMatchFor(pid)).toBe(match); // still in the match, not in a delve
+    expect(isBgPos(sim.entities.get(pid)!.pos.x)).toBe(true);
+  });
+
+  it('the honor DR window round-trips through CharacterState and clears on UTC rollover', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const winner = match.teams[0][0];
+    for (let cap = 0; cap < 5; cap++) captureOnce(sim, match, winner);
+    const daily = sim.meta(winner)!.honorArenaDaily!;
+    expect(daily.bgResultsByOpponent).toBeTruthy();
+    expect(Object.values(daily.bgResultsByOpponent!)).toEqual([1]);
+    // persists across a save/load round trip (the anti-win-trading window)
+    const state = sim.serializeCharacter(winner)!;
+    expect(state.honorArenaDaily!.bgResultsByOpponent).toEqual(daily.bgResultsByOpponent);
+    const sim2 = makeWorld();
+    const reloaded = sim2.addPlayer('warrior', 'Reload', { state });
+    expect(sim2.meta(reloaded)!.honorArenaDaily!.bgResultsByOpponent).toEqual(
+      daily.bgResultsByOpponent,
+    );
   });
 });
 

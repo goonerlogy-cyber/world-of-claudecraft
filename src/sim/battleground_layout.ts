@@ -117,6 +117,34 @@ export const BG_PERIMETER_WALLS: BgWallSeg[] = [
   { x: 0, z: BG_HALF_Z, hw: BG_HALF_X, hd: BG_WALL_T },
 ];
 
+/** How far past the flag (toward the field) the keep interior extends: the
+ *  mouth line the form-up containment holds players behind. */
+export const KEEP_MOUTH_DZ = 4;
+
+/**
+ * The keep's interior box for one team (world-relative to the instance
+ * origin): x across the keep's full width, z from the back wall to the mouth
+ * line. The form-up containment (social/battleground.ts tickCountdown) reads
+ * this so the gate can never drift from the walls it stands in for.
+ */
+export function keepInteriorBounds(team: BgTeam): {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+} {
+  const dir = team === 0 ? -1 : 1;
+  const flagZ = team === 0 ? -BG_FLAG_Z : BG_FLAG_Z;
+  const backZ = flagZ + dir * KEEP_BACK_DZ;
+  const mouthZ = flagZ - dir * KEEP_MOUTH_DZ;
+  return {
+    minX: -KEEP_HALF_X,
+    maxX: KEEP_HALF_X,
+    minZ: Math.min(backZ, mouthZ),
+    maxZ: Math.max(backZ, mouthZ),
+  };
+}
+
 /**
  * Keep walls for one team, postern gap included. Crimson's postern opens in
  * its WEST wall and Azure's in its EAST wall, the point-symmetric mirror

@@ -113,6 +113,9 @@ function dailyWindow(ctx: SimContext, meta: PlayerMeta) {
     daily.date = ctx.utcDay;
     daily.winsByOpponent = {};
     daily.fiestaCompletionsByOpponent = {};
+    // Back to `undefined` (not `{}`) so an untouched day stays byte-equal in
+    // the save blob (the absent-until-first-result rule).
+    daily.bgResultsByOpponent = undefined;
     daily.totalWins = 0;
   }
   return daily;

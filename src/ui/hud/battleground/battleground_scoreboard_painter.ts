@@ -18,6 +18,13 @@ import type { BgScoreboardPip, BgScoreboardView } from './battleground_scoreboar
 
 const num = (n: number): string => formatNumber(n, { maximumFractionDigits: 0 });
 const FLAG_STATES = ['home', 'carried', 'dropped'] as const;
+// Literal key map (the HONOR_REASON_KEYS pattern): a fourth flag state must
+// red-fail tsc here, never throw at runtime through a constructed key.
+const FLAG_STATE_KEYS = {
+  home: 'hudChrome.bg.flagState.home',
+  carried: 'hudChrome.bg.flagState.carried',
+  dropped: 'hudChrome.bg.flagState.dropped',
+} as const;
 
 export interface BattlegroundScoreboardDeps {
   /** The HUD layer the strip mounts into (the #ui element). */
@@ -46,6 +53,7 @@ export class BattlegroundScoreboard {
     if (!view.active) {
       if (this.root) w.setDisplay(this.root, 'none');
       if (this.respawnRoot) w.setDisplay(this.respawnRoot, 'none');
+      if (this.protectedEl) w.setDisplay(this.protectedEl, 'none');
       this.lastSig = view.sig;
       return;
     }
@@ -87,13 +95,14 @@ export class BattlegroundScoreboard {
       if (!el) continue;
       for (const s of FLAG_STATES) w.toggleClass(el, s, view.flagStates[team] === s);
       const carrier = view.carrierNames[team];
-      w.setAttr(
-        el,
-        'title',
-        carrier
-          ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
-          : t(`hudChrome.bg.flagState.${view.flagStates[team]}` as Parameters<typeof t>[0]),
-      );
+      const stateText = carrier
+        ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
+        : t(FLAG_STATE_KEYS[view.flagStates[team]]);
+      w.setAttr(el, 'title', stateText);
+      // The flag state is actionable information: give assistive tech the same
+      // readout the tooltip carries (the glyph is a real named image, never
+      // aria-hidden decoration).
+      w.setAttr(el, 'aria-label', stateText);
     }
     const pips = [...view.pipsCrimson, ...view.pipsAzure];
     for (let i = 0; i < this.pipCount && i < pips.length; i++) {
@@ -138,9 +147,9 @@ export class BattlegroundScoreboard {
     if (!layer) return null;
     const el = document.createElement('div');
     el.id = 'bg-scoreboard';
-    // A live-score region players glance at, not an announcement stream: the
-    // per-second clock must never spam a screen reader (politeness contract).
-    el.setAttribute('role', 'status');
+    // A glanceable strip, deliberately NOT a status landmark: the per-second
+    // clock must never spam a screen reader (politeness contract), and the
+    // flag glyphs inside carry their own accessible names.
     el.setAttribute('aria-live', 'off');
     layer.appendChild(el);
     this.root = el;
@@ -171,17 +180,16 @@ export class BattlegroundScoreboard {
     const pipRow = (pips: BgScoreboardPip[], team: 'crimson' | 'azure'): string =>
       pips
         .map(
-          (p) =>
-            `<span class="bg-pip ${team}${p.me ? ' me' : ''}" title="${esc(p.name)}"></span>`,
+          (p) => `<span class="bg-pip ${team}${p.me ? ' me' : ''}" title="${esc(p.name)}"></span>`,
         )
         .join('');
     const you = (team: number): string =>
       view.myTeam === team ? ` <span class="bg-you">${esc(t('hudChrome.bg.you'))}</span>` : '';
     return (
       `<div class="bg-score-line">` +
-      `<span class="bg-team crimson"><span class="bg-flag crimson" aria-hidden="true"></span>${esc(t('hudChrome.bg.crimson'))}${you(0)}</span>` +
+      `<span class="bg-team crimson"><span class="bg-flag crimson" role="img"></span>${esc(t('hudChrome.bg.crimson'))}${you(0)}</span>` +
       `<span class="bg-score crimson"></span><span class="bg-score-colon">:</span><span class="bg-score azure"></span>` +
-      `<span class="bg-team azure">${esc(t('hudChrome.bg.azure'))}${you(1)}<span class="bg-flag azure" aria-hidden="true"></span></span>` +
+      `<span class="bg-team azure">${esc(t('hudChrome.bg.azure'))}${you(1)}<span class="bg-flag azure" role="img"></span></span>` +
       `</div>` +
       `<div class="bg-under"><span class="bg-clock"></span><span class="bg-caps"></span></div>` +
       `<div class="bg-roster"><span class="bg-roster-side">${pipRow(view.pipsCrimson, 'crimson')}</span><span class="bg-roster-gap"></span><span class="bg-roster-side">${pipRow(view.pipsAzure, 'azure')}</span></div>`

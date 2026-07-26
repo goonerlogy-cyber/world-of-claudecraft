@@ -61,7 +61,10 @@ without changing rating, matchmaking, or combat rules.
 
 Offline Fiesta practice pays no Honor. Fiesta forfeits pay no completion or win
 bonus, and a forfeited Ravenrift match pays nothing on either side (the leavers'
-opponents still take the rating win). Ranked, Fiesta, and Ravenrift result
+opponents still take the rating win). A Ravenrift deserter takes the loss on
+the spot: leaving, disconnecting, or being jailed out of a live match records
+the L and applies the loss-side rating delta immediately, so pulling the plug
+while losing never protects a rating. Ranked, Fiesta, and Ravenrift result
 accounting is exactly once, including a disconnect during the post-match return
 delay.
 

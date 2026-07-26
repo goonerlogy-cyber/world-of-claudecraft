@@ -231,6 +231,9 @@ const baseEnTable = {
   'aura.temporalExhaustion': 'Temporal Exhaustion',
   // Cauterize's 5 min lockout debuff (combat/fire_mage.ts); survives death.
   'aura.cauterizeFatigue': 'Cauterize Fatigue',
+  'aura.spawnProtection': 'Spawn Protection',
+  'aura.carrierFatigue': 'Carrier Fatigue',
+  'aura.sprintRune': 'Sprint',
   'mechanic.warStomp': 'Shuddering Stomp',
   // Heroic warrior-mob anti-kite charge (MobTemplate.charge, src/sim/mob/charge.ts):
   // the stun debuff on the player and the {mechanic} in the "unleashes" line.
@@ -3575,6 +3578,9 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.recentKillRequired': '你需要最近完成一次击杀。',
     'aura.temporalExhaustion': '时光疲惫',
     'aura.cauterizeFatigue': '烧灼疲乏',
+    'aura.spawnProtection': '出生保护',
+    'aura.carrierFatigue': '旗手疲劳',
+    'aura.sprintRune': '疾跑',
     'mechanic.charge': '突进',
     'aura.bladedEcho': '利刃回响',
     'aura.emboldened': '鼓舞',
@@ -3951,6 +3957,9 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.recentKillRequired': '你需要最近完成一次擊殺。',
     'aura.temporalExhaustion': '時光疲憊',
     'aura.cauterizeFatigue': '燒灼疲乏',
+    'aura.spawnProtection': '出生保護',
+    'aura.carrierFatigue': '旗手疲勞',
+    'aura.sprintRune': '疾跑',
     'mechanic.charge': '猛衝',
     'aura.bladedEcho': '利刃迴響',
     'aura.emboldened': '壯膽',
@@ -4336,6 +4345,9 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.recentKillRequired': '최근에 처치한 적이 필요합니다.',
     'aura.temporalExhaustion': '시간의 탈진',
     'aura.cauterizeFatigue': '소작의 피로',
+    'aura.spawnProtection': '생성 보호',
+    'aura.carrierFatigue': '기수 피로',
+    'aura.sprintRune': '질주',
     'mechanic.charge': '쇄도',
     'aura.bladedEcho': '칼날의 메아리',
     'aura.emboldened': '대담함',
@@ -4730,6 +4742,9 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.recentKillRequired': '直前に敵を倒している必要があります。',
     'aura.temporalExhaustion': '時の疲弊',
     'aura.cauterizeFatigue': '焼灼の疲労',
+    'aura.spawnProtection': 'スポーン保護',
+    'aura.carrierFatigue': '旗手の疲弊',
+    'aura.sprintRune': 'スプリント',
     'mechanic.charge': '突撃',
     'aura.bladedEcho': '刃の残響',
     'aura.emboldened': '奮起',
@@ -5513,6 +5528,9 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.recentKillRequired': 'Нужно недавнее убийство.',
     'aura.temporalExhaustion': 'Временное истощение',
     'aura.cauterizeFatigue': 'Усталость от прижигания',
+    'aura.spawnProtection': 'Защита возрождения',
+    'aura.carrierFatigue': 'Усталость знаменосца',
+    'aura.sprintRune': 'Спринт',
     'mechanic.charge': 'Натиск',
     'aura.bladedEcho': 'Клинковое эхо',
     'aura.emboldened': 'Ободрение',
@@ -6980,6 +6998,11 @@ const AURA_NAME_KEY: Record<string, SimMessageKey> = {
   Tamed: 'aura.tamed',
   'Temporal Exhaustion': 'aura.temporalExhaustion',
   'Cauterize Fatigue': 'aura.cauterizeFatigue',
+  // Ravenrift battleground auras (src/sim/social/battleground.ts): spawn
+  // protection, the carrier-fatigue vulnerability, and the sprint-rune haste.
+  'Spawn Protection': 'aura.spawnProtection',
+  'Carrier Fatigue': 'aura.carrierFatigue',
+  Sprint: 'aura.sprintRune',
   'Might of the Bear': 'aura.elixirBear',
   // Crafted alchemy elixir auras (content/profession_items.ts): the
   // buff_sta aura display name each crafted elixir pushes on use.
@@ -7418,7 +7441,10 @@ type BgExtraKey =
   | 'errInBattleground'
   | 'errQueueDead'
   | 'errMemberQueued'
-  | 'errNoFlag';
+  | 'errNoFlag'
+  | 'errPartyTooLarge'
+  | 'errDelveDuringBg'
+  | 'errTalentsDuringBg';
 
 const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   joinQueue: 'You join the Ravenrift queue. Need {count} champions to start a match.',
@@ -7433,6 +7459,9 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   errQueueDead: 'You cannot queue for Ravenrift while dead.',
   errMemberQueued: 'A party member is already queued or in a match.',
   errNoFlag: 'There is no flag within reach.',
+  errPartyTooLarge: 'Your party is too large for Ravenrift. It queues parties of up to 5.',
+  errDelveDuringBg: 'You cannot enter a delve during a battleground.',
+  errTalentsDuringBg: 'You cannot change talents during a battleground.',
 };
 
 const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, string>>>> = {
@@ -7450,6 +7479,9 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errQueueDead: '死亡状态下无法排队进入鸦裂谷。',
     errMemberQueued: '有队友已在队列或比赛中。',
     errNoFlag: '附近没有可夺取的旗帜。',
+    errPartyTooLarge: '你的队伍人数超出鸦裂谷上限。最多5人小队可排队。',
+    errDelveDuringBg: '战场进行中无法进入探秘。',
+    errTalentsDuringBg: '战场进行中无法更改天赋。',
   },
   zh_TW: {
     joinQueue: '你加入了鴉裂谷佇列。需要{count}名勇士才能開始比賽。',
@@ -7464,6 +7496,9 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errQueueDead: '死亡狀態下無法排隊進入鴉裂谷。',
     errMemberQueued: '有隊友已在佇列或比賽中。',
     errNoFlag: '附近沒有可奪取的旗幟。',
+    errPartyTooLarge: '你的隊伍人數超出鴉裂谷上限。最多5人隊伍可排隊。',
+    errDelveDuringBg: '戰場進行中無法進入探祕。',
+    errTalentsDuringBg: '戰場進行中無法更改天賦。',
   },
   ja_JP: {
     joinQueue: 'レイヴンリフトのキューに参加しました。試合開始には{count}人の勇者が必要です。',
@@ -7479,6 +7514,10 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errQueueDead: '死亡中はレイヴンリフトのキューに参加できません。',
     errMemberQueued: 'パーティメンバーがすでにキューまたは試合に参加しています。',
     errNoFlag: '手の届く範囲に旗がありません。',
+    errPartyTooLarge:
+      'パーティの人数がレイヴンリフトの上限を超えています。参加できるのは最大5人です。',
+    errDelveDuringBg: '戦場の最中はディレルヴに入れません。',
+    errTalentsDuringBg: '戦場の最中はタレントを変更できません。',
   },
   ko_KR: {
     joinQueue:
@@ -7495,6 +7534,10 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errQueueDead: '죽은 상태로는 레이븐리프트 대기열에 참가할 수 없습니다.',
     errMemberQueued: '파티원이 이미 대기열이나 경기에 참가 중입니다.',
     errNoFlag: '근처에 잡을 수 있는 깃발이 없습니다.',
+    errPartyTooLarge:
+      '파티 인원이 레이븐리프트 제한을 초과합니다. 최대 5인 파티만 참가할 수 있습니다.',
+    errDelveDuringBg: '전장 중에는 탐사에 들어갈 수 없습니다.',
+    errTalentsDuringBg: '전장 중에는 특성을 변경할 수 없습니다.',
   },
   ru_RU: {
     joinQueue: 'Вы встали в очередь Вороньего Разлома. Для начала матча нужно {count} бойцов.',
@@ -7510,6 +7553,10 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     errQueueDead: 'Нельзя встать в очередь Вороньего Разлома, будучи мертвым.',
     errMemberQueued: 'Кто-то из группы уже в очереди или в матче.',
     errNoFlag: 'Поблизости нет флага, который можно взять.',
+    errPartyTooLarge:
+      'Ваша группа слишком велика для Вороньего Разлома. В очередь встают группы до 5 бойцов.',
+    errDelveDuringBg: 'Нельзя войти в вылазку во время боя на поле боя.',
+    errTalentsDuringBg: 'Нельзя менять таланты во время боя на поле боя.',
   },
 };
 
@@ -8736,6 +8783,18 @@ const RULES: Rule[] = [
     build: () => tBg('errMemberQueued'),
   },
   { re: /^There is no flag within reach\.$/, build: () => tBg('errNoFlag') },
+  {
+    re: /^Your party is too large for Ravenrift\. It queues parties of up to (.+?)\.$/,
+    build: () => tBg('errPartyTooLarge'),
+  },
+  {
+    re: /^You cannot enter a delve during a battleground\.$/,
+    build: () => tBg('errDelveDuringBg'),
+  },
+  {
+    re: /^You cannot change talents during a battleground\.$/,
+    build: () => tBg('errTalentsDuringBg'),
+  },
   // Delve / lockpicking sim text. Re-localized through t() against the sim.delve.* /
   // sim.lockpick.* keys (src/ui/i18n.catalog/index.ts). The module-enter banner is two
   // rules anchored on the fixed objective lines ("X: Clear the room." / "X: Defeat the
