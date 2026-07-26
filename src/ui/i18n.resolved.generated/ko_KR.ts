@@ -1197,7 +1197,9 @@ export const ko_KR: EnTranslations = {
         "arenaWin": "투기장 승리",
         "fiestaKill": "피에스타 처치",
         "fiestaComplete": "피에스타 완료",
-        "fiestaWin": "피에스타 승리"
+        "fiestaWin": "피에스타 승리",
+        "battlegroundWin": "레이븐리프트 승리",
+        "battlegroundComplete": "레이븐리프트 참전"
       }
     },
     "charSheet": {

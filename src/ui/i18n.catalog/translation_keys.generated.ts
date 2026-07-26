@@ -6767,6 +6767,8 @@ export type TranslationKeyFlat =
   | 'hudChrome.warfare.honorGain'
   | 'hudChrome.warfare.notEnoughHonor'
   | 'hudChrome.warfare.reasons.arenaWin'
+  | 'hudChrome.warfare.reasons.battlegroundComplete'
+  | 'hudChrome.warfare.reasons.battlegroundWin'
   | 'hudChrome.warfare.reasons.fiestaComplete'
   | 'hudChrome.warfare.reasons.fiestaKill'
   | 'hudChrome.warfare.reasons.fiestaWin'

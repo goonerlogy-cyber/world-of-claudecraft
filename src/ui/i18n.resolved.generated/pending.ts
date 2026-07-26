@@ -16,7 +16,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "es_ES": [
     "hudChrome.crafting.craftedToastQty",
@@ -25,7 +27,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "fr_FR": [
     "hudChrome.crafting.craftedToastQty",
@@ -34,7 +38,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "fr_CA": [
     "hudChrome.crafting.craftedToastQty",
@@ -43,7 +49,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "en_CA": [],
   "it_IT": [
@@ -53,7 +61,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "de_DE": [
     "hudChrome.crafting.craftedToastQty",
@@ -62,7 +72,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "zh_CN": [],
   "zh_TW": [],
@@ -75,7 +87,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "ru_RU": [],
   "cs_CZ": [
@@ -85,7 +99,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "nl_NL": [
     "hudChrome.crafting.craftedToastQty",
@@ -94,7 +110,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "pl_PL": [
     "hudChrome.crafting.craftedToastQty",
@@ -103,7 +121,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "id_ID": [
     "hudChrome.crafting.craftedToastQty",
@@ -112,7 +132,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "tr_TR": [
     "hudChrome.crafting.craftedToastQty",
@@ -121,7 +143,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "sv_SE": [
     "hudChrome.crafting.craftedToastQty",
@@ -130,7 +154,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "vi_VN": [
     "hudChrome.crafting.craftedToastQty",
@@ -139,7 +165,9 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ],
   "da_DK": [
     "hudChrome.crafting.craftedToastQty",
@@ -148,6 +176,8 @@ export const pending: Record<string, readonly string[]> = {
     "hudChrome.enchanting.disenchantedYield",
     "hudChrome.enchanting.disenchantedYieldQty",
     "hudChrome.enchanting.salvagedYield",
-    "hudChrome.enchanting.salvagedYieldQty"
+    "hudChrome.enchanting.salvagedYieldQty",
+    "hudChrome.warfare.reasons.battlegroundComplete",
+    "hudChrome.warfare.reasons.battlegroundWin"
   ]
 };

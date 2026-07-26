@@ -1197,7 +1197,9 @@ export const zh_CN: EnTranslations = {
         "arenaWin": "竞技场胜利",
         "fiestaKill": "嘉年华击倒",
         "fiestaComplete": "完成嘉年华",
-        "fiestaWin": "嘉年华胜利"
+        "fiestaWin": "嘉年华胜利",
+        "battlegroundWin": "鸦裂谷胜利",
+        "battlegroundComplete": "鸦裂谷参战"
       }
     },
     "charSheet": {

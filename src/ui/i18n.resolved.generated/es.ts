@@ -1197,7 +1197,9 @@ export const es: EnTranslations = {
         "arenaWin": "Victoria en la arena",
         "fiestaKill": "Derribo en Fiesta",
         "fiestaComplete": "Fiesta completada",
-        "fiestaWin": "Victoria en Fiesta"
+        "fiestaWin": "Victoria en Fiesta",
+        "battlegroundWin": "Ravenrift victory",
+        "battlegroundComplete": "Ravenrift battle fought"
       }
     },
     "charSheet": {

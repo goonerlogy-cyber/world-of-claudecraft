@@ -1197,7 +1197,9 @@ export const en_XA: EnTranslations = {
         "arenaWin": "[Áŕéñá ʋíçţóŕý]",
         "fiestaKill": "[Ƒíéšţá ţáķéðóŵñ]",
         "fiestaComplete": "[Ƒíéšţá çóɱþļéţéð]",
-        "fiestaWin": "[Ƒíéšţá ʋíçţóŕý]"
+        "fiestaWin": "[Ƒíéšţá ʋíçţóŕý]",
+        "battlegroundWin": "[Ŕáʋéñŕíƒţ ʋíçţóŕý]",
+        "battlegroundComplete": "[Ŕáʋéñŕíƒţ ƀáţţļé ƒóúĝĥţ]"
       }
     },
     "charSheet": {

@@ -1197,7 +1197,9 @@ export const id_ID: EnTranslations = {
         "arenaWin": "Kemenangan arena",
         "fiestaKill": "Eliminasi Fiesta",
         "fiestaComplete": "Fiesta selesai",
-        "fiestaWin": "Kemenangan Fiesta"
+        "fiestaWin": "Kemenangan Fiesta",
+        "battlegroundWin": "Ravenrift victory",
+        "battlegroundComplete": "Ravenrift battle fought"
       }
     },
     "charSheet": {

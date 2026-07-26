@@ -1058,6 +1058,8 @@ export const hudChromeStrings = {
       fiestaKill: 'Fiesta takedown',
       fiestaComplete: 'Fiesta completed',
       fiestaWin: 'Fiesta victory',
+      battlegroundWin: 'Ravenrift victory',
+      battlegroundComplete: 'Ravenrift battle fought',
     },
   },
   // Character sheet showcase layout: the two titled stat-panel headings under the

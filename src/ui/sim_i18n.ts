@@ -7402,6 +7402,122 @@ function tArenaExtra(key: ArenaExtraKey, params?: InterpolationValues): string {
   return interpolate(table[key] ?? ARENA_EXTRA.en[key], params);
 }
 
+// Ravenrift 5v5 capture-the-flag emit strings (src/sim/social/battleground.ts).
+// English is authoritative; the non-Latin surfaces ship real fills (the M16
+// spirit) and the remaining locales fall back to English here until the
+// release-tier locale fill (the PR-tier S3 guard requires recognition only).
+type BgExtraKey =
+  | 'joinQueue'
+  | 'partyJoinQueue'
+  | 'leaveQueue'
+  | 'battleBegins'
+  | 'fightFor'
+  | 'seizeRune'
+  | 'teamCrimson'
+  | 'teamAzure'
+  | 'errInBattleground'
+  | 'errQueueDead'
+  | 'errMemberQueued'
+  | 'errNoFlag';
+
+const BG_EXTRA_EN: Record<BgExtraKey, string> = {
+  joinQueue: 'You join the Ravenrift queue. Need {count} champions to start a match.',
+  partyJoinQueue: 'Your party of {count} joins the Ravenrift queue.',
+  leaveQueue: 'You leave the Ravenrift queue.',
+  battleBegins: 'The Ravenrift battle begins: take their flag!',
+  fightFor: 'Ravenrift: you fight for the {team}. First to {caps} captures wins.',
+  seizeRune: 'You seize a Sprint Rune!',
+  teamCrimson: 'Crimson',
+  teamAzure: 'Azure',
+  errInBattleground: 'You are already in a battleground.',
+  errQueueDead: 'You cannot queue for Ravenrift while dead.',
+  errMemberQueued: 'A party member is already queued or in a match.',
+  errNoFlag: 'There is no flag within reach.',
+};
+
+const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, string>>>> = {
+  en: BG_EXTRA_EN,
+  zh_CN: {
+    joinQueue: '你加入了鸦裂谷队列。需要{count}名勇士才能开始比赛。',
+    partyJoinQueue: '你的{count}人小队加入了鸦裂谷队列。',
+    leaveQueue: '你离开了鸦裂谷队列。',
+    battleBegins: '鸦裂谷之战开始了:夺取他们的旗帜!',
+    fightFor: '鸦裂谷:你为{team}而战。先夺得{caps}次旗帜者获胜。',
+    seizeRune: '你夺得了疾行符文!',
+    teamCrimson: '赤红队',
+    teamAzure: '蔚蓝队',
+    errInBattleground: '你已经在战场中了。',
+    errQueueDead: '死亡状态下无法排队进入鸦裂谷。',
+    errMemberQueued: '有队友已在队列或比赛中。',
+    errNoFlag: '附近没有可夺取的旗帜。',
+  },
+  zh_TW: {
+    joinQueue: '你加入了鴉裂谷佇列。需要{count}名勇士才能開始比賽。',
+    partyJoinQueue: '你的{count}人隊伍加入了鴉裂谷佇列。',
+    leaveQueue: '你離開了鴉裂谷佇列。',
+    battleBegins: '鴉裂谷之戰開始了:奪取他們的旗幟!',
+    fightFor: '鴉裂谷:你為{team}而戰。先奪得{caps}次旗幟者獲勝。',
+    seizeRune: '你奪得了疾行符文!',
+    teamCrimson: '赤紅隊',
+    teamAzure: '蔚藍隊',
+    errInBattleground: '你已經在戰場中了。',
+    errQueueDead: '死亡狀態下無法排隊進入鴉裂谷。',
+    errMemberQueued: '有隊友已在佇列或比賽中。',
+    errNoFlag: '附近沒有可奪取的旗幟。',
+  },
+  ja_JP: {
+    joinQueue: 'レイヴンリフトのキューに参加しました。試合開始には{count}人の勇者が必要です。',
+    partyJoinQueue: '{count}人のパーティがレイヴンリフトのキューに参加しました。',
+    leaveQueue: 'レイヴンリフトのキューから離脱しました。',
+    battleBegins: 'レイヴンリフトの戦いが始まった:敵の旗を奪え!',
+    fightFor:
+      'レイヴンリフト:あなたは{team}として戦います。先に{caps}回旗を奪取したチームの勝利です。',
+    seizeRune: 'スプリントルーンを手に入れた!',
+    teamCrimson: 'クリムゾン',
+    teamAzure: 'アズール',
+    errInBattleground: 'すでに戦場にいます。',
+    errQueueDead: '死亡中はレイヴンリフトのキューに参加できません。',
+    errMemberQueued: 'パーティメンバーがすでにキューまたは試合に参加しています。',
+    errNoFlag: '手の届く範囲に旗がありません。',
+  },
+  ko_KR: {
+    joinQueue:
+      '레이븐리프트 대기열에 참가했습니다. 경기를 시작하려면 {count}명의 용사가 필요합니다.',
+    partyJoinQueue: '{count}명의 파티가 레이븐리프트 대기열에 참가했습니다.',
+    leaveQueue: '레이븐리프트 대기열에서 나왔습니다.',
+    battleBegins: '레이븐리프트 전투가 시작되었습니다. 적의 깃발을 빼앗으세요!',
+    fightFor:
+      '레이븐리프트: 당신은 {team} 소속으로 싸웁니다. 먼저 {caps}회 깃발을 탈취한 팀이 승리합니다.',
+    seizeRune: '질주 룬을 차지했습니다!',
+    teamCrimson: '진홍팀',
+    teamAzure: '청람팀',
+    errInBattleground: '이미 전장에 있습니다.',
+    errQueueDead: '죽은 상태로는 레이븐리프트 대기열에 참가할 수 없습니다.',
+    errMemberQueued: '파티원이 이미 대기열이나 경기에 참가 중입니다.',
+    errNoFlag: '근처에 잡을 수 있는 깃발이 없습니다.',
+  },
+  ru_RU: {
+    joinQueue: 'Вы встали в очередь Вороньего Разлома. Для начала матча нужно {count} бойцов.',
+    partyJoinQueue: 'Ваша группа из {count} бойцов встала в очередь Вороньего Разлома.',
+    leaveQueue: 'Вы покинули очередь Вороньего Разлома.',
+    battleBegins: 'Битва за Вороний Разлом началась: захватите их флаг!',
+    fightFor:
+      'Вороний Разлом: вы сражаетесь за {team}. Побеждает команда, первой захватившая флаг {caps} раз.',
+    seizeRune: 'Вы подобрали руну спринта!',
+    teamCrimson: 'Багровых',
+    teamAzure: 'Лазурных',
+    errInBattleground: 'Вы уже находитесь на поле боя.',
+    errQueueDead: 'Нельзя встать в очередь Вороньего Разлома, будучи мертвым.',
+    errMemberQueued: 'Кто-то из группы уже в очереди или в матче.',
+    errNoFlag: 'Поблизости нет флага, который можно взять.',
+  },
+};
+
+function tBg(key: BgExtraKey, params?: InterpolationValues): string {
+  const table = BG_EXTRA[getLanguage()] ?? {};
+  return interpolate(table[key] ?? BG_EXTRA_EN[key], params);
+}
+
 type QuestExtraKey =
   | 'ritualNeedsKey'
   | 'aldrenVision1'
@@ -8593,6 +8709,33 @@ const RULES: Rule[] = [
     re: /^(.+) cannot queue from inside an instance\.$/,
     build: (m) => tArenaExtra('memberInstance', { name: m[1] }),
   },
+  // Ravenrift 5v5 capture-the-flag (src/sim/social/battleground.ts emits).
+  {
+    re: /^You join the Ravenrift queue\. Need (.+?) champions to start a match\.$/,
+    build: (m) => tBg('joinQueue', { count: m[1] }),
+  },
+  {
+    re: /^Your party of (.+?) joins the Ravenrift queue\.$/,
+    build: (m) => tBg('partyJoinQueue', { count: m[1] }),
+  },
+  { re: /^You leave the Ravenrift queue\.$/, build: () => tBg('leaveQueue') },
+  { re: /^The Ravenrift battle begins: take their flag!$/, build: () => tBg('battleBegins') },
+  {
+    re: /^Ravenrift: you fight for the (.+?)\. First to (.+?) captures wins\.$/,
+    build: (m) =>
+      tBg('fightFor', {
+        team: m[1] === 'Crimson' ? tBg('teamCrimson') : m[1] === 'Azure' ? tBg('teamAzure') : m[1],
+        caps: m[2],
+      }),
+  },
+  { re: /^You seize a Sprint Rune!$/, build: () => tBg('seizeRune') },
+  { re: /^You are already in a battleground\.$/, build: () => tBg('errInBattleground') },
+  { re: /^You cannot queue for Ravenrift while dead\.$/, build: () => tBg('errQueueDead') },
+  {
+    re: /^A party member is already queued or in a match\.$/,
+    build: () => tBg('errMemberQueued'),
+  },
+  { re: /^There is no flag within reach\.$/, build: () => tBg('errNoFlag') },
   // Delve / lockpicking sim text. Re-localized through t() against the sim.delve.* /
   // sim.lockpick.* keys (src/ui/i18n.catalog/index.ts). The module-enter banner is two
   // rules anchored on the fixed objective lines ("X: Clear the room." / "X: Defeat the

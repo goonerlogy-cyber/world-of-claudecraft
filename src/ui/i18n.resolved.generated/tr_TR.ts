@@ -1197,7 +1197,9 @@ export const tr_TR: EnTranslations = {
         "arenaWin": "Arena zaferi",
         "fiestaKill": "Fiesta avlaması",
         "fiestaComplete": "Fiesta tamamlandı",
-        "fiestaWin": "Fiesta zaferi"
+        "fiestaWin": "Fiesta zaferi",
+        "battlegroundWin": "Ravenrift victory",
+        "battlegroundComplete": "Ravenrift battle fought"
       }
     },
     "charSheet": {

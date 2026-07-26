@@ -794,6 +794,8 @@ const HONOR_REASON_KEYS: Record<HonorReason, TranslationKey> = {
   fiesta_kill: 'hudChrome.warfare.reasons.fiestaKill',
   fiesta_complete: 'hudChrome.warfare.reasons.fiestaComplete',
   fiesta_win: 'hudChrome.warfare.reasons.fiestaWin',
+  battleground_win: 'hudChrome.warfare.reasons.battlegroundWin',
+  battleground_complete: 'hudChrome.warfare.reasons.battlegroundComplete',
 };
 const RAID_MARKER_LABEL_KEYS = [
   'hud.markers.names.star',

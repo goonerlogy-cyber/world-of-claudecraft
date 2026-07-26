@@ -1197,7 +1197,9 @@ export const ru_RU: EnTranslations = {
         "arenaWin": "Победа на арене",
         "fiestaKill": "Устранение на Фиесте",
         "fiestaComplete": "Завершение Фиесты",
-        "fiestaWin": "Победа на Фиесте"
+        "fiestaWin": "Победа на Фиесте",
+        "battlegroundWin": "Победа в Вороньем Разломе",
+        "battlegroundComplete": "Битва в Вороньем Разломе"
       }
     },
     "charSheet": {

@@ -832,6 +832,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaKill': '피에스타 처치',
   'hudChrome.warfare.reasons.fiestaComplete': '피에스타 완료',
   'hudChrome.warfare.reasons.fiestaWin': '피에스타 승리',
+  'hudChrome.warfare.reasons.battlegroundWin': '레이븐리프트 승리',
+  'hudChrome.warfare.reasons.battlegroundComplete': '레이븐리프트 참전',
   'hudChrome.charSheet.offense': '공격',
   'hudChrome.charSheet.defense': '방어',
   'hudChrome.statInfo.fromYour': '당신의 {value} {stat}에서:',

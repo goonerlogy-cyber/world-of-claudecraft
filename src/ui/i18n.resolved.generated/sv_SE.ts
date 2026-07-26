@@ -1197,7 +1197,9 @@ export const sv_SE: EnTranslations = {
         "arenaWin": "Arenaseger",
         "fiestaKill": "Fiesta-nedtagning",
         "fiestaComplete": "Fiesta avklarad",
-        "fiestaWin": "Fiesta-seger"
+        "fiestaWin": "Fiesta-seger",
+        "battlegroundWin": "Ravenrift victory",
+        "battlegroundComplete": "Ravenrift battle fought"
       }
     },
     "charSheet": {

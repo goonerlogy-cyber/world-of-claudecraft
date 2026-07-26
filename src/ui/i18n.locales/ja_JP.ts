@@ -833,6 +833,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.warfare.reasons.fiestaKill': 'フィエスタ撃破',
   'hudChrome.warfare.reasons.fiestaComplete': 'フィエスタ完遂',
   'hudChrome.warfare.reasons.fiestaWin': 'フィエスタ勝利',
+  'hudChrome.warfare.reasons.battlegroundWin': 'レイヴンリフト勝利',
+  'hudChrome.warfare.reasons.battlegroundComplete': 'レイヴンリフト参戦',
   'hudChrome.charSheet.offense': '攻撃',
   'hudChrome.charSheet.defense': '防御',
   'hudChrome.statInfo.fromYour': 'あなたの{stat}{value}による効果:',
