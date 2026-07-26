@@ -8365,6 +8365,10 @@
   .bg-bteam.azure {
     color: var(--color-team-blue);
   }
+  .bg-brow .bb-name {
+    font-family: var(--ui-font);
+    font-size: 13px;
+  }
   .bg-brow.crimson .bb-name {
     color: var(--color-team-red);
   }
@@ -8387,6 +8391,17 @@
   .bg-brow .bb-c {
     text-align: right;
     font-variant-numeric: tabular-nums;
+    /* explicit: the strip root uses the display font, whose digits render
+       tiny and raised; the stat cells must read as plain legible numbers */
+    font-family: var(--ui-font);
+    font-size: 13px;
+    color: #ded8c4;
+  }
+  .bg-brow.bg-bhead .bb-k,
+  .bg-brow.bg-bhead .bb-d,
+  .bg-brow.bg-bhead .bb-c {
+    font-size: 10px;
+    color: #d8cba0;
   }
   .bg-score {
     font-size: 26px;
