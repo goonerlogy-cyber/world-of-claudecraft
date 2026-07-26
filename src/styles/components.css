@@ -8226,6 +8226,225 @@
     margin-top: 4px;
   }
 
+  /* ---------- Ravenrift (5v5 capture the flag) ---------- */
+  #battleground-window {
+    width: 380px;
+    padding: 14px;
+  }
+  #battleground-window .btn {
+    width: 100%;
+    margin: 4px 0 0;
+    box-sizing: border-box;
+    text-align: center;
+  }
+  #battleground-window .btn.leave {
+    background: linear-gradient(#3a4a5a, #243140 55%, #1a2430);
+    color: #cfe6ff;
+  }
+  #battleground-window .bg-mode-tag {
+    color: #998d6a;
+    font-size: 11px;
+  }
+  .bg-sub {
+    font-family: var(--title-font);
+    color: var(--gold, #c8a857);
+    font-size: 12px;
+    margin: 12px 0 5px;
+    border-bottom: 1px solid #463a1c;
+    padding-bottom: 3px;
+  }
+  .bg-rank {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 2px 0 2px;
+  }
+  .bg-rank .rating {
+    font-family: var(--title-font);
+    font-size: 30px;
+    color: #7fb8ff;
+    text-shadow:
+      0 0 10px #3a78d166,
+      1px 1px 2px #000;
+  }
+  .bg-rank .wl {
+    font-size: 12px;
+    color: #cfc6a8;
+  }
+  .bg-captures {
+    font-size: 11px;
+    color: #b6ad8c;
+    margin: 0 0 6px;
+  }
+  .bg-note {
+    font-size: 11.5px;
+    color: #b6ad8c;
+    line-height: 1.45;
+    margin: 4px 0 2px;
+    font-family: Georgia, serif;
+  }
+  .bg-queue-status {
+    font-size: 12px;
+    color: #7fd4ff;
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* in-match scoreboard strip: pinned top centre; every state here is
+     actionable information and paints identically on every graphics tier */
+  #bg-scoreboard {
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: none;
+    text-align: center;
+    pointer-events: none;
+    z-index: 18;
+    min-width: 320px;
+    background: linear-gradient(#10131add, #080a0edd);
+    border: 1px solid #3a4a66;
+    border-radius: 9px;
+    padding: 6px 18px 8px;
+    box-shadow: 0 2px 16px #000a;
+  }
+  .bg-score-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-family: var(--title-font);
+  }
+  .bg-team {
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .bg-team.crimson {
+    color: var(--color-team-red);
+  }
+  .bg-team.azure {
+    color: var(--color-team-blue);
+  }
+  .bg-team .bg-you {
+    font-size: 10px;
+    color: #d8cba0;
+  }
+  .bg-score {
+    font-size: 26px;
+    font-family: var(--title-font);
+    text-shadow: 1px 1px 2px #000;
+  }
+  .bg-score.crimson {
+    color: var(--color-team-red);
+  }
+  .bg-score.azure {
+    color: var(--color-team-blue);
+  }
+  .bg-score-colon {
+    color: #998d6a;
+    font-size: 18px;
+  }
+  /* flag glyph: a small banner square whose state class recolors it (home is
+     dim, carried glows gold, dropped glows orange); never hidden by tier */
+  .bg-flag {
+    width: 11px;
+    height: 13px;
+    display: inline-block;
+    clip-path: polygon(0 0, 100% 0, 72% 28%, 100% 56%, 0 56%, 0 100%, 0 0);
+  }
+  .bg-flag.crimson {
+    background: var(--color-team-red);
+  }
+  .bg-flag.azure {
+    background: var(--color-team-blue);
+  }
+  .bg-flag.home {
+    opacity: 0.45;
+  }
+  .bg-flag.carried {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px #ffd24a);
+  }
+  .bg-flag.dropped {
+    opacity: 1;
+    filter: drop-shadow(0 0 4px #ff9a3c);
+  }
+  .bg-under {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    font-size: 10.5px;
+    color: #9aa6b8;
+    margin-top: 1px;
+    letter-spacing: 0.4px;
+  }
+  .bg-roster {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 4px;
+  }
+  .bg-roster-side {
+    display: inline-flex;
+    gap: 5px;
+  }
+  .bg-roster-gap {
+    width: 10px;
+  }
+  .bg-pip {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid #000;
+  }
+  .bg-pip.crimson {
+    background: var(--color-team-red);
+  }
+  .bg-pip.azure {
+    background: var(--color-team-blue);
+  }
+  .bg-pip.me {
+    outline: 1px solid #d8cba0;
+  }
+  .bg-pip.dead {
+    opacity: 0.3;
+  }
+  .bg-pip.flag {
+    box-shadow: 0 0 6px 1px #ffd24a;
+    border-color: #ffd24a;
+  }
+  #bg-respawn {
+    position: absolute;
+    left: 50%;
+    top: 54%;
+    transform: translate(-50%, -50%);
+    display: none;
+    text-align: center;
+    color: #ff8d7a;
+    font-family: var(--title-font);
+    font-size: 22px;
+    text-shadow: 2px 2px 6px #000;
+    z-index: 60;
+    pointer-events: none;
+  }
+  #bg-protected {
+    position: absolute;
+    left: 50%;
+    top: 62%;
+    transform: translate(-50%, -50%);
+    display: none;
+    text-align: center;
+    color: #9fdc7f;
+    font-family: var(--title-font);
+    font-size: 13px;
+    text-shadow: 1px 1px 3px #000;
+    z-index: 60;
+    pointer-events: none;
+  }
+
   /* ---------- The Vale Cup (boarball at the Sowfield) ---------- */
   /* Flag colors are set per element as --vcup-field / --vcup-accent custom
      properties DERIVED from the VC_NATIONS sim data record (vale_cup_flag.ts),

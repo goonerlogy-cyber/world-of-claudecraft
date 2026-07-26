@@ -281,6 +281,14 @@ const HOT_PAINTERS: ReadonlyArray<{
     allow: { '.className': 14, '.setAttribute': 3 },
     reflowAllow: {},
   },
+  // the Ravenrift scoreboard builds its skeleton in ONE sig-gated innerHTML
+  // write and mounts its three roots once (role + aria-live pairs); every
+  // per-frame write (scores, clock, flag/pip classes, respawn) is facet-routed.
+  {
+    file: 'hud/battleground/battleground_scoreboard_painter.ts',
+    allow: { '.innerHTML': 1, '.setAttribute': 6 },
+    reflowAllow: {},
+  },
   { file: 'auras_painter.ts', allow: { '.className': 3 }, reflowAllow: {} },
   {
     file: 'fct_painter.ts',

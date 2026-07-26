@@ -1,0 +1,178 @@
+import { describe, expect, it } from 'vitest';
+import {
+  type BgAllTimeEntry,
+  buildBgScoreboardView,
+  buildBgWindowView,
+} from '../src/ui/hud/battleground';
+import type { BgInfo, BgMatchInfo } from '../src/world_api';
+
+const baseInfo = (over: Partial<BgInfo> = {}): BgInfo => ({
+  rating: 1500,
+  wins: 0,
+  losses: 0,
+  captures: 0,
+  queued: false,
+  queueSize: 0,
+  queuedParty: 1,
+  match: null,
+  ...over,
+});
+
+const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
+  state: 'active',
+  myTeam: 0,
+  capsToWin: 5,
+  scores: [1, 2],
+  flags: [
+    { state: 'home', carrierPid: null, carrierName: null, carrierTeam: null },
+    { state: 'carried', carrierPid: 7, carrierName: 'Ravven', carrierTeam: 0 },
+  ],
+  players: [
+    {
+      pid: 7,
+      name: 'Ravven',
+      cls: 'warrior',
+      team: 0,
+      carrying: true,
+      dead: false,
+      hp: 90,
+      mhp: 100,
+    },
+    { pid: 8, name: 'Bryn', cls: 'mage', team: 0, carrying: false, dead: true, hp: 0, mhp: 80 },
+    { pid: 9, name: 'Cael', cls: 'priest', team: 1, carrying: false, dead: false, hp: 70, mhp: 70 },
+  ],
+  countdown: 0,
+  timeLeft: 605,
+  waveIn: [10, 5],
+  respawnIn: 0,
+  protectedFor: 0,
+  ...over,
+});
+
+describe('battleground window view (pure core)', () => {
+  it('models offline, idle, queued, and in-match states', () => {
+    expect(
+      buildBgWindowView({ info: null, playerName: 'X', party: null, allTime: null }).kind,
+    ).toBe('offline');
+    const idle = buildBgWindowView({
+      info: baseInfo(),
+      playerName: 'X',
+      party: null,
+      allTime: null,
+    });
+    expect(idle.kind).toBe('live');
+    if (idle.kind !== 'live') return;
+    expect(idle.action).toEqual({ kind: 'idle', partySize: 1 });
+
+    const queued = buildBgWindowView({
+      info: baseInfo({ queued: true, queueSize: 7, queuedParty: 3 }),
+      playerName: 'X',
+      party: null,
+      allTime: null,
+    });
+    if (queued.kind !== 'live') throw new Error('expected live');
+    expect(queued.action).toEqual({ kind: 'queued', queueSize: 7, queuedParty: 3 });
+
+    const inMatch = buildBgWindowView({
+      info: baseInfo({ match: baseMatch() }),
+      playerName: 'X',
+      party: null,
+      allTime: null,
+    });
+    if (inMatch.kind !== 'live') throw new Error('expected live');
+    expect(inMatch.action).toEqual({ kind: 'in-match', scoreCrimson: 1, scoreAzure: 2 });
+  });
+
+  it('ranks the all-time board, marks me, and flags unknown classes for the painter', () => {
+    const allTime: BgAllTimeEntry[] = [
+      { name: 'High', class: 'mage', level: 20, rating: 1700, wins: 9, losses: 1 },
+      { name: 'Me', class: 'not_a_class', level: 12, rating: 1500, wins: 2, losses: 2 },
+    ];
+    const v = buildBgWindowView({ info: baseInfo(), playerName: 'Me', party: null, allTime });
+    if (v.kind !== 'live') throw new Error('expected live');
+    expect(v.allTime).not.toBeNull();
+    expect(v.allTime![0]).toMatchObject({ rank: 1, name: 'High', knownClass: true, me: false });
+    expect(v.allTime![1]).toMatchObject({ rank: 2, name: 'Me', knownClass: false, me: true });
+  });
+
+  it('is identical for Sim-shaped and mirror-shaped snapshots (same input, same output)', () => {
+    const a = buildBgWindowView({
+      info: baseInfo({ rating: 1616, wins: 4 }),
+      playerName: 'X',
+      party: null,
+      allTime: null,
+    });
+    const b = buildBgWindowView({
+      info: JSON.parse(JSON.stringify(baseInfo({ rating: 1616, wins: 4 }))),
+      playerName: 'X',
+      party: null,
+      allTime: null,
+    });
+    expect(a).toEqual(b);
+  });
+});
+
+describe('battleground scoreboard view (pure core)', () => {
+  it('is inactive with no match and active with the full readout', () => {
+    expect(buildBgScoreboardView(null, 7).active).toBe(false);
+    expect(buildBgScoreboardView(baseInfo(), 7).active).toBe(false);
+    const v = buildBgScoreboardView(baseInfo({ match: baseMatch() }), 7);
+    expect(v.active).toBe(true);
+    expect(v.scoreCrimson).toBe(1);
+    expect(v.scoreAzure).toBe(2);
+    expect(v.capsToWin).toBe(5);
+    expect(v.minutes).toBe(10);
+    expect(v.seconds).toBe(5);
+    expect(v.flagStates).toEqual(['home', 'carried']);
+    expect(v.carrierNames[1]).toBe('Ravven');
+    expect(v.pipsCrimson).toEqual([
+      { name: 'Ravven', me: true, dead: false, carrying: true },
+      { name: 'Bryn', me: false, dead: true, carrying: false },
+    ]);
+    expect(v.pipsAzure).toHaveLength(1);
+  });
+
+  it('keeps the structural sig stable across score/clock/state changes and moves it on roster changes', () => {
+    const a = buildBgScoreboardView(baseInfo({ match: baseMatch() }), 7);
+    const b = buildBgScoreboardView(
+      baseInfo({
+        match: baseMatch({
+          scores: [4, 4],
+          timeLeft: 3,
+          flags: a.flagStates.map(() => ({
+            state: 'dropped',
+            carrierPid: null,
+            carrierName: null,
+            carrierTeam: null,
+          })) as BgMatchInfo['flags'],
+        }),
+      }),
+      7,
+    );
+    expect(b.sig).toBe(a.sig);
+    const c = buildBgScoreboardView(
+      baseInfo({
+        match: baseMatch({
+          players: baseMatch().players.slice(0, 2),
+        }),
+      }),
+      7,
+    );
+    expect(c.sig).not.toBe(a.sig);
+  });
+
+  it('surfaces the personal wave-respawn and spawn-protection readouts', () => {
+    const v = buildBgScoreboardView(
+      baseInfo({ match: baseMatch({ respawnIn: 7, protectedFor: 2 }) }),
+      7,
+    );
+    expect(v.respawnIn).toBe(7);
+    expect(v.protectedFor).toBe(2);
+    const countdown = buildBgScoreboardView(
+      baseInfo({ match: baseMatch({ state: 'countdown', countdown: 6 }) }),
+      7,
+    );
+    expect(countdown.state).toBe('countdown');
+    expect(countdown.countdown).toBe(6);
+  });
+});

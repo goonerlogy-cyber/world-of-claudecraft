@@ -627,6 +627,8 @@ export const hudChromeStrings = {
     // Discord is a brand name; it stays identical across locales.
     discord: 'Discord',
     valecup: 'Vale Cup',
+    battleground: 'Ravenrift (Battleground)',
+    bgFlag: 'Battleground Flag Action',
     sheathe: 'Sheathe/Unsheathe Weapon',
     // Pet bar (Ctrl+1..5 by default) key-binding rows + category header.
     categoryPet: 'Pet',
@@ -641,6 +643,56 @@ export const hudChromeStrings = {
   // banners / log lines. Nation names are SHORT proper names; sport ability
   // names/descriptions localize through the entity catalog
   // (i18n.catalog/abilities.ts), not here.
+  // Ravenrift, the 5v5 capture-the-flag battleground: the queue window, the
+  // in-match scoreboard strip, and the event banners/log lines.
+  bg: {
+    title: 'Ravenrift',
+    modeTag: '5v5 Capture the Flag',
+    close: 'Close',
+    offlineNote: 'Ravenrift is syncing. The queue opens once the realm answers.',
+    ratingSummary: 'Rating. {wins} wins / {losses} losses',
+    careerCaptures: 'Career captures: {count}',
+    enterQueue: 'Enter the Queue',
+    enterQueueParty: 'Enter the Queue (party of {count})',
+    leaveQueue: 'Leave Queue',
+    searching: 'Searching. {count}/10 in queue.',
+    queuedParty: 'Party of {count}.',
+    queueNote:
+      'Two teams of five. Steal the enemy banner and run it to your keep. First to 5 captures wins. Group up to 5 and queue together; grab Sprint Runes and weave the cover to lose your pursuers.',
+    matchInProgress: 'Battle in progress. {crimson}:{azure}.',
+    ladderAllTime: 'Ladder. All-Time',
+    noRanked: 'No champions ranked yet. Be the first.',
+    playerLevelClassTitle: '{name}. Level {level} {className}',
+    // the in-match scoreboard strip
+    crimson: 'Crimson',
+    azure: 'Azure',
+    you: '(you)',
+    clock: '{minutes}:{seconds}',
+    formUp: 'Form up: {seconds}',
+    firstTo: 'First to {caps} captures',
+    flagCarriedBy: 'Carried by {name}',
+    flagState: {
+      home: 'Flag at the keep',
+      carried: 'Flag carried',
+      dropped: 'Flag on the ground',
+    },
+    respawnIn: 'Next wave: respawning in {seconds}',
+    protectedFor: 'Spawn protection: {seconds}s',
+    // event banners + combat-log lines (hud.handleEvents)
+    foundBanner: 'Battle found. You fight for the {team}!',
+    countdownBanner: 'Ravenrift begins in {seconds}',
+    startBanner: 'Capture the flag!',
+    flagTakenLog: '{name} has taken the {team} flag!',
+    flagDroppedLog: 'The {team} flag was dropped.',
+    flagReturnedLog: 'The {team} flag was returned.',
+    capturedBanner: '{name} captured the {team} flag! {crimson}:{azure}',
+    capturedLog: '{name} captured the {team} flag. Score {crimson}:{azure}.',
+    victoryBanner: 'Victory! Ravenrift {crimson}:{azure}. Rating {rating} ({delta})',
+    defeatBanner: 'Defeat. Ravenrift {crimson}:{azure}. Rating {rating} ({delta})',
+    drawBanner: 'Ravenrift draw {crimson}:{azure}. Rating {rating} ({delta})',
+    endLog: 'Ravenrift ended {crimson}:{azure}. Rating {rating} ({delta}).',
+    mobileLabel: 'Ravenrift',
+  },
   vcup: {
     title: 'The Vale Cup',
     // Label on the hold-to-charge shoot power meter (short, uppercased in CSS).

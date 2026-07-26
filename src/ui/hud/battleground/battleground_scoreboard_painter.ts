@@ -1,0 +1,190 @@
+// Thin DOM painter for the in-match Ravenrift scoreboard strip and the
+// wave-respawn overlay (the ValeCupHud composition template: snapshot-driven
+// per mediumHud tick from the pure BgScoreboardView, self-mounting roots,
+// sig-diffed skeleton). The skeleton (team labels + pip slots) rebuilds only
+// when the STRUCTURAL sig changes (new match / roster change); scores, the
+// clock, the phase line, flag states, pip states, and the respawn/protection
+// readouts all ride ELIDED writer slots so the per-second tick never rebuilds
+// DOM (per-frame perf contract, src/ui/CLAUDE.md).
+//
+// Fairness: everything here paints identically on every graphics tier; the
+// flag states and carrier marker are actionable information and are never
+// tier-gated. Colors live in the stylesheet (components.css), never in TS.
+
+import { esc } from '../../esc';
+import { formatNumber, t } from '../../i18n';
+import type { PainterHostWriters } from '../../painter_host';
+import type { BgScoreboardPip, BgScoreboardView } from './battleground_scoreboard_view';
+
+const num = (n: number): string => formatNumber(n, { maximumFractionDigits: 0 });
+const FLAG_STATES = ['home', 'carried', 'dropped'] as const;
+
+export interface BattlegroundScoreboardDeps {
+  /** The HUD layer the strip mounts into (the #ui element). */
+  layer(): HTMLElement | null;
+  writers: PainterHostWriters;
+}
+
+export class BattlegroundScoreboard {
+  private root: HTMLElement | null = null;
+  private respawnRoot: HTMLElement | null = null;
+  private lastSig = '';
+  private scoreCrimsonEl: HTMLElement | null = null;
+  private scoreAzureEl: HTMLElement | null = null;
+  private clockEl: HTMLElement | null = null;
+  private phaseEl: HTMLElement | null = null;
+  private flagEls: [HTMLElement | null, HTMLElement | null] = [null, null];
+  private pipEls: HTMLElement[] = [];
+  private pipCount = 0;
+  private protectedEl: HTMLElement | null = null;
+
+  constructor(private readonly deps: BattlegroundScoreboardDeps) {}
+
+  /** Repaint from the pure view (mediumHud band). */
+  update(view: BgScoreboardView): void {
+    const w = this.deps.writers;
+    if (!view.active) {
+      if (this.root) w.setDisplay(this.root, 'none');
+      if (this.respawnRoot) w.setDisplay(this.respawnRoot, 'none');
+      this.lastSig = view.sig;
+      return;
+    }
+    const root = this.ensureRoot();
+    if (!root) return;
+    w.setDisplay(root, 'block');
+    if (view.sig !== this.lastSig) {
+      this.lastSig = view.sig;
+      root.innerHTML = this.skeleton(view);
+      this.scoreCrimsonEl = root.querySelector('.bg-score.crimson');
+      this.scoreAzureEl = root.querySelector('.bg-score.azure');
+      this.clockEl = root.querySelector('.bg-clock');
+      this.phaseEl = root.querySelector('.bg-caps');
+      this.flagEls = [root.querySelector('.bg-flag.crimson'), root.querySelector('.bg-flag.azure')];
+      this.pipEls = [...root.querySelectorAll<HTMLElement>('.bg-pip')];
+      this.pipCount = this.pipEls.length;
+    }
+    if (this.scoreCrimsonEl) w.setText(this.scoreCrimsonEl, num(view.scoreCrimson));
+    if (this.scoreAzureEl) w.setText(this.scoreAzureEl, num(view.scoreAzure));
+    if (this.clockEl) {
+      w.setText(
+        this.clockEl,
+        t('hudChrome.bg.clock', {
+          minutes: num(view.minutes),
+          seconds: String(view.seconds).padStart(2, '0'),
+        }),
+      );
+    }
+    if (this.phaseEl) {
+      w.setText(
+        this.phaseEl,
+        view.state === 'countdown'
+          ? t('hudChrome.bg.formUp', { seconds: num(view.countdown) })
+          : t('hudChrome.bg.firstTo', { caps: num(view.capsToWin) }),
+      );
+    }
+    for (const team of [0, 1] as const) {
+      const el = this.flagEls[team];
+      if (!el) continue;
+      for (const s of FLAG_STATES) w.toggleClass(el, s, view.flagStates[team] === s);
+      const carrier = view.carrierNames[team];
+      w.setAttr(
+        el,
+        'title',
+        carrier
+          ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
+          : t(`hudChrome.bg.flagState.${view.flagStates[team]}` as Parameters<typeof t>[0]),
+      );
+    }
+    const pips = [...view.pipsCrimson, ...view.pipsAzure];
+    for (let i = 0; i < this.pipCount && i < pips.length; i++) {
+      const el = this.pipEls[i];
+      w.toggleClass(el, 'dead', pips[i].dead);
+      w.toggleClass(el, 'flag', pips[i].carrying);
+    }
+    this.updateRespawn(view);
+  }
+
+  private updateRespawn(view: BgScoreboardView): void {
+    const w = this.deps.writers;
+    const el = this.ensureRespawnRoot();
+    if (!el) return;
+    if (view.respawnIn > 0) {
+      w.setText(el, t('hudChrome.bg.respawnIn', { seconds: num(view.respawnIn) }));
+      w.setDisplay(el, 'block');
+    } else {
+      w.setDisplay(el, 'none');
+    }
+    if (this.protectedEl) {
+      if (view.protectedFor > 0 && view.state === 'active') {
+        w.setText(
+          this.protectedEl,
+          t('hudChrome.bg.protectedFor', { seconds: num(view.protectedFor) }),
+        );
+        w.setDisplay(this.protectedEl, 'block');
+      } else {
+        w.setDisplay(this.protectedEl, 'none');
+      }
+    }
+  }
+
+  /** Language switch: clear the structural sig so the next update rebuilds. */
+  relocalize(): void {
+    this.lastSig = '';
+  }
+
+  private ensureRoot(): HTMLElement | null {
+    if (this.root) return this.root;
+    const layer = this.deps.layer();
+    if (!layer) return null;
+    const el = document.createElement('div');
+    el.id = 'bg-scoreboard';
+    // A live-score region players glance at, not an announcement stream: the
+    // per-second clock must never spam a screen reader (politeness contract).
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'off');
+    layer.appendChild(el);
+    this.root = el;
+    return el;
+  }
+
+  private ensureRespawnRoot(): HTMLElement | null {
+    if (this.respawnRoot) return this.respawnRoot;
+    const layer = this.deps.layer();
+    if (!layer) return null;
+    const el = document.createElement('div');
+    el.id = 'bg-respawn';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'off');
+    layer.appendChild(el);
+    this.respawnRoot = el;
+    // the small spawn-protection line rides under the respawn overlay's slot
+    const prot = document.createElement('div');
+    prot.id = 'bg-protected';
+    prot.setAttribute('role', 'status');
+    prot.setAttribute('aria-live', 'off');
+    layer.appendChild(prot);
+    this.protectedEl = prot;
+    return el;
+  }
+
+  private skeleton(view: BgScoreboardView): string {
+    const pipRow = (pips: BgScoreboardPip[], team: 'crimson' | 'azure'): string =>
+      pips
+        .map(
+          (p) =>
+            `<span class="bg-pip ${team}${p.me ? ' me' : ''}" title="${esc(p.name)}"></span>`,
+        )
+        .join('');
+    const you = (team: number): string =>
+      view.myTeam === team ? ` <span class="bg-you">${esc(t('hudChrome.bg.you'))}</span>` : '';
+    return (
+      `<div class="bg-score-line">` +
+      `<span class="bg-team crimson"><span class="bg-flag crimson" aria-hidden="true"></span>${esc(t('hudChrome.bg.crimson'))}${you(0)}</span>` +
+      `<span class="bg-score crimson"></span><span class="bg-score-colon">:</span><span class="bg-score azure"></span>` +
+      `<span class="bg-team azure">${esc(t('hudChrome.bg.azure'))}${you(1)}<span class="bg-flag azure" aria-hidden="true"></span></span>` +
+      `</div>` +
+      `<div class="bg-under"><span class="bg-clock"></span><span class="bg-caps"></span></div>` +
+      `<div class="bg-roster"><span class="bg-roster-side">${pipRow(view.pipsCrimson, 'crimson')}</span><span class="bg-roster-gap"></span><span class="bg-roster-side">${pipRow(view.pipsAzure, 'azure')}</span></div>`
+    );
+  }
+}

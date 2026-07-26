@@ -563,6 +563,7 @@ function mobileCallbacks() {
     onArena: noop,
     onDungeonFinder: noop,
     onValeCup: noop,
+    onBattleground: noop,
     onQuestLog: noop,
     onCharacter: noop,
     onBags: noop,

@@ -197,6 +197,8 @@ const UI_PURE_CORES = [
   'src/ui/vale_cup_window_view.ts',
   'src/ui/vale_cup_indicator_view.ts',
   'src/ui/vale_cup_hud_view.ts',
+  'src/ui/hud/battleground/battleground_window_view.ts',
+  'src/ui/hud/battleground/battleground_scoreboard_view.ts',
   'src/ui/vale_cup_briefing_view.ts',
   'src/ui/vale_cup_betting_view.ts',
   'src/ui/vale_cup_charge_view.ts',
@@ -256,6 +258,7 @@ const UI_PURE_CORES = [
 // the same contract for the map editor's realtime terrain/water edits.
 const RENDER_PURE_CORES = [
   'src/render/arena_water_band_core.ts',
+  'src/render/battleground_core.ts',
   'src/render/camera_boom_core.ts',
   'src/render/camera_director_core.ts',
   'src/render/camera_feel_core.ts',

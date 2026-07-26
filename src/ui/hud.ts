@@ -309,6 +309,11 @@ import {
 } from './hud/action_bar/mobile_action_page_view';
 import { MobileActionRingPainter } from './hud/action_bar/mobile_action_ring_painter';
 import { playerStealthed } from './hud/action_bar/player_stealthed';
+import {
+  BattlegroundScoreboard,
+  BattlegroundWindow,
+  buildBgScoreboardView,
+} from './hud/battleground';
 import { ChatAnnouncer } from './hud/chat/chat_announcer';
 import { chatChannelColor } from './hud/chat/chat_channels';
 import { ChatGeometryController } from './hud/chat/chat_geometry_controller';
@@ -1392,6 +1397,7 @@ export class Hud {
   private wasLeaderOfParty = false;
   private lastArenaStatusSig = '';
   private arenaMatchSeen = false; // closes the queue panel once a bout starts
+  private bgMatchSeen = false; // closes the Ravenrift queue window once a match seats
   private readonly fiesta: FiestaController;
   private lastCombatEventAt = 0;
   // mob ids that have already vocalized their aggro alert (so the first strike
@@ -1830,6 +1836,7 @@ export class Hud {
     // every other touch-facing HUD button; desktop mouse/keyboard is preserved.
     bindTouchTap(this.releaseSpiritBtnEl, () => {
       if (this.sim.arenaInfo?.match) return;
+      if (this.sim.bgInfo?.match) return; // Ravenrift: the wave clock revives
       this.sim.releaseSpirit();
     });
     bindTouchTap(this.resurrectCorpseBtnEl, () => this.sim.resurrectAtCorpse());
@@ -2232,6 +2239,7 @@ export class Hud {
     $('#mm-social').addEventListener('click', () => this.toggleSocial());
     $('#mm-options')?.addEventListener('click', () => this.toggleOptionsMenu());
     $('#mm-arena').addEventListener('click', () => this.toggleArena());
+    $('#mm-battleground')?.addEventListener('click', () => this.toggleBattleground());
     $('#mm-dfinder').addEventListener('click', () => this.toggleDungeonFinder());
     $('#mm-valecup').addEventListener('click', () => this.toggleValeCup());
     $('#mm-cardduel').addEventListener('click', () => this.toggleCardDuel());
@@ -2714,6 +2722,10 @@ export class Hud {
         // Route through the painter so focus returns to the opener (WCAG 2.2 AA),
         // consistent with the toggle / X close path.
         this.arenaWindow.close();
+        break;
+      case 'battleground-window':
+        // Route through the painter so focus returns to the opener (WCAG 2.2 AA).
+        this.bgWindow.close();
         break;
       case 'dungeon-finder-window':
         // Route through the painter so focus returns to the opener (WCAG 2.2 AA).
@@ -3853,6 +3865,14 @@ export class Hud {
     ...this.windowFocus('#arena-window'),
   });
 
+  // Ravenrift battleground queue window (cold, sig-diffed; hud/battleground/).
+  private readonly bgWindow = new BattlegroundWindow({
+    root: () => $('#battleground-window'),
+    world: () => this.sim,
+    closeOthers: () => this.closeOtherWindows('#battleground-window'),
+    ...this.windowFocus('#battleground-window'),
+  });
+
   // Dungeon Finder (cold window; docs/prd/dungeon-finder.md). Composes the
   // shared presentation bag for loot icons/tooltips and a narrow map hook for
   // the non-teleporting "Show on Map" action.
@@ -3908,6 +3928,13 @@ export class Hud {
   // snapshot-driven from cupInfo.match on the mediumHud band; one-shot juice
   // (banners, horn) rides the vcup SimEvents in handleEvents.
   private readonly vcupMatchHud = new ValeCupHud({
+    layer: () => document.getElementById('ui'),
+    writers: this.writerFacet,
+  });
+
+  // Ravenrift in-match scoreboard strip + wave-respawn overlay (self-mounting,
+  // elided writers; hud/battleground/).
+  private readonly bgScoreboard = new BattlegroundScoreboard({
     layer: () => document.getElementById('ui'),
     writers: this.writerFacet,
   });
@@ -5070,6 +5097,8 @@ export class Hud {
     // JSON of ids/numbers), so a language switch alone never moves it; relocalize() forces
     // one rebuild with fresh t() (self-gated on isOpen).
     this.arenaWindow.relocalize();
+    this.bgWindow.relocalize();
+    this.bgScoreboard.relocalize();
     this.dungeonFinderWindow.relocalize();
     this.dungeonFinderProposalPopup.relocalize();
     // Same text-independent-sig contract for the Vale Cup surfaces: clear the
@@ -6539,6 +6568,7 @@ export class Hud {
       ['#mm-bag', 'bags', 'itemUi.bags.title'],
       ['#mm-crafting', 'crafting', 'hudChrome.crafting.title'],
       ['#mm-arena', 'arena', 'hud.core.mobileArena'],
+      ['#mm-battleground', 'battleground', 'hudChrome.bg.title'],
       ['#mm-dfinder', 'dungeonFinder', 'hudChrome.finder.title'],
       ['#mm-valecup', 'valecup', 'hudChrome.keybinds.valecup'],
       ['#mm-leaderboard', 'leaderboard', 'game.leaderboard.title'],
@@ -7568,9 +7598,15 @@ export class Hud {
     // Healer, carrying just the relevant button. The server re-checks both ranges.
     const ghost = p.dead && p.ghost;
     const deadInArena = p.dead && !!this.sim.arenaInfo?.match;
+    // A battleground death is a timed keep wave-respawn (no graveyard run):
+    // the scoreboard painter shows the countdown instead of the Release modal.
+    const deadInBg = p.dead && !!this.sim.bgInfo?.match;
     if (!p.dead) this.closeResurrectionPrompt();
     document.body.classList.toggle('spirit-mode', ghost);
-    this.setDisplay(this.deathOverlayEl, p.dead && !ghost && !deadInArena ? 'flex' : 'none');
+    this.setDisplay(
+      this.deathOverlayEl,
+      p.dead && !ghost && !deadInArena && !deadInBg ? 'flex' : 'none',
+    );
     if (ghost) {
       const corpseInRange = !!p.corpsePos && dist2d(p.pos, p.corpsePos) <= GHOST_CORPSE_REZ_RANGE;
       let healerNearby = false;
@@ -7675,6 +7711,7 @@ export class Hud {
       this.updateTradeWindow();
       this.updateArenaStatus();
       this.updateFiestaHud();
+      this.bgScoreboard.update(buildBgScoreboardView(this.sim.bgInfo, this.sim.playerId));
       this.yumiPainter.update(this.sim.arenaInfo);
       // Vale Cup surfaces (mediumHud like the arena/fiesta ones): the indicator
       // button, the in-match strip, and the open window redraw.
@@ -7685,6 +7722,7 @@ export class Hud {
       this.updateShootCharge();
       if ($('#map-window').style.display === 'block') this.updateMapWindow();
       if ($('#arena-window').style.display === 'block') this.arenaWindow.render();
+      if ($('#battleground-window').style.display === 'block') this.bgWindow.render();
       if ($('#dungeon-finder-window').style.display === 'flex') this.dungeonFinderWindow.render();
       if (this.dungeonFinderProposalPopup.isOpen) this.dungeonFinderProposalPopup.render();
       if ($('#valecup-window').style.display === 'block') this.valeCupWindow.render();
@@ -7736,6 +7774,12 @@ export class Hud {
       this.valeCupWindow.close();
     }
     this.vcupMatchSeen = inVcupMatch;
+    // Same for Ravenrift: when the match seats, the queue window steps aside.
+    const inBgMatch = !!this.sim.bgInfo?.match;
+    if (inBgMatch && !this.bgMatchSeen && $('#battleground-window').style.display === 'block') {
+      this.bgWindow.close();
+    }
+    this.bgMatchSeen = inBgMatch;
     if (fastHud) {
       // The minimap canvas redraw is the heaviest fastHud item; tier its
       // cadence (full tiers redraw every fastHud tick = ~10Hz; low throttles to ~3-4Hz).
@@ -8322,6 +8366,10 @@ export class Hud {
   // band while open. The in-match auto-close + the pinned banner stay here.
   toggleArena(): void {
     this.arenaWindow.toggle();
+  }
+
+  toggleBattleground(): void {
+    this.bgWindow.toggle();
   }
 
   toggleDungeonFinder(): void {
@@ -9999,6 +10047,70 @@ export class Hud {
         case 'arenaUnqueued':
           this.log(t('hud.system.arenaUnqueued'), '#ffa040');
           break;
+        case 'bgQueued':
+        case 'bgUnqueued':
+          // the sim's own log lines cover the queue churn; no duplicate here
+          break;
+        case 'bgFound': {
+          const team = ev.team === 0 ? t('hudChrome.bg.crimson') : t('hudChrome.bg.azure');
+          this.showBanner(t('hudChrome.bg.foundBanner', { team }));
+          audio.duelChallenge();
+          break;
+        }
+        case 'bgCountdown':
+          this.showBanner(
+            t('hudChrome.bg.countdownBanner', {
+              seconds: formatNumber(ev.seconds, { maximumFractionDigits: 0 }),
+            }),
+          );
+          audio.duelCountdownTick();
+          break;
+        case 'bgStart':
+          this.showBanner(t('hudChrome.bg.startBanner'));
+          audio.duelStart();
+          break;
+        case 'bgFlag': {
+          const team = ev.team === 0 ? t('hudChrome.bg.crimson') : t('hudChrome.bg.azure');
+          const scores = {
+            crimson: formatNumber(ev.scoreCrimson, { maximumFractionDigits: 0 }),
+            azure: formatNumber(ev.scoreAzure, { maximumFractionDigits: 0 }),
+          };
+          if (ev.action === 'captured') {
+            this.showBanner(t('hudChrome.bg.capturedBanner', { name: ev.byName, team, ...scores }));
+            this.combatLog(
+              t('hudChrome.bg.capturedLog', { name: ev.byName, team, ...scores }),
+              '#ffd24a',
+            );
+            audio.questDone();
+          } else if (ev.action === 'taken') {
+            this.combatLog(t('hudChrome.bg.flagTakenLog', { name: ev.byName, team }), '#ff9a3c');
+          } else if (ev.action === 'dropped') {
+            this.combatLog(t('hudChrome.bg.flagDroppedLog', { team }), '#cfc6a8');
+          } else {
+            this.combatLog(t('hudChrome.bg.flagReturnedLog', { team }), '#9fdc7f');
+          }
+          break;
+        }
+        case 'bgEnd': {
+          const delta = ev.ratingAfter - ev.ratingBefore;
+          const params = {
+            crimson: formatNumber(ev.scoreCrimson, { maximumFractionDigits: 0 }),
+            azure: formatNumber(ev.scoreAzure, { maximumFractionDigits: 0 }),
+            rating: formatNumber(ev.ratingAfter, { maximumFractionDigits: 0 }),
+            delta: `${delta >= 0 ? '+' : ''}${formatNumber(delta, { maximumFractionDigits: 0 })}`,
+          };
+          if (ev.draw) {
+            this.showBanner(t('hudChrome.bg.drawBanner', params));
+          } else if (ev.won) {
+            this.showBanner(t('hudChrome.bg.victoryBanner', params));
+            audio.duelEnd();
+          } else {
+            this.showBanner(t('hudChrome.bg.defeatBanner', params));
+            audio.death();
+          }
+          this.combatLog(t('hudChrome.bg.endLog', params), ev.won ? '#7fdc4f' : '#ff7a6a');
+          break;
+        }
         case 'dfProposal':
           // A 30s availability window: the WoW-style prompt pops at the top of
           // the screen (with its cue) without opening the finder window.

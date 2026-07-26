@@ -1456,6 +1456,12 @@ async function startGame(
           case 'valecup':
             hud.toggleValeCup();
             break;
+          case 'battleground':
+            hud.toggleBattleground();
+            break;
+          case 'bgFlag':
+            bgFlagKey();
+            break;
           case 'leaderboard':
             hud.toggleLeaderboard();
             break;
@@ -1546,6 +1552,7 @@ async function startGame(
     onArena: () => hud.toggleArena(),
     onDungeonFinder: () => hud.toggleDungeonFinder(),
     onValeCup: () => hud.toggleValeCup(),
+    onBattleground: () => hud.toggleBattleground(),
     onQuestLog: () => hud.toggleQuestLog(),
     onCharacter: () => {
       hud.toggleChar();
@@ -1693,6 +1700,12 @@ async function startGame(
         break;
       case 'valecup':
         hud.toggleValeCup();
+        break;
+      case 'battleground':
+        hud.toggleBattleground();
+        break;
+      case 'bgFlag':
+        bgFlagKey();
         break;
       case 'leaderboard':
         hud.toggleLeaderboard();
@@ -2473,7 +2486,19 @@ async function startGame(
       }
     }
   }
+  // The deliberate Ravenrift flag press. Inside a live match the bare interact
+  // key also routes here (the field has no other interactables), which gives
+  // the mobile interact button flag parity for free; the world owns every rule
+  // (radius, team, the return-beats-press race), so a stray press is a no-op.
+  function bgFlagKey(): void {
+    if (world.bgInfo?.match) world.bgFlagAction();
+  }
+
   function interactKey(): void {
+    if (world.bgInfo?.match?.state === 'active') {
+      world.bgFlagAction();
+      return;
+    }
     stopAutorunForInteraction(
       tryNearbyInteraction(
         world,

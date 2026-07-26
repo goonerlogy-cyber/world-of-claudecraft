@@ -84,6 +84,8 @@ export interface InputCallbacks {
       | 'social'
       | 'arena'
       | 'valecup'
+      | 'battleground'
+      | 'bgFlag'
       | 'dungeonFinder'
       | 'leaderboard'
       | 'calendar'
@@ -1027,6 +1029,12 @@ export class Input {
         return;
       case 'valecup':
         this.cb.onUiKey('valecup');
+        return;
+      case 'battleground':
+        this.cb.onUiKey('battleground');
+        return;
+      case 'bgFlag':
+        this.cb.onUiKey('bgFlag');
         return;
       case 'leaderboard':
         this.cb.onUiKey('leaderboard');
