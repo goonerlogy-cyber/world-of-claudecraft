@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { GLTF } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { STALL_HALF_D, STALL_HALF_W } from '../sim/colliders';
 import { getActiveWorldContent, WORLD_MIN_Z } from '../sim/data';
 import {
   DOCK_SECTION_LOCAL_Z,
@@ -914,7 +915,13 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
     g.position.set(s.x, ground(s.x, s.z) - 0.06, s.z);
     g.rotation.y = s.rot;
     group.add(shadowed(g));
-    registerHideable(g, circleFootprint(s.x, s.z, s.r, ground(s.x, s.z) + 3.1));
+    // Footprint mirrors the collider's true 3.1 x 2.5 box (the old circle
+    // overhung the flat sides, so a body pressed to the counter put its eye
+    // a hair from the hide surface and the stall vanished at most angles).
+    registerHideable(
+      g,
+      obbFootprint(s.x, s.z, STALL_HALF_W, STALL_HALF_D, s.rot, ground(s.x, s.z) + 3.1),
+    );
   });
 
   // ---- wells ---------------------------------------------------------------
@@ -1766,6 +1773,14 @@ function segmentObbEntry(h: Hideable, ax: number, az: number, bx: number, bz: nu
   return tmin;
 }
 
+// A crossing that begins within arm's reach of the EYE end of the segment is
+// the player standing AGAINST the prop, not the prop covering the player:
+// occlusion of the subject scales with how close the blocker sits to the
+// CAMERA end. Without this, a body pressed to a stall counter or a house
+// wall hides the whole structure at most orbit angles, because the entry
+// point sits centimetres from the eye at eye height.
+const HIDE_EYE_CLEARANCE = 1.0;
+
 function cameraSegmentHitsFootprint(
   h: Hideable,
   eyeX: number,
@@ -1786,6 +1801,7 @@ function cameraSegmentHitsFootprint(
       ? segmentCircleEntry(eyeX, eyeZ, camX, camZ, h.x, h.z, h.r)
       : segmentObbEntry(h, eyeX, eyeZ, camX, camZ);
   if (t < 0 || t > 1) return false;
+  if (t * Math.hypot(camX - eyeX, camZ - eyeZ) < HIDE_EYE_CLEARANCE) return false;
   return eyeY + (camY - eyeY) * t < h.topY;
 }
 
