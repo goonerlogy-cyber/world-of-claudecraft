@@ -66,7 +66,7 @@ try {
     },
     { timeout: 30000, polling: 100 },
   );
-  await page.evaluate(() => document.querySelector('#ws-continue').click());
+  await page.evaluate(() => document.querySelector('#ws-continue')?.click());
   await page.waitForFunction(() => window.__game?.sim?.player, { timeout: 60000, polling: 250 });
   await page.waitForFunction(
     () => (document.querySelector('#ui')?.getBoundingClientRect().width ?? 0) > 0,
