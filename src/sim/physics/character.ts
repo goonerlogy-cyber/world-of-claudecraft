@@ -33,6 +33,7 @@
 
 import {
   type Collider,
+  colliderTopAt,
   MANTLE_REACH,
   queryOpenWorldColliders,
   SUPPORT_OVERLAP,
@@ -164,36 +165,48 @@ function supportFromCandidates(x: number, z: number, r: number, maxY: number): n
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
     if (!c.standable || c.moveTopY === undefined) continue;
-    if (c.moveTopY > maxY + TOP_EPS || c.moveTopY <= best) continue;
     if (c.type === 'circle') {
       const dx = x - c.x;
       const dz = z - c.z;
       const reach = c.r + reachR;
-      if (dx * dx + dz * dz < reach * reach) best = c.moveTopY;
+      if (dx * dx + dz * dz >= reach * reach) continue;
     } else {
       toLocal(x - c.x, z - c.z, -c.rot);
-      if (Math.abs(localPt.x) < c.hw + reachR && Math.abs(localPt.z) < c.hd + reachR) {
-        best = c.moveTopY;
-      }
+      if (Math.abs(localPt.x) >= c.hw + reachR || Math.abs(localPt.z) >= c.hd + reachR) continue;
     }
+    // Sampled surface: a pitched roof supports at its local height.
+    const top = colliderTopAt(c, x, z);
+    if (top > maxY + TOP_EPS || top <= best) continue;
+    best = top;
   }
   return best;
 }
 
 /**
- * Does this collider block a body whose feet are at `feetY`?
+ * Does this collider block a body at (x, z) whose feet are at `feetY`?
  *
  * An AIRBORNE body gets the mantle assist over standable tops (the same
  * `MANTLE_REACH` allowance `colliders.ts` grants the legacy sweep): a jump
  * that falls just short of a crate rim still carries over it, and the vertical
  * pass then seats the body on top. Grounded bodies get no lift; they climb
  * only through step-up, which has its own, stricter gate.
+ *
+ * Sloped tops are sampled at the body's own position: a body standing on a
+ * canopy's fabric is ON the surface there, and must not be treated as inside
+ * an obstacle just because the ridge line rises higher elsewhere (that
+ * ridge-max reading would depenetrate a roof-walker off the roof).
  */
-function blocksAt(c: Collider, feetY: number, params: CharacterMoveParams): boolean {
+function blocksAt(
+  c: Collider,
+  x: number,
+  z: number,
+  feetY: number,
+  params: CharacterMoveParams,
+): boolean {
   if (params.ignoreFences && c.type === 'obb' && c.isFence) return false;
   if (c.moveTopY === undefined) return true; // full height: buildings, trees, walls
   const lift = !params.grounded && c.standable === true ? MANTLE_REACH : 0;
-  return c.moveTopY > feetY + lift + TOP_EPS;
+  return colliderTopAt(c, x, z) > feetY + lift + TOP_EPS;
 }
 
 /** Can a grounded body climb onto this obstacle without jumping? */
@@ -212,7 +225,7 @@ function steppableAt(c: Collider, feetY: number, params: CharacterMoveParams): b
 function isClear(x: number, z: number, feetY: number, params: CharacterMoveParams): boolean {
   for (let i = 0; i < candidates.length; i++) {
     const c = candidates[i];
-    if (!blocksAt(c, feetY, params)) continue;
+    if (!blocksAt(c, x, z, feetY, params)) continue;
     physicsStats.overlaps++;
     if (overlapCollider(c, x, z, params.radius, push)) return false;
   }
@@ -234,7 +247,7 @@ function depenetrate(
     let moved = false;
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i];
-      if (!blocksAt(c, feetY, params)) continue;
+      if (!blocksAt(c, px, pz, feetY, params)) continue;
       physicsStats.overlaps++;
       if (!overlapCollider(c, px, pz, params.radius, push)) continue;
       px += push.nx * (push.depth + SKIN_WIDTH);
@@ -303,7 +316,10 @@ export function moveCharacter(
     let bestNz = 0;
     for (let i = 0; i < candidates.length; i++) {
       const c = candidates[i];
-      if (!blocksAt(c, feetY, params)) continue;
+      // Sampled at the sweep's start: a body on a roof slope re-evaluates
+      // each tick as it moves, while a body outside the footprint sees the
+      // eave-clamped face as the wall it is.
+      if (!blocksAt(c, px, pz, feetY, params)) continue;
       physicsStats.sweeps++;
       if (!sweepCollider(c, px, pz, remX, remZ, params.radius, hit)) continue;
       if (hit.t < bestT) {

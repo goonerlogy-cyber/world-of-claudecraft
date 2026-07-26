@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { advanceClimb, climbDuration, tryStartClimb } from '../src/sim/climb';
-import { DOCK_HUT_ROOF_TOP, isBlocked, MANTLE_REACH, STALL_CANOPY_TOP } from '../src/sim/colliders';
+import {
+  DOCK_HUT_ROOF_TOP,
+  isBlocked,
+  MANTLE_REACH,
+  STALL_CANOPY_EAVE,
+  STALL_CANOPY_TOP,
+} from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import { PLAYER_BODY_RADIUS } from '../src/sim/pathfind';
 import { MAX_STEP_HEIGHT } from '../src/sim/physics';
@@ -320,10 +326,10 @@ describe('the climb onto the town roofs', () => {
     expect(climbDuration(LEDGE_GRAB_MAX)).toBeLessThanOrEqual(0.75);
   });
 
-  it('carries a jumping player from the street onto a stall canopy', () => {
+  it('carries a jumping player from the street onto a stall canopy, then up its cone', () => {
     const sz = SPOT.z + 2.6;
     setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: sz, rot: 0, r: 1.7 }] }));
-    const top = groundHeight(SPOT.x, sz, SEED) + STALL_CANOPY_TOP;
+    const g = groundHeight(SPOT.x, sz, SEED);
 
     const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
     sim.setPlayerLevel(60);
@@ -337,24 +343,48 @@ describe('the climb onto the town roofs', () => {
     const meta = sim.players.get(p.id);
     if (!meta) throw new Error('missing meta');
 
+    const step = (input: Partial<Record<string, boolean>>, ticks: number) => {
+      for (let i = 0; i < ticks; i++) {
+        Object.assign(
+          meta.moveInput,
+          {
+            forward: false,
+            back: false,
+            turnLeft: false,
+            turnRight: false,
+            strafeLeft: false,
+            strafeRight: false,
+            jump: false,
+          },
+          input,
+        );
+        sim.tick();
+      }
+    };
+
+    // Jump at the canopy until the grab lands the body on the pitched fabric.
     let climbed = false;
-    let standingOnCanopy = false;
-    for (let i = 0; i < 100; i++) {
-      Object.assign(meta.moveInput, {
-        forward: true,
-        back: false,
-        turnLeft: false,
-        turnRight: false,
-        strafeLeft: false,
-        strafeRight: false,
-        jump: true,
-      });
-      sim.tick();
+    let onCanopy = false;
+    for (let i = 0; i < 100 && !onCanopy; i++) {
+      step({ forward: true, jump: true }, 1);
       if (p.climb) climbed = true;
-      if (p.onGround && Math.abs(p.pos.y - top) < 0.1) standingOnCanopy = true;
+      const rel = p.pos.y - g;
+      if (p.onGround && rel > STALL_CANOPY_EAVE - 0.05 && rel <= STALL_CANOPY_TOP + 0.05) {
+        onCanopy = true;
+      }
     }
     expect(climbed).toBe(true);
-    expect(standingOnCanopy).toBe(true);
+    expect(onCanopy).toBe(true);
+
+    // The top is a CONE, not a plane: walking toward the centre pole climbs
+    // the fabric toward the peak (the landing sits ~1.2 yd from the centre;
+    // four ticks of run cover it without carrying over the far rim).
+    const before = p.pos.y - g;
+    step({ forward: true }, 4);
+    const after = p.pos.y - g;
+    expect(p.onGround).toBe(true);
+    expect(after).toBeGreaterThan(before + 0.1);
+    expect(after).toBeLessThanOrEqual(STALL_CANOPY_TOP + 0.01);
   });
 
   it('a grounded walk still collides with the stall full-height', () => {

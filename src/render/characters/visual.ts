@@ -105,7 +105,19 @@ const STOW_ARM_LIFT_RAD = -0.85;
 // lift. Negative X raises an arm on this rig (see the stow lift above); the
 // joints are the shared rig names with GLTF's dot-stripping applied.
 const CLIMB_ARM_BONES = ['upperarml', 'upperarmr'] as const;
-const CLIMB_ARM_RAISE_RAD = -1.35;
+const CLIMB_FOREARM_BONES = ['lowerarml', 'lowerarmr'] as const;
+/** Deep overhead raise: the hands must read ABOVE the head, grasping the lip,
+ *  not out at the sides. Negative X swings an arm forward and up on this rig;
+ *  -2.5 carries it past vertical so the hands hang over the ledge line. */
+const CLIMB_ARM_RAISE_RAD = -2.5;
+/** Roll the raised arms toward the body's midline so the hands finish at
+ *  shoulder width above the head instead of flaring into a T. Mirrored per
+ *  side (left +, right -). */
+const CLIMB_ARM_ROLL_RAD = 0.45;
+/** Elbow hook while the hands own the lip: a straight arm reads as a plank. */
+const CLIMB_ELBOW_RAD = 0.55;
+/** Chin up at the lip while the hands fly to it: the eyes lead the grab. */
+const CLIMB_HEAD_TILT_RAD = -0.35;
 /** The off hand plants this far (in phase) behind the lead hand. */
 const CLIMB_ARM_LEAD = 0.05;
 const CLIMB_LEG_BONES = ['upperlegl', 'upperlegr'] as const;
@@ -257,9 +269,11 @@ export class CharacterVisual {
   private climbPhase = 0;
   private climbTarget: number | null = null;
   private climbArmBones: (THREE.Object3D | null)[] | undefined;
+  private climbForearmBones: (THREE.Object3D | null)[] | undefined;
   private climbLegBones: (THREE.Object3D | null)[] | undefined;
   private climbShinBones: (THREE.Object3D | null)[] | undefined;
   private climbTorsoBone: THREE.Object3D | null | undefined;
+  private climbHeadBone: THREE.Object3D | null | undefined;
   private spinAngle = 0;
   private spinOnceTimer = 0;
 
@@ -528,15 +542,25 @@ export class CharacterVisual {
     if (this.climbTorsoBone === undefined) {
       this.climbTorsoBone = this.model.getObjectByName(CLIMB_TORSO_BONE) ?? null;
     }
+    if (this.climbForearmBones === undefined) {
+      this.climbForearmBones = CLIMB_FOREARM_BONES.map(
+        (n) => this.model.getObjectByName(n) ?? null,
+      );
+    }
     const t = this.climbPhase;
     const k = this.climbBlend;
-    // Hands to the lip fast, pressing through the pull, released on the vault.
+    // Hands fly ABOVE THE HEAD to the lip (deep forward raise rolled toward
+    // the midline so they finish at shoulder width, never a T), hook the lip
+    // with a bent elbow, press through the pull, release on the vault.
     for (let i = 0; i < this.climbArmBones.length; i++) {
       const bone = this.climbArmBones[i];
       if (!bone) continue;
       const lead = i === 0 ? 0 : CLIMB_ARM_LEAD;
       const reach = env01(t - lead, 0, 0.2) * (1 - env01(t, 0.58, 0.95));
       bone.rotation.x += CLIMB_ARM_RAISE_RAD * reach * k;
+      bone.rotation.z += (i === 0 ? 1 : -1) * CLIMB_ARM_ROLL_RAD * reach * k;
+      const forearm = this.climbForearmBones[i];
+      if (forearm) forearm.rotation.x += CLIMB_ELBOW_RAD * reach * k;
     }
     // Knees tuck while the body rises and extend to plant as it tops out; the
     // trailing leg follows a beat behind at reduced depth.
@@ -553,6 +577,14 @@ export class CharacterVisual {
     if (this.climbTorsoBone) {
       const curl = env01(t, 0.06, 0.4) * (1 - env01(t, 0.7, 1));
       this.climbTorsoBone.rotation.x += CLIMB_TORSO_CURL_RAD * curl * k;
+    }
+    // The eyes lead: chin up at the lip while the hands fly to it.
+    if (this.climbHeadBone === undefined) {
+      this.climbHeadBone = this.model.getObjectByName('head') ?? null;
+    }
+    if (this.climbHeadBone) {
+      const look = env01(t, 0, 0.18) * (1 - env01(t, 0.5, 0.85));
+      this.climbHeadBone.rotation.x += CLIMB_HEAD_TILT_RAD * look * k;
     }
   }
 
