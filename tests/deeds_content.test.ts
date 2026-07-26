@@ -55,8 +55,8 @@ const PREFIX_CATEGORY: Record<string, DeedCategory> = {
 
 describe('audited launch totals (literals: update deliberately with the catalog)', () => {
   it('ships exactly 219 deeds worth 2710 total Renown', () => {
-    expect(DEED_ORDER.length).toBe(219);
-    expect(ALL.reduce((sum, d) => sum + d.renown, 0)).toBe(2710);
+    expect(DEED_ORDER.length).toBe(223);
+    expect(ALL.reduce((sum, d) => sum + d.renown, 0)).toBe(2795);
   });
 
   it('ships the audited per-category counts', () => {
@@ -69,7 +69,7 @@ describe('audited launch totals (literals: update deliberately with the catalog)
       delve: 13,
       chronicle: 24,
       collection: 28,
-      pvp: 28,
+      pvp: 32,
       social: 18,
       exploration: 9,
       feat: 3,
@@ -116,6 +116,11 @@ describe('audited launch totals (literals: update deliberately with the catalog)
       'col_perfect_specimen',
       'soc_first_salvage',
       'soc_salvage_50',
+      // Ravenrift battleground tail (order-pinned like the blocks above).
+      'pvp_bg_first_capture',
+      'pvp_bg_first_win',
+      'pvp_bg_wins_25',
+      'pvp_bg_captures_100',
     ]);
     expect(DEEDS.prog_crown_below.renown).toBe(25);
     expect(DEEDS.prog_mere_at_rest.renown).toBe(25);
@@ -273,11 +278,11 @@ describe('audited launch totals (literals: update deliberately with the catalog)
   it('ships exactly 30 titles and 3 borders', () => {
     const titles = ALL.filter((d) => d.reward?.kind === 'title');
     const borders = ALL.filter((d) => d.reward?.kind === 'border');
-    expect(titles.length).toBe(30);
+    expect(titles.length).toBe(31);
     expect(borders.length).toBe(3);
     // Titles and border slugs are unique (one deed per cosmetic).
     const titleTexts = titles.map((d) => (d.reward as { text: string }).text);
-    expect(new Set(titleTexts).size).toBe(30);
+    expect(new Set(titleTexts).size).toBe(31);
     const borderSlugs = borders.map((d) => (d.reward as { slug: string }).slug);
     expect([...borderSlugs].sort()).toEqual(['curators_gilt', 'deepward', 'prestige_laurels']);
   });
@@ -313,7 +318,7 @@ describe('frozen trigger + renown catalog (design rule 9: never retro-edit a tri
   // milestones, the rare-find quartet, and the salvage pair). No shipped
   // trigger or renown changed; prog_master_gatherer had only its English desc
   // reworded, which this digest deliberately does not cover.
-  const FROZEN_CATALOG_SHA256 = '059694159a630369a4f9536f741dff8128f04ced50b8eb11a3a9edfde65e996a';
+  const FROZEN_CATALOG_SHA256 = '40acc1e99dc16482b20c4b1df61d7f31fdd993de2257177502930f62dca4914e';
 
   it('every shipped deed keeps its trigger and renown unchanged', () => {
     const canonical = JSON.stringify(
@@ -443,12 +448,12 @@ describe('table shape', () => {
   it('DEED_ORDER holds the append-only authored order (first and last pinned)', () => {
     // DEED_ORDER derives from the table keys, so covering DEEDS is inherent;
     // what CAN drift is the authored order itself. Pin the endpoints as
-    // literals: prog_first_steps opens the catalog and soc_salvage_50
+    // literals: prog_first_steps opens the catalog and pvp_bg_captures_100
     // closes the tail, and either moving would signal a reorder
     // (forbidden: the order is an append-only determinism contract; new
     // deeds append). hid_codfather's index is pinned in the refresh test.
     expect(DEED_ORDER[0]).toBe('prog_first_steps');
-    expect(DEED_ORDER[DEED_ORDER.length - 1]).toBe('soc_salvage_50');
+    expect(DEED_ORDER[DEED_ORDER.length - 1]).toBe('pvp_bg_captures_100');
   });
 
   it('every entry key matches its id and its prefix matches its category', () => {

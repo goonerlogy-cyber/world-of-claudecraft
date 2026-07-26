@@ -230,6 +230,15 @@ Press `G` or the arena button to queue. Matchmaking teleports fighters into a pr
 - **1v1 and 2v2 ranked ladders**, each with a persistent Elo-style rating (everyone starts at 1500) and an all-time leaderboard (`GET /api/arena/leaderboard`).
 - **2v2 Fiesta**, a livelier party mode: first team to fifteen takedowns wins inside a six-minute cap, players respawn on growing timers, augment pickups drop power across three waves, and a closing ring forces the fight together.
 
+### Ravenrift (5v5 capture the flag)
+
+Press `Shift+G` or the banner button and Enter the Queue, solo or with a party of up to five (parties stay together; solos fill the rest). Two teams of five fight over a walled, open-air field with a keep at each end: steal the enemy banner with a deliberate press of the battleground action key and run it to your own stand. First to 5 captures wins inside a 12-minute cap.
+
+- **Team wave respawns** (no graveyard run): each team's fallen rise together on a staggered wave clock at their keep, briefly spawn-protected until they act.
+- **Anti-turtle carrier fatigue**: hold the enemy flag too long and you take ever-increasing damage until it is captured, dropped, or returned.
+- **Sprint Runes** at the flag approaches and flanks, plus mirrored postern gaps that give the flag runner a second way out of every keep.
+- A persistent per-character **battleground rating** (Elo over team averages, base 1500) with an all-time leaderboard (`GET /api/battleground/leaderboard`), and Honor for played-out wins and losses.
+
 ### Playing together
 
 - **Dungeon Finder**: open it with `Shift+I` to browse dungeons and raids, inspect bosses and loot, join an automatic tank/healer/DPS role queue, or create a premade listing. Finder-made groups still travel to the entrance together.
@@ -334,6 +343,7 @@ node scripts/tour_temple.mjs    # screenshot tour of the Glimmermere and Drowned
 node scripts/mp_integration.mjs # API, WS, and persistence checks (server running)
 node scripts/social_e2e.mjs     # trade and duel over the wire (ALLOW_DEV_COMMANDS=1)
 node scripts/arena_visual.mjs   # two clients queue and fight a ranked 1v1
+node scripts/squad_visual.mjs   # several clients queue and play Ravenrift 5v5 CTF (ALLOW_DEV_COMMANDS=1)
 node scripts/crypt_raid.mjs     # five bots clear the Hollow Crypt (ALLOW_DEV_COMMANDS=1)
 ```
 

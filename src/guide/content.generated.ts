@@ -3969,6 +3969,35 @@ export const GUIDE_DEEDS: GuideDeed[] = [
     "renown": 10,
     "feat": false,
     "crest": "/ui/deeds/soc_salvage_50.webp"
+  },
+  {
+    "id": "pvp_bg_first_capture",
+    "name": "Banner in Hand",
+    "category": "pvp",
+    "renown": 5,
+    "feat": false
+  },
+  {
+    "id": "pvp_bg_first_win",
+    "name": "The Rift Holds",
+    "category": "pvp",
+    "renown": 5,
+    "feat": false
+  },
+  {
+    "id": "pvp_bg_wins_25",
+    "name": "Warden of the Rift",
+    "category": "pvp",
+    "renown": 25,
+    "feat": false,
+    "rewardTitle": "Flagbearer"
+  },
+  {
+    "id": "pvp_bg_captures_100",
+    "name": "A Hundred Banners",
+    "category": "pvp",
+    "renown": 50,
+    "feat": false
   }
 ];
 

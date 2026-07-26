@@ -22,6 +22,7 @@ import { models } from './models';
 import { professions } from './professions';
 import { progression } from './progression';
 import { quests } from './quests';
+import { ravenrift } from './ravenrift';
 import { settings } from './settings';
 import { social } from './social';
 import { stats } from './stats';
@@ -49,6 +50,7 @@ const PAGES: Record<string, GuidePage> = {
   dungeons,
   delves,
   arena,
+  ravenrift,
   'vale-cup': valeCup,
   deeds,
   combat,

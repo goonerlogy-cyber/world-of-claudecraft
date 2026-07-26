@@ -45,6 +45,7 @@ export const guideStrings = {
     talents: 'Talents',
     arena: 'Arena & PvP',
     valeCup: 'Vale Cup',
+    ravenrift: 'Ravenrift',
     deeds: 'Book of Deeds',
     glossary: 'Glossary',
     wishIKnew: 'Things I Wish I Knew',
@@ -1091,6 +1092,31 @@ export const guideStrings = {
   // The Vale Cup boarball minigame page (docs/prd/vale-cup.md). Spoiler-safe:
   // lore, how to play, nations, roles; no kick powers, timers, or matchmaker
   // internals. Nation/role NAMES render from the shared hudChrome.vcup.* keys.
+  ravenriftPage: {
+    heading: 'Ravenrift',
+    intro:
+      'A ranked 5v5 capture-the-flag battleground: two teams of five, two keeps, one goal. Steal the enemy banner and run it home before they run yours.',
+    queueHeading: 'Queueing up',
+    queueBody:
+      'Open the Ravenrift panel and enter the queue solo, or bring a party of up to five and queue together: parties are always kept on one team, and the remaining seats fill with solo champions. When ten stand ready, the match seats both teams at their keeps for a short form-up before the flags go live.',
+    fieldHeading: 'The field',
+    fieldBody:
+      'A walled, open-air field with a keep at each end. Every keep is a three-sided enclosure with two ways out: the main mouth toward the mid-field cover, and a narrow postern gap in one side wall that opens onto the fast flank. The middle is a broken ruin with staggered walls, pillars, and crates that cut lines of sight, and four Sprint Runes wait at the flag approaches and the two flanks.',
+    flagsHeading: 'Flags',
+    flagsBody:
+      'Each keep holds its team flag. Take the enemy flag and carry it to your own stand to score; the first team to five captures wins, and a timed-out battle resolves on score. A slain carrier drops the flag where they fell: an enemy can take it up again, while its own team returns it home instantly just by reaching it.',
+    pickupNote:
+      'Picking a flag up is always a deliberate press of the battleground action key: nobody ever becomes the carrier by strafing through the wrong spot.',
+    respawnHeading: 'Falling in battle',
+    respawnBody:
+      'There is no graveyard run in Ravenrift. Each team has a shared respawn wave, and every fallen teammate rises together on their team wave at the keep, briefly protected until they act. The two team waves are deliberately staggered, so the fight never fully resets at once.',
+    carrierHeading: 'Carrying the flag',
+    carrierBody:
+      'A carrier who holds the enemy flag too long grows more and more vulnerable, taking ever-increasing damage until the flag is captured, dropped, or returned. Hiding with the flag is a losing plan; running it home is the winning one.',
+    ladderHeading: 'The ladder',
+    ladderBody:
+      'Every match moves a persistent per-character battleground rating, win or lose, and the all-time board ranks the realm champions. Wins and hard-fought losses also pay Honor through the Warfare system.',
+  },
   valeCupPage: {
     heading: 'The Vale Cup',
     intro:
