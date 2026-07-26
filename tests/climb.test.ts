@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { advanceClimb, CLIMB_DURATION, tryStartClimb } from '../src/sim/climb';
-import { isBlocked, MANTLE_REACH } from '../src/sim/colliders';
+import { advanceClimb, climbDuration, tryStartClimb } from '../src/sim/climb';
+import { DOCK_HUT_ROOF_TOP, isBlocked, MANTLE_REACH, STALL_CANOPY_TOP } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import { PLAYER_BODY_RADIUS } from '../src/sim/pathfind';
 import { MAX_STEP_HEIGHT } from '../src/sim/physics';
@@ -141,8 +141,11 @@ describe('the climb move', () => {
     const p = makeBody(SPOT.x, g, SPOT.z);
     expect(tryStartClimb(p, SEED)).toBe(true);
     const target = p.climb ? { ...p.climb.to } : null;
+    const duration = p.climb ? p.climb.duration : 0;
     expect(target).not.toBeNull();
     if (!target) return;
+    // The pull's pacing scales with its height.
+    expect(duration).toBeCloseTo(climbDuration(target.y - g), 6);
 
     const startZ = p.pos.z;
     let midRiseFraction = 0;
@@ -160,7 +163,7 @@ describe('the climb move', () => {
     // Early in the move the body is mostly UP, not yet over the edge: that
     // ordering is what makes it read as a mantle and not a diagonal slide.
     expect(midRiseFraction).toBeGreaterThan(midForwardFraction + 0.15);
-    expect(ticks).toBeLessThanOrEqual(Math.ceil(CLIMB_DURATION * 20) + 1);
+    expect(ticks).toBeLessThanOrEqual(Math.ceil(duration * 20) + 1);
     expect(p.climb).toBeNull();
     expect(p.onGround).toBe(true);
     expect(p.pos.y).toBeCloseTo(target.y, 6);
@@ -296,5 +299,92 @@ describe('the climb against real world geometry', () => {
     }
     expect(climbed).toBe(true);
     expect(reachedTop).toBe(true);
+  });
+});
+
+describe('the climb onto the town roofs', () => {
+  it('stall canopies and the dock hut roof sit above vault reach, inside climb reach', () => {
+    // The whole point of the standable roofs: too tall to jump-vault, exactly
+    // what the grab-and-pull is for. If either bound inverts, the roof is
+    // either trivially hoppable or unreachable decoration again.
+    const apex = (JUMP_VELOCITY * JUMP_VELOCITY) / (2 * GRAVITY);
+    for (const top of [STALL_CANOPY_TOP, DOCK_HUT_ROOF_TOP]) {
+      expect(top).toBeGreaterThan(apex + MANTLE_REACH);
+      expect(top).toBeLessThanOrEqual(apex + LEDGE_GRAB_MAX);
+    }
+  });
+
+  it('paces the pull by its height, inside a mantle rhythm at both ends', () => {
+    expect(climbDuration(2.2)).toBeGreaterThan(climbDuration(1.0));
+    expect(climbDuration(LEDGE_GRAB_MIN)).toBeGreaterThanOrEqual(0.35);
+    expect(climbDuration(LEDGE_GRAB_MAX)).toBeLessThanOrEqual(0.75);
+  });
+
+  it('carries a jumping player from the street onto a stall canopy', () => {
+    const sz = SPOT.z + 2.6;
+    setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: sz, rot: 0, r: 1.7 }] }));
+    const top = groundHeight(SPOT.x, sz, SEED) + STALL_CANOPY_TOP;
+
+    const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
+    sim.setPlayerLevel(60);
+    const p = sim.player;
+    p.pos.x = SPOT.x;
+    p.pos.z = sz - 1.7 - 1.4; // outside the canopy rim, a run-up away
+    p.pos.y = terrainHeight(p.pos.x, p.pos.z, SEED);
+    p.prevPos = { ...p.pos };
+    p.facing = 0; // +z, at the stall
+    p.onGround = true;
+    const meta = sim.players.get(p.id);
+    if (!meta) throw new Error('missing meta');
+
+    let climbed = false;
+    let standingOnCanopy = false;
+    for (let i = 0; i < 100; i++) {
+      Object.assign(meta.moveInput, {
+        forward: true,
+        back: false,
+        turnLeft: false,
+        turnRight: false,
+        strafeLeft: false,
+        strafeRight: false,
+        jump: true,
+      });
+      sim.tick();
+      if (p.climb) climbed = true;
+      if (p.onGround && Math.abs(p.pos.y - top) < 0.1) standingOnCanopy = true;
+    }
+    expect(climbed).toBe(true);
+    expect(standingOnCanopy).toBe(true);
+  });
+
+  it('a grounded walk still collides with the stall full-height', () => {
+    const sz = SPOT.z + 2.6;
+    setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: sz, rot: 0, r: 1.7 }] }));
+    const sim = new Sim({ seed: SEED, playerClass: 'warrior', autoEquip: true });
+    sim.setPlayerLevel(60);
+    const p = sim.player;
+    p.pos.x = SPOT.x;
+    p.pos.z = sz - 1.7 - 1.4;
+    p.pos.y = terrainHeight(p.pos.x, p.pos.z, SEED);
+    p.prevPos = { ...p.pos };
+    p.facing = 0;
+    p.onGround = true;
+    const meta = sim.players.get(p.id);
+    if (!meta) throw new Error('missing meta');
+    for (let i = 0; i < 80; i++) {
+      Object.assign(meta.moveInput, {
+        forward: true,
+        back: false,
+        turnLeft: false,
+        turnRight: false,
+        strafeLeft: false,
+        strafeRight: false,
+        jump: false,
+      });
+      sim.tick();
+    }
+    // Walked into the stall and stopped at its rim, never through or onto it.
+    expect(p.pos.z).toBeLessThan(sz - 1.6);
+    expect(p.pos.y).toBeLessThan(groundHeight(p.pos.x, p.pos.z, SEED) + 0.5);
   });
 });

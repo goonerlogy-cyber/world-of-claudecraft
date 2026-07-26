@@ -129,6 +129,13 @@ export const SUPPORT_OVERLAP = 0.5;
 // Exported so tests pin against the one authoritative value.
 export const CRATE_TOP = 1.35;
 export const CAMPFIRE_MOVE_TOP = 0.55;
+// Standable roofs: the market stall's canopy and the dock hut's stone roof.
+// Both meshes stand 2.6 units tall at their peak (`src/render/props.ts` scales
+// them to exactly that); the standable plane sits a touch below the ridge so
+// feet read as ON the sloped surface rather than hovering at its very tip.
+// Above vault reach, inside climb reach: these are what the ledge grab is FOR.
+export const STALL_CANOPY_TOP = 2.45;
+export const DOCK_HUT_ROOF_TOP = 2.45;
 
 /** The mover's feet altitude plus how much standable lift it gets (the
  * airborne mantle assist). Both hosts derive it from the SAME entity fields so
@@ -227,6 +234,11 @@ function staticWorldColliders(seed: number): Collider[] {
       r: s.r,
       cameraTopY: topY(seed, s.x, s.z, 3.1),
       camGhost: true,
+      // The canopy is a roof you can climb onto and stand on: too tall to
+      // vault (a grounded walk still collides full-height), reachable by the
+      // ledge grab from a jump at the counter.
+      moveTopY: topY(seed, s.x, s.z, STALL_CANOPY_TOP),
+      standable: true,
     });
 
   // mines: mound behind the timber portal
@@ -252,6 +264,10 @@ function staticWorldColliders(seed: number): Collider[] {
       rot: d.rot,
       cameraTopY: topY(seed, x, z, 2.9),
       camGhost: true,
+      // The hut's low stone roof is a climbable perch, same deal as the stall
+      // canopy: full-height to a walk, a ledge grab away from a jump.
+      moveTopY: topY(seed, x, z, DOCK_HUT_ROOF_TOP),
+      standable: true,
     });
   }
 

@@ -24,12 +24,14 @@ import { groundHeight, terrainSteepnessAt } from '../world';
 /** A ledge must be at least this far above the feet, or it is a step. */
 export const LEDGE_GRAB_MIN = 0.9;
 /**
- * Arms-extended reach above the feet (yards). At the player's 2 yd stature
- * this is chest-to-overhead: combined with a jump apex near 1.1 yd it puts
- * ledges up to roughly 2.7 yd above the launch ground within climbing range,
- * which covers rocks, carts, low walls, and the lower structures of a town.
+ * Arms-extended reach above the feet (yards). At the player's 2 yd stature a
+ * full overhead reach is about 1.1x height; combined with a jump apex near
+ * 1.1 yd it puts ledges up to roughly 3.3 yd above the launch ground within
+ * climbing range: rocks, carts, graveyard crosses, stall canopies, and the
+ * dock hut's roof. Taller town silhouettes (wells, ruin columns, houses)
+ * stay deliberately out of reach, so rooftops of real buildings remain walls.
  */
-export const LEDGE_GRAB_MAX = 1.6;
+export const LEDGE_GRAB_MAX = 2.2;
 /** How far ahead of the body's leading edge the hands can reach (yards). */
 export const LEDGE_GRAB_FORWARD = 0.5;
 /** Clearance a body needs above a ledge to be allowed to climb onto it. */

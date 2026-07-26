@@ -22,8 +22,17 @@ import { PLAYER_BODY_RADIUS } from './pathfind';
 import { findLedgeGrab, LEDGE_GRAB_MAX, LEDGE_GRAB_MIN } from './physics/ledge';
 import { DT, type Entity, type LedgeClimb } from './types';
 
-/** How long the pull-up takes. Long enough to read, short enough to feel snappy. */
-export const CLIMB_DURATION = 0.42;
+/** Pull-up pacing: the duration scales with how far the body actually rises,
+ *  so hopping onto a low ledge stays snappy while hauling up onto a stall
+ *  canopy or a roof reads as effort. A 1 yd pull lands near 0.46 s, the
+ *  tallest reachable ledge near 0.65 s. */
+export const CLIMB_DURATION_BASE = 0.3;
+export const CLIMB_DURATION_PER_YARD = 0.16;
+
+/** How long the pull-up onto a ledge `rise` yards up takes. */
+export function climbDuration(rise: number): number {
+  return CLIMB_DURATION_BASE + CLIMB_DURATION_PER_YARD * Math.max(0, rise);
+}
 /** Fraction of the climb spent rising before the body pulls forward. */
 const CLIMB_RISE_PHASE = 0.62;
 /** Clearance above the ledge the body settles at (it stands ON the surface). */
@@ -55,11 +64,12 @@ export function tryStartClimb(p: Entity, seed: number): boolean {
     p.pos.z,
   );
   if (!grab) return false;
+  const toY = grab.topY + CLIMB_SETTLE_EPS;
   p.climb = {
     from: { x: p.pos.x, y: p.pos.y, z: p.pos.z },
-    to: { x: grab.x, y: grab.topY + CLIMB_SETTLE_EPS, z: grab.z },
+    to: { x: grab.x, y: toY, z: grab.z },
     elapsed: 0,
-    duration: CLIMB_DURATION,
+    duration: climbDuration(toY - p.pos.y),
   };
   // The climb owns motion from here: drop the flight's velocity so nothing
   // downstream (air control, the landing detector) sees a body still falling.
