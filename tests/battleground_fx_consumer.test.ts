@@ -6,6 +6,7 @@
 // anchors/colors per transition, and the track-invalidation rules. The BgInfo
 // fixture shape is identical for the offline Sim and the wire mirror (one
 // facet type), so a single fixture covers both worlds.
+import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
 import { BattlegroundFx } from '../src/render/battleground_fx';
 import { BG_RUNE_BOB_AMP } from '../src/render/battleground_fx_core';
@@ -98,6 +99,14 @@ describe('props<->fx handshake', () => {
     expect(azure.group.userData.bg as BgObjectRefs).toMatchObject({ kind: 'flag', team: 1 });
     expect(odd.group.userData.bg).toBeUndefined();
     expect(rune.group.userData.bg as BgObjectRefs).toMatchObject({ kind: 'rune' });
+    // the gem renders SOLID in the rune color (normal blending): additive
+    // washed every rune color to white under bloom
+    const refs = rune.group.userData.bg as Extract<BgObjectRefs, { kind: 'rune' }>;
+    const gemMesh = refs.gem.children[0] as unknown as {
+      material: { blending: number; color: { getHex(): number } };
+    };
+    expect(gemMesh.material.blending).toBe(THREE.NormalBlending);
+    expect(gemMesh.material.color.getHex()).toBe(0xffd280);
   });
 
   it('rune nameplate anchor clears the gem at the top of its hover', () => {

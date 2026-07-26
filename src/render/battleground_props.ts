@@ -84,13 +84,28 @@ function glowMaterial(color: number): THREE.MeshBasicMaterial {
     mat = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
-      opacity: 0.85,
+      // 0.6, not 0.85: over the bright floor + bloom, higher additive
+      // opacity washed every rune color out to white.
+      opacity: 0.6,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
     });
     markSharedMaterial(mat);
     glowMats.set(color, mat);
+  }
+  return mat;
+}
+
+// The gem itself renders SOLID in the rune color (normal blending): additive
+// blending washed it to white under bloom, hiding which rune it is.
+const gemMats = new Map<number, THREE.MeshBasicMaterial>();
+function gemMaterial(color: number): THREE.MeshBasicMaterial {
+  let mat = gemMats.get(color);
+  if (!mat) {
+    mat = new THREE.MeshBasicMaterial({ color });
+    markSharedMaterial(mat);
+    gemMats.set(color, mat);
   }
   return mat;
 }
@@ -121,7 +136,7 @@ export function buildBattlegroundObject(
     // yaws and bobs the spinner (battleground_fx_core runeGemPose).
     const gem = new THREE.Group();
     gem.position.y = RUNE_GEM_Y;
-    const gemMesh = new THREE.Mesh(runeGemGeo, glow);
+    const gemMesh = new THREE.Mesh(runeGemGeo, gemMaterial(color));
     gemMesh.rotation.z = RUNE_GEM_TILT_Z;
     gemMesh.rotation.x = RUNE_GEM_TILT_X;
     gem.add(gemMesh);

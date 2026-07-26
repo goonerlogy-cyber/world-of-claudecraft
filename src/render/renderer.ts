@@ -67,6 +67,7 @@ import {
 } from './camera_feel_core';
 import {
   characterRecklessnessActive,
+  characterRuneTintColor,
   characterSanguineAuraActive,
   characterSoulRendActive,
 } from './character_effects';
@@ -5660,6 +5661,7 @@ export class Renderer {
       active.setShadowform(hasShadowform);
       active.setMoonkin(hasMoonkin);
       active.setMetamorph(hasMetamorph);
+      active.setRuneTint(characterRuneTintColor(e));
       v.visual.root.visible = active === v.visual && !fireballForm;
       // distant rigs swap to the single-draw baked idle-pose mesh
       v.visual.setFar(v.isFar && active === v.visual && !fireballForm);
