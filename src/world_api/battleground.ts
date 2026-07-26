@@ -38,8 +38,7 @@ export interface BgMatchInfo {
   countdown: number; // whole seconds left in the form-up gate (0 once live)
   timeLeft: number; // whole seconds until the match cap resolves on score
   waveIn: [number, number]; // whole seconds to each team's next respawn wave
-  respawnIn: number; // = waveIn[myTeam] while you are dead, else 0
-  protectedFor: number; // whole seconds of your spawn protection left (0 = none)
+  respawnIn: number; // = waveIn[myTeam] while you wait as a released ghost, else 0
 }
 
 export interface BgInfo {

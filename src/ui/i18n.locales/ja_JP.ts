@@ -863,7 +863,6 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagState.carried': '旗は運搬中',
   'hudChrome.bg.flagState.dropped': '旗は地面にある',
   'hudChrome.bg.respawnIn': '次のウェーブ:{seconds}秒後に復活',
-  'hudChrome.bg.protectedFor': 'スポーン保護:{seconds}秒',
   'hudChrome.bg.foundBanner': 'マッチ成立。あなたは{team}として戦います!',
   'hudChrome.bg.countdownBanner': 'レイヴンリフト開始まで{seconds}',
   'hudChrome.bg.startBanner': '旗を奪え!',
@@ -901,7 +900,7 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'guide.ravenriftPage.flagsBody':
     '各砦は自軍の旗を守っています。敵の旗を奪って自軍の旗座まで運べば得点。先に5回キャプチャーしたチームの勝利で、時間切れの戦いはスコアで決着します。倒された運び手はその場に旗を落とします。敵は拾い直せますが、旗の持ち主チームは近づくだけで即座に旗を戻せます。また、旗は決して隠れません。旗を拾うとステルスは解除され、運び手がどんな手段であれ姿を消せば、旗はその場に落ちます。',
   'guide.ravenriftPage.respawnBody':
-    '死は古典の儀式のまま:魂を解放すると、自陣キープの傍らの柵に囲まれた墓地に霊体として現れ、次のチーム復活ウェーブまでそこに縛られます(放置された遺体も短い猶予の後に自動で解放されます)。ウェーブは待機中の霊体を全員同時に蘇らせ、行動するまで短時間保護されます。両チームのウェーブは意図的にずらされており、戦いが同時に完全リセットされることはありません。遺体走りも、スピリットヒーラーとの取引もありません:ウェーブこそが唯一の帰り道です。',
+    '死は古典の儀式のまま:遺体はあなた自身が解放するまでその場に残り、魂は自陣キープの傍らの柵に囲まれた墓地に現れ、次のチーム復活ウェーブまでそこに縛られます。ウェーブは待機中の霊体を全員同時に蘇らせます。両チームのウェーブは意図的にずらされており、戦いが同時に完全リセットされることはありません。遺体走りも、スピリットヒーラーとの取引もありません:解放し、ウェーブを待ち、戦うのみ。',
   'guide.ravenriftPage.pickupNote':
     '旗を拾うのは常に戦場アクションキーの意図的な押下です。誤って旗の上を走り抜けて運び手になることはありません。',
   'guide.ravenriftPage.respawnHeading': '戦場での死',

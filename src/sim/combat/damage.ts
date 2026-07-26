@@ -137,29 +137,6 @@ export function dealDamage(
   // Ravenrift spawn protection: full damage immunity for a few seconds after
   // every battleground spawn (social/battleground.ts owns the aura). Every
   // damage path funnels here, so this covers melee, spells, and DoT ticks.
-  // The protected player's own first hostile action ends their protection
-  // early; both checks are gated on a live match existing so the overworld
-  // hot path never scans for them.
-  if (ctx.bgMatches.size > 0) {
-    // Scoped to participants so overworld combat never pays the aura scans.
-    // CASTER-FIRST, matching the CC arm: swinging at anyone is a hostile act,
-    // so the attacker's own protection breaks even when the target's
-    // protection then absorbs the blow.
-    if (source && source.id !== target.id) {
-      // A pet/guardian resolves to its owning player: the owner's own first
-      // hostile action includes damage their pet deals on command.
-      const owner =
-        source.kind === 'player'
-          ? source
-          : source.ownerId !== null
-            ? ctx.entities.get(source.ownerId)
-            : undefined;
-      if (owner && owner.kind === 'player' && ctx.bgMatches.has(owner.id))
-        ctx.bgBreakSpawnProtection(owner);
-    }
-    if (ctx.bgMatches.has(target.id) && target.auras.some((a) => a.kind === 'spawn_protection'))
-      return;
-  }
   // A wild mob that broke leash is in 'evade': it has dropped its hate table
   // and walks home without fighting back, healing to full only on arrival.
   // Classic mechanics make it immune while it retreats, so it can't be chipped

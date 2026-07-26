@@ -236,7 +236,6 @@ const CALLBACK_KEYS = [
   'vcupSportShove',
   // Ravenrift battleground hooks (social/battleground.ts).
   'bgOnPlayerDeath',
-  'bgBreakSpawnProtection',
 ] as const;
 
 // A fully-spied fake host. `clock` is mutable so a test can prove the context reads
@@ -539,7 +538,6 @@ function makeFakeHost() {
     vcupSportShove: vi.fn(),
     // Ravenrift battleground hooks.
     bgOnPlayerDeath: vi.fn(),
-    bgBreakSpawnProtection: vi.fn(),
   };
   return { host, rng, entities, clock };
 }

@@ -5283,7 +5283,6 @@ export type TranslationKeyFlat =
   | 'hudChrome.bg.noRanked'
   | 'hudChrome.bg.offlineNote'
   | 'hudChrome.bg.playerLevelClassTitle'
-  | 'hudChrome.bg.protectedFor'
   | 'hudChrome.bg.queueNote'
   | 'hudChrome.bg.queuedParty'
   | 'hudChrome.bg.ratingSummary'

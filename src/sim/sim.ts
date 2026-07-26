@@ -4357,7 +4357,6 @@ export class Sim {
         valeCupMod.vcupSportShove(sim.ctx, caster, target, distance),
       // Ravenrift battleground hooks (social/battleground.ts).
       bgOnPlayerDeath: (e, killer) => bgMod.bgOnPlayerDeath(sim.ctx, e, killer),
-      bgBreakSpawnProtection: (e) => bgMod.bgBreakSpawnProtection(sim.ctx, e),
     };
     return createSimContext(host);
   }
@@ -5432,38 +5431,6 @@ export class Sim {
       this.isNythraxisRaidEnemy(target) &&
       !nythraxis.isNythraxisControllableAdd(target) && // priest + stalker are meant to be CC'd
       this.isNythraxisControlAura(aura.kind) &&
-      aura.sourceId !== target.id &&
-      !isUnbreakableControlAura(aura)
-    )
-      return;
-    // Ravenrift spawn protection. The caster-side break runs FIRST (a protected
-    // player CASTING any hostile control effect, via a pet included, ends their
-    // own protection even when the target's own protection then rejects the
-    // aura), and uses the SAME broad predicate as the rejection arm so a
-    // silence/blind/disarm/snare breaks it exactly like a stun would.
-    if (
-      this.bgMatches.size > 0 &&
-      this.isIceBlockCrowdControlAura(aura.kind) &&
-      aura.sourceId !== target.id
-    ) {
-      const src = this.entities.get(aura.sourceId);
-      const owner =
-        src?.kind === 'player'
-          ? src
-          : src?.ownerId != null
-            ? this.entities.get(src.ownerId)
-            : undefined;
-      if (owner && owner.kind === 'player' && this.bgMatches.has(owner.id)) {
-        bgMod.bgBreakSpawnProtection(this.ctx, owner);
-      }
-    }
-    // The rejection arm: a protected player shrugs off every hostile control
-    // effect (the broad Ice Block set) for the few protected seconds.
-    if (
-      target.kind === 'player' &&
-      this.bgMatches.has(target.id) &&
-      target.auras.some((a) => a.kind === 'spawn_protection') &&
-      this.isIceBlockCrowdControlAura(aura.kind) &&
       aura.sourceId !== target.id &&
       !isUnbreakableControlAura(aura)
     )

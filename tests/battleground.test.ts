@@ -6,14 +6,12 @@ import { BATTLEGROUND_LOSS_HONOR, BATTLEGROUND_WIN_HONOR } from '../src/sim/pvp'
 import { eloDelta, Sim } from '../src/sim/sim';
 import type { BgMatch } from '../src/sim/social/battleground';
 import {
-  BG_AUTO_RELEASE_SECONDS,
   BG_CARRIER_VULN_DELAY,
   BG_CARRIER_VULN_INTERVAL,
   BG_MAX_DURATION,
   BG_MIN_LEVEL,
   BG_MIN_RATING,
   BG_POWER_RUNE_VALUE,
-  BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
   endBgMatch,
@@ -62,13 +60,7 @@ function inGraveyard(sim: Sim, match: BgMatch, pid: number, team: 0 | 1): boolea
   );
 }
 
-function stripProtection(sim: Sim, pid: number) {
-  const e = sim.entities.get(pid)!;
-  e.auras = e.auras.filter((a) => a.kind !== 'spawn_protection');
-}
-
 function kill(sim: Sim, pid: number, killerPid: number | null = null) {
-  stripProtection(sim, pid);
   const e = sim.entities.get(pid)!;
   const killer = killerPid !== null ? sim.entities.get(killerPid)! : null;
   sim.ctx.dealDamage(killer, e, 9_999_999, false, 'physical', null, 'hit');
@@ -296,7 +288,7 @@ describe('Ravenrift: the form-up hold', () => {
 });
 
 describe('Ravenrift: the graveyard rite', () => {
-  it('a corpse auto-releases after the grace; a released spirit is warded inside the plot', () => {
+  it('a corpse NEVER auto-releases (the press is the player own move); the ward binds the ghost', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
@@ -304,13 +296,20 @@ describe('Ravenrift: the graveyard rite', () => {
     kill(sim, victim);
     sim.tick();
     const e = sim.entities.get(victim)!;
-    // still a corpse just before the grace ends
-    for (let i = 0; i < Math.floor(20 * (BG_AUTO_RELEASE_SECONDS - 0.5)); i++) sim.tick();
+    // a full half minute (three whole waves) later, the corpse still lies
+    // where it fell: no timer touches it, and no wave raises an unreleased body
+    for (let i = 0; i < 20 * 30; i++) sim.tick();
+    expect(e.dead).toBe(true);
     expect(e.ghost).toBeFalsy();
-    // released automatically just after
-    for (let i = 0; i < 20; i++) sim.tick();
+    // and the corpse shows NO respawn countdown (the wave readout is a ghost's)
+    expect(sim.bgInfoFor(victim)!.match!.respawnIn).toBe(0);
+    // the deliberate press releases into the plot...
+    sim.releaseSpirit(victim);
     expect(e.ghost).toBe(true);
     expect(inGraveyard(sim, match, victim, 0)).toBe(true);
+    // ...where the wave countdown NOW shows
+    sim.tick();
+    expect(sim.bgInfoFor(victim)!.match!.respawnIn).toBeGreaterThan(0);
     // the ward: teleport the spirit outside the plot and the next tick pulls
     // it back inside (a spirit cannot scout or leave before its wave)
     tp(sim, victim, 0, -40);
@@ -324,24 +323,19 @@ describe('Ravenrift: the graveyard rite', () => {
     toActive(sim, match);
     const a = match.teams[0][0];
     const b = match.teams[0][1];
-    // stage the clock so Crimson's next wave lands INSIDE the auto-release
-    // grace: advance until the boundary is ~3s away, then die
-    while (
-      BG_WAVE_PERIOD - (match.timer % BG_WAVE_PERIOD) > 3 ||
-      BG_WAVE_PERIOD - (match.timer % BG_WAVE_PERIOD) < 2
-    ) {
-      sim.tick();
-    }
+    // die just before a wave, release only a: the wave raises the released
+    // spirit and leaves the corpse untouched
+    while (BG_WAVE_PERIOD - (match.timer % BG_WAVE_PERIOD) > 3) sim.tick();
     kill(sim, a);
     kill(sim, b);
     sim.tick();
     sim.releaseSpirit(a); // a releases immediately; b lies on its corpse
     const target = Math.ceil(match.timer / BG_WAVE_PERIOD) * BG_WAVE_PERIOD + 0.3;
-    expect(target - match.timer).toBeLessThan(BG_AUTO_RELEASE_SECONDS - 0.5); // staging held
     while (match.timer < target) sim.tick();
     expect(sim.entities.get(a)!.dead).toBe(false); // the released spirit rose
     expect(sim.entities.get(b)!.dead).toBe(true); // the corpse waited
-    // b auto-releases and the following wave raises it too
+    // b releases LATE and the following wave raises it too
+    sim.releaseSpirit(b);
     while (sim.entities.get(b)!.dead && match.timer < 60) sim.tick();
     expect(sim.entities.get(b)!.dead).toBe(false);
     expect(inGraveyard(sim, match, b, 0)).toBe(true);
@@ -534,7 +528,6 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     const secondThief = match.teams[1][1];
     tp(sim, defender, dropX, dropZ);
     tp(sim, secondThief, dropX, dropZ);
-    stripProtection(sim, secondThief);
     sim.bgFlagAction(secondThief);
     sim.tick();
     expect(match.flags[0].state).toBe('home'); // the return won the race
@@ -563,7 +556,6 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     hide();
     expect(e.stealthed).toBe(true);
     tp(sim, runner, match.flags[1].home.x, match.flags[1].home.z);
-    stripProtection(sim, runner);
     sim.bgFlagAction(runner);
     sim.tick();
     expect(match.flags[1].carrier).toBe(runner);
@@ -584,7 +576,6 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
     // and the dropped flag then behaves like any drop: an enemy re-press takes it
     const azure = match.teams[1].find((pid) => pid !== runner)!;
     tp(sim, azure, match.flags[1].pos.x, match.flags[1].pos.z);
-    stripProtection(sim, azure);
     sim.bgFlagAction(azure);
     sim.tick();
     expect(match.flags[1].state).toBe('home'); // own team: proximity return wins
@@ -669,51 +660,39 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
     while (match.timer < BG_WAVE_PERIOD * 2 + 0.5) sim.tick();
     expect(sim.entities.get(victim)!.dead).toBe(false);
   });
+});
 
-  it('spawn protection: applies at the gate spawn and on wave respawn, blocks damage and CC, expires', () => {
+describe('Ravenrift: the classic capture gate', () => {
+  it('a capture only resolves while your OWN flag is home, and fires the moment it returns', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
-    const guarded = match.teams[0][0];
-    const attacker = match.teams[1][0];
-    const e = sim.entities.get(guarded)!;
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
-    // damage while protected: nothing lands
-    const hpBefore = e.hp;
-    stripProtection(sim, attacker); // the attacker acting is its own break, keep it clean
-    sim.ctx.dealDamage(sim.entities.get(attacker)!, e, 5000, false, 'physical', null, 'hit');
-    expect(e.hp).toBe(hpBefore);
-    // hostile CC while protected: rejected
-    sim.ctx.applyAura(e, {
-      id: 'test_stun',
-      name: 'Test Stun',
-      kind: 'stun',
-      value: 0,
-      remaining: 3,
-      duration: 3,
-      sourceId: attacker,
-      school: 'physical',
-    });
-    expect(e.auras.some((a) => a.kind === 'stun')).toBe(false);
-    // it expires on its own after BG_SPAWN_PROTECTION seconds
-    for (let i = 0; i < Math.ceil(BG_SPAWN_PROTECTION * 20) + 3; i++) sim.tick();
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
-    const hp2 = e.hp;
-    sim.ctx.dealDamage(sim.entities.get(attacker)!, e, 500, false, 'physical', null, 'hit');
-    expect(e.hp).toBeLessThan(hp2);
-  });
-
-  it('spawn protection breaks early on the protected player OWN first hostile action', () => {
-    const { sim, pids } = tenInQueue();
-    const match = sim.bgMatchFor(pids[0])!;
-    toActive(sim, match);
-    const eager = match.teams[0][0];
-    const target = match.teams[1][0];
-    const e = sim.entities.get(eager)!;
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
-    stripProtection(sim, target);
-    sim.ctx.dealDamage(e, sim.entities.get(target)!, 50, false, 'physical', null, 'hit');
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
+    const raider = match.teams[0][0]; // Crimson, carrying the Azure flag
+    const thief = match.teams[1][0]; // Azure, stealing the Crimson flag
+    tp(sim, thief, match.flags[0].home.x, match.flags[0].home.z);
+    sim.bgFlagAction(thief);
+    sim.tick();
+    expect(match.flags[0].state).toBe('carried'); // Crimson's flag is OUT
+    tp(sim, raider, match.flags[1].pos.x, match.flags[1].pos.z);
+    sim.bgFlagAction(raider);
+    sim.tick();
+    expect(match.flags[1].state).toBe('carried');
+    // at the stand with the enemy flag, but the own flag is stolen: NO capture
+    tp(sim, raider, match.flags[0].home.x, match.flags[0].home.z);
+    for (let i = 0; i < 20; i++) sim.tick();
+    expect(match.scores[0]).toBe(0);
+    expect(match.flags[1].state).toBe('carried'); // still waiting at the stand
+    // the thief dies, a defender walk-over returns the Crimson flag home:
+    // the waiting carrier captures AUTOMATICALLY on the next tick
+    kill(sim, thief);
+    sim.tick();
+    const defender = match.teams[0][1];
+    tp(sim, defender, match.flags[0].pos.x, match.flags[0].pos.z);
+    sim.tick();
+    expect(match.flags[0].state).toBe('home');
+    sim.tick();
+    expect(match.scores[0]).toBe(1); // the gated capture resolved itself
+    expect(match.flags[1].state).toBe('home');
   });
 });
 
@@ -744,7 +723,6 @@ describe('Ravenrift: carrier vulnerability (Focused Assault lineage)', () => {
     expect(vuln!.value).toBeCloseTo(0.2, 5);
     // decisive damage check: two stacks take 20% more than clean (sub-lethal
     // amounts, or the overkill clamp equalizes both hits)
-    stripProtection(sim, attacker);
     const atk = sim.entities.get(attacker)!;
     e.hp = e.maxHp;
     sim.ctx.dealDamage(
@@ -817,8 +795,6 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(BG_MAX_DURATION).toBe(900); // 15 minute cap
     expect(BG_WAVE_PERIOD).toBe(10);
     expect(BG_WAVE_OFFSET).toBe(5);
-    expect(BG_SPAWN_PROTECTION).toBe(2.5);
-    expect(BG_AUTO_RELEASE_SECONDS).toBe(6);
     expect(BG_POWER_RUNE_VALUE).toBeCloseTo(0.15, 10);
     expect(BATTLEGROUND_WIN_HONOR).toBe(60);
     expect(BATTLEGROUND_LOSS_HONOR).toBe(20);
@@ -952,6 +928,7 @@ describe('Ravenrift: review-hardening pins', () => {
     const powerRunner = match.teams[0][2];
     tp(sim, powerRunner, match.runes[4].pos.x, match.runes[4].pos.z);
     kill(sim, match.teams[1][1]);
+    sim.releaseSpirit(match.teams[1][1]); // the wave raises released spirits only
     const timerBefore = match.timer;
 
     // 20s covers the worst chain: the 6s auto-release just missing a wave,
@@ -1020,45 +997,6 @@ describe('Ravenrift: review-hardening pins', () => {
     const evs = sim.tick();
     expect(sim.bgInfoFor(a)!.queued).toBe(false);
     expect(evs.some((e) => e.type === 'bgUnqueued' && e.pid === a)).toBe(true);
-  });
-
-  it('spawn protection breaks on a hostile SILENCE too (the broad control set), and on pet damage', () => {
-    const { sim, pids } = tenInQueue();
-    const match = sim.bgMatchFor(pids[0])!;
-    toActive(sim, match);
-    const caster = match.teams[0][0];
-    const target = match.teams[1][0];
-    const e = sim.entities.get(caster)!;
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
-    // casting a silence (not a stun: the broad Ice Block predicate) breaks it
-    sim.ctx.applyAura(sim.entities.get(target)!, {
-      id: 'test_silence',
-      name: 'Test Silence',
-      kind: 'silence',
-      value: 0,
-      remaining: 2,
-      duration: 2,
-      sourceId: caster,
-      school: 'shadow',
-    });
-    expect(e.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
-    // and pet damage resolves to the owning player (the gate protection every
-    // fighter still carries right after gates-open is the fixture)
-    const owner = match.teams[1][1];
-    const oe = sim.entities.get(owner)!;
-    expect(oe.auras.some((a) => a.kind === 'spawn_protection')).toBe(true);
-    const pet = sim.entities.get(match.teams[0][1])!;
-    const petLike = { ...pet, kind: 'mob' as const, ownerId: owner, id: 999999 };
-    sim.ctx.dealDamage(
-      petLike as typeof pet,
-      sim.entities.get(caster)!,
-      5,
-      false,
-      'physical',
-      null,
-      'hit',
-    );
-    expect(oe.auras.some((a) => a.kind === 'spawn_protection')).toBe(false);
   });
 
   it('a live participant cannot enter a delve mid-match', () => {

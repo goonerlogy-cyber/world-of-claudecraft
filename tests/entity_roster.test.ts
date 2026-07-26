@@ -372,7 +372,6 @@ function makeCtx() {
     vcupSportShove: vi.fn(),
     // Ravenrift battleground hooks.
     bgOnPlayerDeath: vi.fn(),
-    bgBreakSpawnProtection: vi.fn(),
   };
   const ctx = createSimContext(host);
   return {

@@ -683,7 +683,6 @@ export const hudChromeStrings = {
       dropped: 'Flag on the ground',
     },
     respawnIn: 'Next wave: respawning in {seconds}',
-    protectedFor: 'Spawn protection: {seconds}s',
     // event banners + combat-log lines (hud.handleEvents)
     foundBanner: 'Battle found. You fight for the {team}!',
     countdownBanner: 'Ravenrift begins in {seconds}',

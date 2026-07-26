@@ -875,11 +875,9 @@ export interface SimContextCallbacks {
   vcupSportShove(caster: Entity, target: Entity, distance: number): void;
   // Ravenrift battleground (social/battleground.ts). bgOnPlayerDeath is the
   // death hook the damage hub calls for a fallen battleground player (carrier
-  // death drops the flag in place; the wave clock revives, so no release).
-  // bgBreakSpawnProtection ends spawn protection early on the protected
-  // player's own first hostile action (called from the damage and aura paths).
+  // death drops the flag in place; releasing sends the spirit to the warded
+  // graveyard and the team wave raises it).
   bgOnPlayerDeath(e: Entity, killer: Entity | null): void;
-  bgBreakSpawnProtection(e: Entity): void;
 }
 
 // The seam consumed by extracted modules.
@@ -1344,6 +1342,5 @@ export function createSimContext(host: SimContextHost): SimContext {
     vcupSportShove: host.vcupSportShove,
     // Ravenrift battleground hooks (points at social/battleground.ts via Sim).
     bgOnPlayerDeath: host.bgOnPlayerDeath,
-    bgBreakSpawnProtection: host.bgBreakSpawnProtection,
   };
 }

@@ -47,7 +47,6 @@ export class BattlegroundScoreboard {
   private pipCount = 0;
   // Expanded-board row cells, aligned with view.board order (structural sig).
   private boardRows: { row: HTMLElement; k: HTMLElement; d: HTMLElement; c: HTMLElement }[] = [];
-  private protectedEl: HTMLElement | null = null;
 
   constructor(private readonly deps: BattlegroundScoreboardDeps) {}
 
@@ -57,7 +56,6 @@ export class BattlegroundScoreboard {
     if (!view.active) {
       if (this.root) w.setDisplay(this.root, 'none');
       if (this.respawnRoot) w.setDisplay(this.respawnRoot, 'none');
-      if (this.protectedEl) w.setDisplay(this.protectedEl, 'none');
       this.lastSig = view.sig;
       return;
     }
@@ -144,17 +142,6 @@ export class BattlegroundScoreboard {
     } else {
       w.setDisplay(el, 'none');
     }
-    if (this.protectedEl) {
-      if (view.protectedFor > 0 && view.state === 'active') {
-        w.setText(
-          this.protectedEl,
-          t('hudChrome.bg.protectedFor', { seconds: num(view.protectedFor) }),
-        );
-        w.setDisplay(this.protectedEl, 'block');
-      } else {
-        w.setDisplay(this.protectedEl, 'none');
-      }
-    }
   }
 
   /** Language switch: clear the structural sig so the next update rebuilds. */
@@ -204,13 +191,6 @@ export class BattlegroundScoreboard {
     el.setAttribute('aria-live', 'off');
     layer.appendChild(el);
     this.respawnRoot = el;
-    // the small spawn-protection line rides under the respawn overlay's slot
-    const prot = document.createElement('div');
-    prot.id = 'bg-protected';
-    prot.setAttribute('role', 'status');
-    prot.setAttribute('aria-live', 'off');
-    layer.appendChild(prot);
-    this.protectedEl = prot;
     return el;
   }
 

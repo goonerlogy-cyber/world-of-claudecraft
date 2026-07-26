@@ -56,10 +56,9 @@ export interface BgScoreboardView {
   /** Both rosters in team order for the expanded board; stats ride elided
    *  writer slots (stable row identity = the structural sig). */
   board: BgBoardRow[];
-  /** Seconds until my team's wave revives me (>0 only while I am dead). */
+  /** Seconds until my team's wave raises me (>0 only while I wait as a
+   *  released ghost in the graveyard; a corpse shows nothing). */
   respawnIn: number;
-  /** Seconds of my spawn protection left (0 = none). */
-  protectedFor: number;
   /** Structural identity: rebuild the skeleton only when this changes. */
   sig: string;
 }
@@ -80,7 +79,6 @@ const INACTIVE: BgScoreboardView = {
   pipsAzure: [],
   board: [],
   respawnIn: 0,
-  protectedFor: 0,
   sig: 'off',
 };
 
@@ -123,7 +121,6 @@ export function buildBgScoreboardView(info: BgInfo | null, myPid: number): BgSco
       captures: p.captures,
     })),
     respawnIn: m.respawnIn,
-    protectedFor: m.protectedFor,
     sig: `${m.myTeam}|${crimson.map((p) => p.pid).join(',')}|${azure.map((p) => p.pid).join(',')}`,
   };
 }

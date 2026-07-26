@@ -66,7 +66,6 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
   timeLeft: 605,
   waveIn: [10, 5],
   respawnIn: 0,
-  protectedFor: 0,
   ...over,
 });
 
@@ -158,7 +157,7 @@ describe('battleground window view (pure core)', () => {
         '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true,"kills":0,"deaths":4,"captures":0},' +
         '{"pid":9,"name":"Cael","cls":"priest","team":1,' +
         '"carrying":false,"dead":false,"kills":5,"deaths":0,"captures":1}],"countdown":0,' +
-        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0,"protectedFor":0}}',
+        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0}}',
     ) as BgInfo;
     const inputRest = { playerName: 'X', playerLevel: 20, party: null, allTime: null };
     expect(buildBgWindowView({ info: simShaped, ...inputRest })).toEqual(
@@ -230,13 +229,9 @@ describe('battleground scoreboard view (pure core)', () => {
     expect(c.sig).not.toBe(a.sig);
   });
 
-  it('surfaces the personal wave-respawn and spawn-protection readouts', () => {
-    const v = buildBgScoreboardView(
-      baseInfo({ match: baseMatch({ respawnIn: 7, protectedFor: 2 }) }),
-      7,
-    );
+  it('surfaces the personal wave-respawn readout', () => {
+    const v = buildBgScoreboardView(baseInfo({ match: baseMatch({ respawnIn: 7 }) }), 7);
     expect(v.respawnIn).toBe(7);
-    expect(v.protectedFor).toBe(2);
     const countdown = buildBgScoreboardView(
       baseInfo({ match: baseMatch({ state: 'countdown', countdown: 6 }) }),
       7,

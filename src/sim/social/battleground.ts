@@ -49,7 +49,6 @@ export const BG_CAPS_TO_WIN = 5; // first team to this many captures wins.
 export const BG_MAX_DURATION = 900; // 15 min cap; resolves on score, ties draw
 export const BG_WAVE_PERIOD = 10; // one respawn wave per team every 10s
 export const BG_WAVE_OFFSET = 5; // the two team clocks run staggered half-cycles
-export const BG_SPAWN_PROTECTION = 2.5; // seconds of damage/CC immunity on spawn
 // Carrier vulnerability (the WSG Focused Assault lineage): after holding an
 // enemy flag continuously for BG_CARRIER_VULN_DELAY the carrier takes stacking
 // extra damage, a stack every BG_CARRIER_VULN_INTERVAL, each
@@ -73,7 +72,6 @@ const BG_RUNE_DURATION = 10; // seconds of haste per rune
 export const BG_POWER_RUNE_VALUE = 0.15; // +15% dealt / -15% taken
 const BG_POWER_RUNE_DURATION = 10;
 
-const SPAWN_PROTECTION_AURA_ID = 'bg_spawn_protection';
 const CARRIER_VULN_AURA_ID = 'bg_carrier_vulnerability';
 export const SPRINT_RUNE_AURA_ID = 'bg_sprint_rune';
 export const BATTLE_RUNE_AURA_ID = 'bg_battle_rune';
@@ -120,9 +118,6 @@ export interface BgMatch {
   // Per-player match tallies for the scoreboard (seeded to zeros at start;
   // a deserter's row drops with their team entry).
   stats: Map<number, { kills: number; deaths: number; captures: number }>;
-  // Seconds until a fresh corpse auto-releases to the keep graveyard (a
-  // deliberate Release press goes sooner); keyed per dead player.
-  autoReleaseIn: Map<number, number>;
   ratingAvg: [number, number]; // team average rating at start, for Elo
   resultRecorded: boolean;
   // per-tick memo of the viewer-identical match view (server hot-path rule:
@@ -334,10 +329,7 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
     match.waveIn = [BG_WAVE_PERIOD, BG_WAVE_OFFSET];
     for (const pid of bgAllPids(match)) {
       const e = ctx.entities.get(pid);
-      if (e) {
-        ctx.readyArenaFighter(e, { clearPrep: true });
-        applySpawnProtection(ctx, e);
-      }
+      if (e) ctx.readyArenaFighter(e, { clearPrep: true });
       ctx.emit({
         type: 'log',
         text: 'The Ravenrift battle begins: take their flag!',
@@ -467,7 +459,6 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
     slot,
     teams: [teamA, teamB],
     stats: new Map([...teamA, ...teamB].map((p) => [p, { kills: 0, deaths: 0, captures: 0 }])),
-    autoReleaseIn: new Map(),
     scores: [0, 0],
     flags,
     runes,
@@ -556,33 +547,6 @@ function spawnRuneEntity(ctx: SimContext, rune: BgRuneState): void {
   rune.entityId = e.id;
 }
 
-function applySpawnProtection(ctx: SimContext, e: Entity): void {
-  bgBreakSpawnProtection(ctx, e); // never stack two
-  const aura: Aura = {
-    id: SPAWN_PROTECTION_AURA_ID,
-    name: 'Spawn Protection',
-    kind: 'spawn_protection',
-    value: 0,
-    remaining: BG_SPAWN_PROTECTION,
-    duration: BG_SPAWN_PROTECTION,
-    sourceId: e.id,
-    school: 'holy',
-  };
-  ctx.applyAura(e, aura);
-}
-
-/**
- * Strip spawn protection early: the protected player's own first hostile
- * action (attack, hostile cast, flag pickup) ends it. Called from the damage
- * and aura paths via ctx and from the flag pickup below.
- */
-export function bgBreakSpawnProtection(ctx: SimContext, e: Entity): void {
-  const idx = e.auras.findIndex((a) => a.kind === 'spawn_protection');
-  if (idx < 0) return;
-  const [aura] = e.auras.splice(idx, 1);
-  ctx.emit({ type: 'aura', targetId: e.id, name: aura.name, gained: false });
-}
-
 // One team-wide respawn clock per side, period BG_WAVE_PERIOD, the two clocks
 // offset by BG_WAVE_OFFSET (staggered half-cycles, never synchronized). The
 // wave raises every RELEASED spirit waiting in the team graveyard, together,
@@ -604,19 +568,15 @@ function tickWaveRespawns(ctx: SimContext, match: BgMatch): void {
       e.prevPos = { ...e.pos };
       e.facing = team === 0 ? 0 : Math.PI;
       e.prevFacing = e.facing;
-      applySpawnProtection(ctx, e);
       ctx.emit({ type: 'respawn', pid });
     });
   }
 }
 
-// How long a fresh corpse holds before the spirit is released for it.
-export const BG_AUTO_RELEASE_SECONDS = 6;
-
-// The corpse-to-graveyard flow: auto-release fresh corpses after the grace
-// (a deliberate Release press goes sooner via releasePlayerSpirit's bg arm),
-// and hold every released spirit inside its team plot (the ward) until the
-// wave raises it.
+// The graveyard ward: a released spirit is bound to its team plot until the
+// wave raises it. The corpse itself is untouched: releasing is the PLAYER'S
+// deliberate press (classic rules, no auto-release, no corpse timer), and the
+// wave only ever raises released spirits.
 function tickGraveyards(ctx: SimContext, match: BgMatch): void {
   const origin = battlegroundOrigin(match.slot);
   // The ward box is the plot inset past the fence rails (which sit ON the
@@ -631,22 +591,7 @@ function tickGraveyards(ctx: SimContext, match: BgMatch): void {
     const maxZ = origin.z + plot.z + plot.hd - WARD_INSET;
     for (const pid of match.teams[team]) {
       const e = ctx.entities.get(pid);
-      if (!e || !e.dead) {
-        match.autoReleaseIn.delete(pid);
-        continue;
-      }
-      if (!e.ghost) {
-        const left = (match.autoReleaseIn.get(pid) ?? BG_AUTO_RELEASE_SECONDS) - DT;
-        if (left <= 0) {
-          match.autoReleaseIn.delete(pid);
-          releasePlayerSpirit(ctx, pid);
-        } else {
-          match.autoReleaseIn.set(pid, left);
-        }
-        continue;
-      }
-      match.autoReleaseIn.delete(pid);
-      // The ward: a spirit cannot leave the plot before its wave.
+      if (!e || !e.dead || !e.ghost) continue;
       const cx = Math.min(maxX, Math.max(minX, e.pos.x));
       const cz = Math.min(maxZ, Math.max(minZ, e.pos.z));
       if (cx !== e.pos.x || cz !== e.pos.z) {
@@ -762,7 +707,6 @@ function tickFlags(ctx: SimContext, match: BgMatch): void {
       flag.state = 'carried';
       flag.carrier = pid;
       flag.carrySeconds = 0;
-      bgBreakSpawnProtection(ctx, e); // a flag grab is a hostile action
       bgBreakStealth(ctx, e); // and a revealing one: stealth never survives it
       const byName = ctx.players.get(pid)?.name ?? '?';
       bgEmitAll(ctx, match, (mp) =>
@@ -830,10 +774,15 @@ function tickCarriedFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState): vo
       });
     }
   }
-  // Captured: carry the enemy flag home to your own stand.
+  // Captured: carry the enemy flag home to your own stand. CLASSIC GATE: the
+  // capture only resolves while your OWN flag sits at home. A carrier waiting
+  // at the stand captures automatically the moment their flag is returned.
   const carrierTeam = bgTeamOf(match, flag.carrier ?? -1);
   const ownHome = match.flags[carrierTeam].home;
-  if (dist2d(carrier.pos, ownHome) <= BG_CAPTURE_RADIUS) {
+  if (
+    dist2d(carrier.pos, ownHome) <= BG_CAPTURE_RADIUS &&
+    match.flags[carrierTeam].state === 'home'
+  ) {
     captureFlag(ctx, match, flag, carrierTeam);
   }
 }
@@ -1021,7 +970,6 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   match.returns.delete(pid);
   match.preMatchPools.delete(pid);
   match.stats.delete(pid);
-  match.autoReleaseIn.delete(pid);
   match.pendingFlagPress.delete(pid);
   ctx.bgMatches.delete(pid);
   if (match.teams[0].length === 0 || match.teams[1].length === 0) {
@@ -1145,12 +1093,12 @@ export function bgInfoFor(ctx: SimContext, pid: number): import('../../world_api
     const shared = sharedMatchView(ctx, match);
     const myTeam = bgTeamOf(match, pid);
     const e = ctx.entities.get(pid);
-    const protection = e?.auras.find((a) => a.kind === 'spawn_protection');
     matchInfo = {
       ...shared,
       myTeam,
-      respawnIn: e?.dead ? Math.ceil(match.waveIn[myTeam]) : 0,
-      protectedFor: protection ? Math.ceil(protection.remaining) : 0,
+      // The wave countdown is a GHOST's readout: a corpse shows nothing (the
+      // release press is the player's own move, on their own time).
+      respawnIn: e?.dead && e?.ghost ? Math.ceil(match.waveIn[myTeam]) : 0,
     };
   }
   const group = bgGroupContaining(ctx, pid);
@@ -1208,7 +1156,6 @@ function sharedMatchView(ctx: SimContext, match: BgMatch): import('../../world_a
         : BG_MAX_DURATION,
     waveIn: [Math.ceil(match.waveIn[0]), Math.ceil(match.waveIn[1])],
     respawnIn: 0, // per-viewer; overwritten in bgInfoFor
-    protectedFor: 0, // per-viewer; overwritten in bgInfoFor
   };
   match.viewTick = ctx.tickCount;
   match.viewShared = shared;

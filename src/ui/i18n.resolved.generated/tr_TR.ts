@@ -928,7 +928,6 @@ export const tr_TR: EnTranslations = {
         "dropped": "Flag on the ground"
       },
       "respawnIn": "Next wave: respawning in {seconds}",
-      "protectedFor": "Spawn protection: {seconds}s",
       "foundBanner": "Battle found. You fight for the {team}!",
       "countdownBanner": "Ravenrift begins in {seconds}",
       "startBanner": "Capture the flag!",
@@ -3638,7 +3637,7 @@ export const tr_TR: EnTranslations = {
       "flagsBody": "Each keep holds its team flag. Take the enemy flag and carry it to your own stand to score; the first team to five captures wins, and a timed-out battle resolves on score. A slain carrier drops the flag where they fell: an enemy can take it up again, while its own team returns it home instantly just by reaching it. The flag also refuses to hide: picking it up breaks stealth, and a carrier who turns invisible by any means drops it on the spot.",
       "pickupNote": "Picking a flag up is always a deliberate press of the battleground action key: nobody ever becomes the carrier by strafing through the wrong spot.",
       "respawnHeading": "Falling in battle",
-      "respawnBody": "Death keeps the classic rite: release your spirit and it rises in the fenced graveyard beside your keep, warded there until your team's next respawn wave (a corpse that lingers is released for you after a short grace). Each wave raises every waiting spirit together, briefly protected until they act, and the two team waves are deliberately staggered, so the fight never fully resets at once. There is no corpse run and no Spirit Healer bargain: the wave is the one road back.",
+      "respawnBody": "Death keeps the classic rite: your corpse lies where it fell until YOU release, and the spirit rises in the fenced graveyard beside your keep, warded there until your team's next respawn wave. The wave raises every waiting spirit together, and the two team waves are deliberately staggered, so the fight never fully resets at once. There is no corpse run and no Spirit Healer bargain: release, wait out the wave, fight.",
       "carrierHeading": "Carrying the flag",
       "carrierBody": "A carrier who holds the enemy flag too long grows more and more vulnerable, taking ever-increasing damage until the flag is captured, dropped, or returned. Hiding with the flag is a losing plan; running it home is the winning one.",
       "ladderHeading": "The ladder",

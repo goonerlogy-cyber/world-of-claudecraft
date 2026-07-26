@@ -205,7 +205,6 @@ export const TARGETS = [
         await page.evaluate(() => {
           const sim = window.__game.sim;
           const p = sim.player;
-          p.auras = p.auras.filter((a) => a.kind !== 'spawn_protection');
           sim.ctx.dealDamage(null, p, 9_999_999, false, 'physical', null, 'hit');
         });
         await wait(400);

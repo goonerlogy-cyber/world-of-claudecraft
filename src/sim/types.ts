@@ -251,11 +251,6 @@ export type AuraKind =
   | 'slow'
   | 'stun'
   | 'stasis'
-  // Ravenrift spawn protection: full damage immunity + hostile-CC rejection for
-  // a few seconds after every battleground spawn, broken early by the protected
-  // player's own first hostile action (social/battleground.ts owns the rule;
-  // the damage/CC arms live in combat/damage.ts and Sim.applyAura).
-  | 'spawn_protection'
   | 'root'
   | 'incapacitate'
   | 'polymorph'
