@@ -3,14 +3,13 @@ import {
   BG_BASES,
   BG_COVER_CRATES,
   BG_COVER_PILLARS,
+  BG_CURTAIN_WALLS,
   BG_FLAG_Z,
+  BG_GATEHOUSE_WALLS,
   BG_HALF_X,
   BG_HALF_Z,
   BG_KEEP_BARRICADES,
   BG_POSTERN_GAP,
-  BG_RAMPART_NICHES,
-  BG_RUIN_FRAGMENTS,
-  BG_SIDE_ROOM_WALLS,
   BG_WALL_HEIGHT,
   BG_WALL_T,
   battlegroundColliders,
@@ -134,15 +133,14 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     }
   });
 
-  it('pins the wall/pillar/crate manifest counts (the v2 recut field)', () => {
-    // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 7 cover walls
-    // + 4 ruin fragments + 6 side-room walls + 8 niche stubs + 2 barricades
-    expect(BG_RUIN_FRAGMENTS).toHaveLength(4);
-    expect(BG_SIDE_ROOM_WALLS).toHaveLength(6);
-    expect(BG_RAMPART_NICHES).toHaveLength(8);
+  it('pins the wall/pillar/crate manifest counts (the three-chambers field)', () => {
+    // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 5 cover walls
+    // + 8 curtain segments + 8 gatehouse walls + 2 barricades
+    expect(BG_CURTAIN_WALLS).toHaveLength(8);
+    expect(BG_GATEHOUSE_WALLS).toHaveLength(8);
     expect(BG_KEEP_BARRICADES).toHaveLength(2);
-    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 7 + 4 + 6 + 8 + 2);
-    expect(BG_COVER_PILLARS).toHaveLength(6);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 5 + 8 + 8 + 2);
+    expect(BG_COVER_PILLARS).toHaveLength(4);
     expect(BG_COVER_CRATES).toHaveLength(6);
   });
 
@@ -195,7 +193,7 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
   });
 });
 
-describe('Ravenrift v2 routes: side rooms, niches, barricades, ruin fragments', () => {
+describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', () => {
   const o = battlegroundOrigin(0);
   // Walk a chain of straight legs with body radius 0.5, asserting every leg
   // arrives at its waypoint (so the whole route is genuinely traversable).
@@ -210,30 +208,53 @@ describe('Ravenrift v2 routes: side rooms, niches, barricades, ruin fragments', 
     return at;
   }
 
-  it('the west side room is a through-route: south doorway to north doorway', () => {
-    walk({ x: -31.5, z: -16 }, [
-      { x: -31.5, z: -10 }, // in through the south doorway
-      { x: -32, z: -8 }, // around the ambush crate, hugging the rampart
-      { x: -32, z: -4 },
-      { x: -31.5, z: 0 },
-      { x: -31.5, z: 6 }, // out through the north doorway
+  it('the curtain wall is solid; the main gate and flank arch thread it', () => {
+    // straight into the south curtain between the crossings: stopped at its face
+    const blocked = resolveMovement(SEED, o.x, o.z - 26, o.x, o.z - 14, 0.5);
+    expect(blocked.z).toBeLessThan(o.z - 21.4);
+    // the 8yd main gate (x 4..12) passes
+    walk({ x: 8, z: -26 }, [{ x: 8, z: -14 }]);
+    // the 4yd flank arch (x 26..30) passes
+    walk({ x: 28, z: -26 }, [{ x: 28, z: -14 }]);
+    // the rampart-side stub is solid
+    const stub = resolveMovement(SEED, o.x + 32, o.z - 26, o.x + 32, o.z - 14, 0.5);
+    expect(stub.z).toBeLessThan(o.z - 21.4);
+    // north curtain mirrors: main gate at x -12..-4, arch at x -30..-26
+    walk({ x: -8, z: 26 }, [{ x: -8, z: 14 }]);
+    walk({ x: -28, z: 26 }, [{ x: -28, z: 14 }]);
+  });
+
+  it('the gatehouse is a jogged through-route; its walls block everything else', () => {
+    // in the field door (x -20..-16), west around the ambush crate, out the
+    // courtyard door (x -24..-21): the offset-door S-jog
+    walk({ x: -18, z: -30 }, [
+      { x: -18, z: -24 }, // in through the field-side door
+      { x: -21.5, z: -22 }, // jog west around the ambush crate
+      { x: -22.5, z: -16 },
+      { x: -22.5, z: -12 }, // out through the courtyard-side door
+    ]);
+    // the straight door-to-door line is blocked by the crate
+    const crate = resolveMovement(SEED, o.x - 18, o.z - 24, o.x - 18, o.z - 16, 0.5);
+    expect(crate.z).toBeLessThan(o.z - 23.2);
+    // the gatehouse east wall is solid from the field side
+    const wall = resolveMovement(SEED, o.x - 15, o.z - 30, o.x - 15, o.z - 24, 0.5);
+    expect(wall.z).toBeLessThan(o.z - 26.4);
+    // the north gatehouse mirrors: in at x 16..20, out at x 21..24
+    walk({ x: 18, z: 30 }, [
+      { x: 18, z: 24 },
+      { x: 21.5, z: 22 },
+      { x: 22.5, z: 16 },
+      { x: 22.5, z: 12 },
     ]);
   });
 
-  it('the east side room mirrors it exactly', () => {
-    walk({ x: 31.5, z: 16 }, [
-      { x: 31.5, z: 10 },
-      { x: 32, z: 8 },
-      { x: 32, z: 4 },
-      { x: 31.5, z: 0 },
-      { x: 31.5, z: -6 },
-    ]);
-  });
-
-  it('the side-room field wall blocks entry from the field side', () => {
-    // straight at the west room's field wall (x = -27, faces at -26/-28)
-    const blocked = resolveMovement(SEED, o.x - 22, o.z - 5, o.x - 30, o.z - 5, 0.5);
-    expect(blocked.x).toBeGreaterThan(o.x - 26);
+  it('chambers are sight-sealed: casts cross only at the crossings', () => {
+    // across the curtain between crossings: no line of sight
+    expect(lineOfSightClear(SEED, { x: o.x, z: o.z - 24 }, { x: o.x, z: o.z - 16 })).toBe(false);
+    // through the main gate: clear
+    expect(lineOfSightClear(SEED, { x: o.x + 8, z: o.z - 24 }, { x: o.x + 8, z: o.z - 16 })).toBe(
+      true,
+    );
   });
 
   it('the mouth barricade blocks the straight charge and both gaps stay open', () => {
@@ -252,69 +273,54 @@ describe('Ravenrift v2 routes: side rooms, niches, barricades, ruin fragments', 
     }
   });
 
-  it('a rampart niche bay is enterable cover; its stub walls block the wall-hug line', () => {
-    // duck into the west bay between the stubs at z -24..-20
-    walk({ x: -28, z: -22 }, [{ x: -31.8, z: -22 }]);
-    // hugging the rampart straight through the stub is blocked
-    const blocked = resolveMovement(SEED, o.x - 31.5, o.z - 28, o.x - 31.5, o.z - 22, 0.5);
-    expect(blocked.z).toBeLessThan(o.z - 26);
-  });
-
-  it('the ruin fragments thread the tight heart corridor and block their own line', () => {
-    // the 2yd corridor between the heart's south face (z=-5) and the fragment
-    // foot (z=-7): passable end to end at z=-6
-    walk({ x: -8, z: -6 }, [{ x: 2, z: -6 }]);
-    // crossing the fragment foot head-on is blocked
-    const blocked = resolveMovement(SEED, o.x - 5, o.z - 11, o.x - 5, o.z - 3, 0.5);
-    expect(blocked.z).toBeLessThan(o.z - 9.4);
-    // the corner slip gap between the two fragment arms is passable
-    walk({ x: -11, z: -6 }, [{ x: -6, z: -6 }]);
+  it('the courtyard sightline breakers block their line and leave the lanes open', () => {
+    // crossing the northeast breaker (x 6..14, z 9..11) head-on is blocked
+    const blocked = resolveMovement(SEED, o.x + 10, o.z + 6, o.x + 10, o.z + 14, 0.5);
+    expect(blocked.z).toBeLessThan(o.z + 8.6);
+    // the lane between the heart's north face (z=6) and that breaker passes
+    walk({ x: 10, z: 7.5 }, [{ x: -2, z: 7.5 }]);
   });
 
   it('each flag is reachable from the enemy keep with body radius 0.5, both routes', () => {
-    // Route A, mid-field: Crimson flag out the wide mouth gap, up the east
-    // lane between the lane walls and the ruin fragments, in through Azure's
-    // postern-side mouth gap to the Azure flag.
+    // Route A, the main gates: out the wide mouth gap, through the south main
+    // gate, across the courtyard between the heart and the breakers, out the
+    // north main gate, and in through Azure's postern-side mouth gap.
     walk({ x: 0, z: -BG_FLAG_Z }, [
       { x: 8, z: -46 },
       { x: 8, z: -38 },
-      { x: 11, z: -24 },
-      { x: 11, z: -8 },
-      { x: 11, z: 6 },
-      { x: 11, z: 12 },
-      { x: 6, z: 20 },
-      { x: -5, z: 27 },
-      { x: -8, z: 34 },
+      { x: 8, z: -26 },
+      { x: 8, z: -14 }, // the south main gate
+      { x: 10, z: -4 },
+      { x: 10, z: 7.5 }, // the heart-to-breaker lane
+      { x: -2, z: 7.5 },
+      { x: -8, z: 14 },
+      { x: -8, z: 26 }, // the north main gate
+      { x: -8, z: 38 },
       { x: -8, z: 44 },
       { x: -6, z: 46 },
       { x: 0, z: BG_FLAG_Z },
     ]);
-    // Route B, west flank: out the narrow gap, past the wing baffle, weaving
-    // the niche stubs, THROUGH the west side room, and in through Azure's
-    // wide western mouth gap.
+    // Route B, the sneak: out the postern-side mouth gap, around the wing
+    // baffle, the gatehouse S-jog, up the courtyard's west flank past the
+    // rune, out the north flank arch, and home through the far mouth gap.
     walk({ x: 0, z: -BG_FLAG_Z }, [
       { x: -8, z: -46 },
       { x: -10, z: -44 },
       { x: -10, z: -36 },
-      { x: -30.5, z: -34 },
-      { x: -31, z: -28 }, // hug the rampart past the wing baffle
-      { x: -29, z: -27 }, // step off the wall ahead of the niche stub
-      { x: -29, z: -22 },
-      { x: -31.8, z: -22 }, // duck into the cover bay
-      { x: -29, z: -22 },
-      { x: -29, z: -16 },
-      { x: -31.5, z: -15 },
-      { x: -31.5, z: -10 }, // through the room, south door to north door
-      { x: -32, z: -8 },
-      { x: -32, z: -4 },
-      { x: -31.5, z: 6 },
-      { x: -29, z: 12 },
-      { x: -29, z: 22 },
-      { x: -31.8, z: 22 }, // the northern cover bay
-      { x: -29, z: 22 },
-      { x: -29, z: 27 },
-      { x: -31, z: 29 },
-      { x: -31, z: 40 },
+      { x: -25, z: -34 },
+      { x: -30.5, z: -33 },
+      { x: -30.5, z: -28 }, // the rampart-side gap past the wing baffle
+      { x: -22, z: -28 },
+      { x: -18, z: -27 },
+      { x: -18, z: -24 }, // the gatehouse S-jog
+      { x: -21.5, z: -22 },
+      { x: -22.5, z: -16 },
+      { x: -22.5, z: -12 },
+      { x: -24, z: -4 }, // the courtyard west flank, over the rune pad
+      { x: -24, z: 8 },
+      { x: -28, z: 14 },
+      { x: -28, z: 26 }, // the north flank arch
+      { x: -28, z: 32 },
       { x: -10, z: 40 },
       { x: -10, z: 46 },
       { x: -4, z: 47 },

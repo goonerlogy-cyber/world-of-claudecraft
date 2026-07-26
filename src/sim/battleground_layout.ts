@@ -2,10 +2,13 @@
 // instance-local coordinates (y up, z along the length), the single source of
 // truth shared by BOTH the collider set (src/sim/colliders.ts) and the renderer
 // (src/render/battleground.ts), so what you fight around is what you see.
-// Sim layer: no three.js imports. The field is a v2 rework of Dubtribe11's
+// Sim layer: no three.js imports. The field is a rework of Dubtribe11's
 // PR #589 layout: the keeps, flags, runes, and postern gaps are kept, and the
-// open field between them is recut into deliberate routes (flank side rooms,
-// rampart cover bays, mouth barricades, and ruin fragments around the heart).
+// space between them is carved into THREE CHAMBERS. Two full-width curtain
+// walls partition the field into each team's own field chamber and the walled
+// Ruin Courtyard between them; every move between chambers passes one of three
+// contested crossings per curtain (main gate, flank arch, or the gatehouse
+// room), and a low barricade breaks the straight charge into each keep mouth.
 import type { Collider } from './colliders';
 
 export type BgTeam = 0 | 1; // 0 = Crimson (south, -z), 1 = Azure (north, +z)
@@ -85,17 +88,16 @@ export interface BgWallSeg {
   low?: boolean;
 }
 
-// Central cover: staggered walls, a heart ruin, pillars and crate stacks that
-// break line of sight and carve out flanking lanes to weave enemies through.
+// Chamber cover: the hollow heart ruin and flanking cover inside the Ruin
+// Courtyard, plus one wing baffle per field chamber near each keep mouth.
 // The heart ruin collides as one solid block; the renderer dresses it as a
-// hollow ruin shell (visual only, same footprint).
+// hollow ruin shell (visual only, same footprint). The two sightline
+// breakers are angled so the two main gates never see each other.
 export const BG_COVER_WALLS: BgWallSeg[] = [
-  { x: 0, z: 0, hw: 5, hd: 5 }, // heart ruin block
-  { x: -13, z: -16, hw: 1, hd: 8 }, // offset lane walls
-  { x: 13, z: 16, hw: 1, hd: 8 },
-  { x: 13, z: -16, hw: 1, hd: 5 },
-  { x: -13, z: 16, hw: 1, hd: 5 },
-  { x: -22, z: -30, hw: 6, hd: 1 }, // wing baffles near each base mouth
+  { x: 0, z: 0, hw: 6, hd: 6 }, // heart ruin block
+  { x: -10, z: -10, hw: 4, hd: 1 }, // courtyard sightline breakers
+  { x: 10, z: 10, hw: 4, hd: 1 },
+  { x: -22, z: -30, hw: 6, hd: 1 }, // wing baffles near each keep mouth
   { x: 22, z: 30, hw: 6, hd: 1 },
 ];
 export const BG_COVER_PILLARS: { x: number; z: number }[] = [
@@ -103,55 +105,50 @@ export const BG_COVER_PILLARS: { x: number; z: number }[] = [
   { x: 18, z: -8 },
   { x: -18, z: 8 },
   { x: 18, z: 8 },
-  { x: 0, z: -26 },
-  { x: 0, z: 26 },
 ];
 export const BG_COVER_CRATES: { x: number; z: number }[] = [
-  { x: -8, z: -32 },
+  { x: -8, z: -32 }, // field cover on each approach
   { x: 8, z: 32 },
-  { x: 9, z: -22 },
-  { x: -9, z: 22 },
-  { x: -29, z: -8 }, // ambush cover inside each flank side room, set against
-  { x: 29, z: 8 }, // the field wall so the rampart-side passage stays wide
+  { x: 27, z: -3 }, // cover beside each flank rune
+  { x: -27, z: 3 },
+  { x: -18, z: -22 }, // the ambush crate inside each gatehouse: it blocks the
+  { x: 18, z: 22 }, // straight door-to-door line and forces the jog wide
 ];
 
-// Ruin fragments: two broken L-shapes hugging the heart ruin, mirrored. Each L
-// is deliberately split at its corner (a 2yd slip gap), so mid-field threads
-// several distinct paths instead of flowing around one box: the tight 2yd
-// corridor along the heart's face, the 3yd gap between the fragment foot and
-// the lane wall, and the open lanes outside them.
-export const BG_RUIN_FRAGMENTS: BgWallSeg[] = [
-  { x: -9, z: -1, hw: 1, hd: 4 }, // southwest L, upright arm
-  { x: -5, z: -8, hw: 4, hd: 1 }, // southwest L, foot (corner slip gap between)
-  { x: 9, z: 1, hw: 1, hd: 4 }, // northeast mirror
-  { x: 5, z: 8, hw: 4, hd: 1 },
+/** The z line of each curtain wall: the chamber boundaries. */
+export const BG_CURTAIN_Z = 20;
+
+// The two curtain walls: full-width partitions at z = +-BG_CURTAIN_Z that
+// carve the field into three chambers (each team's field, the Ruin Courtyard
+// between). Each curtain is pierced by exactly three crossings, mirrored:
+//   main gate, 8yd, off-center toward the field side (Crimson's east);
+//   flank arch, 4yd, hugging the far rampart;
+//   the gatehouse, whose walls the curtain terminates into (below).
+export const BG_CURTAIN_WALLS: BgWallSeg[] = [
+  { x: -30, z: -20, hw: 4, hd: 1 }, // rampart to gatehouse west wall
+  { x: -5, z: -20, hw: 9, hd: 1 }, // gatehouse east wall to main gate (x 4..12)
+  { x: 19, z: -20, hw: 7, hd: 1 }, // main gate to flank arch (x 26..30)
+  { x: 32, z: -20, hw: 2, hd: 1 }, // flank arch to rampart
+  { x: 30, z: 20, hw: 4, hd: 1 }, // north curtain, point mirror
+  { x: 5, z: 20, hw: 9, hd: 1 },
+  { x: -19, z: 20, hw: 7, hd: 1 },
+  { x: -32, z: 20, hw: 2, hd: 1 },
 ];
 
-// Flank side rooms: a mirrored pair of three-walled pocket rooms backed by the
-// east and west ramparts at mid-field. Each room has a doorway at BOTH ends
-// beside the rampart, so the flank run threads THROUGH the room: an alternate
-// route with hard cover and ambush corners rather than a bare wall run.
-export const BG_SIDE_ROOM_WALLS: BgWallSeg[] = [
-  { x: -27, z: -5, hw: 1, hd: 9 }, // west room, field-side wall
-  { x: -29, z: 3, hw: 1, hd: 1 }, // west room, north wall (doorway at the rampart;
-  { x: -29, z: -13, hw: 1, hd: 1 }, // butt-joins the field wall, never overlaps it)
-  { x: 27, z: 5, hw: 1, hd: 9 }, // east room mirror
-  { x: 29, z: -3, hw: 1, hd: 1 },
-  { x: 29, z: 13, hw: 1, hd: 1 },
-];
-
-// Rampart niches: shallow cover bays notched between stub walls that jut from
-// the perimeter side walls, two bays per rampart, mirrored. A flag runner
-// hugging the wall gets a cover beat to duck behind roughly every 20yd.
-export const BG_RAMPART_NICHES: BgWallSeg[] = [
-  { x: -31.5, z: -25, hw: 1.5, hd: 1 },
-  { x: -31.5, z: -19, hw: 1.5, hd: 1 },
-  { x: -31.5, z: 19, hw: 1.5, hd: 1 },
-  { x: -31.5, z: 25, hw: 1.5, hd: 1 },
-  { x: 31.5, z: -25, hw: 1.5, hd: 1 },
-  { x: 31.5, z: -19, hw: 1.5, hd: 1 },
-  { x: 31.5, z: 19, hw: 1.5, hd: 1 },
-  { x: 31.5, z: 25, hw: 1.5, hd: 1 },
+// The gatehouses: a 12x12 room straddling each curtain with OFFSET doors
+// (enter the field-side door on one half, exit the courtyard-side door on the
+// other), so crossing it is a jog past ambush corners, not a straight run.
+// Each sits on its team's postern side, so a runner slipping out the postern
+// chains naturally into it. Walls butt-join the curtain segments exactly.
+export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
+  { x: -25, z: -20, hw: 1, hd: 6 }, // south gatehouse, west wall
+  { x: -15, z: -20, hw: 1, hd: 6 }, // east wall
+  { x: -23, z: -26, hw: 3, hd: 1 }, // field-side wall (door x -20..-16)
+  { x: -18.5, z: -14, hw: 2.5, hd: 1 }, // courtyard-side wall (door x -24..-21)
+  { x: 25, z: 20, hw: 1, hd: 6 }, // north gatehouse, point mirror
+  { x: 15, z: 20, hw: 1, hd: 6 },
+  { x: 23, z: 26, hw: 3, hd: 1 },
+  { x: 18.5, z: 14, hw: 2.5, hd: 1 },
 ];
 
 // Mouth barricades: one low wall 2yd field-side of each keep mouth, offset
@@ -240,17 +237,16 @@ export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   return segs;
 }
 
-/** Every wall segment on the field (perimeter + both keeps + cover + the v2
- *  route work: ruin fragments, side rooms, rampart niches, mouth barricades). */
+/** Every wall segment on the field (perimeter + both keeps + chamber cover +
+ *  the curtains, gatehouses, and mouth barricades). */
 export function battlegroundWallSegments(): BgWallSeg[] {
   return [
     ...BG_PERIMETER_WALLS,
     ...keepWallSegments(0),
     ...keepWallSegments(1),
     ...BG_COVER_WALLS,
-    ...BG_RUIN_FRAGMENTS,
-    ...BG_SIDE_ROOM_WALLS,
-    ...BG_RAMPART_NICHES,
+    ...BG_CURTAIN_WALLS,
+    ...BG_GATEHOUSE_WALLS,
     ...BG_KEEP_BARRICADES,
   ];
 }
