@@ -360,8 +360,13 @@ describe('talented burst window (Monte Carlo 2026-07-24, designer round 2026-07-
   });
 
   it('the talented build still out-bursts the naked spec (over-nerf guard)', () => {
-    const naked = runShortFight('fire', FIGHT_SECONDS);
-    expect(mean).toBeGreaterThanOrEqual(naked.dps);
+    // Mean versus mean over the SAME seed panel: a single-seed naked run can
+    // high-roll past the talented mean on pure crit luck whenever the shared
+    // rng stream shifts (any world-content change forks it), which is seed
+    // noise, not an over-nerf.
+    const naked = CEILING_SEEDS.map((seed) => runShortFight('fire', FIGHT_SECONDS, seed));
+    const nakedMean = naked.reduce((a, r) => a + r.dps, 0) / naked.length;
+    expect(mean).toBeGreaterThanOrEqual(nakedMean);
   });
 });
 
