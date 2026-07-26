@@ -349,9 +349,8 @@ export function castleLift(x: number, z: number): number {
     abs = Math.max(
       abs,
       segStripAbs(z, x, b.x, b.z0, b.z1, b.hAbs, bht, [G.outer]),
-      // MUTATION: side walls deleted
-      0,
-      0,
+      segStripAbs(x, z, b.z0, b.x, CASTLE.wx0, b.hAbs, bht),
+      segStripAbs(x, z, b.z1, b.x, CASTLE.wx0, b.hAbs, bht),
     );
   }
   // the walled garden behind the far wall: a low south wall with two
@@ -362,9 +361,8 @@ export function castleLift(x: number, z: number): number {
     abs = Math.max(
       abs,
       segStripAbs(x, z, g.wallZ, g.x0, g.x1, g.hAbs, ght, g.gates),
-      // MUTATION: end returns deleted
-      0,
-      0,
+      segStripAbs(z, x, g.x0, CASTLE.wz1, g.wallZ, g.hAbs, ght),
+      segStripAbs(z, x, g.x1, CASTLE.wz1, g.wallZ, g.hAbs, ght),
     );
   }
   // tower bastions (square tops, walkable, continuous with the walks)
