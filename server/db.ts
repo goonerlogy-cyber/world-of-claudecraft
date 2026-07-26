@@ -2985,6 +2985,8 @@ export interface BgLeaderRow {
 // that scan hurt, the documented upgrade is a bare `(state->>'bgRating')`
 // expression plus a partial index over eligible rows, applied to both twins.
 export async function topBgRatings(limit = 20): Promise<BgLeaderRow[]> {
+  // The 1500 literal mirrors BG_BASE_RATING (src/sim/social/battleground.ts);
+  // SQL cannot import the TS constant, so a base-rating retune must edit BOTH.
   const ratingExpr = "COALESCE((state->>'bgRating')::int, 1500)";
   const winsExpr = "COALESCE((state->>'bgWins')::int, 0)";
   const lossesExpr = "COALESCE((state->>'bgLosses')::int, 0)";
