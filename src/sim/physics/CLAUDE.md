@@ -56,10 +56,22 @@ general 3D solver and exact rather than approximate for this content.
   carries over. Grounded climbing goes through `steppableAt` alone.
 - **Every step-up is headroom-gated** (`isClear`): climbing must never push a
   body into a wall.
-- **Open world only.** Instanced interiors (dungeon, delve, arena, Yumi maze)
-  keep the long-standing `resolveMove` path in `player_motion.ts`; they are flat
-  rooms of full-height walls where step-up has nothing to act on, and their
-  delve bounds/door clamps live on that path.
+- **The solver runs the open world; interiors share its traversal queries.**
+  Instanced interiors (dungeon, delve, arena, Yumi maze) keep the
+  long-standing `resolveMove` path in `player_motion.ts` for horizontal
+  collision (their delve bounds/door clamps live there), but DUNGEON
+  interiors are no longer flat rooms of walls: `supportHeightAt` and the
+  ledge grab resolve their standable furniture tops (coffin lids, cargo
+  stacks; `dungeon_layout.ts` layoutColliders), `groundHeight` carries the
+  raised boss dais (`dungeon_floor.ts`), and the instanced kernel arm grants
+  the step allowance up the dais rim plus the airborne mantle over it. The
+  delve/arena/yumi bands stay flat-floor by contract.
+- **Standable tops may be SHAPED** (`TopSlope`: gabled ridge or cone), sampled
+  everywhere through `colliderTopAt`: support, landing, pass-over, the ledge
+  fit, and the solver's blocking test all read the pitched surface at the
+  query point, never the ridge max (a ridge-max blocking read depenetrates a
+  roof-walker off the roof; the sampled read is what lets feet track the
+  stall canopy's cone and the chapel hall's gable).
 - **Allocation-light steady state.** Module scratch (`candidates`, `hit`,
   `push`) is reused and `moveCharacter` fills a caller-owned result, so no
   per-call lists or poses are minted; the kernel owns one params/result pair
