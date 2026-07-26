@@ -655,14 +655,13 @@ export const hudChromeStrings = {
   bg: {
     title: 'Ravenrift',
     modeTag: '5v5 Capture the Flag',
-    close: 'Close',
     offlineNote: 'Ravenrift is syncing. The queue opens once the realm answers.',
     ratingSummary: 'Rating. {wins} wins / {losses} losses',
     careerCaptures: 'Career captures: {count}',
     enterQueue: 'Enter the Queue',
     enterQueueParty: 'Enter the Queue (party of {count})',
     leaveQueue: 'Leave Queue',
-    searching: 'Searching. {count}/10 in queue.',
+    searching: 'Searching. {count}/{size} in queue.',
     queuedParty: 'Party of {count}.',
     queueNote:
       'Two teams of five. Steal the enemy banner and run it to your keep. First to 5 captures wins. Group up to 5 and queue together; grab Sprint Runes and weave the cover to lose your pursuers.',
@@ -693,6 +692,7 @@ export const hudChromeStrings = {
     flagDroppedLog: 'The {team} flag was dropped.',
     flagReturnedLog: 'The {team} flag was returned.',
     // Across-screen banner variants (separate sink, separate length budget)
+    boardToggleLabel: 'Match scoreboard. Press Enter to pin the full board open.',
     levelRequirement: 'You must reach level {level} to unlock queueing for this battleground.',
     board: {
       kills: 'Kills',

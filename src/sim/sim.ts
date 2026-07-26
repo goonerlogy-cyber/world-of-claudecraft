@@ -2255,10 +2255,18 @@ export class Sim {
       arena2v2Rating: savedArena2v2.rating,
       arena2v2Wins: savedArena2v2.wins,
       arena2v2Losses: savedArena2v2.losses,
-      bgRating: savedState?.bgRating ?? bgMod.BG_BASE_RATING,
-      bgWins: savedState?.bgWins ?? 0,
-      bgLosses: savedState?.bgLosses ?? 0,
-      bgCaptures: savedState?.bgCaptures ?? 0,
+      // Finite-clamped like the arena standings above: bgRating feeds Elo
+      // math, so a corrupt row must never flow NaN through a match result.
+      bgRating: Number.isFinite(savedState?.bgRating)
+        ? (savedState?.bgRating as number)
+        : bgMod.BG_BASE_RATING,
+      bgWins: Number.isFinite(savedState?.bgWins) ? Math.max(0, savedState?.bgWins as number) : 0,
+      bgLosses: Number.isFinite(savedState?.bgLosses)
+        ? Math.max(0, savedState?.bgLosses as number)
+        : 0,
+      bgCaptures: Number.isFinite(savedState?.bgCaptures)
+        ? Math.max(0, savedState?.bgCaptures as number)
+        : 0,
       sportRole: null,
       vcupWins: savedState?.vcupWins ?? 0,
       vcupLosses: savedState?.vcupLosses ?? 0,
@@ -4715,8 +4723,10 @@ export class Sim {
     // tick-staggered bots), so appending it here cannot fork the draw order.
     this.updateValeCup();
     lap?.('valecup');
-    // Ravenrift draws ZERO rng (queue-order matchmaking, tick-math wave and
-    // rune clocks), so appending it here cannot fork the draw order.
+    // Ravenrift's ACTIVE phase draws ZERO rng (queue-order matchmaking,
+    // tick-math wave and rune clocks; the one seeded draw is the power-rune
+    // face at match START), so its tick position cannot fork the draw order
+    // mid-match.
     bgMod.updateBattleground(this.ctx);
     lap?.('battleground');
     // The Dungeon Finder phase draws ZERO rng (queue bookkeeping + role

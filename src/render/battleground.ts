@@ -27,9 +27,10 @@ import { freezeStaticMatrices } from './static_matrix';
 
 export { battlegroundRenderManifest } from './battleground_core';
 
-// Kit modules outside the dungeon base pack would load here on demand (the
-// jail_scene loadKitModules seam); every module the battleground manifest
-// emits today ships in the base kit, so the extra list is empty.
+// Kit modules outside the dungeon base pack, loaded on demand through the
+// jail_scene loadKitModules seam: the graveyard dressing (stones, markers,
+// the candle shrine, dirt grave floors) lives here so the base pack stays
+// lean for hosts that never enter the band.
 const BG_EXTRA_KIT: readonly string[] = [
   'gravestone',
   'grave_a',

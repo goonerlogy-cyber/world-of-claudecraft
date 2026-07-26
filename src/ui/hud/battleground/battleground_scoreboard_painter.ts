@@ -172,9 +172,23 @@ export class BattlegroundScoreboard {
     // clock must never spam a screen reader (politeness contract), and the
     // flag glyphs inside carry their own accessible names.
     el.setAttribute('aria-live', 'off');
-    // Hover reveals the expanded board (CSS); a tap/click pins it open, which
-    // is also the touch path where hover does not exist.
-    el.addEventListener('click', () => el.classList.toggle('expanded'));
+    // Hover reveals the expanded board (CSS); a tap/click pins it open (the
+    // touch path), and the strip is FOCUSABLE so keyboard users get the same
+    // board: focus reveals via :focus-within, Enter/Space pins it exactly like
+    // a click (a keyboard user must never be locked out of kills/deaths/caps).
+    el.tabIndex = 0;
+    el.setAttribute('aria-label', t('hudChrome.bg.boardToggleLabel'));
+    el.setAttribute('aria-expanded', 'false');
+    const togglePin = (): void => {
+      const pinned = el.classList.toggle('expanded');
+      el.setAttribute('aria-expanded', pinned ? 'true' : 'false');
+    };
+    el.addEventListener('click', togglePin);
+    el.addEventListener('keydown', (ev) => {
+      if (ev.key !== 'Enter' && ev.key !== ' ') return;
+      ev.preventDefault();
+      togglePin();
+    });
     layer.appendChild(el);
     this.root = el;
     return el;

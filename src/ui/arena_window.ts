@@ -19,6 +19,7 @@
 
 import { audio } from '../game/audio';
 import type { ArenaMapId } from '../sim/dungeon_layout';
+import { BG_TEAM_SIZE } from '../sim/social/battleground';
 import type { PlayerClass } from '../sim/types';
 import type { ArenaFormat, IWorld } from '../world_api';
 import {
@@ -368,7 +369,10 @@ export class ArenaWindow {
       return (
         `<button class="btn leave" data-act="leave">${esc(t('hudChrome.bg.leaveQueue'))}</button>` +
         `<div class="bg-queue-status">${esc(
-          t('hudChrome.bg.searching', { count: num(action.queueSize) }),
+          t('hudChrome.bg.searching', {
+            count: num(action.queueSize),
+            size: num(BG_TEAM_SIZE * 2),
+          }),
         )}${partyNote}</div>`
       );
     }

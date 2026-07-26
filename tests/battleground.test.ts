@@ -11,6 +11,7 @@ import {
   BG_CARRIER_VULN_INTERVAL,
   BG_MAX_DURATION,
   BG_MIN_LEVEL,
+  BG_MIN_RATING,
   BG_POWER_RUNE_VALUE,
   BG_SPAWN_PROTECTION,
   BG_WAVE_OFFSET,
@@ -717,7 +718,7 @@ describe('Ravenrift: death, wave respawn, spawn protection', () => {
 });
 
 describe('Ravenrift: carrier vulnerability (Focused Assault lineage)', () => {
-  it('stacks after 45s of continuous holding, one more every 15s, and amplifies damage taken', () => {
+  it('stacks after the fatigue delay (75s), one more every 15s, and amplifies damage taken', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
@@ -808,12 +809,33 @@ describe('Ravenrift: carrier vulnerability (Focused Assault lineage)', () => {
 });
 
 describe('Ravenrift: runes, hostility, and the match clock', () => {
-  it('pins the immersive-scale timing tune (re-pin deliberately when retuning)', () => {
-    // The behavior suites above use these constants symbolically, so this pin
-    // is what actually fails if the live tune drifts: fatigue at 75s covers
-    // roughly two 236yd flag runs, the cap is 15 minutes.
-    expect(BG_CARRIER_VULN_DELAY).toBe(75);
-    expect(BG_MAX_DURATION).toBe(900);
+  it('pins the whole live tune as literals (re-pin deliberately when retuning)', () => {
+    // The behavior suites use these constants symbolically, so THIS block is
+    // what actually fails on a silent retune: every tuned number ships pinned.
+    expect(BG_CARRIER_VULN_DELAY).toBe(75); // ~two 236yd flag runs
+    expect(BG_CARRIER_VULN_INTERVAL).toBe(15);
+    expect(BG_MAX_DURATION).toBe(900); // 15 minute cap
+    expect(BG_WAVE_PERIOD).toBe(10);
+    expect(BG_WAVE_OFFSET).toBe(5);
+    expect(BG_SPAWN_PROTECTION).toBe(2.5);
+    expect(BG_AUTO_RELEASE_SECONDS).toBe(6);
+    expect(BG_POWER_RUNE_VALUE).toBeCloseTo(0.15, 10);
+    expect(BATTLEGROUND_WIN_HONOR).toBe(60);
+    expect(BATTLEGROUND_LOSS_HONOR).toBe(20);
+    // the one deliberate zero-sum exception: the loser-side rating floor
+    expect(BG_MIN_RATING).toBe(100);
+  });
+
+  it('the rating floor holds a loss at BG_MIN_RATING while the winner keeps the full delta', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const winner = match.teams[0][0];
+    const loser = match.teams[1][0];
+    sim.meta(loser)!.bgRating = BG_MIN_RATING + 1; // one point above the floor
+    for (let cap = 0; cap < 5; cap++) captureOnce(sim, match, winner);
+    expect(sim.meta(loser)!.bgRating).toBe(BG_MIN_RATING); // clamped, not negative
+    expect(sim.meta(winner)!.bgRating).toBeGreaterThan(1500); // winner unaffected
   });
 
   it('stepping on a sprint rune grants 1.4x haste for 10s and the rune recharges over 22s', () => {
@@ -913,14 +935,17 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
 });
 
 describe('Ravenrift: review-hardening pins', () => {
-  it('the battleground phase draws ZERO rng (the tick-position justification)', () => {
+  it('the ACTIVE battleground phase draws ZERO rng (the one draw is at match start)', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
     // Drive the phase DIRECTLY (not sim.tick, whose other phases draw) across
-    // countdown tail, wave respawns, a rune claim, and a capture: the shared
-    // rng state must not move by a single draw.
-    const rngState = () => (sim.rng as unknown as { s: number }).s;
+    // countdown tail, wave respawns, rune claims (sprint AND power, so the
+    // face alternation is proven draw-free), and a capture: the observer must
+    // count zero draws. (setObserver, not the private field: a field rename
+    // must fail this test, never vacuously pass it.)
+    let draws = 0;
+    sim.rng.setObserver(() => draws++);
     const runner = match.teams[0][0];
     tp(sim, runner, match.runes[0].pos.x, match.runes[0].pos.z);
     // a power-rune claim inside the window proves the alternation draws nothing
@@ -928,12 +953,12 @@ describe('Ravenrift: review-hardening pins', () => {
     tp(sim, powerRunner, match.runes[4].pos.x, match.runes[4].pos.z);
     kill(sim, match.teams[1][1]);
     const timerBefore = match.timer;
-    const before = rngState();
+
     // 20s covers the worst chain: the 6s auto-release just missing a wave,
     // then the full 10s to the next one (release + ward + revive all inside
     // this phase, still zero draws).
     for (let i = 0; i < 20 * 20; i++) updateBattleground(sim.ctx);
-    expect(rngState()).toBe(before); // zero draws across 20s of battleground
+    expect(draws).toBe(0); // zero draws across 20s of battleground
     expect(match.timer).toBeGreaterThan(timerBefore + 10); // and the phase really ran
     expect(sim.entities.get(match.teams[1][1])!.dead).toBe(false); // released + wave-raised
   });
@@ -1049,6 +1074,7 @@ describe('Ravenrift: review-hardening pins', () => {
 
   it('the honor DR window round-trips through CharacterState and clears on UTC rollover', () => {
     const { sim, pids } = tenInQueue();
+    sim.utcDay = '2026-07-26';
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
     const winner = match.teams[0][0];
@@ -1056,6 +1082,24 @@ describe('Ravenrift: review-hardening pins', () => {
     const daily = sim.meta(winner)!.honorArenaDaily!;
     expect(daily.bgResultsByOpponent).toBeTruthy();
     expect(Object.values(daily.bgResultsByOpponent!)).toEqual([1]);
+    expect(daily.date).toBe('2026-07-26');
+    // ROLLOVER: the next award on a new UTC day re-keys the window and pays
+    // the full price again (the reset arm in pvp/honor.ts dailyWindow)
+    const honorAfterDayOne = sim.meta(winner)!.honor;
+    sim.utcDay = '2026-07-27';
+    for (const pid of pids) sim.bgQueueJoin(pid);
+    sim.tick();
+    const rematch = sim.bgMatchFor(winner)!;
+    toActive(sim, rematch);
+    const rewinner = rematch.teams[0].includes(winner) ? winner : rematch.teams[1][0];
+    for (let cap = 0; cap < 5; cap++) captureOnce(sim, rematch, rematch.teams[0][0]);
+    const team0Won = rematch.teams[0].includes(rewinner);
+    const meta = sim.meta(rewinner)!;
+    expect(meta.honorArenaDaily!.date).toBe('2026-07-27'); // window re-keyed
+    expect(Object.values(meta.honorArenaDaily!.bgResultsByOpponent ?? {})).toEqual([1]);
+    // full price again, NOT the same-day repeat decay
+    const paid = meta.honor - (rewinner === winner ? honorAfterDayOne : 0);
+    expect(paid).toBe(team0Won ? BATTLEGROUND_WIN_HONOR : BATTLEGROUND_LOSS_HONOR);
     // persists across a save/load round trip (the anti-win-trading window)
     const state = sim.serializeCharacter(winner)!;
     expect(state.honorArenaDaily!.bgResultsByOpponent).toEqual(daily.bgResultsByOpponent);

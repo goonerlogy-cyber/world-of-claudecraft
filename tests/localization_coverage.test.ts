@@ -157,7 +157,6 @@ describe('i18n Localization Key Coverage', () => {
     'hud.core.mobileMore',
     'hud.core.mobileMoreAria',
     'hud.core.mobileSocial',
-    'hud.core.mobileArena',
     'hud.core.mobileMenu',
     'hud.core.mobileUse',
     'hud.core.mobileMeters',

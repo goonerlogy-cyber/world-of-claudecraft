@@ -37,7 +37,7 @@ import { eloDelta, snapshotArenaReturnPools } from './arena';
 
 // --- Ravenrift tuning consts (rating reuses the arena's exported eloDelta) ---
 export const BG_BASE_RATING = 1500; // every character starts here on the ladder
-const BG_MIN_RATING = 100; // rating floor so a losing streak can't go absurd
+export const BG_MIN_RATING = 100; // rating floor so a losing streak can't go absurd
 export const BG_TEAM_SIZE = 5; // players per team: a full match is 5v5
 // Queue floor: an under-leveled body on one side decides ranked matches, so
 // every queued champion (and every member of a queued party) must be 20.
@@ -376,7 +376,12 @@ function matchmakeBg(ctx: SimContext): void {
     // Greedily pack whole groups into two teams of five, balancing headcount.
     // Queue order is the only input: no rng, no rating banding (rated, not
     // matched; strict matchmaking is deferred).
-    const groups = [...ctx.bgQueue].sort((a, b) => b.pids.length - a.pids.length);
+    // Size-desc with a queue-order tiebreak: an explicit total order (the
+    // repo rule), not a lean on engine sort stability.
+    const groups = ctx.bgQueue
+      .map((g, seq) => ({ g, seq }))
+      .sort((a, b) => b.g.pids.length - a.g.pids.length || a.seq - b.seq)
+      .map((x) => x.g);
     const teams: [number[], number[]] = [[], []];
     const used: BgQueueGroup[] = [];
     for (const g of groups) {

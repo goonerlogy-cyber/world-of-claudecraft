@@ -2976,6 +2976,14 @@ export interface BgLeaderRow {
   losses: number;
 }
 
+// ACCEPTED COST (the arena twin's trade, doubled): predicating and ordering on
+// the COALESCE-wrapped JSONB expression can never match an index (the index
+// rule at the top of this file), so each cache refresh seq-scans and detoasts
+// every character blob in the realm. Bounded on purpose: the leaderboard is
+// fronted by a single-flight TTL cache (clients cannot bust it) and the
+// statement timeout, so the realm pays ONE scan per TTL. If realm size makes
+// that scan hurt, the documented upgrade is a bare `(state->>'bgRating')`
+// expression plus a partial index over eligible rows, applied to both twins.
 export async function topBgRatings(limit = 20): Promise<BgLeaderRow[]> {
   const ratingExpr = "COALESCE((state->>'bgRating')::int, 1500)";
   const winsExpr = "COALESCE((state->>'bgWins')::int, 0)";

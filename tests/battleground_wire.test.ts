@@ -37,7 +37,7 @@ vi.mock('../server/db', () => ({
   releaseAllCharacterLeases: vi.fn(async () => {}),
 }));
 
-import { type ClientSession, GameServer } from '../server/game';
+import { BG_MATCH_INTEREST_RADIUS, type ClientSession, GameServer } from '../server/game';
 import { ClientWorld } from '../src/net/online';
 import { BG_HALF_X, BG_HALF_Z } from '../src/sim/battleground_layout';
 import { battlegroundOrigin } from '../src/sim/data';
@@ -255,9 +255,55 @@ describe('immersive-scale interest: the whole match stays tracked', () => {
 
   it('the field diagonal keeps headroom inside the match interest radius', () => {
     // The whole-match-tracked design rests on the diagonal fitting the raised
-    // radius (server BG_MATCH_INTEREST_RADIUS = 300). If the field grows again
-    // this fails loudly instead of participants popping out of mirrors.
-    expect(Math.hypot(2 * BG_HALF_X, 2 * BG_HALF_Z)).toBeLessThan(300);
+    // radius. Pin the radius itself AND compute the check from the exported
+    // constant, so lowering the server radius fails here instead of silently
+    // shrinking the guarantee under a still-green hardcoded 300.
+    expect(BG_MATCH_INTEREST_RADIUS).toBe(300);
+    expect(Math.hypot(2 * BG_HALF_X, 2 * BG_HALF_Z)).toBeLessThan(BG_MATCH_INTEREST_RADIUS);
+  });
+
+  it('stealth filters BEFORE the widened match radius: a hidden enemy ships nowhere', () => {
+    // The fairness half of whole-match interest: the wider bubble must reveal
+    // nothing stealth hides (canObserveEntity runs before the limit branch).
+    const saved = process.env.ALLOW_DEV_COMMANDS;
+    try {
+      process.env.ALLOW_DEV_COMMANDS = '1';
+      const server = new GameServer();
+      const fa = fakeWs();
+      const fb = fakeWs();
+      const a = joinServer(server, fa, 61, 'SeerOpen');
+      const b = joinServer(server, fb, 62, 'SneakFar');
+      cmd(server, a, { cmd: 'bg_queue' });
+      cmd(server, b, { cmd: 'bg_queue' });
+      cmd(server, a, { cmd: 'dev_bg_start' });
+      const match = server.sim.bgMatchFor(a.pid)!;
+      expect(match).toBeTruthy();
+      const ea = server.sim.entities.get(a.pid)!;
+      const eb = server.sim.entities.get(b.pid)!;
+      // opposite teams (a 1v1 split), stood on their own flags: 236yd apart,
+      // inside the widened same-slot radius
+      const aTeam = match.teams[0].includes(a.pid) ? 0 : 1;
+      const aHome = match.flags[aTeam].home;
+      const bHome = match.flags[1 - aTeam].home;
+      ea.pos = { x: aHome.x, y: ea.pos.y, z: aHome.z };
+      ea.prevPos = { ...ea.pos };
+      server.sim.ctx.rebucket(ea);
+      eb.pos = { x: bHome.x, y: eb.pos.y, z: bHome.z };
+      eb.prevPos = { ...eb.pos };
+      server.sim.ctx.rebucket(eb);
+      // visible first: the widened radius ships the enemy
+      (server as any).broadcastSnapshots();
+      let ids = (lastSnap(fa.sent).ents as { id: number }[]).map((row) => row.id);
+      expect(ids).toContain(b.pid);
+      // now hidden: same positions, stealth on, absent from the snapshot
+      eb.stealthed = true;
+      (server as any).broadcastSnapshots();
+      ids = (lastSnap(fa.sent).ents as { id: number }[]).map((row) => row.id);
+      expect(ids).not.toContain(b.pid);
+    } finally {
+      if (saved === undefined) delete process.env.ALLOW_DEV_COMMANDS;
+      else process.env.ALLOW_DEV_COMMANDS = saved;
+    }
   });
 });
 

@@ -243,7 +243,7 @@ const INTEREST_QUERY_RADIUS = NPC_DROP_RADIUS;
 // CLIENT hides past ~120yd behind the band's distance fog, like the open
 // world's view distance). Applies to SAME-SLOT pairs only: slot spacing (460)
 // keeps cross-slot pairs >= 180yd apart, beyond every default radius.
-const BG_MATCH_INTEREST_RADIUS = 300;
+export const BG_MATCH_INTEREST_RADIUS = 300;
 const BG_MATCH_DROP_RADIUS = 320;
 // Distance-tiered update rates: full snapshot rate inside nameplate range
 // (55yd, beyond every ability range), half rate out to the 80yd draw range,

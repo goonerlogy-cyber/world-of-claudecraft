@@ -210,7 +210,7 @@ export const BIND_ACTIONS: BindAction[] = [
   },
   {
     id: 'arena',
-    label: 'Arena (Ashen Coliseum)',
+    label: 'PvP (Ravenrift and Arenas)',
     category: 'Interface',
     kind: 'edge',
     defaults: ['KeyG'],

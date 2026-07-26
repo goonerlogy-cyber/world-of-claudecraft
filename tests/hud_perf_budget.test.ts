@@ -284,11 +284,13 @@ const HOT_PAINTERS: ReadonlyArray<{
   // the Ravenrift scoreboard builds its skeleton in ONE sig-gated innerHTML
   // write and mounts its three roots once (role + aria-live pairs); every
   // per-frame write (scores, clock, flag/pip classes, respawn, board cells)
-  // is facet-routed. The one .classList is the mount-time click handler that
-  // pins the expanded board open (user-event-driven, never per-frame).
+  // is facet-routed. The one .classList is the mount-time click/keyboard
+  // handler that pins the expanded board open (user-event-driven, never
+  // per-frame); the three extra setAttribute are the mount-time focusable
+  // strip's aria-label plus the aria-expanded pair the same handler flips.
   {
     file: 'hud/battleground/battleground_scoreboard_painter.ts',
-    allow: { '.innerHTML': 1, '.setAttribute': 5, '.classList': 1 },
+    allow: { '.innerHTML': 1, '.setAttribute': 8, '.classList': 1 },
     reflowAllow: {},
   },
   { file: 'auras_painter.ts', allow: { '.className': 3 }, reflowAllow: {} },

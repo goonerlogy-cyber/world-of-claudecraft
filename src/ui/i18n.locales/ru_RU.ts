@@ -841,7 +841,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.pvp.mobileLabel': 'PvP',
   'hudChrome.bg.title': 'Вороний Разлом',
   'hudChrome.bg.modeTag': 'Захват флага 5 на 5',
-  'hudChrome.bg.close': 'Закрыть',
   'hudChrome.bg.offlineNote':
     'Вороний Разлом синхронизируется. Очередь откроется после ответа мира.',
   'hudChrome.bg.ratingSummary': 'Рейтинг. Побед: {wins} / поражений: {losses}',
@@ -849,7 +848,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.enterQueue': 'Встать в очередь',
   'hudChrome.bg.enterQueueParty': 'Встать в очередь (группа из {count})',
   'hudChrome.bg.leaveQueue': 'Покинуть очередь',
-  'hudChrome.bg.searching': 'Поиск. В очереди {count}/10.',
+  'hudChrome.bg.searching': 'Поиск. В очереди {count}/{size}.',
   'hudChrome.bg.queuedParty': 'Группа из {count}.',
   'hudChrome.bg.queueNote':
     'Две команды по пять бойцов. Украдите вражеское знамя и принесите его в свою крепость. Побеждает команда, первой захватившая флаг 5 раз. Собирайте группу до 5 человек и вставайте в очередь вместе; подбирайте руны спринта и уходите от погони между укрытиями.',
@@ -874,6 +873,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagDroppedLog': 'Флаг команды {team} уронен.',
   'hudChrome.bg.flagReturnedLog': 'Флаг команды {team} возвращен.',
   'hudChrome.bg.yourTeamTitle': 'Ваша команда',
+  'hudChrome.bg.boardToggleLabel': 'Табло матча. Нажмите Enter, чтобы закрепить полную таблицу.',
   'hudChrome.bg.levelRequirement': 'Очередь на это поле боя открывается на уровне {level}.',
   'hudChrome.bg.board.kills': 'Убийства',
   'hudChrome.bg.board.deaths': 'Смерти',
@@ -1798,7 +1798,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hud.core.mobileMore': 'Еще',
   'hud.core.mobileMoreAria': 'Показать еще меню',
   'hud.core.mobileSocial': 'Общение',
-  'hud.core.mobileArena': 'Арена',
   'hud.core.mobileMenu': 'Меню',
   'hud.core.mobileSettings': 'Настройки',
   'hud.core.mobileUse': 'Использовать',
@@ -1882,6 +1881,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hud.options.mouseCamera': 'Камера мышью',
   'hud.options.keybindHelpMouseCamera':
     'Камера мышью выкл.: A/D поворачивает, перетаскивание облетает (классика). Вкл.: WASD относительно камеры, A/D стрейф. Щелкните ячейку клавиши для переназначения; Esc отменяет.',
+  'hud.keybinds.actions.arena': 'PvP (Вороний Разлом и арены)',
   'hud.keybinds.categories.movement': 'Передвижение',
   'hud.keybinds.categories.targeting': 'Цели',
   'hud.keybinds.categories.interface': 'Интерфейс',
@@ -1904,7 +1904,6 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hud.keybinds.actions.nameplates': 'Индикаторы здоровья',
   'hud.keybinds.actions.meters': 'Счетчики урона',
   'hud.keybinds.actions.social': 'Друзья и гильдия',
-  'hud.keybinds.actions.arena': 'Арена (Пепельный Колизей)',
   'hud.keybinds.actions.chat': 'Открыть чат',
   'hud.keybinds.actions.attack': 'Атака',
   'hud.keybinds.actions.actionBarSlot': 'Панель действий {slot}',
