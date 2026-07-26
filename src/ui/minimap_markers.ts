@@ -31,7 +31,7 @@
 // to a color, never the resolved color.
 
 import type { GatheringProfessionId } from '../sim/content/professions';
-import { GATHER_NODES, isDelvePos, isYumiMazePos, QUESTS, zoneAt } from '../sim/data';
+import { GATHER_NODES, isBgPos, isDelvePos, isYumiMazePos, QUESTS, zoneAt } from '../sim/data';
 import { NODE_HARVEST_TABLE } from '../sim/professions/gathering';
 import { canGatherTier } from '../sim/professions/tools';
 import { isQuestTurnInNpc } from '../sim/types';
@@ -48,9 +48,11 @@ const PARTY_DISC_RADIUS_RANGE = 3;
 
 /** Which minimap surface a world renders: the delve schematic (owned by
  *  delve_map_painter), the Protect Yumi maze (the overworld marker set over a
- *  cached maze-wall background, minimap_painter.paintYumiMaze), or the
+ *  cached maze-wall background, minimap_painter.paintYumiMaze), the Ravenrift
+ *  battleground (the same marker set over a cached wall raster; Hud routes it
+ *  through paintOverworld, which branches to paintBattleground), or the
  *  overworld minimap (this core). */
-export type MinimapMode = 'delve' | 'yumiMaze' | 'overworld';
+export type MinimapMode = 'delve' | 'yumiMaze' | 'battleground' | 'overworld';
 
 /** The NPC quest glyph: turn-in ready ('?') wins over available ('!'), else neutral. */
 export type NpcGlyph = '?' | '!' | '•';
@@ -121,6 +123,7 @@ export interface MinimapMarkers {
  *  branch is delve_map_painter's; the overworld branch is this core's. */
 export function minimapMode(world: IWorld): MinimapMode {
   if (isYumiMazePos(world.player.pos.x)) return 'yumiMaze';
+  if (isBgPos(world.player.pos.x)) return 'battleground';
   return isDelvePos(world.player.pos.x) && world.delveRun ? 'delve' : 'overworld';
 }
 

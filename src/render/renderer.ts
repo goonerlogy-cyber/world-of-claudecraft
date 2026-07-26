@@ -5,6 +5,8 @@ import {
   ABILITIES,
   ARENA_SLOT_COUNT,
   arenaOrigin,
+  BG_SLOT_COUNT,
+  battlegroundOrigin,
   CLASSES,
   DELVE_MODULE_Z_START,
   DUNGEON_LIST,
@@ -20,6 +22,7 @@ import {
   ITEM_SETS,
   instanceOrigin,
   isArenaPos,
+  isBgPos,
   isDelvePos,
   isYumiMazePos,
   MOBS,
@@ -42,6 +45,8 @@ import { isVisuallyDead } from './anim_state';
 import { AOE_RING_LIFETIME, aoeRingAnim } from './aoe_ring';
 import type { AmbientPointSource, SpatialAudioSink, Surface } from './audio_sink';
 import { attachBankerChestToNpcView } from './banker_chest';
+import { type BattlegroundView, buildBattleground } from './battleground';
+import { buildBattlegroundObject } from './battleground_props';
 import { type BirdsView, buildBirds } from './birds';
 import { createCameraBoom, stepCameraBoom } from './camera_boom_core';
 import { type CameraOcclusionState, stepCameraOcclusion } from './camera_collision';
@@ -4218,6 +4223,15 @@ export class Renderer {
         sparkle.position.y = 1.35;
         group.add(sparkle);
       }
+    } else if (e.kind === 'object' && e.templateId?.startsWith('bg_')) {
+      // Battleground flags/runes: stateful (team color, carrier), so skip the
+      // object pool (the delve_ precedent) and build the dedicated body. No
+      // loot sparkle: the flag pennant / rune glow is the beacon.
+      objectPoolKey = null;
+      const built = buildBattlegroundObject(e.templateId, e.color, this.lowGfx);
+      body = built.group;
+      height = built.height;
+      objectMesh = body!;
     } else if (e.kind === 'object') {
       objectPoolKey = this.objectPoolKeyFor(e);
       const pooled = objectPoolKey ? this.takePooledObject(objectPoolKey) : null;
@@ -4703,6 +4717,9 @@ export class Renderer {
   // Protect Yumi maze interiors, one per match slot, built lazily like the
   // arena copies; their update() anchors the team beacons each frame.
   private yumiMazeViews = new Map<number, YumiMazeView>();
+  // Ravenrift battleground fields, one per match slot, built lazily like the
+  // yumi maze copies; the field is static, so there is no per-frame update.
+  private bgViews = new Map<number, BattlegroundView>();
   // Blue/red team arrows above every yumi fighter (yumi_team_markers.ts).
   private readonly yumiTeamMarkers = new YumiTeamMarkers();
   // Delve module interiors build asynchronously; track in-flight keys so a
@@ -4715,6 +4732,7 @@ export class Renderer {
     | 'nythraxis'
     | 'delve'
     | 'yumiMaze'
+    | 'battleground'
     | 'underwater'
     | 'practice' = 'outdoor';
 
@@ -4852,6 +4870,18 @@ export class Renderer {
           this.yumiMazeViews.set(i, view);
         }
       }
+    } else if (inside && isBgPos(px)) {
+      // build the Ravenrift field copy the player was matched into (the yumi
+      // view-map pattern; the field is static, so no per-frame update hook)
+      for (let i = 0; i < BG_SLOT_COUNT; i++) {
+        if (this.bgViews.has(i)) continue;
+        const o = battlegroundOrigin(i);
+        if (Math.abs(px - o.x) < 220 && Math.abs(pz - o.z) < 200) {
+          const view = buildBattleground(o, this.sim.cfg.seed, { lowGfx: this.lowGfx });
+          this.scene.add(view.group);
+          this.bgViews.set(i, view);
+        }
+      }
     } else if (inside && isArenaPos(px)) {
       void ensureDungeonAssets().catch(() => undefined);
       // build the Ashen Coliseum copy the player was matched into
@@ -4883,8 +4913,11 @@ export class Renderer {
     // crypt's near-black, so its flooded halls feel underwater, not just dark
     const inDelve = inside && isDelvePos(px);
     const inYumiMaze = inside && isYumiMazePos(px);
+    const inBattleground = inside && isBgPos(px);
     const interior =
-      inside && !inDelve && !inYumiMaze && !isArenaPos(px) ? dungeonAt(px)?.interior : null;
+      inside && !inDelve && !inYumiMaze && !inBattleground && !isArenaPos(px)
+        ? dungeonAt(px)?.interior
+        : null;
     const inTemple = interior === 'temple';
     const inNythraxis = interior === 'nythraxis';
     const desired = inPractice
@@ -4893,15 +4926,17 @@ export class Renderer {
         ? 'delve'
         : inYumiMaze
           ? 'yumiMaze'
-          : inTemple
-            ? 'temple'
-            : inNythraxis
-              ? 'nythraxis'
-              : inside
-                ? 'dungeon'
-                : camY < waterLevelAt(px, pz) - 0.05
-                  ? 'underwater'
-                  : 'outdoor';
+          : inBattleground
+            ? 'battleground'
+            : inTemple
+              ? 'temple'
+              : inNythraxis
+                ? 'nythraxis'
+                : inside
+                  ? 'dungeon'
+                  : camY < waterLevelAt(px, pz) - 0.05
+                    ? 'underwater'
+                    : 'outdoor';
     const fog = this.scene.fog as THREE.Fog;
     if (desired !== this.fogState) {
       this.fogState = desired;
@@ -4933,6 +4968,13 @@ export class Renderer {
         fog.color.setHex(0x161d31);
         fog.near = 30;
         fog.far = 170;
+      } else if (desired === 'battleground') {
+        // Ravenrift is OPEN-AIR: a pale daylight haze that hides the
+        // off-world void past the ramparts while the whole 120yd field stays
+        // readable end to end (competitive fairness: no murk mid-field).
+        fog.color.setHex(0xaecbe0);
+        fog.near = 50;
+        fog.far = 185;
       } else if (desired === 'practice') {
         // The private practice pitch under its futuristic sky: tint the fog to
         // the sky variant and push it well back so the pitch reads clear and lit

@@ -24,7 +24,15 @@
 // radii, rect size, outline width, the NPC glyph font + offsets, the arrow geometry) is a
 // named constant.
 
-import { WORLD_MAX_X, WORLD_MAX_Z, WORLD_MIN_X, yumiMazeOriginAt } from '../sim/data';
+import { BG_HALF_Z, battlegroundWallSegments } from '../sim/battleground_layout';
+import {
+  bgOriginAt,
+  isBgPos,
+  WORLD_MAX_X,
+  WORLD_MAX_Z,
+  WORLD_MIN_X,
+  yumiMazeOriginAt,
+} from '../sim/data';
 import { yumiMazeLayout } from '../sim/yumi_maze_layout';
 import type { IWorld } from '../world_api';
 import { createMinimapMarkers, type MinimapMarker } from './minimap_markers';
@@ -95,6 +103,12 @@ const MAZE_BG_PX_PER_YARD = 3;
 const MAZE_BG_MARGIN_YD = 24;
 const MAZE_BG_WALL_ALPHA = 0.75;
 
+// Ravenrift battleground background: the same cached-raster technique over
+// battlegroundWallSegments() (the layout the sim collides against), so the
+// minimap shows exactly what blocks movement. Same raster constants as the
+// maze; the pad is the field's long half-extent plus the shared margin.
+const BG_MAP_PAD_YD = BG_HALF_Z + MAZE_BG_MARGIN_YD;
+
 // Draw the corpse skull centered at (x, y): `fill` paints the bone, `socket` the
 // dark eye/nose hollows so the shape reads even over light terrain.
 function drawCorpseSkull(
@@ -161,6 +175,8 @@ export class MinimapPainter {
   // The Protect Yumi maze wall cache (built on first in-maze redraw; the fixed
   // competitive layout never changes, so one raster serves the session).
   private mazeBg: HTMLCanvasElement | null = null;
+  // The Ravenrift battleground wall cache (same lifecycle as mazeBg).
+  private battlegroundBg: HTMLCanvasElement | null = null;
 
   constructor(
     private readonly writers: PainterHostWriters,
@@ -198,12 +214,21 @@ export class MinimapPainter {
     bg: HTMLCanvasElement,
     zoom: number,
   ): void {
+    // One token resolve serves both branches below (cached; static tokens).
+    const colors = this.resolveColors();
+    // Ravenrift battleground band: Hud routes the 'battleground' minimap mode
+    // through this overworld entry (the mode falls through its delve/yumi
+    // branches), so branch to the field raster here instead of blitting the
+    // far-off overworld terrain cache the band sits outside of.
+    if (isBgPos(world.player.pos.x)) {
+      this.paintBattleground(ctx, world, zoneLabelEl, zoom, colors);
+      return;
+    }
     const S = MINIMAP_SIZE;
     const pxPerYard = MINIMAP_BASE_SCALE * zoom;
     const model = this.markers.build(world, S, pxPerYard);
     // The one DOM write this Canvas painter routes through the write-elision facet.
     this.writers.setText(zoneLabelEl, this.localizeZone(model.zoneId));
-    const colors = this.resolveColors();
     const p = world.player;
 
     ctx.clearRect(0, 0, S, S);
@@ -288,6 +313,71 @@ export class MinimapPainter {
       );
     }
     this.mazeBg = canvas;
+    return canvas;
+  }
+
+  /**
+   * Ravenrift battleground render: the ordinary overworld marker set (party
+   * discs, players, mob dots) over a cached raster of the field's walls (the
+   * paintYumiMaze technique). The '#zone-label' keeps the localized committed
+   * zone (the arena-band precedent; the band has no dedicated zone entry).
+   */
+  paintBattleground(
+    ctx: CanvasRenderingContext2D,
+    world: IWorld,
+    zoneLabelEl: HTMLElement,
+    zoom: number,
+    colors: MinimapColors,
+  ): void {
+    const S = MINIMAP_SIZE;
+    const pxPerYard = MINIMAP_BASE_SCALE * zoom;
+    const model = this.markers.build(world, S, pxPerYard);
+    this.writers.setText(zoneLabelEl, this.localizeZone(model.zoneId));
+    const p = world.player;
+    const o = bgOriginAt(p.pos.z);
+    const bg = this.ensureBattlegroundBg(colors);
+
+    ctx.clearRect(0, 0, S, S);
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(S / 2, S / 2, S / 2 - CLIP_INSET, 0, FULL_CIRCLE);
+    ctx.clip();
+    ctx.imageSmoothingEnabled = false;
+    // Sub-rect blit centered on the player's field-local position (+X map-left,
+    // matching the marker projection).
+    const sw = S / (pxPerYard / MAZE_BG_PX_PER_YARD);
+    const sx = (BG_MAP_PAD_YD - (p.pos.x - o.x)) * MAZE_BG_PX_PER_YARD - sw / 2;
+    const sy = (p.pos.z - o.z + BG_MAP_PAD_YD) * MAZE_BG_PX_PER_YARD - sw / 2;
+    ctx.drawImage(bg, sx, sy, sw, sw, 0, 0, S, S);
+    this.drawMarkers(ctx, model.markers, colors);
+    ctx.restore();
+  }
+
+  // Rasterize the fixed battleground layout once: every wall segment (the
+  // perimeter, both keeps with their postern gaps, the cover walls and the
+  // heart-ruin block) as a rect in the outline token (mirrored on x like the
+  // live projection). Tier-identical: walls are actionable cover.
+  private ensureBattlegroundBg(colors: MinimapColors): HTMLCanvasElement {
+    if (this.battlegroundBg) return this.battlegroundBg;
+    const pad = BG_MAP_PAD_YD;
+    const s = MAZE_BG_PX_PER_YARD;
+    const side = Math.ceil(pad * 2 * s);
+    const canvas = document.createElement('canvas');
+    canvas.width = side;
+    canvas.height = side;
+    const bctx = canvas.getContext('2d');
+    if (!bctx) return canvas;
+    bctx.globalAlpha = MAZE_BG_WALL_ALPHA;
+    bctx.fillStyle = colors.outline;
+    for (const wall of battlegroundWallSegments()) {
+      bctx.fillRect(
+        (pad - wall.x - wall.hw) * s,
+        (wall.z - wall.hd + pad) * s,
+        wall.hw * 2 * s,
+        wall.hd * 2 * s,
+      );
+    }
+    this.battlegroundBg = canvas;
     return canvas;
   }
 
