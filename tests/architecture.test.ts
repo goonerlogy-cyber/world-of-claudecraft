@@ -265,6 +265,7 @@ const RENDER_PURE_CORES = [
   'src/render/camera_feel_core.ts',
   'src/render/cast_bar.ts',
   'src/render/draw_stats_core.ts',
+  'src/render/far_terrain_core.ts',
   'src/render/fishing_bobber_core.ts',
   'src/render/foliage_core.ts',
   'src/render/stations_core.ts',

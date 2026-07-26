@@ -1,14 +1,16 @@
 import * as THREE from 'three';
-import { WORLD_MAX_Z, WORLD_MIN_Z, WORLD_SIZE } from '../sim/data';
+import { WORLD_MAX_X, WORLD_MAX_Z, WORLD_MIN_Z, WORLD_SIZE } from '../sim/data';
 import type { ZoneDef } from '../sim/types';
 import { waterLevel } from '../sim/world';
 import { loadTexture } from './assets/loader';
 import { registerPreload } from './assets/preload';
+import { farVistaPlan } from './far_terrain_core';
 import { GFX, SUN_DIR, sharedUniforms } from './gfx';
 import { idleSlot, runIdleQueue } from './idle_queue';
 import { waterNormalish, waterNormalMaps } from './textures';
 import { shoreDepthAt } from './water_core';
 import { WaterSimulation, type WaterWaveUniforms } from './water_simulation';
+import { MAX_OUTDOOR_FOG_FAR } from './zone_streaming';
 
 // Water for the whole zone strip.
 //
@@ -306,10 +308,16 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
   // The apron: one huge deep-sea sheet running far past every map edge, so
   // looking off the world's side reads as open ocean to the fog line, never
   // a water plane ending in mid-air. It sits a hair below the zone planes
-  // (no z-fight) and carries a constant deep shore attribute.
+  // (no z-fight) and carries a constant deep shore attribute. Its reach must
+  // beat the fog envelope from ANY camera position or its rim shows as a
+  // line against the sky; the vista tiers open that envelope well past the
+  // classic 850, so the apron grows with the tier's vista plan.
   {
-    const span = WORLD_MAX_Z - WORLD_MIN_Z + 2400;
-    const geo = new THREE.PlaneGeometry(3000, span, 1, 1).rotateX(-Math.PI / 2);
+    const vista = farVistaPlan(GFX.tier, GFX.constrainedMemory);
+    const reach = Math.max(MAX_OUTDOOR_FOG_FAR, vista.envelopeFar) + 400;
+    const width = (WORLD_MAX_X + reach) * 2;
+    const span = WORLD_MAX_Z - WORLD_MIN_Z + reach * 2;
+    const geo = new THREE.PlaneGeometry(width, span, 1, 1).rotateX(-Math.PI / 2);
     geo.translate(0, 0, (WORLD_MIN_Z + WORLD_MAX_Z) / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const deep = new Float32Array(pos.count).fill(8);
