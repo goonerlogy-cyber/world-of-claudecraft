@@ -16,7 +16,7 @@
       "tick": 0,
       "time": 0,
       "nextId": 416,
-      "state": "28f12f87",
+      "state": "c3d80405",
       "events": "741638a5",
       "rng": {
         "draws": 0,
@@ -37,6 +37,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {},
           "counters": {},
@@ -148,7 +149,7 @@
       "tick": 5,
       "time": 0.25,
       "nextId": 425,
-      "state": "394fe24e",
+      "state": "7505fddc",
       "events": "0180c56c",
       "rng": {
         "draws": 7,
@@ -159,7 +160,7 @@
       "tick": 10,
       "time": 0.5,
       "nextId": 425,
-      "state": "5164fc66",
+      "state": "23c91f94",
       "events": "741638a5",
       "rng": {
         "draws": 7,
@@ -170,7 +171,7 @@
       "tick": 15,
       "time": 0.75,
       "nextId": 425,
-      "state": "f5cf275c",
+      "state": "c9418cea",
       "events": "741638a5",
       "rng": {
         "draws": 7,
@@ -181,7 +182,7 @@
       "tick": 20,
       "time": 1,
       "nextId": 425,
-      "state": "da4c7847",
+      "state": "638a55f1",
       "events": "fcb0555f",
       "rng": {
         "draws": 7,
@@ -192,7 +193,7 @@
       "tick": 25,
       "time": 1.25,
       "nextId": 425,
-      "state": "6eb70e57",
+      "state": "cad9a761",
       "events": "741638a5",
       "rng": {
         "draws": 7,
@@ -203,7 +204,7 @@
       "tick": 30,
       "time": 1.5,
       "nextId": 425,
-      "state": "7b6c4ccc",
+      "state": "a0dc757a",
       "events": "a3319371",
       "rng": {
         "draws": 10,
@@ -214,7 +215,7 @@
       "tick": 35,
       "time": 1.75,
       "nextId": 425,
-      "state": "d9478c8e",
+      "state": "220b991c",
       "events": "741638a5",
       "rng": {
         "draws": 10,
@@ -225,7 +226,7 @@
       "tick": 40,
       "time": 2,
       "nextId": 425,
-      "state": "e8ab96da",
+      "state": "5a2e2498",
       "events": "741638a5",
       "rng": {
         "draws": 10,
@@ -236,7 +237,7 @@
       "tick": 40,
       "time": 2,
       "nextId": 425,
-      "state": "e8ab96da",
+      "state": "5a2e2498",
       "events": "741638a5",
       "rng": {
         "draws": 10,
@@ -257,6 +258,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {
             "companion_tessa": 2
@@ -478,7 +480,7 @@
       "tick": 41,
       "time": 2.05,
       "nextId": 425,
-      "state": "f51ce72d",
+      "state": "f6d66d2f",
       "events": "77392800",
       "rng": {
         "draws": 12,
@@ -499,6 +501,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {
             "companion_tessa": 2
@@ -721,7 +724,7 @@
       "tick": 45,
       "time": 2.25,
       "nextId": 425,
-      "state": "84424d13",
+      "state": "a8fbee0d",
       "events": "741638a5",
       "rng": {
         "draws": 12,
@@ -732,7 +735,7 @@
       "tick": 49,
       "time": 2.45,
       "nextId": 425,
-      "state": "b9de9800",
+      "state": "f66b702e",
       "events": "741638a5",
       "rng": {
         "draws": 12,
@@ -753,6 +756,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {
             "companion_tessa": 2
@@ -918,7 +922,7 @@
       "tick": 50,
       "time": 2.5,
       "nextId": 425,
-      "state": "7289fc68",
+      "state": "bdaccf36",
       "events": "741638a5",
       "rng": {
         "draws": 12,
@@ -929,7 +933,7 @@
       "tick": 51,
       "time": 2.55,
       "nextId": 425,
-      "state": "4d90680b",
+      "state": "42f29265",
       "events": "741638a5",
       "rng": {
         "draws": 12,
@@ -950,6 +954,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {
             "companion_tessa": 2
@@ -1116,7 +1121,7 @@
       "tick": 51,
       "time": 2.55,
       "nextId": 425,
-      "state": "4d90680b",
+      "state": "42f29265",
       "events": "741638a5",
       "rng": {
         "draws": 12,
@@ -1137,6 +1142,7 @@
             null
           ],
           "bank": {},
+          "bgRating": 1500,
           "cls": "warrior",
           "companionUpgrades": {
             "companion_tessa": 2
