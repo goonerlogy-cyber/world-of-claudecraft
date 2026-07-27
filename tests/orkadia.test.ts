@@ -6,9 +6,9 @@
 // Deeds pair, so a future edit that drops any of them reds here.
 
 import { describe, expect, it } from 'vitest';
-import { BUILTIN_WORLD, DUNGEONS, MOBS, zoneAt } from '../src/sim/data';
 import { DEEDS } from '../src/sim/content/deeds';
 import { ORKADIA_DUNGEON_DEFS, ORKADIA_MOBS } from '../src/sim/content/orkadia';
+import { BUILTIN_WORLD, DUNGEONS, MOBS, zoneAt } from '../src/sim/data';
 import { enterDungeon } from '../src/sim/instances/dungeons';
 import { Sim } from '../src/sim/sim';
 import type { Entity, WorldContent } from '../src/sim/types';
@@ -76,9 +76,9 @@ describe('Orkadia dungeon content', () => {
     const sim = makeSim();
     const pid = sim.addPlayer('warrior', 'Alpha');
     expect(enterDungeon(sim.ctx, 'orkadia', pid)).toBe(true);
-    const inst = (sim.instances as { dungeonId: string; partyKey: unknown; mobIds: number[] }[]).find(
-      (i) => i.dungeonId === 'orkadia' && i.partyKey !== null,
-    );
+    const inst = (
+      sim.instances as { dungeonId: string; partyKey: unknown; mobIds: number[] }[]
+    ).find((i) => i.dungeonId === 'orkadia' && i.partyKey !== null);
     expect(inst, 'orkadia instance claimed').toBeDefined();
     const templates = inst!.mobIds
       .map((id) => sim.entities.get(id))

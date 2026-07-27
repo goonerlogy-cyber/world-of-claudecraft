@@ -80,7 +80,10 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     aoePulse: { min: 28, max: 40, radius: 13, every: 9, name: 'Warstomp' },
     knockback: { chance: 0.2, distance: 6, name: 'Skull Cleave' },
     enrage: { belowHpPct: 0.3, dmgMult: 1.5, hasteMult: 1.3 },
-    yells: { engage: 'Orkadia does not kneel! For the black banners!', enrage: 'BLEED FOR THE WARLORD!' },
+    yells: {
+      engage: 'Orkadia does not kneel! For the black banners!',
+      enrage: 'BLEED FOR THE WARLORD!',
+    },
     loot: [
       { copper: 50000, chance: 1 },
       { itemId: 'bone_fragments', chance: 0.8 },
