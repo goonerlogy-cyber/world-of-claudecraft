@@ -34,9 +34,11 @@ instead of rooms.
      war hall + bone throne + skull dais + skull pile anchoring the boss end.
      Volcanic cliff modules form the visual perimeter so there is no visible
      void.
-   - Field extent (instance-local): about x [-45, 45], z [0, 160]; the boss
-     dais near z 146 where the original spawn list puts the warlord; the
-     arrival gate near z 0-12 by `entry`/`exitOffset`.
+   - Field extent (instance-local): about x [-80, 80], z [-20, 240] (the back
+     line is capped by the 500yd instance slot spacing: local |z| must stay
+     under 250), with shared ground relief (orkadiaFieldHeight: dunes, side
+     berms, and a 3.2yd boss terrace); the boss dais near z 216 on the terrace
+     plateau; the arrival gate near z 0-14 by `entry`/`exitOffset`.
 2. **Colliders**: `INTERIOR_COLLIDERS.orkadia` stops reusing SANCTUM_COLLIDERS
    and becomes the open-field set: a perimeter enclosure (so players cannot
    walk off the field) plus circle footprints matched to the placed props

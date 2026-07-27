@@ -6217,11 +6217,12 @@ export class Renderer {
         fog.near = 20;
         fog.far = 80;
       } else if (desired === 'orkadiaField') {
-        // the open-air war-camp reads under a real sky: an ashen volcanic haze
-        // pushed past the boss end of the ~160yd field, not the room murk
-        fog.color.setHex(0x27301f);
-        fog.near = 45;
-        fog.far = 230;
+        // A smoky volcanic basin under its own storm dome. The far edge stays
+        // readable while the mountain and rear fortress fall into green-grey
+        // atmospheric depth instead of exposing the overworld horizon.
+        fog.color.setHex(0x303831);
+        fog.near = 90;
+        fog.far = 350;
       } else if (desired === 'wildheartField') {
         // Sunlit humid depth keeps the full caldera readable while the rear
         // shrine and limestone shell settle into a warm green atmospheric veil.

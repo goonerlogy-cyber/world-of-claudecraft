@@ -1,10 +1,12 @@
 // Orkadia open-field interior (DungeonDef interior 'orkadia'): the first dungeon
 // whose instance is open air instead of a closed KayKit room. An outdoor orc
-// war-camp under the sky: a broad volcanic-ash ground plane on the flat instance
-// floor, the 18 generated orkadia_* prop GLBs placed as a war-camp, green
-// warpyre accents, and a volcanic cliff ring as the visual perimeter (no room
-// walls, no ceiling; the sky/fog/light rig is the renderer's own outdoor
-// machinery, see the 'orkadiaField' fogState in renderer.ts).
+// war-camp under the sky: a broad volcanic-ash ground displaced by the shared
+// orkadiaFieldHeight relief (dunes, side berms, the boss terrace; the sim's
+// groundHeight uses the same function for this interior), the 18 generated
+// orkadia_* prop GLBs placed as a war-camp at monumental scale, green warpyre
+// accents, and a volcanic cliff ring as the visual perimeter (no room walls,
+// no ceiling; the sky/fog/light rig is the renderer's own outdoor machinery,
+// see the 'orkadiaField' fogState in renderer.ts).
 //
 // The placement table is shared with the sim: ORKADIA_FIELD_PLACEMENTS and
 // ORKADIA_FIELD_COLLIDER_SPECS live in src/sim/orkadia_field.ts and drive BOTH
@@ -19,6 +21,7 @@ import {
   ORKADIA_FIELD_COLLIDER_SPECS,
   ORKADIA_FIELD_PLACEMENTS,
   type OrkadiaPropKind,
+  orkadiaFieldHeight,
 } from '../sim/orkadia_field';
 import { loadGltf } from './assets/loader';
 import { registerPreload } from './assets/preload';
@@ -39,11 +42,16 @@ const WARPYRE_LIGHT_INTENSITY = 24;
 const WARPYRE_LIGHT_DISTANCE = 26;
 
 // Volcanic ash ground: dark mossy green over the grayscale mottled detail
-// texture every terrain surface reuses, tiled across the field plane.
+// texture every terrain surface reuses, tiled across the field plane. The mesh
+// is displaced by the SAME orkadiaFieldHeight the sim's groundHeight uses for
+// this interior, so the visible dunes/berms/terrace are exactly the walkable
+// relief.
 const GROUND_COLOR = 0x3a4430;
-const GROUND_WIDTH = 240;
-const GROUND_DEPTH = 260;
-const GROUND_CENTER_Z = 74; // covers the field (z -12..160) plus the cliff ring
+const GROUND_WIDTH = 200;
+const GROUND_DEPTH = 320;
+const GROUND_CENTER_Z = 115; // covers the field (z -45..275) plus the cliff ring
+const GROUND_SEG_X = 100;
+const GROUND_SEG_Z = 170;
 
 const ORKADIA_ASSET_URL: Record<OrkadiaPropKind, string> = {
   orkadia_spiked_barricade: '/models/props/orkadia_spiked_barricade.glb',
@@ -66,27 +74,28 @@ const ORKADIA_ASSET_URL: Record<OrkadiaPropKind, string> = {
   orkadia_supply_crates: '/models/props/orkadia_supply_crates.glb',
 };
 
-// Target height (yd), matched to each generation job's --height so the fallback
-// primitives occupy the same silhouette the real GLB settles into.
+// Target height (yd): hero-scale silhouettes matched to (and past) each
+// generation job's --height, so the camp reads monumental from the lane. The
+// fallback primitives occupy the same silhouette the real GLB settles into.
 const ORKADIA_TARGET_HEIGHT: Record<OrkadiaPropKind, number> = {
-  orkadia_spiked_barricade: 1.6,
-  orkadia_war_totem: 2.2,
-  orkadia_war_banner: 2.0,
-  orkadia_green_brazier: 0.7,
-  orkadia_skull_pile: 0.8,
-  orkadia_weapon_rack: 1.2,
-  orkadia_volcanic_cliff: 6.0,
-  orkadia_war_gate: 3.4,
-  orkadia_war_hall: 4.2,
-  orkadia_skull_dais: 1.0,
-  orkadia_watchtower: 3.8,
-  orkadia_palisade: 1.4,
-  orkadia_war_drum: 0.8,
-  orkadia_prisoner_cage: 1.3,
-  orkadia_bone_throne: 0.9,
-  orkadia_torch_post: 1.3,
-  orkadia_trophy_pole: 2.2,
-  orkadia_supply_crates: 0.7,
+  orkadia_spiked_barricade: 2.4,
+  orkadia_war_totem: 4.2,
+  orkadia_war_banner: 4.0,
+  orkadia_green_brazier: 1.8,
+  orkadia_skull_pile: 1.2,
+  orkadia_weapon_rack: 2.2,
+  orkadia_volcanic_cliff: 11.0,
+  orkadia_war_gate: 8.0,
+  orkadia_war_hall: 12.0,
+  orkadia_skull_dais: 1.6,
+  orkadia_watchtower: 9.0,
+  orkadia_palisade: 3.4,
+  orkadia_war_drum: 1.5,
+  orkadia_prisoner_cage: 2.8,
+  orkadia_bone_throne: 3.0,
+  orkadia_torch_post: 2.6,
+  orkadia_trophy_pole: 3.4,
+  orkadia_supply_crates: 1.3,
 };
 
 // Local GLB cache keyed by prop kind. A `null` cache entry means asset load
@@ -132,24 +141,24 @@ interface OrkadiaFallbackSpec {
 }
 
 const ORKADIA_FALLBACK_GEOMETRY: Record<OrkadiaPropKind, OrkadiaFallbackSpec> = {
-  orkadia_spiked_barricade: { w: 0.55, h: 1.5, d: 2.4, color: 0x74614b },
-  orkadia_war_totem: { w: 0.8, h: 2.2, d: 0.8, color: 0x7a6b3c },
-  orkadia_war_banner: { w: 1.7, h: 2.0, d: 0.6, color: 0xb44a4a },
-  orkadia_green_brazier: { w: 0.5, h: 0.6, d: 0.5, color: 0x5a4e34 },
-  orkadia_skull_pile: { w: 0.8, h: 0.7, d: 0.8, color: 0x4b4943 },
-  orkadia_weapon_rack: { w: 1.2, h: 1.0, d: 1.1, color: 0x7e6f52 },
-  orkadia_volcanic_cliff: { w: 6.5, h: 2.3, d: 4.8, color: 0x30241b },
-  orkadia_war_gate: { w: 4.8, h: 2.4, d: 2.6, color: 0x6a5a4a },
-  orkadia_war_hall: { w: 9.5, h: 2.8, d: 7.0, color: 0x584839 },
-  orkadia_skull_dais: { w: 2.2, h: 0.8, d: 2.2, color: 0x5f5a4a },
-  orkadia_watchtower: { w: 2.3, h: 3.7, d: 2.3, color: 0x5a4e36 },
-  orkadia_palisade: { w: 0.4, h: 1.2, d: 2.2, color: 0x6f6848 },
-  orkadia_war_drum: { w: 1.1, h: 0.7, d: 1.8, color: 0x604a22 },
-  orkadia_prisoner_cage: { w: 1.5, h: 1.2, d: 1.0, color: 0x5a4735 },
-  orkadia_bone_throne: { w: 1.0, h: 0.8, d: 1.4, color: 0x5e4e37 },
-  orkadia_torch_post: { w: 0.45, h: 1.3, d: 0.45, color: 0x51462f },
-  orkadia_trophy_pole: { w: 0.35, h: 2.0, d: 0.35, color: 0x7f6e54 },
-  orkadia_supply_crates: { w: 1.2, h: 0.6, d: 0.8, color: 0x7a5f3a },
+  orkadia_spiked_barricade: { w: 0.8, h: 2.2, d: 3.4, color: 0x74614b },
+  orkadia_war_totem: { w: 1.4, h: 4.2, d: 1.4, color: 0x7a6b3c },
+  orkadia_war_banner: { w: 2.6, h: 4.0, d: 0.8, color: 0xb44a4a },
+  orkadia_green_brazier: { w: 0.9, h: 1.5, d: 0.9, color: 0x5a4e34 },
+  orkadia_skull_pile: { w: 1.6, h: 1.0, d: 1.6, color: 0x4b4943 },
+  orkadia_weapon_rack: { w: 1.9, h: 1.8, d: 1.7, color: 0x7e6f52 },
+  orkadia_volcanic_cliff: { w: 12.0, h: 4.2, d: 8.6, color: 0x30241b },
+  orkadia_war_gate: { w: 9.6, h: 6.2, d: 4.2, color: 0x6a5a4a },
+  orkadia_war_hall: { w: 18.0, h: 8.0, d: 13.0, color: 0x584839 },
+  orkadia_skull_dais: { w: 3.4, h: 1.3, d: 3.4, color: 0x5f5a4a },
+  orkadia_watchtower: { w: 3.8, h: 8.6, d: 3.8, color: 0x5a4e36 },
+  orkadia_palisade: { w: 0.6, h: 3.0, d: 4.4, color: 0x6f6848 },
+  orkadia_war_drum: { w: 1.6, h: 1.2, d: 2.4, color: 0x604a22 },
+  orkadia_prisoner_cage: { w: 2.2, h: 2.4, d: 1.6, color: 0x5a4735 },
+  orkadia_bone_throne: { w: 1.8, h: 2.6, d: 2.2, color: 0x5e4e37 },
+  orkadia_torch_post: { w: 0.6, h: 2.6, d: 0.6, color: 0x51462f },
+  orkadia_trophy_pole: { w: 0.5, h: 3.4, d: 0.5, color: 0x7f6e54 },
+  orkadia_supply_crates: { w: 1.8, h: 1.1, d: 1.2, color: 0x7a5f3a },
 };
 
 function buildFallbackMesh(kind: OrkadiaPropKind): THREE.Group {
@@ -281,7 +290,19 @@ let glowMat: THREE.MeshBasicMaterial | null = null;
 
 function orkadiaGroundMesh(): THREE.Mesh {
   if (!groundGeo) {
-    groundGeo = new THREE.PlaneGeometry(GROUND_WIDTH, GROUND_DEPTH).rotateX(-Math.PI / 2);
+    groundGeo = new THREE.PlaneGeometry(
+      GROUND_WIDTH,
+      GROUND_DEPTH,
+      GROUND_SEG_X,
+      GROUND_SEG_Z,
+    ).rotateX(-Math.PI / 2);
+    // Displace with the shared relief function (src/sim/orkadia_field.ts);
+    // vertex local z maps to instance-local z through GROUND_CENTER_Z.
+    const pos = groundGeo.attributes.position;
+    for (let i = 0; i < pos.count; i++) {
+      pos.setY(i, orkadiaFieldHeight(pos.getX(i), pos.getZ(i) + GROUND_CENTER_Z));
+    }
+    groundGeo.computeVertexNormals();
     markSharedGeometry(groundGeo);
   }
   if (!groundTex) {
@@ -359,7 +380,7 @@ function addWarpyreGlow(
       map: glowTex,
       color: WARPYRE_LIGHT,
       transparent: true,
-      opacity: 0.4,
+      opacity: 0.3,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
     });
@@ -383,30 +404,50 @@ export function buildOrkadiaFieldInterior(deps: OrkadiaFieldInteriorDeps): THREE
 
   group.add(orkadiaGroundMesh());
 
+  // Cosmetic fill rig for this interior only: the camp props are dark volcanic
+  // GLBs that silhouette against the low sun, so a gentle sky bounce plus a
+  // warm gate-side fill keeps their silhouettes readable without touching the
+  // shared outdoor rig (graphics-settings neutral: pure cosmetics).
+  const fillHemi = new THREE.HemisphereLight(0xbfd4c0, 0x4a3f2c, 0.45);
+  group.add(fillHemi);
+  const fillSun = new THREE.DirectionalLight(0xffe0b8, 0.4);
+  fillSun.position.set(30, 60, -60);
+  fillSun.target.position.set(0, 0, 130);
+  group.add(fillSun);
+  group.add(fillSun.target);
+
   for (const p of ORKADIA_FIELD_PLACEMENTS) {
     const obj = buildOrkadiaMesh(p.kind);
     const holder = new THREE.Group();
     holder.add(obj);
-    holder.position.set(p.x, 0, p.z); // the instance floor is flat (y=0)
+    // Seat on the shared relief (a 5cm sink keeps edges grounded on slopes).
+    holder.position.set(p.x, orkadiaFieldHeight(p.x, p.z) - 0.05, p.z);
     holder.rotation.y = p.rot;
     group.add(holder);
   }
 
   // Warpyre accents: a flame + budgeted green point light on every brazier and
-  // torch post (5 lights total, well inside the interior light budget).
+  // torch post, seated on the relief like the props.
   for (const p of ORKADIA_FIELD_PLACEMENTS) {
+    const groundY = orkadiaFieldHeight(p.x, p.z);
     if (p.kind === 'orkadia_green_brazier') {
-      addWarpyre(group, deps, p.x, p.z, ORKADIA_TARGET_HEIGHT.orkadia_green_brazier + 0.35);
-      addWarpyreGlow(group, deps, p.x, p.z);
+      addWarpyre(
+        group,
+        deps,
+        p.x,
+        p.z,
+        groundY + ORKADIA_TARGET_HEIGHT.orkadia_green_brazier + 0.35,
+      );
+      addWarpyreGlow(group, deps, p.x, p.z, groundY + 0.07);
     } else if (p.kind === 'orkadia_torch_post') {
-      addWarpyre(group, deps, p.x, p.z, ORKADIA_TARGET_HEIGHT.orkadia_torch_post + 0.35);
-      addWarpyreGlow(group, deps, p.x, p.z, 0.07, 0.7);
+      addWarpyre(group, deps, p.x, p.z, groundY + ORKADIA_TARGET_HEIGHT.orkadia_torch_post + 0.35);
+      addWarpyreGlow(group, deps, p.x, p.z, groundY + 0.07, 0.7);
     }
   }
   // A warpyre pool on the walkable skull dais so the boss stage never reads as
   // a black slab, and one under the war gate arching the approach.
-  addWarpyreGlow(group, deps, 0, 146, 0.07, 1.8);
-  addWarpyreGlow(group, deps, 0, 12, 0.07, 1.2);
+  addWarpyreGlow(group, deps, 0, 216, orkadiaFieldHeight(0, 216) + 0.07, 1.5);
+  addWarpyreGlow(group, deps, 0, 14, orkadiaFieldHeight(0, 14) + 0.07, 1.2);
 
   return group;
 }

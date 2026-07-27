@@ -1,9 +1,11 @@
 // Orkadia orc war-camp dungeon (src/sim/content/orkadia.ts): a hand-authored
-// classic DungeonDef placed in the Drakelands, reusing the tested Sanctum room
-// geometry/colliders under a green/black `orkadia` interior grade. Pins the
+// classic DungeonDef placed in the Drakelands whose `orkadia` interior is the
+// first open-field dungeon interior (outdoor ground with shared relief, the
+// war-camp prop set, perimeter walls; see src/sim/orkadia_field.ts). Pins the
 // content wiring (def fields, entrance zone, the three orc mobs, the boss kit),
-// the entry lifecycle (spawns the roster incl. the warlord), and the Book of
-// Deeds pair, so a future edit that drops any of them reds here.
+// the entry lifecycle (spawns the roster incl. the warlord), the live collider
+// routing, the shared ground relief, and the Book of Deeds pair, so a future
+// edit that drops any of them reds here.
 
 import { describe, expect, it } from 'vitest';
 import { resolvePosition } from '../src/sim/colliders';
@@ -22,8 +24,14 @@ import {
   zoneAt,
 } from '../src/sim/data';
 import { enterDungeon } from '../src/sim/instances/dungeons';
+import {
+  ORKADIA_FIELD_BOUNDS,
+  ORKADIA_FIELD_COLLIDER_SPECS,
+  orkadiaFieldHeight,
+} from '../src/sim/orkadia_field';
 import { Sim } from '../src/sim/sim';
 import type { Entity, WorldContent } from '../src/sim/types';
+import { groundHeight } from '../src/sim/world';
 
 const ORKADIA_TEST_WORLD: WorldContent = {
   ...BUILTIN_WORLD,
@@ -121,16 +129,41 @@ describe('Orkadia dungeon content', () => {
   });
 
   it('resolves collision against its own interior colliders, not the arena', () => {
-    // A point buried in the Sanctum-derived side wall (instance-local |x| = 23,
-    // deep along z where only the dungeon side wall exists, not the short arena
-    // wall) must be pushed back out. Under the classification bug this position
-    // routed to ARENA_COLLIDERS ~300u away and moved not at all (the player clipped
-    // straight through Orkadia's walls into a black void).
+    // A point buried in one of the field's prop footprints must be pushed back
+    // out. Under the classification bug this position routed to ARENA_COLLIDERS
+    // ~300u away and moved not at all (the player clipped straight through
+    // Orkadia's walls into a black void). The probe derives from the live
+    // collider table so the pin survives layout retunes.
     const origin = instanceOrigin(DUNGEONS.orkadia.index, 0);
-    const wallPoint = { x: origin.x + 23, z: origin.z + 100 };
+    const spec = ORKADIA_FIELD_COLLIDER_SPECS.find((s) => s.kind === 'orkadia_watchtower')!;
+    const wallPoint = { x: origin.x + spec.x + 0.4, z: origin.z + spec.z };
     const resolved = resolvePosition(1, wallPoint.x, wallPoint.z, 1);
     const moved = Math.hypot(resolved.x - wallPoint.x, resolved.z - wallPoint.z);
     expect(moved).toBeGreaterThan(0.5); // collision fired: the Orkadia colliders are live
+  });
+
+  it('shares the open-field relief between groundHeight and the placement domain', () => {
+    // groundHeight inside the instance IS orkadiaFieldHeight on instance-local
+    // coords: the arrival shelf is level, the boss terrace rises at the back,
+    // and every spawn point sits inside the walkable field bounds.
+    const origin = instanceOrigin(DUNGEONS.orkadia.index, 0);
+    const at = (lx: number, lz: number) => groundHeight(origin.x + lx, origin.z + lz, 1);
+    expect(at(0, -2)).toBeCloseTo(0, 5);
+    for (const [lx, lz] of [
+      [12, 80],
+      [-30, 160],
+      [0, 216],
+      [40, 230],
+    ] as const) {
+      expect(at(lx, lz)).toBeCloseTo(orkadiaFieldHeight(lx, lz), 10);
+    }
+    expect(at(0, 216)).toBeGreaterThan(at(0, 110) + 2);
+    for (const s of ORKADIA_DUNGEON_DEFS.orkadia.spawns) {
+      expect(s.x).toBeGreaterThanOrEqual(ORKADIA_FIELD_BOUNDS.minX);
+      expect(s.x).toBeLessThanOrEqual(ORKADIA_FIELD_BOUNDS.maxX);
+      expect(s.z).toBeGreaterThanOrEqual(ORKADIA_FIELD_BOUNDS.minZ);
+      expect(s.z).toBeLessThanOrEqual(ORKADIA_FIELD_BOUNDS.maxZ);
+    }
   });
 
   it('authors the Book of Deeds clear pair targeting the dungeon', () => {

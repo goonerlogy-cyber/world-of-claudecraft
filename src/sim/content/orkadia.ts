@@ -98,31 +98,31 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
 };
 
 // ---------------------------------------------------------------------------
-// Spawn plan (instance-local coords, reusing the Sanctum room footprint z 18..146)
-// Packs of two spaced beyond social-aggro range, a marauder line at the waist,
-// then Grommok alone on the far dais.
+// Spawn plan (instance-local coords on the open-field footprint z 30..216)
+// Packs of two spaced beyond social-aggro range up the rolling camp lane, a
+// marauder line at the waist, then Grommok alone on the terraced far dais.
 // ---------------------------------------------------------------------------
 const ORKADIA_SPAWN_LIST: DungeonSpawn[] = [
-  { mobId: 'orkadia_grunt', x: -3, z: 20 },
-  { mobId: 'orkadia_grunt', x: 3, z: 21 },
-  { mobId: 'orkadia_grunt', x: -8, z: 30 },
-  { mobId: 'orkadia_marauder', x: -4, z: 31 },
-  { mobId: 'orkadia_grunt', x: 7, z: 44 },
-  { mobId: 'orkadia_grunt', x: 3, z: 45 },
-  { mobId: 'orkadia_marauder', x: -6, z: 58 },
-  { mobId: 'orkadia_grunt', x: -2, z: 59 },
-  { mobId: 'orkadia_marauder', x: 0, z: 72 },
-  { mobId: 'orkadia_grunt', x: -7, z: 86 },
-  { mobId: 'orkadia_grunt', x: -3, z: 87 },
-  { mobId: 'orkadia_marauder', x: 6, z: 100 },
-  { mobId: 'orkadia_grunt', x: 2, z: 101 },
-  { mobId: 'orkadia_marauder', x: -4, z: 112 },
-  { mobId: 'orkadia_marauder', x: 4, z: 112 },
-  { mobId: 'orkadia_grunt', x: -5, z: 130 },
-  { mobId: 'orkadia_grunt', x: -1, z: 132 },
-  { mobId: 'orkadia_warlord', x: 0, z: 146 },
-  { mobId: 'orkadia_grunt', x: -5, z: 144 },
-  { mobId: 'orkadia_grunt', x: 5, z: 144 },
+  { mobId: 'orkadia_grunt', x: -3, z: 29.6 },
+  { mobId: 'orkadia_grunt', x: 3, z: 31.1 },
+  { mobId: 'orkadia_grunt', x: -8, z: 44.4 },
+  { mobId: 'orkadia_marauder', x: -4, z: 45.9 },
+  { mobId: 'orkadia_grunt', x: 7, z: 65.1 },
+  { mobId: 'orkadia_grunt', x: 3, z: 66.6 },
+  { mobId: 'orkadia_marauder', x: -6, z: 85.8 },
+  { mobId: 'orkadia_grunt', x: -2, z: 87.3 },
+  { mobId: 'orkadia_marauder', x: 0, z: 106.6 },
+  { mobId: 'orkadia_grunt', x: -7, z: 127.3 },
+  { mobId: 'orkadia_grunt', x: -3, z: 128.8 },
+  { mobId: 'orkadia_marauder', x: 6, z: 148 },
+  { mobId: 'orkadia_grunt', x: 2, z: 149.5 },
+  { mobId: 'orkadia_marauder', x: -4, z: 165.8 },
+  { mobId: 'orkadia_marauder', x: 4, z: 165.8 },
+  { mobId: 'orkadia_grunt', x: -5, z: 192.4 },
+  { mobId: 'orkadia_grunt', x: -1, z: 195.4 },
+  { mobId: 'orkadia_warlord', x: 0, z: 216.1 },
+  { mobId: 'orkadia_grunt', x: -5, z: 213.1 },
+  { mobId: 'orkadia_grunt', x: 5, z: 213.1 },
 ];
 
 // ---------------------------------------------------------------------------
