@@ -54,14 +54,37 @@ export class BattlegroundKillFeed {
     root.innerHTML = this.lines.map((l) => this.lineHtml(l)).join('');
   }
 
+  // Big team-voiced entries (owner direction): the names render as bold
+  // team-colored spans inside the localized sentence. Word order is locale-
+  // owned, so the template resolves with SENTINEL characters and the painter
+  // splits around them, never around English words.
   private lineHtml(l: BgKillFeedLine): string {
-    const team = l.killerTeam ?? l.victimTeam;
-    const cls = l.killerTeam === null ? 'plain' : team === 0 ? 'crimson' : 'azure';
-    const text =
+    const K = '\u0001';
+    const V = '\u0002';
+    const teamCls = (team: number | null): string =>
+      team === 0 ? 'crimson' : team === 1 ? 'azure' : 'plain';
+    const tpl =
       l.killerName === null
-        ? t('hudChrome.bg.killFeedFallen', { victim: l.victimName })
-        : t('hudChrome.bg.killFeed', { killer: l.killerName, victim: l.victimName });
-    return `<div class="bgkf-line ${cls}">${esc(text)}</div>`;
+        ? t('hudChrome.bg.killFeedFallen', { victim: V })
+        : t('hudChrome.bg.killFeed', { killer: K, victim: V });
+    const parts = tpl
+      .split(/([\u0001\u0002])/)
+      .map((seg) => {
+        if (seg === K) {
+          return `<span class="bgkf-name ${teamCls(l.killerTeam)}">${esc(l.killerName ?? '')}</span>`;
+        }
+        if (seg === V) {
+          return `<span class="bgkf-name ${teamCls(l.victimTeam)}">${esc(l.victimName)}</span>`;
+        }
+        return seg ? `<span class="bgkf-verb">${esc(seg)}</span>` : '';
+      })
+      .join('');
+    // A crossed-swords mark leads the entry (inline SVG: no fonts, no images).
+    const mark =
+      '<svg class="bgkf-mark" viewBox="0 0 24 24" aria-hidden="true">' +
+      '<path d="M3 3 L14 14 M14 3 L3 14 M14 14 L20 20 M3 14 L9 20" ' +
+      'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/></svg>';
+    return `<div class="bgkf-line ${teamCls(l.killerTeam)}">${mark}${parts}</div>`;
   }
 
   private ensureRoot(): HTMLElement | null {
