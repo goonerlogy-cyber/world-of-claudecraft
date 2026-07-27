@@ -153,14 +153,14 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
 // dressing derives its heap placements from THIS list, so what blocks is
 // exactly what renders.
 export const BG_RUBBLE_PILES: { x: number; z: number }[] = [
-  { x: 10.5, z: -11.5 }, // by the heart's corners
-  { x: -10.5, z: 11.5 },
+  { x: 9.5, z: -10.5 }, // hugging the heart's corners, clear of the z 14 lane
+  { x: -9.5, z: 10.5 },
   { x: -20, z: -50 }, // at the curtain feet
   { x: 20, z: 50 },
   { x: 44, z: -24 }, // rampart-side heaps
   { x: -44, z: 24 },
-  { x: 5, z: -30 },
-  { x: -5, z: 30 },
+  { x: 3, z: -33 },
+  { x: -3, z: 33 },
   { x: -33, z: -20 },
   { x: 33, z: 20 },
 ];
@@ -250,7 +250,8 @@ export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
 ];
 
 const PILLAR_R = 1.0;
-const RUBBLE_R = 1.2; // heaped-masonry piles: movement blocks, camera clears
+const RUBBLE_R = 2.3; // matches the rendered heap footprint (playtest: at 1.2
+// the pile's skirts were walk-through while its center blocked)
 const RUBBLE_TOP = 1.4; // BELOW SIGHT_HEIGHT: casts pass over, honestly
 const CRATE_R = 0.8;
 

@@ -305,7 +305,9 @@ export function buildBattleground(
     ownMats.push(glowMat);
     const ringGlow = new THREE.Mesh(glowGeo, glowMat);
     ringGlow.rotation.x = -Math.PI / 2;
-    ringGlow.position.set(stand.x, BG_FLOOR_Y + 0.05, stand.z);
+    // Well proud of the proud-laid tile tops: at +0.05 the additive ring
+    // z-fought the floor and shimmered (playtest note).
+    ringGlow.position.set(stand.x, BG_FLOOR_Y + 0.18, stand.z);
     group.add(ringGlow);
     const orbMat = new THREE.MeshBasicMaterial({
       color,

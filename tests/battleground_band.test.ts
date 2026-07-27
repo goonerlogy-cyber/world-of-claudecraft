@@ -152,9 +152,9 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     // walking straight at the heap stops at its face
     const blocked = resolveMovement(
       SEED,
-      o.x + rb.x - 3,
+      o.x + rb.x - 4,
       o.z + rb.z,
-      o.x + rb.x + 3,
+      o.x + rb.x + 4,
       o.z + rb.z,
       0.5,
     );
@@ -163,8 +163,8 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     expect(
       lineOfSightClear(
         SEED,
-        { x: o.x + rb.x - 3, z: o.z + rb.z },
-        { x: o.x + rb.x + 3, z: o.z + rb.z },
+        { x: o.x + rb.x - 4, z: o.z + rb.z },
+        { x: o.x + rb.x + 4, z: o.z + rb.z },
       ),
     ).toBe(true);
   });
