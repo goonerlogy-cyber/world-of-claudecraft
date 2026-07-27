@@ -324,8 +324,7 @@ describe('auras: updateRegen', () => {
 });
 
 describe('auras: updateRegen mana (Spirit in and out of combat)', () => {
-  const makeMage = (seed = 99): AnySim =>
-    new Sim({ seed, playerClass: 'mage', autoEquip: true }) as AnySim;
+  const makeMage = (seed = 99): Sim => new Sim({ seed, playerClass: 'mage', autoEquip: true });
 
   // Regenerate one 40-tick boundary tick from an empty mana bar at a given
   // five-second-rule state and return how much mana came back.
@@ -333,7 +332,7 @@ describe('auras: updateRegen mana (Spirit in and out of combat)', () => {
     fiveSecondRule: number,
   ): { gained: number; spi: number; level: number; pct: number } => {
     const sim = makeMage();
-    const p = sim.player as AnyEntity;
+    const p = sim.player;
     const meta = sim.players.get(p.id) as PlayerMeta;
     p.resource = 0;
     p.fiveSecondRule = fiveSecondRule;
