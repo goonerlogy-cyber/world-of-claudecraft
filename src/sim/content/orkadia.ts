@@ -132,9 +132,12 @@ export const ORKADIA_DUNGEON_DEFS: Record<string, DungeonDef> = {
     id: 'orkadia',
     name: 'Orkadia',
     index: 6,
-    // Skull-and-tusk warcamp gate just south-east of the Trollmoot raiding camp,
-    // in the black rock of the Drakelands (zone rect x[180,540] z[1820,2420]).
-    doorPos: { x: 500, z: 2200 },
+    // Skull-and-tusk warcamp gate on the dry black rock just south-east of the
+    // Trollmoot raiding camp (Trollmoot POI x460 z2140), clear of its henge and
+    // spawns, in the Drakelands (zone rect x[180,540] z[1820,2420]). The old
+    // {500,2200} sat on drowned seabed (groundHeight -10.3, below the -4.5 sea);
+    // {490,2120} is firm ground (groundHeight ~3.8, ~8.3yd above the water).
+    doorPos: { x: 490, z: 2120 },
     entry: { x: 0, z: -2 }, // clear-of-aggro arrival (see dungeon_entry_clearance test)
     exitOffset: { x: 0, z: -6 },
     spawns: ORKADIA_SPAWN_LIST,
