@@ -32,6 +32,13 @@ import {
 import type { BgObjectRefs } from './battleground_props';
 import type { Vfx } from './vfx';
 
+// Team identity rings: a flat team-colored ring at every match player's feet.
+// Custom nameplates make plate color unreliable, so ally-vs-enemy must read
+// from the WORLD; the ring is actionable information and draws on every tier.
+const TEAM_RING_INNER = 0.55;
+const TEAM_RING_OUTER = 0.72;
+const TEAM_RING_OPACITY = 0.85;
+
 const CAPTURE_GOLD = 0xffd24a;
 const RETURN_GREEN = 0x9fdc7f;
 const PICKUP_WHITE = 0xffffff;
@@ -62,6 +69,12 @@ export class BattlegroundFx {
   // is a periodic wisp ring, not a per-frame emitter.
   private lastSwirl = new Map<number, number>();
 
+  // One team ring per visible match player (shared geometry, two shared
+  // materials); reparented as views churn, torn down with the match.
+  private teamRings = new Map<number, THREE.Mesh>();
+  private ringGeo: THREE.RingGeometry | null = null;
+  private ringMats: [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial] | null = null;
+
   constructor(
     private readonly sim: {
       bgInfo: BgInfo | null;
@@ -78,9 +91,11 @@ export class BattlegroundFx {
       this.tracks[0] = null;
       this.tracks[1] = null;
       if (this.lastSwirl.size > 0) this.lastSwirl.clear();
+      this.clearTeamRings();
       return;
     }
     this.runeAuraSwirls(match, time);
+    this.teamRingPass(match);
     const seen = [false, false];
     for (const view of this.views.values()) {
       const bg = view.group.userData.bg as BgObjectRefs | undefined;
@@ -113,11 +128,20 @@ export class BattlegroundFx {
         // Mount the pole on the carrier's BACK (offset behind the body along
         // facing, slightly raised), so it reads as a strapped war banner
         // instead of sprouting from the head. No bob: the tiny fast bounce
-        // read as jitter against the walk cycle.
+        // read as jitter against the walk cycle. The mount pins to the
+        // carrier's VIEW position each frame: the flag entity itself moves at
+        // tick rate, and at sprint speeds (worst in the fast beast forms,
+        // e.g. the spirit wolf) that gap read as the banner trailing the
+        // body instead of riding it.
+        const cp = carrierView?.group.position ?? null;
+        const gp = view.group.position;
+        const dx = cp ? cp.x - gp.x : 0;
+        const dy = cp ? cp.y - gp.y : 0;
+        const dz = cp ? cp.z - gp.z : 0;
         bg.lean.position.set(
-          -Math.sin(yaw) * BG_CARRY_BACK,
-          BG_CARRY_RAISE,
-          -Math.cos(yaw) * BG_CARRY_BACK,
+          dx - Math.sin(yaw) * BG_CARRY_BACK,
+          BG_CARRY_RAISE + dy,
+          dz - Math.cos(yaw) * BG_CARRY_BACK,
         );
       } else {
         bg.lean.rotation.y = 0;
@@ -184,5 +208,58 @@ export class BattlegroundFx {
             : RUNE_VISUALS.defense.color;
       this.vfx.buffSwirl(row.pid, color);
     }
+  }
+
+  // The per-player team ring pass: ensure a ring rides every visible match
+  // player's group (their own team color, hidden on a corpse), and drop rings
+  // whose player left the roster or scoped out.
+  private teamRingPass(match: NonNullable<BgInfo['match']>): void {
+    const seen = new Set<number>();
+    for (const row of match.players) {
+      const view = this.views.get(row.pid);
+      if (!view) continue;
+      seen.add(row.pid);
+      let ring = this.teamRings.get(row.pid);
+      if (!ring) {
+        ring = new THREE.Mesh(this.ringGeometry(), this.ringMaterial(row.team));
+        ring.rotation.x = -Math.PI / 2;
+        ring.position.y = 0.06;
+        ring.renderOrder = 2;
+        this.teamRings.set(row.pid, ring);
+      }
+      if (ring.parent !== view.group) view.group.add(ring);
+      ring.visible = !row.dead;
+    }
+    for (const [pid, ring] of this.teamRings) {
+      if (seen.has(pid)) continue;
+      ring.parent?.remove(ring);
+      this.teamRings.delete(pid);
+    }
+  }
+
+  private clearTeamRings(): void {
+    if (this.teamRings.size === 0) return;
+    for (const ring of this.teamRings.values()) ring.parent?.remove(ring);
+    this.teamRings.clear();
+  }
+
+  private ringGeometry(): THREE.RingGeometry {
+    if (!this.ringGeo) this.ringGeo = new THREE.RingGeometry(TEAM_RING_INNER, TEAM_RING_OUTER, 36);
+    return this.ringGeo;
+  }
+
+  private ringMaterial(team: number): THREE.MeshBasicMaterial {
+    if (!this.ringMats) {
+      this.ringMats = [0, 1].map(
+        (t) =>
+          new THREE.MeshBasicMaterial({
+            color: BG_TEAM_COLORS[t],
+            transparent: true,
+            opacity: TEAM_RING_OPACITY,
+            depthWrite: false,
+          }),
+      ) as [THREE.MeshBasicMaterial, THREE.MeshBasicMaterial];
+    }
+    return this.ringMats[team === 0 ? 0 : 1];
   }
 }

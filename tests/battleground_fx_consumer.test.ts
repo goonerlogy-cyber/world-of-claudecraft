@@ -40,7 +40,7 @@ function bgInfo(flags: [BgFlagInfo, BgFlagInfo]): BgInfo {
       timeLeft: 800,
       waveIn: [5, 10],
       respawnIn: 0,
-  winner: null,
+      winner: null,
     },
   };
 }
@@ -162,6 +162,60 @@ describe('BattlegroundFx.update', () => {
     expect(crimson.lean.rotation.y).toBe(0);
     expect(crimson.lean.position.x).toBe(0);
     expect(crimson.lean.position.z).toBe(0);
+  });
+
+  it('pins the carried pole to the carrier VIEW when the flag entity lags (beast-form fix)', () => {
+    const h = makeHarness();
+    const carrier = {
+      group: { position: { x: 4, y: 0.5, z: -2 }, rotation: { y: 0 }, userData: {} },
+    };
+    h.views.set(55, carrier as never);
+    // the flag entity trails the sprinting carrier by a couple of yards
+    h.crimsonFlag.group.position.set(2, 0, -4);
+    h.sim.bgInfo = bgInfo([flagInfo('carried', 55), flagInfo('home')]);
+    h.fx.update(0.1);
+    const lean = h.refs(h.crimsonFlag.group).lean;
+    // the mount closes the whole gap (plus the usual back offset at yaw 0)
+    expect(lean.position.x).toBeCloseTo(4 - 2, 5);
+    expect(lean.position.z).toBeCloseTo(-2 - -4 - 0.35, 5);
+    expect(lean.position.y).toBeCloseTo(0.5 + 0.1, 5);
+  });
+
+  it('rides a team ring on every visible match player, hidden on corpses, torn down with the match', () => {
+    const h = makeHarness();
+    const match = h.sim.bgInfo?.match;
+    if (!match) throw new Error('missing match');
+    const row = (pid: number, team: number, dead = false) => ({
+      pid,
+      name: `P${pid}`,
+      cls: 'rogue' as const,
+      team,
+      carrying: false,
+      dead,
+      kills: 0,
+      deaths: 0,
+      captures: 0,
+    });
+    match.players.push(row(70, 0), row(71, 1, true));
+    const g70 = new THREE.Group();
+    const g71 = new THREE.Group();
+    h.views.set(70, { group: g70 });
+    h.views.set(71, { group: g71 });
+    h.fx.update(0.1);
+    const ring70 = g70.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const ring71 = g71.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    expect(ring70).toBeTruthy();
+    expect(ring71).toBeTruthy();
+    // each ring wears its OWN team hue (identity, independent of nameplates)
+    expect((ring70.material as THREE.MeshBasicMaterial).color.getHex()).toBe(BG_TEAM_COLORS[0]);
+    expect((ring71.material as THREE.MeshBasicMaterial).color.getHex()).toBe(BG_TEAM_COLORS[1]);
+    expect(ring70.visible).toBe(true);
+    expect(ring71.visible).toBe(false); // a corpse shows no ring
+    // match over: every ring leaves the scene graph
+    h.sim.bgInfo = null;
+    h.fx.update(0.2);
+    expect(g70.children).toHaveLength(0);
+    expect(g71.children).toHaveLength(0);
   });
 
   it('a rune buff swirls the wearer in the rune color, throttled, and stops with the aura', () => {
