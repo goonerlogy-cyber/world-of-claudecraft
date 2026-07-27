@@ -146,6 +146,25 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 27, z: 51 },
 ];
 
+// Heaped rubble in the Ruin Courtyard: knee-high masonry piles that BLOCK
+// MOVEMENT (walking through a solid-looking heap read as a bug in the
+// playtest) but sit below the eye line, so casts pass over them and the
+// camera clears them. Point-symmetric like everything else; the render
+// dressing derives its heap placements from THIS list, so what blocks is
+// exactly what renders.
+export const BG_RUBBLE_PILES: { x: number; z: number }[] = [
+  { x: 10.5, z: -11.5 }, // by the heart's corners
+  { x: -10.5, z: 11.5 },
+  { x: -20, z: -50 }, // at the curtain feet
+  { x: 20, z: 50 },
+  { x: 44, z: -24 }, // rampart-side heaps
+  { x: -44, z: 24 },
+  { x: 5, z: -30 },
+  { x: -5, z: 30 },
+  { x: -33, z: -20 },
+  { x: 33, z: 20 },
+];
+
 /** The z line of each curtain wall: the chamber boundaries. On the 4yd floor
  *  grid, so the theming bands land exactly on the walls. */
 export const BG_CURTAIN_Z = 56;
@@ -231,6 +250,8 @@ export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
 ];
 
 const PILLAR_R = 1.0;
+const RUBBLE_R = 1.2; // heaped-masonry piles: movement blocks, camera clears
+const RUBBLE_TOP = 1.4; // BELOW SIGHT_HEIGHT: casts pass over, honestly
 const CRATE_R = 0.8;
 
 // Visual tops for camera occlusion and the spell-sight low-obstacle skip
@@ -329,6 +350,9 @@ export function battlegroundColliders(): Collider[] {
   }
   for (const c of BG_COVER_CRATES) {
     out.push({ type: 'circle', x: c.x, z: c.z, r: CRATE_R, cameraTopY: CRATE_TOP });
+  }
+  for (const rb of BG_RUBBLE_PILES) {
+    out.push({ type: 'circle', x: rb.x, z: rb.z, r: RUBBLE_R, cameraTopY: RUBBLE_TOP });
   }
   return out;
 }

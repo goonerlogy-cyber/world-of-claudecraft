@@ -13,6 +13,7 @@ import {
   BG_HALF_Z,
   BG_KEEP_BARRICADES,
   BG_POWER_RUNES,
+  BG_RUBBLE_PILES,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
@@ -145,6 +146,29 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     expect(blocked.x).toBeGreaterThan(o.x - 16);
   });
 
+  it('rubble heaps block movement but sit below the eye line (casts pass over)', () => {
+    const o = battlegroundOrigin(0);
+    const rb = BG_RUBBLE_PILES[0];
+    // walking straight at the heap stops at its face
+    const blocked = resolveMovement(
+      SEED,
+      o.x + rb.x - 3,
+      o.z + rb.z,
+      o.x + rb.x + 3,
+      o.z + rb.z,
+      0.5,
+    );
+    expect(blocked.x).toBeLessThan(o.x + rb.x - 1);
+    // but the cast crosses it: the pile top is under SIGHT_HEIGHT, honestly
+    expect(
+      lineOfSightClear(
+        SEED,
+        { x: o.x + rb.x - 3, z: o.z + rb.z },
+        { x: o.x + rb.x + 3, z: o.z + rb.z },
+      ),
+    ).toBe(true);
+  });
+
   it('flag stands and rune pads are walkable (no collider on them)', () => {
     const o = battlegroundOrigin(1);
     for (const base of BG_BASES) {
@@ -173,6 +197,7 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     expect(BG_GRAVEYARD_FENCES).toHaveLength(8);
     expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 6 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
+    expect(BG_RUBBLE_PILES).toHaveLength(10);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
 

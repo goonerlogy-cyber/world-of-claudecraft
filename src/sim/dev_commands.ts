@@ -9,7 +9,7 @@ import { placeMobileStationForPlayer } from './professions/mobile_station';
 import { completeAllQuestsForDev } from './quests/dev_quest_commands';
 import type { SentChat } from './sim';
 import type { SimContext } from './sim_context';
-import { bgQueueJoin, bgQueueSize, devStartBg } from './social/battleground';
+import { bgQueueJoin, bgQueueSize, devEndBg, devStartBg } from './social/battleground';
 import { revivePlayerAt } from './spirit';
 import { MAX_LEVEL } from './types';
 
@@ -268,6 +268,14 @@ export function handleDevChat(
     const botPid = ctx.spawnDevBot(botName);
     if (botPid < 0) ctx.error(pid, `[dev] Could not spawn '${botName}'.`);
     else emitDevLog(ctx, pid, `[dev] Spawned ${botName}. Whisper it with /w ${botName} hi.`);
+    return null;
+  }
+
+  if (/^\/(?:dev\s+bg|devbg)\s+end\s*$/i.test(raw)) {
+    // End the caller's live match early, resolving on the current score (ties
+    // draw) through the normal result screen + release flow.
+    if (devEndBg(ctx, pid)) emitDevLog(ctx, pid, '[dev] Ravenrift resolved early on score.');
+    else ctx.error(pid, '[dev] You are not in an unresolved battleground.');
     return null;
   }
 

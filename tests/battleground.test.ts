@@ -16,6 +16,7 @@ import {
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
   bgResolveDesertion,
+  devEndBg,
   endBgMatch,
   updateBattleground,
 } from '../src/sim/social/battleground';
@@ -342,6 +343,22 @@ describe('Ravenrift: release is never gated by a stale arena entry (playtest reg
     expect(e.dead).toBe(false);
     expect(e.ghost).toBe(false);
     expect(e.corpsePos).toBe(null);
+  });
+});
+
+describe('Ravenrift: /dev bg end (early resolve)', () => {
+  it('resolves the match on the current score through the normal hold, once', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    captureOnce(sim, match, match.teams[0][0]);
+    expect(devEndBg(sim.ctx, pids[0])).toBe(true);
+    expect(match.state).toBe('ended');
+    expect(match.winner).toBe(0); // 1:0 resolves for Crimson, not a draw
+    expect(match.resultRecorded).toBe(true);
+    expect(devEndBg(sim.ctx, pids[0])).toBe(false); // already resolved
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick();
+    expect(sim.bgMatchFor(pids[0])).toBe(null); // released home like any finish
   });
 });
 

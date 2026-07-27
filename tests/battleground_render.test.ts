@@ -360,8 +360,10 @@ describe('zone theming (visual only; colliders never move)', () => {
     for (const d of m.dressing) {
       if (d.kind.startsWith('tree_')) continue;
       for (const w of battlegroundWallSegments()) {
+        // Wall-hung cloth deliberately sits AT the face plane (inset 0.78 from
+        // a 1.0 half-thickness), so only a truly BURIED center fails here.
         const inside =
-          Math.abs(d.x - w.x) < w.hw - 0.2 && Math.abs(d.z - w.z) < w.hd - 0.2 && d.y === 0;
+          Math.abs(d.x - w.x) < w.hw - 0.35 && Math.abs(d.z - w.z) < w.hd - 0.35 && d.y === 0;
         expect(inside, `${d.kind} at (${d.x},${d.z}) is inside a wall footprint`).toBe(false);
       }
     }

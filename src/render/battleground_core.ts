@@ -20,6 +20,7 @@ import {
   BG_HALF_X,
   BG_HALF_Z,
   BG_POWER_RUNES,
+  BG_RUBBLE_PILES,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
@@ -223,7 +224,9 @@ const KEEP_BANNER_KINDS: Record<BgTeam, { center: string; side: string; mouth: s
   1: { center: 'banner_patterna_blue', side: 'banner_thin_blue', mouth: 'banner_shield_blue' },
 };
 const BANNER_MODULE_SCALE = 1.5; // 4u kit banner -> 6u, the wall height
-const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
+const BANNER_WALL_INSET = 0.78; // hung INTO the face plane: at 1.1 the cloth
+// floated a visible gap off the wall (playtest note), so the pivot now sits
+// slightly inside the masonry and the cloth emerges flush
 
 // Torch-lit ramparts: mounted torches along the perimeter side walls plus the
 // keep back walls, mirrored. The builder adds a small warm glow at each
@@ -547,7 +550,7 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   for (let tx = -56; tx <= 56; tx += 11) treeAt(tx, -150); // south band (mirror: north)
   // Wall dressing on the curtains' COURTYARD faces: crossed-sword trophies
   // mid-wall and candle plaques at the wall foot, spaced between the runs.
-  const courtZ = -(BG_CURTAIN_Z - 1.1);
+  const courtZ = -(BG_CURTAIN_Z - BANNER_WALL_INSET);
   for (const t of [
     { x: -10, y: 0, kind: 'plaque_candles', s: 1.4 },
     { x: -1, y: 3.0, kind: 'sword_shield', s: 1.5 },
@@ -558,23 +561,33 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   }
   // Team triple banners flanking each main gate on the courtyard face: the
   // gate reads as a dressed threshold from mid-field (red south, blue north).
-  for (const gx of [6.5, 19.5]) {
+  // Two yards INTO the solid runs and slightly smaller: at the exact jambs
+  // the wide triple overhung the gate opening (playtest note).
+  for (const gx of [4.5, 21.5]) {
     pushMirrored(
-      { kind: 'banner_triple_red', x: gx, y: 0, z: courtZ, ry: 0, scale: [1.5, 1.5, 1.5] },
+      { kind: 'banner_triple_red', x: gx, y: 0, z: courtZ, ry: 0, scale: [1.3, 1.3, 1.3] },
       'banner_triple_blue',
     );
   }
-  // Courtyard rubble: collapsed-masonry piles hugging the ruin heart and the
-  // wall feet; low debris the boots read over, never movement blocking.
+  // Courtyard rubble, two families. The chunky HEAPS derive from the layout's
+  // BG_RUBBLE_PILES (real movement colliders, below the eye line), so what
+  // blocks is exactly what renders; the flat rubble_half sheets stay
+  // visual-only debris the boots read over.
+  for (const rb of BG_RUBBLE_PILES) {
+    const kind = hash2(rb.x, rb.z) < 0.55 ? 'rubble_large' : 'rocks_decorated';
+    dressing.push({
+      kind,
+      x: rb.x,
+      y: 0,
+      z: rb.z,
+      ry: hash2(rb.z, rb.x) * Math.PI * 2,
+      scale: [1.5, 1.5, 1.5],
+    });
+  }
   for (const r of [
-    { x: 11.5, z: -11.5, kind: 'rubble_large', s: 1.6 },
     { x: -13, z: -9, kind: 'rubble_half', s: 1.5 },
-    { x: -20, z: -50, kind: 'rubble_large', s: 1.7 },
     { x: 30, z: -51, kind: 'rubble_half', s: 1.4 },
-    { x: 44, z: -24, kind: 'rocks_decorated', s: 1.6 },
     { x: -44, z: -36, kind: 'rubble_half', s: 1.5 },
-    { x: 5, z: -30, kind: 'rocks_decorated', s: 1.4 },
-    { x: -33, z: -20, kind: 'rocks_decorated', s: 1.5 },
   ]) {
     pushMirrored({
       kind: r.kind,

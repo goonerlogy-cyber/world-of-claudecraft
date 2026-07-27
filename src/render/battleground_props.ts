@@ -121,10 +121,28 @@ function runeTypeForColor(color: number): keyof typeof RUNE_VISUALS | null {
 
 // The pad's identity lives in the SPINNER SHAPE itself (playtest direction,
 // second pass: 2D glyph billboards read as stickers against the low-poly
-// world): Sprint keeps the classic corner-down gem cube, Battle spins a sword
-// shard, Ward a shield plate, all extruded low-poly solids in the rune color.
+// world): Sprint spins a lightning bolt, Battle a pair of crossed swords,
+// Ward a shield plate, all extruded low-poly solids in the rune color.
 let bladeGeo: THREE.ExtrudeGeometry | null = null;
 let shieldGeo: THREE.ExtrudeGeometry | null = null;
+let boltGeo: THREE.ExtrudeGeometry | null = null;
+
+function runeBoltGeometry(): THREE.ExtrudeGeometry {
+  if (boltGeo) return boltGeo;
+  const sh = new THREE.Shape();
+  sh.moveTo(0.1, 0.8);
+  sh.lineTo(0.42, 0.8);
+  sh.lineTo(0.08, 0.12);
+  sh.lineTo(0.34, 0.12);
+  sh.lineTo(-0.42, -0.8);
+  sh.lineTo(-0.05, -0.05);
+  sh.lineTo(-0.34, -0.05);
+  sh.closePath();
+  boltGeo = new THREE.ExtrudeGeometry(sh, { depth: 0.12, bevelEnabled: false });
+  boltGeo.translate(0, 0, -0.06);
+  markSharedGeometry(boltGeo);
+  return boltGeo;
+}
 
 function runeBladeGeometry(): THREE.ExtrudeGeometry {
   if (bladeGeo) return bladeGeo;
@@ -194,18 +212,24 @@ export function buildBattlegroundObject(
     const gem = new THREE.Group();
     gem.position.y = RUNE_GEM_Y;
     const runeType = runeTypeForColor(color);
-    let gemMesh: THREE.Mesh;
     if (runeType === 'damage') {
-      gemMesh = new THREE.Mesh(runeBladeGeometry(), gemMaterial(color));
-      gemMesh.position.y = 0.25; // grip clears the pad at the bob's low point
+      // CROSSED swords: two blades in an X, the war-room trophy silhouette.
+      for (const lean of [-0.5, 0.5]) {
+        const blade = new THREE.Mesh(runeBladeGeometry(), gemMaterial(color));
+        blade.rotation.z = lean;
+        blade.position.y = 0.3; // grips clear the pad at the bob's low point
+        gem.add(blade);
+      }
     } else if (runeType === 'defense') {
-      gemMesh = new THREE.Mesh(runeShieldGeometry(), gemMaterial(color));
+      gem.add(new THREE.Mesh(runeShieldGeometry(), gemMaterial(color)));
+    } else if (runeType === 'sprint') {
+      gem.add(new THREE.Mesh(runeBoltGeometry(), gemMaterial(color)));
     } else {
-      gemMesh = new THREE.Mesh(runeGemGeo, gemMaterial(color));
+      const gemMesh = new THREE.Mesh(runeGemGeo, gemMaterial(color));
       gemMesh.rotation.z = RUNE_GEM_TILT_Z;
       gemMesh.rotation.x = RUNE_GEM_TILT_X;
+      gem.add(gemMesh);
     }
-    gem.add(gemMesh);
     group.add(gem);
     if (!lowGfx) {
       const light = new THREE.PointLight(color, RUNE_LIGHT_INTENSITY, RUNE_LIGHT_DISTANCE, 2);

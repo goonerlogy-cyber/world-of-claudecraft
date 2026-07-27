@@ -44,8 +44,8 @@ export const BG_RING_ENEMY = 0xe8392b;
 const TEAM_RING_INNER = 0.55;
 const TEAM_RING_OUTER = 0.74;
 const TEAM_RING_OPACITY = 0.95;
-const RING_UNDERLAY_PAD = 0.09; // dark rim beyond both ring edges
-const RING_UNDERLAY_OPACITY = 0.55;
+const RING_UNDERLAY_PAD = 0.035; // a thin dark outline, not a fat rim (playtest note)
+const RING_UNDERLAY_OPACITY = 0.4;
 
 const CAPTURE_GOLD = 0xffd24a;
 const RETURN_GREEN = 0x9fdc7f;

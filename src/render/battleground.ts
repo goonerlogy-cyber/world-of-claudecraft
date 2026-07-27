@@ -82,9 +82,10 @@ const BG_RECEIVER_KINDS = new Set([
 const TORCH_GLOW_R = 0.24;
 const TORCH_GLOW_COLOR = 0xffb254;
 const TORCH_GLOW_OPACITY = 0.85;
-// Standards stay UNDER the 6yd rampart top: at 7.6 the cloth poked above the
-// back wall and read as floating squares from the field side.
-const BANNER_POLE_H = 5.5;
+// The standards CREST the 6yd rampart deliberately (owner direction, third
+// pass): with the swallowtail cloth, crossbar, and finial they read as the
+// keep's colors flying over the back wall behind the flag stand.
+const BANNER_POLE_H = 8.2;
 const BANNER_POLE_R = 0.09;
 const BANNER_CLOTH_W = 1.5;
 const BANNER_CLOTH_H = 2.3;

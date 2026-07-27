@@ -1036,6 +1036,19 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   }
 }
 
+/** Dev/test only: resolve the caller's live match NOW on the current score
+ *  (ties draw) through the normal end-hold flow, so the frozen result screen
+ *  and the release are exercised exactly like a played-out finish. Returns
+ *  false when the caller is not in an unresolved match. */
+export function devEndBg(ctx: SimContext, pid: number): boolean {
+  const match = ctx.bgMatches.get(pid);
+  if (!match || match.resultRecorded) return false;
+  const w: BgTeam | null =
+    match.scores[0] === match.scores[1] ? null : match.scores[0] > match.scores[1] ? 0 : 1;
+  enterBgEndHold(ctx, match, w, 'timeout');
+  return true;
+}
+
 // The played-out ending: resolve the result on the spot, then hold everyone
 // on a frozen result screen (state 'ended', combat off) for BG_END_HOLD
 // before releaseBgFighters sends them home. Flags come home silently so no
