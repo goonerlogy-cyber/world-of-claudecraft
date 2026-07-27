@@ -2,8 +2,8 @@
 // raised boss dais (see dungeon_layout.ts DAIS_HEIGHT). A pure leaf between
 // data.ts (which dungeon an x-band belongs to, instance slot origins) and
 // dungeon_layout.ts (the per-interior room plan), consumed by world.ts
-// groundHeight so EVERY height consumer — mob y-snapping, spawns, loot,
-// landings, ground AoEs, the chase camera — stands on the stage for free.
+// groundHeight so EVERY height consumer (mob y-snapping, spawns, loot,
+// landings, ground AoEs, the chase camera) stands on the stage for free.
 //
 // Pure and deterministic: no rng, no wall clock, no sim state.
 
