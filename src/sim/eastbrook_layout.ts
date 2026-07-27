@@ -832,6 +832,21 @@ const WALL_GATES = [
 
 const WALL_SEGMENTS = generateCircularWallSegments(WALL_CONFIG, WALL_GATES);
 
+/**
+ * A wall wing is MIRRORED when its segment starts at a gate's end, putting
+ * the wing's tall lantern pillar on the gate side. This is the one rule both
+ * the renderer's instancing (render/eastbrook_town.ts) and the wall's
+ * pillar colliders (sim/colliders.ts) hang the wing's asymmetry on, so the
+ * lantern you see is the pylon that blocks.
+ */
+export function wallSegmentMirrored(segment: CircularWallSegment): boolean {
+  return WALL_GATES.some(
+    (gate) =>
+      Math.abs(gate.end.x - segment.start.x) < 1e-8 &&
+      Math.abs(gate.end.z - segment.start.z) < 1e-8,
+  );
+}
+
 function gateCrossing(id: string): Point2 {
   const gate = WALL_GATES.find((candidate) => candidate.id === id);
   if (!gate) throw new Error(`missing Eastbrook wall gate ${id}`);

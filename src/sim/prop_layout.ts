@@ -291,3 +291,24 @@ export const MAILBOX_HD = 0.44;
 export function delveExitDropZ(markerZ: number, delveId: string): number {
   return delveArchZ(markerZ, delveId) + delveArchMouthSign(delveId) * (DELVE_ARCH_HD + 1.2);
 }
+
+/**
+ * The Eastbrook town wall wing (eastbrook_wall_wing.glb), measured from the
+ * exporter factory (scripts/assets/eastbrook_town/furniture.js) at its native
+ * 6.35 x 3.51 bounds, drawn scaled to each segment's length x height. The
+ * wing is NOT a solid curtain: it is a stone parapet (slab plus coping) with
+ * an open iron railing above and two pillars, a short capped one and a tall
+ * lantern pylon. Physics follows that silhouette: the parapet is a standable
+ * top a jump vaults onto or clean over (the railing is see-through iron, the
+ * fence rule), the short pillar cap is a standable step above it, and only
+ * the lantern pylon is a full-height blocker. Fractions of the AUTHORED
+ * height / half-length so they survive any segment size.
+ */
+export const TOWN_WALL_PARAPET_FRAC = 1.81 / 3.51;
+export const TOWN_WALL_SHORT_PILLAR_TOP_FRAC = 2.15 / 3.51;
+/** Pillar centreline offsets as fractions of the wing's half-length; the
+ *  TALL pylon rides +x on an unmirrored wing and flips with `mirrored`. */
+export const TOWN_WALL_TALL_PILLAR_ALONG = 2.62 / 3.175;
+export const TOWN_WALL_SHORT_PILLAR_ALONG = -2.9 / 3.175;
+/** Pillar half-width as a fraction of the wing's native length. */
+export const TOWN_WALL_PILLAR_HW_FRAC = 0.36 / 6.35;

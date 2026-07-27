@@ -2479,6 +2479,12 @@ export interface StaticObbPropDef {
   height: number;
   /** False when a merged mesh cannot hide this placement independently. */
   camGhost?: boolean;
+  /**
+   * The asset renders x-mirrored (an asymmetric wing flipped end for end,
+   * e.g. a town-wall wing whose tall lantern pillar swaps sides). Collision
+   * derived from the asset's asymmetry must flip with it.
+   */
+  mirrored?: true;
 }
 
 // Static prop placement per zone — the renderer builds meshes from these and

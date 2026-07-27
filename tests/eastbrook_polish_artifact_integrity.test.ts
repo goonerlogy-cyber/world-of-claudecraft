@@ -1412,7 +1412,7 @@ describe('Eastbrook polish performance and contact evidence', () => {
     // was recaptured (renderer.ts and eastbrook_layout.ts are provenance
     // inputs and both changed), so the accepted byte-for-byte set moved.
     expect(fingerprint.digest('hex')).toBe(
-      'c423cb978ed4a3442ad3e160d5b7b7c2cec977c04cf5d9b68725e7b08bdf941a',
+      '661506434811a02cb7d24d2335f6dac642de519c50d2968ac65480cab92d321f',
     );
   });
 

@@ -71,6 +71,11 @@ import {
   propPlacementRoll,
   SMITHY_DRESSING,
   STALL_DRESSING,
+  TOWN_WALL_PARAPET_FRAC,
+  TOWN_WALL_PILLAR_HW_FRAC,
+  TOWN_WALL_SHORT_PILLAR_ALONG,
+  TOWN_WALL_SHORT_PILLAR_TOP_FRAC,
+  TOWN_WALL_TALL_PILLAR_ALONG,
 } from './prop_layout';
 import { townPropPlacements } from './town_props';
 import type { WorldContent } from './types';
@@ -454,11 +459,15 @@ function staticWorldColliders(seed: number): Collider[] {
       standable: true,
     });
   }
-  // Town wall segments: a railed parapet (stone slab, open iron railing,
-  // capped pillars). Extruded-2D cannot host a body between the railing and
-  // the coping, so the wall is DELIBERATELY full-height: use the gates. The
-  // same honest-exception reasoning as the murloc mushroom stems.
+  // Town wall segments: the drawn wing is a stone PARAPET with an open iron
+  // railing above it, not a solid curtain, so the slab is a standable top a
+  // jump vaults onto or clean over (the railing is see-through iron: the
+  // fence rule). The wing's two pillars ride each segment: the short capped
+  // one is a standable step above the parapet, and only the tall lantern
+  // pylon (gate-side on `mirrored` wings) blocks full-height. Mob pathing is
+  // untouched: grounded movers without a jump still treat the slab as a wall.
   for (const wall of PROPS.walls ?? []) {
+    const parapet = topY(seed, wall.x, wall.z, wall.height * TOWN_WALL_PARAPET_FRAC);
     out.push({
       type: 'obb',
       x: wall.x,
@@ -468,7 +477,33 @@ function staticWorldColliders(seed: number): Collider[] {
       rot: wall.rot,
       cameraTopY: topY(seed, wall.x, wall.z, wall.height),
       camGhost: wall.camGhost ?? false,
+      moveTopY: parapet,
+      standable: true,
     });
+    const mirror = wall.mirrored ? -1 : 1;
+    const pillarHw = Math.max(0.24, wall.w * TOWN_WALL_PILLAR_HW_FRAC);
+    for (const pillar of [
+      { along: TOWN_WALL_TALL_PILLAR_ALONG * mirror, topFrac: null },
+      { along: TOWN_WALL_SHORT_PILLAR_ALONG * mirror, topFrac: TOWN_WALL_SHORT_PILLAR_TOP_FRAC },
+    ]) {
+      const off = rotY(pillar.along * (wall.w / 2), 0, wall.rot);
+      const px = wall.x + off.x;
+      const pz = wall.z + off.z;
+      const top =
+        pillar.topFrac === null ? undefined : topY(seed, px, pz, wall.height * pillar.topFrac);
+      out.push({
+        type: 'obb',
+        x: px,
+        z: pz,
+        hw: pillarHw,
+        hd: wall.d / 2,
+        rot: wall.rot,
+        cameraTopY: topY(seed, px, pz, wall.height),
+        camGhost: wall.camGhost ?? false,
+        moveTopY: top,
+        standable: top !== undefined,
+      });
+    }
   }
 
   // Interactable town boards are authored through active WorldContent rather

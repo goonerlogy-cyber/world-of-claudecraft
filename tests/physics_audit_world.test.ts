@@ -9,6 +9,7 @@ import {
   interiorColliderFrame,
   isBlocked,
   queryOpenWorldColliders,
+  resolvePosition,
   STALL_CANOPY_EAVE,
   STALL_CANOPY_TOP,
   supportHeightAt,
@@ -30,6 +31,8 @@ import {
   delveArchZ,
   delveExitDropZ,
   GATHER_NODE_BODIES,
+  TOWN_WALL_PARAPET_FRAC,
+  TOWN_WALL_TALL_PILLAR_ALONG,
 } from '../src/sim/prop_layout';
 import { Sim } from '../src/sim/sim';
 import type { MoveInput } from '../src/sim/types';
@@ -110,7 +113,6 @@ describe('full-height props reject standing (jump-spam 4s each)', () => {
     // Approach from the north so the post-slide run heads for open ground:
     // the southern lane now passes the banker's standable strongbox.
     ['notice board', 10, -8 + 1.6, Math.PI],
-    ['town wall parapet', 0, -25.4, Math.PI],
   ];
   for (const [name, x, z, f] of cases) {
     it(`cannot stand on the ${name}`, () => {
@@ -121,6 +123,46 @@ describe('full-height props reject standing (jump-spam 4s each)', () => {
       expect(stood).toBeLessThan(0.95);
     });
   }
+});
+
+describe('the town wall is a vaultable parapet, not a curtain', () => {
+  it('a jump vaults onto the parapet, and over it to the outside', () => {
+    // Mid-arc of the south run, between gates. The drawn wing is a stone
+    // parapet with an open iron railing: the slab top is standable at its
+    // drawn height and a jump crosses the wall entirely.
+    const sim = makeSim();
+    teleport(sim, 0, -25.4, Math.PI);
+    const p = sim.player;
+    let onWall = false;
+    for (let i = 0; i < 140 && !onWall; i++) {
+      hold(sim, { forward: true, jump: true }, 1);
+      const rel = p.pos.y - terrainHeight(p.pos.x, p.pos.z, SEED);
+      if (p.onGround && rel > 1.1) onWall = true;
+    }
+    expect(onWall).toBe(true);
+    // Keep pushing: down the far side, OUTSIDE the ring.
+    for (let i = 0; i < 80; i++) hold(sim, { forward: true, jump: true }, 1);
+    expect(Math.hypot(p.pos.x, p.pos.z)).toBeGreaterThan(28.4);
+  });
+
+  it('the tall lantern pylons stay full-height even for a body on the parapet', () => {
+    const walls = BUILTIN_WORLD.props.walls ?? [];
+    expect(walls.length).toBeGreaterThan(0);
+    for (const wall of walls.slice(0, 6)) {
+      const mirror = wall.mirrored ? -1 : 1;
+      const along = TOWN_WALL_TALL_PILLAR_ALONG * mirror * (wall.w / 2);
+      const px = wall.x + Math.sin(wall.rot + Math.PI / 2) * along;
+      const pz = wall.z + Math.cos(wall.rot + Math.PI / 2) * along;
+      const parapetY = groundHeight(px, pz, SEED) + wall.height * TOWN_WALL_PARAPET_FRAC + 1e-3;
+      // A mover standing at parapet height is still pushed out of the pylon.
+      const res = resolvePosition(SEED, px, pz, 0.4, false, undefined, {
+        y: parapetY,
+        lift: 0,
+      });
+      const moved = Math.hypot(res.x - px, res.z - pz);
+      expect(moved, `${wall.id} pylon holds at parapet height`).toBeGreaterThan(1e-4);
+    }
+  });
 });
 
 describe('interactable landmarks are solid (the v0.31 walk-through sweep)', () => {
