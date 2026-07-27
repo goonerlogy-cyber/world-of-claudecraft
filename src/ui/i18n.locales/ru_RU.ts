@@ -4319,6 +4319,11 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'entities.dungeons.gravewyrm_sanctum.leaveText': 'Вы пошатываясь выходите на горный ветер.',
   'entities.mobs.orkadia_grunt.name': 'Пехотинец Кровавого Клыка',
   'entities.mobs.orkadia_marauder.name': 'Мародёр Железношкурый',
+  'entities.mobs.orkadia_axethrower.name': 'Метатель топоров Кровавого Клыка',
+  'entities.mobs.orkadia_fel_shaman.name': 'Шаман Пепельной Кости',
+  'entities.mobs.orkadia_beast_handler.name': 'Укротитель боевых зверей Железной Шкуры',
+  'entities.mobs.orkadia_siege_brute.name': 'Осадный громила Оркадии',
+  'entities.mobs.orkadia_banner_captain.name': 'Капитан Чёрного Знамени',
   'entities.mobs.orkadia_warlord.name': 'Полководец Громмок Черепокол',
   'entities.dungeons.orkadia.name': 'Оркадия',
   'entities.dungeons.orkadia.enterText':

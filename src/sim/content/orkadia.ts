@@ -7,9 +7,10 @@
 // src/sim/orkadia_field.ts, and INTERIOR_COLLIDERS in src/sim/colliders.ts), so
 // what you see is what you collide with.
 //
-// Three orc creatures (the black_orc / blue_orc / red_orc Tripo GLBs) crew the
-// camp: the Bloodtusk Grunt line packs, the heavier Ironhide Marauder elites,
-// and Warlord Grommok Skullcleaver on the far dais. Mob display names are
+// Eight purpose-built orcs crew the camp. The five specialist silhouettes make
+// each district read as a working war machine: scouts at the approach, a shaman
+// in the ritual hollow, beast handlers at the cages, siege brutes by the engines,
+// and banner captains guarding Grommok's fortress. Mob display names are
 // re-localized on the client via the entity_i18n matcher (English lives here).
 import type { DungeonDef, DungeonSpawn, MobTemplate } from '../types';
 
@@ -59,6 +60,189 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     scale: 1.9,
     color: 0x35506a, // steel-blue plate over green hide
   },
+  // Mobile ranged pressure (orkadia_axethrower.glb): scouts guarding the lower
+  // terraces. The windup gives players time to read each thrown axe.
+  orkadia_axethrower: {
+    id: 'orkadia_axethrower',
+    name: 'Bloodtusk Axethrower',
+    minLevel: 18,
+    maxLevel: 19,
+    family: 'humanoid',
+    elite: true,
+    hpBase: 54,
+    hpPerLevel: 20,
+    dmgBase: 11,
+    dmgPerLevel: 2.4,
+    attackSpeed: 2.2,
+    armorPerLevel: 17,
+    moveSpeed: 7.2,
+    aggroRadius: 15,
+    petSpell: {
+      name: 'Barbed Axe',
+      school: 'physical',
+      min: 24,
+      max: 34,
+      range: 23,
+      every: 2.7,
+      windup: 0.55,
+    },
+    componentTags: ['hide'],
+    loot: [{ copper: 310, chance: 1 }],
+    scale: 1.75,
+    color: 0x536c39,
+  },
+  // Priority caster (orkadia_fel_shaman.glb): a fel bolt plus pack healing makes
+  // the ritual-ground pulls collapse quickly once the shaman is interrupted.
+  orkadia_fel_shaman: {
+    id: 'orkadia_fel_shaman',
+    name: 'Ashenbone Fel Shaman',
+    minLevel: 19,
+    maxLevel: 20,
+    family: 'humanoid',
+    elite: true,
+    hpBase: 56,
+    hpPerLevel: 20,
+    dmgBase: 10,
+    dmgPerLevel: 2.3,
+    attackSpeed: 2.4,
+    armorPerLevel: 18,
+    moveSpeed: 6.5,
+    aggroRadius: 15,
+    petSpell: {
+      name: 'Fel Cinder',
+      school: 'shadow',
+      min: 27,
+      max: 39,
+      range: 25,
+      every: 3,
+      windup: 0.7,
+    },
+    mendAlly: {
+      healMin: 34,
+      healMax: 48,
+      radius: 13,
+      every: 8,
+      name: 'Bloodfire Mending',
+      school: 'shadow',
+    },
+    componentTags: ['hide', 'horn'],
+    loot: [{ copper: 390, chance: 1 }],
+    scale: 1.8,
+    color: 0x44552e,
+  },
+  // Pack enabler (orkadia_beast_handler.glb): its cadence accelerates nearby
+  // allies while the hooked chain leaves a readable bleed on the tank.
+  orkadia_beast_handler: {
+    id: 'orkadia_beast_handler',
+    name: 'Ironhide Warbeast Handler',
+    minLevel: 19,
+    maxLevel: 20,
+    family: 'humanoid',
+    elite: true,
+    hpBase: 78,
+    hpPerLevel: 24,
+    dmgBase: 14,
+    dmgPerLevel: 2.7,
+    attackSpeed: 2.3,
+    armorPerLevel: 25,
+    moveSpeed: 6.8,
+    aggroRadius: 14,
+    bleed: {
+      chance: 0.28,
+      perTick: 7,
+      interval: 3,
+      duration: 9,
+      name: 'Hooked Chain',
+      school: 'physical',
+    },
+    warcry: {
+      radius: 13,
+      every: 12,
+      hasteMult: 1.18,
+      duration: 7,
+      name: 'Hunting Cadence',
+      school: 'physical',
+    },
+    componentTags: ['hide', 'fang'],
+    loot: [{ copper: 430, chance: 1 }],
+    scale: 1.9,
+    color: 0x4c5b35,
+  },
+  // Siege-yard miniboss (orkadia_siege_brute.glb): a large, rare elite with a
+  // short-range stomp and cleave. Its slow cadence keeps both tells avoidable.
+  orkadia_siege_brute: {
+    id: 'orkadia_siege_brute',
+    name: 'Orkadia Siege Brute',
+    minLevel: 20,
+    maxLevel: 20,
+    family: 'humanoid',
+    elite: true,
+    rare: true,
+    ccImmune: true,
+    hpBase: 140,
+    hpPerLevel: 34,
+    dmgBase: 18,
+    dmgPerLevel: 3.2,
+    attackSpeed: 2.8,
+    armorPerLevel: 34,
+    moveSpeed: 6.1,
+    aggroRadius: 15,
+    stomp: {
+      radius: 8,
+      every: 13,
+      duration: 1.2,
+      min: 20,
+      max: 30,
+      name: 'Siegebreaker Stomp',
+      school: 'physical',
+    },
+    cleave: { radius: 7, mult: 0.55, name: 'Basalt Sweep' },
+    enrage: { belowHpPct: 0.25, dmgMult: 1.3, hasteMult: 1.15 },
+    componentTags: ['hide', 'horn'],
+    loot: [{ copper: 900, chance: 1 }],
+    scale: 2.3,
+    color: 0x26382c,
+  },
+  // Inner-gate miniboss (orkadia_banner_captain.glb): a rare elite commander
+  // whose banner turns the honor guard into a coordinated final pull.
+  orkadia_banner_captain: {
+    id: 'orkadia_banner_captain',
+    name: 'Black Banner Captain',
+    minLevel: 20,
+    maxLevel: 20,
+    family: 'humanoid',
+    elite: true,
+    rare: true,
+    ccImmune: true,
+    hpBase: 112,
+    hpPerLevel: 30,
+    dmgBase: 16,
+    dmgPerLevel: 3,
+    attackSpeed: 2.5,
+    armorPerLevel: 31,
+    moveSpeed: 6.6,
+    aggroRadius: 16,
+    rally: {
+      radius: 14,
+      every: 11,
+      ap: 32,
+      duration: 8,
+      name: 'Black Banner Rally',
+      school: 'physical',
+    },
+    wardAllies: {
+      radius: 12,
+      every: 14,
+      amount: 65,
+      duration: 7,
+      name: 'Ironwall Order',
+      school: 'physical',
+    },
+    componentTags: ['hide', 'horn'],
+    loot: [{ copper: 850, chance: 1 }],
+    scale: 2.1,
+    color: 0x4a3029,
+  },
   // Boss (red_orc.glb): Warlord Grommok Skullcleaver on the dais. A Warstomp
   // nova plus an enrage under 30%, mirroring the Gravewyrm Sanctum boss shape.
   orkadia_warlord: {
@@ -98,31 +282,31 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
 };
 
 // ---------------------------------------------------------------------------
-// Spawn plan (instance-local coords on the open-field footprint z 30..216)
-// Packs of two spaced beyond social-aggro range up the rolling camp lane, a
-// marauder line at the waist, then Grommok alone on the terraced far dais.
+// Spawn plan along the winding processional route. Each pull occupies a
+// distinct camp pocket or terrace, with Grommok and his honor guard in the
+// broad fortress ring at the top of the basin.
 // ---------------------------------------------------------------------------
 const ORKADIA_SPAWN_LIST: DungeonSpawn[] = [
-  { mobId: 'orkadia_grunt', x: -3, z: 29.6 },
-  { mobId: 'orkadia_grunt', x: 3, z: 31.1 },
-  { mobId: 'orkadia_grunt', x: -8, z: 44.4 },
-  { mobId: 'orkadia_marauder', x: -4, z: 45.9 },
-  { mobId: 'orkadia_grunt', x: 7, z: 65.1 },
-  { mobId: 'orkadia_grunt', x: 3, z: 66.6 },
-  { mobId: 'orkadia_marauder', x: -6, z: 85.8 },
-  { mobId: 'orkadia_grunt', x: -2, z: 87.3 },
-  { mobId: 'orkadia_marauder', x: 0, z: 106.6 },
-  { mobId: 'orkadia_grunt', x: -7, z: 127.3 },
-  { mobId: 'orkadia_grunt', x: -3, z: 128.8 },
-  { mobId: 'orkadia_marauder', x: 6, z: 148 },
-  { mobId: 'orkadia_grunt', x: 2, z: 149.5 },
-  { mobId: 'orkadia_marauder', x: -4, z: 165.8 },
-  { mobId: 'orkadia_marauder', x: 4, z: 165.8 },
-  { mobId: 'orkadia_grunt', x: -5, z: 192.4 },
-  { mobId: 'orkadia_grunt', x: -1, z: 195.4 },
-  { mobId: 'orkadia_warlord', x: 0, z: 216.1 },
-  { mobId: 'orkadia_grunt', x: -5, z: 213.1 },
-  { mobId: 'orkadia_grunt', x: 5, z: 213.1 },
+  { mobId: 'orkadia_grunt', x: 1, z: 35 },
+  { mobId: 'orkadia_axethrower', x: 8, z: 36.5 },
+  { mobId: 'orkadia_grunt', x: 8, z: 56 },
+  { mobId: 'orkadia_marauder', x: 15, z: 57.5 },
+  { mobId: 'orkadia_axethrower', x: 7, z: 79 },
+  { mobId: 'orkadia_beast_handler', x: 14, z: 80.5 },
+  { mobId: 'orkadia_fel_shaman', x: -4, z: 102 },
+  { mobId: 'orkadia_grunt', x: 3, z: 103.5 },
+  { mobId: 'orkadia_fel_shaman', x: -4, z: 119 },
+  { mobId: 'orkadia_beast_handler', x: -13, z: 134 },
+  { mobId: 'orkadia_grunt', x: -6, z: 135.5 },
+  { mobId: 'orkadia_marauder', x: -13, z: 152 },
+  { mobId: 'orkadia_banner_captain', x: -6, z: 153.5 },
+  { mobId: 'orkadia_siege_brute', x: -7, z: 172 },
+  { mobId: 'orkadia_marauder', x: 0, z: 173.5 },
+  { mobId: 'orkadia_axethrower', x: -2, z: 181 },
+  { mobId: 'orkadia_grunt', x: 2, z: 182.5 },
+  { mobId: 'orkadia_banner_captain', x: -24, z: 213 },
+  { mobId: 'orkadia_siege_brute', x: 24, z: 213 },
+  { mobId: 'orkadia_warlord', x: 0, z: 220 },
 ];
 
 // ---------------------------------------------------------------------------

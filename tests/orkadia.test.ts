@@ -2,7 +2,7 @@
 // classic DungeonDef placed in the Drakelands whose `orkadia` interior is the
 // first open-field dungeon interior (outdoor ground with shared relief, the
 // war-camp prop set, perimeter walls; see src/sim/orkadia_field.ts). Pins the
-// content wiring (def fields, entrance zone, the three orc mobs, the boss kit),
+// content wiring (def fields, entrance zone, the eight orc mobs, the boss kit),
 // the entry lifecycle (spawns the roster incl. the warlord), the live collider
 // routing, the shared ground relief, and the Book of Deeds pair, so a future
 // edit that drops any of them reds here.
@@ -59,16 +59,35 @@ describe('Orkadia dungeon content', () => {
     expect(indices.filter((i) => i === def.index)).toHaveLength(1);
   });
 
-  it('defines exactly the three orc creatures and reaches the global MOBS table', () => {
+  it('defines the complete eight-orc roster and reaches the global MOBS table', () => {
     expect(Object.keys(ORKADIA_MOBS).sort()).toEqual([
+      'orkadia_axethrower',
+      'orkadia_banner_captain',
+      'orkadia_beast_handler',
+      'orkadia_fel_shaman',
       'orkadia_grunt',
       'orkadia_marauder',
+      'orkadia_siege_brute',
       'orkadia_warlord',
     ]);
     for (const id of Object.keys(ORKADIA_MOBS)) {
       expect(MOBS[id], `${id} reaches MOBS`).toBeDefined();
       expect(MOBS[id].family).toBe('humanoid');
     }
+  });
+
+  it('gives every specialist a distinct combat job and promotes two minibosses', () => {
+    expect(MOBS.orkadia_axethrower.petSpell?.school).toBe('physical');
+    expect(MOBS.orkadia_fel_shaman.petSpell?.school).toBe('shadow');
+    expect(MOBS.orkadia_fel_shaman.mendAlly?.name).toBe('Bloodfire Mending');
+    expect(MOBS.orkadia_beast_handler.bleed?.name).toBe('Hooked Chain');
+    expect(MOBS.orkadia_beast_handler.warcry?.name).toBe('Hunting Cadence');
+    expect(MOBS.orkadia_siege_brute.stomp?.name).toBe('Siegebreaker Stomp');
+    expect(MOBS.orkadia_siege_brute.cleave?.name).toBe('Basalt Sweep');
+    expect(MOBS.orkadia_banner_captain.rally?.name).toBe('Black Banner Rally');
+    expect(MOBS.orkadia_banner_captain.wardAllies?.name).toBe('Ironwall Order');
+    expect(MOBS.orkadia_siege_brute).toMatchObject({ elite: true, rare: true });
+    expect(MOBS.orkadia_banner_captain).toMatchObject({ elite: true, rare: true });
   });
 
   it('makes the warlord a boss with a Warstomp nova and an enrage', () => {
@@ -92,6 +111,17 @@ describe('Orkadia dungeon content', () => {
     expect(bosses[0].z).toBe(maxZ);
   });
 
+  it('keeps every combat spawn clear of the authored prop footprints', () => {
+    for (const spawn of ORKADIA_DUNGEON_DEFS.orkadia.spawns) {
+      const clearance = Math.min(
+        ...ORKADIA_FIELD_COLLIDER_SPECS.map(
+          (spec) => Math.hypot(spawn.x - spec.x, spawn.z - spec.z) - spec.r,
+        ),
+      );
+      expect(clearance, `${spawn.mobId} at ${spawn.x},${spawn.z}`).toBeGreaterThan(4);
+    }
+  });
+
   it('spawns the full roster (including the warlord) when a party claims the instance', () => {
     const sim = makeSim();
     const pid = sim.addPlayer('warrior', 'Alpha');
@@ -105,8 +135,7 @@ describe('Orkadia dungeon content', () => {
       .filter((e): e is Entity => !!e)
       .map((e) => e.templateId);
     expect(templates).toContain('orkadia_warlord');
-    expect(templates).toContain('orkadia_grunt');
-    expect(templates).toContain('orkadia_marauder');
+    for (const id of Object.keys(ORKADIA_MOBS)) expect(templates).toContain(id);
     // every spawned mob is an orc.
     for (const t of templates) expect(t.startsWith('orkadia_')).toBe(true);
   });

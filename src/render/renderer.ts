@@ -475,6 +475,10 @@ const YUMI_MAZE_SUN_INTENSITY = 1.2;
 const YUMI_MAZE_HEMI_INTENSITY = 0.42;
 const YUMI_MAZE_ENV_INTENSITY = 0.28;
 const YUMI_MAZE_RIM_BOOST = 1.7;
+const ORKADIA_SUN_INTENSITY = 1.35;
+const ORKADIA_HEMI_INTENSITY = 0.55;
+const ORKADIA_ENV_INTENSITY = 0.24;
+const ORKADIA_RIM_BOOST = 1.75;
 const WILDHEART_SUN_INTENSITY = 1.55;
 const WILDHEART_HEMI_INTENSITY = 0.68;
 const WILDHEART_ENV_INTENSITY = 0.32;
@@ -6272,6 +6276,7 @@ export class Renderer {
       // The rim glow cranks up instead — silhouettes must split from the murk.
       if (!this.lowGfx) {
         const mazeNight = desired === 'yumiMaze';
+        const orkadiaStorm = desired === 'orkadiaField';
         const wildheartSun = desired === 'wildheartField';
         const keepHearth = desired === 'lastkeep';
         const underground =
@@ -6284,41 +6289,53 @@ export class Renderer {
         // of a cave at night stays night.
         this.sun.intensity = mazeNight
           ? YUMI_MAZE_SUN_INTENSITY
-          : wildheartSun
-            ? WILDHEART_SUN_INTENSITY
-            : keepHearth
-              ? LASTKEEP_SUN_INTENSITY
-              : underground
-                ? DUNGEON_SUN_INTENSITY
-                : SUN_INTENSITY * this.dnGrade.lightScale;
+          : orkadiaStorm
+            ? ORKADIA_SUN_INTENSITY
+            : wildheartSun
+              ? WILDHEART_SUN_INTENSITY
+              : keepHearth
+                ? LASTKEEP_SUN_INTENSITY
+                : underground
+                  ? DUNGEON_SUN_INTENSITY
+                  : SUN_INTENSITY * this.dnGrade.lightScale;
         this.hemi.intensity = mazeNight
           ? YUMI_MAZE_HEMI_INTENSITY
-          : wildheartSun
-            ? WILDHEART_HEMI_INTENSITY
-            : keepHearth
-              ? LASTKEEP_HEMI_INTENSITY
-              : underground
-                ? DUNGEON_HEMI_INTENSITY
-                : HEMI_INTENSITY * this.dnGrade.lightScale;
+          : orkadiaStorm
+            ? ORKADIA_HEMI_INTENSITY
+            : wildheartSun
+              ? WILDHEART_HEMI_INTENSITY
+              : keepHearth
+                ? LASTKEEP_HEMI_INTENSITY
+                : underground
+                  ? DUNGEON_HEMI_INTENSITY
+                  : HEMI_INTENSITY * this.dnGrade.lightScale;
         this.scene.environmentIntensity = mazeNight
           ? YUMI_MAZE_ENV_INTENSITY
-          : wildheartSun
-            ? WILDHEART_ENV_INTENSITY
-            : keepHearth
-              ? LASTKEEP_ENV_INTENSITY
-              : underground
-                ? DUNGEON_ENV_INTENSITY
-                : this.envOutdoorIntensity * this.dnGrade.lightScale;
+          : orkadiaStorm
+            ? ORKADIA_ENV_INTENSITY
+            : wildheartSun
+              ? WILDHEART_ENV_INTENSITY
+              : keepHearth
+                ? LASTKEEP_ENV_INTENSITY
+                : underground
+                  ? DUNGEON_ENV_INTENSITY
+                  : this.envOutdoorIntensity * this.dnGrade.lightScale;
         sharedUniforms.uRimBoost.value = mazeNight
           ? YUMI_MAZE_RIM_BOOST
-          : wildheartSun
-            ? WILDHEART_RIM_BOOST
-            : keepHearth
-              ? LASTKEEP_RIM_BOOST
-              : underground
-                ? DUNGEON_RIM_BOOST
-                : 1;
-        if (wildheartSun) {
+          : orkadiaStorm
+            ? ORKADIA_RIM_BOOST
+            : wildheartSun
+              ? WILDHEART_RIM_BOOST
+              : keepHearth
+                ? LASTKEEP_RIM_BOOST
+                : underground
+                  ? DUNGEON_RIM_BOOST
+                  : 1;
+        if (orkadiaStorm) {
+          this.sun.color.setHex(0xa9b8a8);
+          this.hemi.color.setHex(0x899b9a);
+          this.hemi.groundColor.setHex(0x25281f);
+        } else if (wildheartSun) {
           this.sun.color.setHex(0xffd48c);
           this.hemi.color.setHex(0xd8ebca);
           this.hemi.groundColor.setHex(0x5b4a2d);

@@ -4276,6 +4276,11 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'entities.dungeons.gravewyrm_sanctum.leaveText': '산바람 속으로 비틀거리며 돌아옵니다.',
   'entities.mobs.orkadia_grunt.name': '피엄니 병졸',
   'entities.mobs.orkadia_marauder.name': '무쇠가죽 약탈자',
+  'entities.mobs.orkadia_axethrower.name': '피엄니 도끼투척병',
+  'entities.mobs.orkadia_fel_shaman.name': '잿빛뼈 지옥 주술사',
+  'entities.mobs.orkadia_beast_handler.name': '무쇠가죽 전투야수 조련사',
+  'entities.mobs.orkadia_siege_brute.name': '오르카디아 공성 투사',
+  'entities.mobs.orkadia_banner_captain.name': '검은 깃발 대장',
   'entities.mobs.orkadia_warlord.name': '전쟁군주 그로목 해골분쇄자',
   'entities.dungeons.orkadia.name': '오르카디아',
   'entities.dungeons.orkadia.enterText':

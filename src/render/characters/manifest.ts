@@ -250,7 +250,7 @@ const ORC_TRIPO: ClipMap = {
   death: 'Death',
 };
 
-// Tripo biped rig. These creatures come through the current biped
+// Orkadia specialist rig. These five creatures come through the current biped
 // pipeline, which retargets and bakes the complete game vocabulary directly.
 const TRIPO_BIPED_FULL_RIG: ClipMap = {
   idle: 'Idle',
@@ -1112,6 +1112,43 @@ export const VISUALS: Record<string, VisualDef> = {
     tint: 'entity',
     tintStrength: 0.1,
   },
+  // Five bespoke Orkadia specialists, kept effectively untinted so their
+  // authored armor, warpaint, fel runes, and rank silhouettes remain distinct.
+  mob_orkadia_axethrower: {
+    url: `${CREATURES}/orkadia_axethrower.glb`,
+    height: 2.4,
+    clips: TRIPO_BIPED_FULL_RIG,
+    tint: 'entity',
+    tintStrength: 0.06,
+  },
+  mob_orkadia_fel_shaman: {
+    url: `${CREATURES}/orkadia_fel_shaman.glb`,
+    height: 2.4,
+    clips: TRIPO_BIPED_FULL_RIG,
+    tint: 'entity',
+    tintStrength: 0.06,
+  },
+  mob_orkadia_beast_handler: {
+    url: `${CREATURES}/orkadia_beast_handler.glb`,
+    height: 2.5,
+    clips: TRIPO_BIPED_FULL_RIG,
+    tint: 'entity',
+    tintStrength: 0.06,
+  },
+  mob_orkadia_siege_brute: {
+    url: `${CREATURES}/orkadia_siege_brute.glb`,
+    height: 2.9,
+    clips: TRIPO_BIPED_FULL_RIG,
+    tint: 'entity',
+    tintStrength: 0.04,
+  },
+  mob_orkadia_banner_captain: {
+    url: `${CREATURES}/orkadia_banner_captain.glb`,
+    height: 2.7,
+    clips: TRIPO_BIPED_FULL_RIG,
+    tint: 'entity',
+    tintStrength: 0.05,
+  },
   // Five Wildheart troll silhouettes use the same complete biped vocabulary,
   // but preserve their woven cloth, bone paint, feathers, and jungle palette.
   mob_wildheart_stalker: {
@@ -1625,6 +1662,11 @@ const MOB_KEYS: Record<string, string> = {
   orkadia_grunt: 'mob_orc_grunt',
   orkadia_marauder: 'mob_orc_marauder',
   orkadia_warlord: 'mob_orc_warlord',
+  orkadia_axethrower: 'mob_orkadia_axethrower',
+  orkadia_fel_shaman: 'mob_orkadia_fel_shaman',
+  orkadia_beast_handler: 'mob_orkadia_beast_handler',
+  orkadia_siege_brute: 'mob_orkadia_siege_brute',
+  orkadia_banner_captain: 'mob_orkadia_banner_captain',
   wildheart_stalker: 'mob_wildheart_stalker',
   wildheart_ravager: 'mob_wildheart_ravager',
   wildheart_hexcaller: 'mob_wildheart_hexcaller',

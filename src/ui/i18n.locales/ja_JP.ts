@@ -4291,6 +4291,11 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'entities.dungeons.gravewyrm_sanctum.leaveText': '山風の中へよろめき戻ります。',
   'entities.mobs.orkadia_grunt.name': '血牙の兵卒',
   'entities.mobs.orkadia_marauder.name': '鉄皮の略奪者',
+  'entities.mobs.orkadia_axethrower.name': '血牙の斧投げ',
+  'entities.mobs.orkadia_fel_shaman.name': '灰骨のフェルシャーマン',
+  'entities.mobs.orkadia_beast_handler.name': '鉄皮の戦獣使い',
+  'entities.mobs.orkadia_siege_brute.name': 'オルカディアの攻城兵',
+  'entities.mobs.orkadia_banner_captain.name': '黒旗の隊長',
   'entities.mobs.orkadia_warlord.name': '軍団長グロモク・スカルクリーヴァー',
   'entities.dungeons.orkadia.name': 'オルカディア',
   'entities.dungeons.orkadia.enterText':
