@@ -75,3 +75,30 @@ gatehouse as mirrored outer bastions around a genuinely clear center passage.
 - Applied props: 24 total, including 6 structural rework assets.
 - Applied creatures: 5 new biped specialists with complete eight-clip sets.
 - Skipped props: none.
+
+## Third-party IP remediation, 2026-07-27
+
+`orkadia_war_drum` shipped with a recognisable third-party faction crest baked into its base
+colour map: the generator painted it onto the drum skin, and the prop-QA pass (silhouette,
+budget, meshopt, bounds) had no step that looked at what the texture actually depicted. Three
+drums are placed in the camp (`src/sim/orkadia_field.ts`, local -43/80, 31/121, 34/154), so it
+was visible on every run.
+
+Fixed in place rather than regenerated, so no Tripo credits were spent and the mesh is
+untouched:
+
+- The drum skin was resynthesised from the prop's own clean outer band. A 2D quadratic fitted
+  to the band carries the lighting falloff, and two octaves of fixed-seed value noise put the
+  hide grain back, so the head reads as plain stretched hide instead of a patched disc.
+- The emblem left a faint imprint in the normal map too; the same ellipse was flattened to the
+  band average there. The ORM map never carried it.
+- The mesh, UVs, ORM map, materials, and all three required extensions
+  (`EXT_meshopt_compression`, `EXT_texture_webp`, `KHR_mesh_quantization`) are unchanged. Only
+  the two image payloads were swapped, with every meshopt blob copied byte-for-byte and its
+  offset shifted. GLB 63116 to 65456 bytes, still inside the 40 to 100 KB prop budget.
+- The other 19 Orkadia props were swept the same way (base colour maps inspected at full
+  resolution). They are clean: the marks on `orkadia_prisoner_cage` are hide weathering and the
+  `orkadia_war_banner` motif is an original orc skull-and-fist.
+
+Before and after, from `pipeline.mjs preview`, plus an in-game capture of the reworked drum
+in the camp: `docs/screenshots/orkadia/ip-fix/`.

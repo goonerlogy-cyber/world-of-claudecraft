@@ -874,7 +874,7 @@ export const MEDIA_ASSETS: Record<string, string> =
   "models/props/orkadia_trophy_pole.glb": "/media/models/props/orkadia_trophy_pole.f46aa0bac1b4.glb",
   "models/props/orkadia_volcanic_cliff.glb": "/media/models/props/orkadia_volcanic_cliff.1b6a6b814453.glb",
   "models/props/orkadia_war_banner.glb": "/media/models/props/orkadia_war_banner.e4f6c3b9ee90.glb",
-  "models/props/orkadia_war_drum.glb": "/media/models/props/orkadia_war_drum.cda188831fd3.glb",
+  "models/props/orkadia_war_drum.glb": "/media/models/props/orkadia_war_drum.408b43278af5.glb",
   "models/props/orkadia_war_gate.glb": "/media/models/props/orkadia_war_gate.5182bd18b5e7.glb",
   "models/props/orkadia_war_hall.glb": "/media/models/props/orkadia_war_hall.775b04831f2f.glb",
   "models/props/orkadia_war_tent.glb": "/media/models/props/orkadia_war_tent.f52b2806682f.glb",

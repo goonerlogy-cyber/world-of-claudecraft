@@ -143,10 +143,16 @@ Cada concepto individual pedía:
 - Fondo gris claro.
 - Luz de estudio plana.
 - Sin suelo, sombra, personajes, texto ni marca de agua.
+- Sin emblemas, escudos de armas ni insignias de facción reconocibles de otro juego.
 - Silueta gruesa y legible.
 - Detalle visual concentrado en hueso, hierro, madera quemada, tela roja y brillo verde.
 
 Esto reduce la probabilidad de que el modelo 3D incorpore paisaje, peanas o elementos flotantes.
+
+La regla de los emblemas no es teórica: `orkadia_war_drum` se generó con el escudo de una
+facción de otro juego pintado en el parche del tambor, y pasó el QA porque ninguna comprobación
+miraba lo que la textura representaba. Ver la remediación en
+`docs/prd/orkadia-open-world-assets.md`.
 
 ### 4.3 Reglas de los conceptos de criaturas
 
@@ -222,6 +228,13 @@ La validación final debía confirmar:
 - Base en `y=0`.
 - Tamaño y bounding box razonables.
 - Sin errores del validador glTF.
+- Ningún emblema, insignia ni texto de terceros en el mapa de color base.
+
+Esta última comprobación se añadió después de que `orkadia_war_drum` llegara a producción con
+un escudo de facción ajeno pintado en la piel del tambor. Las cinco anteriores son
+estructurales y ninguna mira el contenido de la textura, así que hay que inspeccionarla
+aparte: extraer el mapa de color del GLB y verlo a resolución completa, no solo mirar el
+render del prop, donde un emblema de 25 px pasa desapercibido.
 
 ### 5.3 La puerta cerrada y la solución compositiva
 
