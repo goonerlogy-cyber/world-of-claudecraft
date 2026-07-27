@@ -277,6 +277,7 @@ const RENDER_PURE_CORES = [
   'src/render/nameplate_view.ts',
   'src/render/net_interp_core.ts',
   'src/render/race_line_core.ts',
+  'src/render/sea_mist_core.ts',
   'src/render/terrain_region_core.ts',
   'src/render/water_core.ts',
   'src/render/day_night_core.ts',

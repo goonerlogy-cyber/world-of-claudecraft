@@ -294,8 +294,8 @@ describe('scripted playthrough (one sim, live sites only)', () => {
         sawBiteOnKoiSession = bit;
       }
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded for the
-    // rifts + ability-VFX integration stream): the koi bites on session index 73.
+    // Hunted literal (seed 4242, after every beat above, re-recorded after
+    // reverting the Orkadia dungeon): the koi bites on session index 73.
     expect(koiSession).toBe(73);
     expect(sawBiteOnKoiSession).toBe(true); // the celebration follows the bite moment
     expect(meta.deedsEarned.has('col_glimmerfin')).toBe(false); // grant sweeps at the tick tail

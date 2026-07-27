@@ -180,3 +180,108 @@ describe('progressive terrain build', () => {
     expect(earlyClosest).toBeCloseTo(overallClosest, 5);
   });
 });
+
+// The world seed src/main.ts fixes; the gap geometry below is stated in its
+// terms, so the height pin and the build share one world.
+const WORLD_SEED = 20061;
+
+// The zone rectangles do not tile the world box (nothing sits west of
+// Eastbrook Vale for z -180..180, nothing north of Frostveil in the centre
+// column, and the chunk grid overhangs WORLD_MAX_Z by a row). Cells in those
+// gaps used to belong to no zone, so no zone's build ever meshed them: the
+// ground there rendered as a hole you saw and fell through. Standing at
+// (-195, 161) the terrain is 1.6yd ABOVE the waterline, i.e. walkable ground a
+// player reaches on foot from the Willowfen border.
+describe('terrain covers the whole world, gaps between zone rectangles included', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // A point is covered when some built chunk's XZ footprint contains it.
+  const coversPoint = (group: THREE.Object3D, x: number, z: number): boolean =>
+    group.children.some((mesh) => {
+      const box = new THREE.Box3().setFromObject(mesh);
+      return x >= box.min.x && x <= box.max.x && z >= box.min.z && z <= box.max.z;
+    });
+
+  it('meshes the walkable ground at (-195, 161), in the gap west of Eastbrook Vale', async () => {
+    vi.resetModules();
+    mockEmptyAssetLoads();
+    const { buildTerrain } = await import('../src/render/terrain');
+    const { ZONES } = await import('../src/sim/data');
+    const { terrainHeight, WATER_LEVEL } = await import('../src/sim/world');
+
+    // Pin the premise on the shipped world seed: this really is dry land, not
+    // seabed under the water plane, so a missing chunk here is ground the
+    // player walks onto and falls through.
+    expect(terrainHeight(-195, 161, WORLD_SEED)).toBeGreaterThan(WATER_LEVEL);
+
+    const terrain = buildTerrain(WORLD_SEED);
+    // The two realms the gap abuts, which is what the renderer's streaming
+    // horizon prepares from either side of the border.
+    for (const id of ['eastbrook_vale', 'willowfen']) {
+      const zone = ZONES.find((candidate) => candidate.id === id);
+      if (!zone) throw new Error(`missing zone ${id}`);
+      const task = terrain.ensureZone(zone);
+      await vi.runAllTimersAsync();
+      await task;
+    }
+
+    expect(coversPoint(terrain.group, -195, 161)).toBe(true);
+    terrain.cancelStreaming();
+  });
+
+  it('leaves no uncovered cell anywhere once every zone is built', async () => {
+    vi.resetModules();
+    mockEmptyAssetLoads();
+    const { buildTerrain } = await import('../src/render/terrain');
+    const { ZONES, WORLD_MAX_X, WORLD_MAX_Z, WORLD_MIN_Z } = await import('../src/sim/data');
+
+    const terrain = buildTerrain(WORLD_SEED);
+    for (const zone of ZONES) {
+      const task = terrain.ensureZone(zone);
+      await vi.runAllTimersAsync();
+      await task;
+    }
+
+    // Sample every 60u chunk cell's centre across the whole world box. Before
+    // the gap-cell fix this found 96 uncovered cells (the south-west quadrant,
+    // the centre column north of Frostveil, and the overhanging north row).
+    const CHUNK = 60;
+    const uncovered: [number, number][] = [];
+    for (let z = WORLD_MIN_Z + CHUNK / 2; z < WORLD_MAX_Z; z += CHUNK) {
+      for (let x = -WORLD_MAX_X + CHUNK / 2; x < WORLD_MAX_X; x += CHUNK) {
+        if (!coversPoint(terrain.group, x, z)) uncovered.push([x, z]);
+      }
+    }
+    expect(uncovered).toEqual([]);
+    terrain.cancelStreaming();
+  });
+
+  it('builds every cell exactly once across all zones', async () => {
+    vi.resetModules();
+    mockEmptyAssetLoads();
+    const { buildTerrain } = await import('../src/render/terrain');
+    const { ZONES } = await import('../src/sim/data');
+
+    // Nearest-rect ownership must stay single-owner: a cell claimed by two
+    // zones would mesh twice and z-fight, which is the failure mode a plain
+    // "nearest zone" fallback in each zone's own loop would have.
+    const terrain = buildTerrain(WORLD_SEED);
+    for (const zone of ZONES) {
+      const task = terrain.ensureZone(zone);
+      await vi.runAllTimersAsync();
+      await task;
+    }
+
+    const footprints = terrain.group.children.map((mesh) => {
+      const box = new THREE.Box3().setFromObject(mesh);
+      return `${box.min.x.toFixed(2)},${box.min.z.toFixed(2)},${box.max.x.toFixed(2)},${box.max.z.toFixed(2)}`;
+    });
+    expect(new Set(footprints).size).toBe(footprints.length);
+    terrain.cancelStreaming();
+  });
+});

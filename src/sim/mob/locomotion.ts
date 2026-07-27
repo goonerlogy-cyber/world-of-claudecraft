@@ -61,6 +61,7 @@ import {
   type Vec3,
 } from '../types';
 import { groundHeight, waterLevelAt } from '../world';
+import { MAX_AGGRO_RADIUS, MAX_WANDER_RADIUS, MIN_WANDER_RADIUS } from './aggro_ranges';
 import { isAmbientMob, updateAmbientMob } from './ambient';
 import {
   cancelMobChargeDash,
@@ -73,11 +74,13 @@ import { rallyFleeingAllies } from './social_aggro';
 import { isTrivialTo, retargetMob, tickForcedTarget } from './targeting';
 import { emitMobYell } from './yells';
 
-// Hard ceiling on a mob's effective aggro/detection radius, whatever its template
-// aggroRadius or level advantage. Exported so the dungeon door-clearance module and
-// its guard test pin the same number: a mob spawned strictly outside this radius of
-// a dungeon door can never aggro a player standing on the door.
-export const MAX_AGGRO_RADIUS = 20;
+// This module ENFORCES the aggro ceiling and the wander ring; the numbers themselves live
+// in the dependency-free ./aggro_ranges leaf so the modules that must clear them (the
+// dungeon door ring, the rift arrival clearance) can import the same values without
+// closing an import cycle back through here. Re-exported so existing consumers and their
+// guard tests keep importing them from locomotion and still see one shared value.
+export { MAX_AGGRO_RADIUS, MAX_WANDER_RADIUS } from './aggro_ranges';
+
 const EVADE_SPEED_MULT = 1.6;
 // An evading mob walks a straight line home (no pathfinding) and stalls if deep
 // water or a collider sits between it and its spawn. Since evading mobs are
@@ -375,7 +378,7 @@ export function updateMob(ctx: SimContext, mob: Entity): void {
           mob.wanderTimer = ctx.rng.range(3, 10);
         } else {
           const ang = ctx.rng.range(0, Math.PI * 2);
-          const r = ctx.rng.range(2, 9);
+          const r = ctx.rng.range(MIN_WANDER_RADIUS, MAX_WANDER_RADIUS);
           mob.wanderTarget = ctx.groundPos(
             mob.spawnPos.x + Math.sin(ang) * r,
             mob.spawnPos.z + Math.cos(ang) * r,

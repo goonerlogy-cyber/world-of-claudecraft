@@ -240,31 +240,6 @@ non-commercial. For commercial use, arrange your own licence with the author.
 | Generated Eastbrook Ravenpost mailbox (`mailbox_pillar`) | World of ClaudeCraft | Original deterministic procedural Three.js model produced via the img2threejs workflow and `scripts/assets/eastbrook_mailbox` from the project-generated finishing-pass turnaround; replaces the historical Tripo mailbox while preserving its stable runtime path and gameplay contract | Project asset | With the project only |
 | Generated Eastbrook public noticeboard (`eastbrook_noticeboard`) | World of ClaudeCraft | Original deterministic procedural Three.js model produced via the img2threejs workflow and `scripts/assets/eastbrook_noticeboard` from the project-generated finishing-pass turnaround; blank notice shapes contain no readable or proprietary text | Project asset | With the project only |
 
-| Generated prop model (orkadia_spiked_barricade) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_totem) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_banner) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_green_brazier) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_skull_pile) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_weapon_rack) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_volcanic_cliff) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_gate) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_hall) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_skull_dais) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_watchtower) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_palisade) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_drum) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_prisoner_cage) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_bone_throne) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_torch_post) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_trophy_pole) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_supply_crates) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_war_tent) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated prop model (orkadia_catapult) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
-| Generated creature model + animations (orkadia_beast_handler) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D, auto-rig + preset retargets) | Project asset | With the project only |
-| Generated creature model + animations (orkadia_siege_brute) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D, auto-rig + preset retargets) | Project asset | With the project only |
-| Generated creature model + animations (orkadia_banner_captain) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D, auto-rig + preset retargets) | Project asset | With the project only |
-| Generated creature model + animations (orkadia_axethrower) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D, auto-rig + preset retargets) | Project asset | With the project only |
-| Generated creature model + animations (orkadia_fel_shaman) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D, auto-rig + preset retargets) | Project asset | With the project only |
 | Generated prop model (wildheart_jaguar_gate) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (wildheart_ritual_pyramid) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |
 | Generated prop model (wildheart_canopy_platform) | World of ClaudeCraft | Project-generated via scripts/asset_pipeline (Tripo AI 3D) | Project asset | With the project only |

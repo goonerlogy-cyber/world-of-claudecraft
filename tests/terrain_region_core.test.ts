@@ -1,5 +1,11 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { chunkIntersectsRegion, normalTexelBounds } from '../src/render/terrain_region_core';
+import {
+  chunkIntersectsRegion,
+  normalTexelBounds,
+  owningRectIndex,
+  rectDistance,
+  type WorldRect,
+} from '../src/render/terrain_region_core';
 import {
   advanceWaterSchedule,
   shoreDepthAt,
@@ -128,6 +134,68 @@ describe('normalTexelBounds (macro normal partial rebake)', () => {
     const b = normalTexelBounds(-10, 5, 5, 8, 0, 0, W, D, TEX_W, TEX_H, 1);
     expect(b).not.toBeNull();
     expect(b?.i0).toBe(0);
+  });
+});
+
+describe('owningRectIndex (terrain chunk cell -> building zone)', () => {
+  // Three rects laid out like the real world's south end: a centre strip, an
+  // east wing beside it, and a west wing one band NORTH of them, leaving the
+  // south-west corner covered by nobody.
+  const STRIP: WorldRect = { minX: -180, maxX: 180, minZ: -180, maxZ: 180 };
+  const EAST: WorldRect = { minX: 180, maxX: 540, minZ: -180, maxZ: 180 };
+  const WEST_NORTH: WorldRect = { minX: -540, maxX: -180, minZ: 180, maxZ: 700 };
+  const RECTS = [STRIP, EAST, WEST_NORTH];
+
+  it('returns the containing rect', () => {
+    expect(owningRectIndex(0, 0, RECTS)).toBe(0);
+    expect(owningRectIndex(300, -100, RECTS)).toBe(1);
+    expect(owningRectIndex(-300, 400, RECTS)).toBe(2);
+  });
+
+  it('resolves a shared border to exactly one rect (half-open on max)', () => {
+    // x = 180 is STRIP's max edge and EAST's min edge: EAST takes it, and no
+    // point is ever claimed twice.
+    expect(owningRectIndex(180, 0, RECTS)).toBe(1);
+    expect(owningRectIndex(179.999, 0, RECTS)).toBe(0);
+  });
+
+  it('gives an uncovered cell to the nearest rect, not to a z-band neighbour', () => {
+    // The real bug: (-210, 150) is the chunk cell holding the dry ground south
+    // of the Willowfen border, inside no rect at all. It must still be built.
+    // Nearest here is a tie (30 west of STRIP, 30 south of WEST_NORTH), broken
+    // to the lower index.
+    expect(owningRectIndex(-210, 150, RECTS)).toBe(0);
+    // Deep in the gap the west wing is unambiguously nearer than the strip,
+    // so a z-band clamp (which would say "strip, same latitude") is wrong.
+    expect(owningRectIndex(-510, 150, RECTS)).toBe(2);
+    // ...and low in the gap the strip is nearer than the west wing.
+    expect(owningRectIndex(-210, -150, RECTS)).toBe(0);
+  });
+
+  it('gives a cell past a rect edge back to that rect', () => {
+    // The chunk grid overhangs the world box by up to one row; the overhanging
+    // cell centres sit just outside the northmost rect and must build with it.
+    expect(owningRectIndex(-300, 720, RECTS)).toBe(2);
+  });
+
+  it('reports -1 for an empty rect list', () => {
+    expect(owningRectIndex(0, 0, [])).toBe(-1);
+  });
+});
+
+describe('rectDistance', () => {
+  const R: WorldRect = { minX: -10, maxX: 10, minZ: -10, maxZ: 10 };
+
+  it('is zero inside and on the border', () => {
+    expect(rectDistance(0, 0, R)).toBe(0);
+    expect(rectDistance(10, 10, R)).toBe(0);
+    expect(rectDistance(-10, 4, R)).toBe(0);
+  });
+
+  it('measures the axis gap outside, and the corner diagonal past a corner', () => {
+    expect(rectDistance(13, 0, R)).toBeCloseTo(3, 10);
+    expect(rectDistance(0, -14, R)).toBeCloseTo(4, 10);
+    expect(rectDistance(13, 14, R)).toBeCloseTo(5, 10); // 3-4-5
   });
 });
 

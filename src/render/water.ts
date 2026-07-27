@@ -7,7 +7,13 @@ import { registerPreload } from './assets/preload';
 import { GFX, SUN_DIR, sharedUniforms } from './gfx';
 import { idleSlot, runIdleQueue } from './idle_queue';
 import { waterNormalish, waterNormalMaps } from './textures';
-import { shoreDepthAt } from './water_core';
+import {
+  shoreDepthAt,
+  shoreSlopeAt,
+  WATER_FIELD_EDGE_FEATHER_UV,
+  WATER_FOAM_WIDTH_YARDS,
+  WATER_SEABED_CLAMP_YARDS,
+} from './water_core';
 import { WaterSimulation, type WaterWaveUniforms } from './water_simulation';
 
 // Water for the whole zone strip.
@@ -37,6 +43,77 @@ const SEGMENTS_PER_ZONE = 180; // ~2u vertex spacing, enough for the foam band
 const WATER_ROWS_PER_IDLE_SLICE = 4;
 const WATER_IDLE_TIMEOUT_MS = 200;
 const WATER_VERTEX_ROWS = Array.from({ length: SEGMENTS_PER_ZONE + 1 }, (_, row) => row);
+// The apron runs UNDER every zone plane and both ride one transparent material
+// with depthWrite off, so the depth buffer cannot arbitrate between them: the
+// surface that paints LAST wins the blend outright. Left to three.js's
+// transparent sort that order comes from each object's bounding-sphere centre,
+// and the apron's is a world-scale sheet near the origin, so merely orbiting
+// the camera reorders them and swaps the sea between the apron's constant deep
+// colour and the zone plane's shallow tint plus foam band. Pin the order so it
+// can never depend on where the camera happens to be. The sky dome holds -10,
+// so the apron sits between the sky and the default 0 band.
+const WATER_APRON_RENDER_ORDER = -1;
+const WATER_SURFACE_RENDER_ORDER = 0;
+
+// Surface look, tuned against a 30 sample survey of the real coastline
+// (tests/water_shore_shape.test.ts pins the geometry these assume).
+/** Foam is an analytic sine with no mip chain, so fade it out with range. */
+const WATER_FOAM_DISTANCE_FADE = 0.0055;
+/**
+ * Opacity rises far faster than colour does. Colour has to spread across the
+ * whole 6 yard seabed range, but water stops showing its bottom within a couple
+ * of yards, and the surface MUST reach full opacity by the seabed clamp: a zone
+ * plane rect edge has the apron alone on one side and apron-under-zone-plane on
+ * the other, and two stacked semi-transparent sheets do not composite to the
+ * same colour as one. At full opacity both sides resolve identically and the
+ * rect edge stops being visible.
+ */
+const WATER_OPACITY_EXTINCTION_PER_YARD = 0.9;
+const WATER_SHALLOW_ALPHA = 0.84;
+const WATER_DEEP_ALPHA = 1;
+/**
+ * How much of the palette the SEABED is allowed to drive. Bathymetry is not
+ * smooth: the measured shelf off Eastbrook runs flat at ~1.5 yards for 40
+ * yards, then breaks and drops to the 6 yard clamp within 30. Letting depth
+ * drive the whole palette spends it across that break, and 30 yards of ground
+ * at a grazing camera angle is a handful of pixels, so a real and correct piece
+ * of terrain reads as a hard painted line out at sea. Handing most of the range
+ * to VIEW DISTANCE instead is both softer and truer: open water gets its colour
+ * from the depth of atmosphere in front of it, not from the rock underneath.
+ */
+const WATER_DEPTH_COLOR_AUTHORITY = 0.55;
+/** View distance over which the sea grades to open-ocean colour. */
+const WATER_DEEP_NEAR_YARDS = 25;
+const WATER_DEEP_FAR_YARDS = 240;
+// Carries what the seabed no longer does, so the far sea still reads as ocean.
+const WATER_DEEP_DISTANCE_STRENGTH = 0.92;
+/** GLSL needs a decimal point on every float literal. */
+const glsl = (n: number): string => (Number.isInteger(n) ? `${n}.0` : String(n));
+/**
+ * Seabed slope the horizon apron falls back to once it is far enough out that
+ * terrain sampling is no longer trustworthy. Foam is depth/slope, so a small
+ * slope against a deep reading puts it far past the surf band: open water,
+ * never foam.
+ */
+const APRON_SHORE_SLOPE = 1;
+/**
+ * The apron is NOT a featureless sheet. It begins exactly where the zone planes
+ * stop (the world is only WORLD_SIZE yards across, so that edge is a few dozen
+ * yards offshore and squarely in view), and a constant deep reading there steps
+ * against whatever the zone plane actually has, which is usually still shelf.
+ * Measured off Eastbrook: 1.51 yards on the plane's last vertex against the
+ * apron's 6, drawn as a ruler-straight line because a rectangle edge IS
+ * straight. So the apron samples the SAME terrain function the zone planes do
+ * and the two agree at the seam by construction rather than by tuning.
+ */
+const APRON_SEGMENTS = 192;
+/**
+ * How far outside the world the apron keeps trusting terrainHeight. It stays
+ * sensible well past the edge (6 yards, the clamp, by 70 yards out) but turns
+ * into another landmass eventually (-38 yards at 720 out), which would paint
+ * dry land across the horizon. Fade to the constant deep sea before that.
+ */
+const APRON_TERRAIN_FADE_YARDS = 240;
 
 // Real water normal maps, fetched at module import and gated by the boot
 // preload only for the shader tier. Low/mobile uses generated canvas water
@@ -128,19 +205,23 @@ export interface WaterView {
 // Outside the window there is no state to read, and clamping to the rim would
 // smear the border texel across the entire distant sea.
 const WAVE_SAMPLE_GLSL = /* glsl */ `
-  bool waveSampleAt(vec2 worldXZ, out vec4 wave) {
+  float waveSampleAt(vec2 worldXZ, out vec4 wave) {
     vec2 waveUv = (worldXZ - uWaveOrigin) / uWaveSize;
     if (any(lessThan(waveUv, vec2(0.0))) || any(greaterThan(waveUv, vec2(1.0)))) {
       wave = vec4(0.0);
-      return false;
+      return 0.0;
     }
     wave = texture2D(uWaveState, waveUv);
-    return true;
+    // Ramp to nothing at the border. A hard cut steps the surface normal, and
+    // the window is a camera-anchored SQUARE, so that step is a straight seam.
+    vec2 toEdge = min(waveUv, vec2(1.0) - waveUv);
+    return smoothstep(0.0, ${glsl(WATER_FIELD_EDGE_FEATHER_UV)}, min(toEdge.x, toEdge.y));
   }
 `;
 
 const WATER_VERT = /* glsl */ `
   attribute float aShoreDepth;
+  attribute float aShoreSlope;
   uniform float uTime;
   uniform sampler2D uWaveState;
   uniform float uWaveEnabled;
@@ -148,16 +229,21 @@ const WATER_VERT = /* glsl */ `
   uniform float uWaveSize;
   varying vec3 vWPos;
   varying float vShoreDepth;
+  varying float vShoreSlope;
   #include <fog_pars_vertex>
   ${WAVE_SAMPLE_GLSL}
   void main() {
     vec3 pos = position;
     pos.y += (sin(uTime * 1.1 + pos.x * 0.35) + sin(uTime * 0.7 + pos.z * 0.28)) * 0.05;
     if (uWaveEnabled > 0.001) {
+      // waveSampleAt WRITES wave, so it has to complete before wave is read:
+      // operand evaluation order is unspecified in GLSL.
       vec4 wave;
-      if (waveSampleAt(pos.xz, wave)) pos.y += wave.r * uWaveEnabled;
+      float waveW = uWaveEnabled * waveSampleAt(pos.xz, wave);
+      pos.y += wave.r * waveW;
     }
     vShoreDepth = aShoreDepth;
+    vShoreSlope = aShoreSlope;
     vec4 wp = modelMatrix * vec4(pos, 1.0);
     vWPos = wp.xyz;
     vec4 mvPosition = viewMatrix * wp;
@@ -182,6 +268,7 @@ const WATER_FRAG = /* glsl */ `
   uniform float uWaveSize;
   varying vec3 vWPos;
   varying float vShoreDepth;
+  varying float vShoreSlope;
   #include <common>
   #include <fog_pars_fragment>
   ${WAVE_SAMPLE_GLSL}
@@ -201,16 +288,26 @@ const WATER_FRAG = /* glsl */ `
     float waveEnergy = 0.0;
     if (uWaveEnabled > 0.001) {
       vec4 wave;
-      if (waveSampleAt(vWPos.xz, wave)) {
-        waveSlope = wave.ba * uWaveEnabled;
-        waveEnergy = (abs(wave.g) * 0.9 + length(wave.ba) * 0.4) * uWaveEnabled;
-      }
+      float waveW = uWaveEnabled * waveSampleAt(vWPos.xz, wave);
+      waveSlope = wave.ba * waveW;
+      waveEnergy = (abs(wave.g) * 0.9 + length(wave.ba) * 0.4) * waveW;
     }
     vec3 N = normalize(vec3(nm + waveSlope * 9.5, 3.1).xzy);
     vec3 V = normalize(cameraPosition - vWPos);
     float fresnel = 0.05 + 0.95 * pow(1.0 - max(dot(N, V), 0.0), 4.0);
-    float depth = clamp(vShoreDepth / 6.0, 0.0, 1.0);
-    vec3 col = mix(uShallow, uDeep, depth);
+    // The seabed is hard clamped at ${WATER_SEABED_CLAMP_YARDS} yards. A linear ramp spends the
+    // whole palette in the shallows, and an exponential is still climbing when
+    // it reaches the clamp, which creases the colour field along the clamp
+    // contour. smoothstep spans the full range AND arrives with zero slope, so
+    // the gradient is already flat where the geometry goes flat. The apron
+    // carries exactly WATER_SEABED_CLAMP_YARDS and runs the same ramp, so the
+    // two land on the same colour and rect boundaries stay invisible.
+    float depth = smoothstep(0.0, ${glsl(WATER_SEABED_CLAMP_YARDS)}, vShoreDepth);
+    vec3 col = mix(uShallow, uDeep, depth * ${glsl(WATER_DEPTH_COLOR_AUTHORITY)});
+    // A 6 yard seabed cannot supply open-ocean depth, so grade toward deep with
+    // VIEW DISTANCE the way real water does. This is what makes the far sea read
+    // as ocean rather than as an endless shallow, and it hides the apron seam.
+    col = mix(col, uDeep, smoothstep(${glsl(WATER_DEEP_NEAR_YARDS)}, ${glsl(WATER_DEEP_FAR_YARDS)}, camDist) * ${glsl(WATER_DEEP_DISTANCE_STRENGTH)});
     // dappled shimmer that fades with distance so it never reads as speckle
     float shimmer = max(n1.x * 0.7 + n2.y * 0.55, 0.0) * exp(-camDist * 0.022);
     col *= 0.92 + 0.4 * shimmer;
@@ -222,18 +319,31 @@ const WATER_FRAG = /* glsl */ `
     col += uSunColor * pow(sunAlign, 130.0) * 2.6;                   // sparkle glints (>1 -> bloom)
     col += uSunColor * pow(sunAlign, 28.0) * 0.30;                   // wider lobe: survives steep cameras
     col += uSunColor * pow(sunAlign, 6.0) * 0.05;                    // faint warm sheen sunward
-    // shoreline foam: wide animated band hugging the waterline (the shore
-    // attribute is per-vertex at ~2u, so the band must span several units)
-    float foamBand = smoothstep(3.2, 0.1, vShoreDepth + n1.x * 0.7);
+    // Shoreline foam keyed on HORIZONTAL distance to the waterline, recovered
+    // as depth / seabed slope, NOT on depth. Measured shelves range from 3.2
+    // yards of depth in 4 yards of run to 0.2 yards of depth sustained over 40,
+    // so any depth threshold either floods a flat bay or vanishes on a steep
+    // one. Distance to shore is the same signal on both.
+    float shoreDist = vShoreDepth / vShoreSlope;
+    float foamBand = smoothstep(${glsl(WATER_FOAM_WIDTH_YARDS)}, 0.0, shoreDist + n1.x * 0.6);
     foamBand *= foamBand;
-    float foamWave = 0.62 + 0.38 * sin(uTime * 1.7 + vWPos.x * 1.2 + vWPos.z * 0.95 + n2.y * 6.0);
-    float foam = foamBand * foamWave;
+    // Two decorrelated sines so the band stops reading as one set of wallpaper
+    // stripes, faded with range because it is an analytic function with no mip
+    // chain and aliases hard at grazing angles.
+    float foamWave = 0.55
+      + 0.25 * sin(uTime * 1.7 + vWPos.x * 1.2 + vWPos.z * 0.95 + n2.y * 6.0)
+      + 0.20 * sin(uTime * 0.9 - vWPos.x * 0.41 + vWPos.z * 0.63 + n1.y * 4.0);
+    float foam = foamBand * foamWave * exp(-camDist * ${glsl(WATER_FOAM_DISTANCE_FADE)});
     // disturbed water reads brighter and skyward, the way a real wake does
     float contactSheen = smoothstep(0.025, 0.13, waveEnergy) * exp(-camDist * 0.022);
     col = mix(col, mix(uShallow, uSkyColor, 0.52), contactSheen * 0.24);
     col = mix(col, vec3(1.05), clamp(foam, 0.0, 0.9));
     float surfaceAccent = clamp(foam + contactSheen * 0.12, 0.0, 0.92);
-    float alpha = max(mix(0.84, 0.96, depth), surfaceAccent * 0.95);
+    float opacityDepth = 1.0 - exp(-vShoreDepth * ${glsl(WATER_OPACITY_EXTINCTION_PER_YARD)});
+    float alpha = max(
+      mix(${glsl(WATER_SHALLOW_ALPHA)}, ${glsl(WATER_DEEP_ALPHA)}, opacityDepth),
+      surfaceAccent * 0.95
+    );
     gl_FragColor = vec4(col, alpha);
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
@@ -309,18 +419,89 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
   // (no z-fight) and carries a constant deep shore attribute.
   {
     const span = WORLD_MAX_Z - WORLD_MIN_Z + 2400;
-    const geo = new THREE.PlaneGeometry(3000, span, 1, 1).rotateX(-Math.PI / 2);
+    const geo = new THREE.PlaneGeometry(3000, span, APRON_SEGMENTS, APRON_SEGMENTS).rotateX(
+      -Math.PI / 2,
+    );
     geo.translate(0, 0, (WORLD_MIN_Z + WORLD_MAX_Z) / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
-    const deep = new Float32Array(pos.count).fill(8);
+    const deep = new Float32Array(pos.count);
+    const apronSlope = new Float32Array(pos.count);
+    const half = WORLD_SIZE / 2;
+    const edgeDepthCache = new Map<string, number>();
+    const fillApron = (): void => {
+      edgeDepthCache.clear();
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        // Distance OUTSIDE the world rect: 0 anywhere the zone planes cover.
+        const outside = Math.max(0, Math.abs(x) - half, z - WORLD_MAX_Z, WORLD_MIN_Z - z);
+        // The apron is thousands of yards across and the world is 360, so the
+        // vast majority of vertices are far outside and need no sampling at
+        // all. Skipping them is what keeps this bake cheap enough to run
+        // inline: terrainHeight is deliberately rich and shoreSlopeAt costs
+        // four samples of it.
+        if (outside >= APRON_TERRAIN_FADE_YARDS) {
+          deep[i] = WATER_SEABED_CLAMP_YARDS;
+          apronSlope[i] = APRON_SHORE_SLOPE;
+          continue;
+        }
+        const t = outside / APRON_TERRAIN_FADE_YARDS;
+        const toConstant = t * t * (3 - 2 * t); // smoothstep, flat at both ends
+        // Sample the nearest point INSIDE the world, never past it. Inside, that
+        // is the vertex itself, so the apron reads the exact function the zone
+        // planes read and the seam closes by construction. Outside, it extends
+        // the coast's own depth and fades to open sea. Sampling the real
+        // terrain out there instead looks tempting and is wrong: it is another
+        // landmass (measured -518 yards, i.e. dry ground), so it would paint
+        // land and surf across the open horizon.
+        // Every vertex on a ray heading straight out of one edge clamps to the
+        // SAME boundary point, so the samples collapse heavily. Memoize them.
+        const cx = Math.min(half, Math.max(-half, x));
+        const cz = Math.min(WORLD_MAX_Z, Math.max(WORLD_MIN_Z, z));
+        const key = `${cx},${cz}`;
+        let edgeDepth = edgeDepthCache.get(key);
+        if (edgeDepth === undefined) {
+          edgeDepth = shoreDepthAt(cx, cz, seed);
+          edgeDepthCache.set(key, edgeDepth);
+        }
+        const carried = outside > 0 ? Math.max(edgeDepth, 0) : edgeDepth;
+        deep[i] = carried * (1 - toConstant) + WATER_SEABED_CLAMP_YARDS * toConstant;
+      }
+      // Slope is the GRADIENT of the depth just filled, so take it by finite
+      // difference on the grid instead of calling shoreSlopeAt: that costs four
+      // more terrainHeight samples per vertex and terrainHeight is the
+      // expensive part. It cannot be dropped for a constant either: the shader
+      // reads foam as depth/slope, and a constant slope of 1 against the real
+      // shelf depths out here (~1.5 yards) lands inside the surf band and would
+      // paint foam across open water.
+      const columns = APRON_SEGMENTS + 1;
+      const dx = (2 * 3000) / APRON_SEGMENTS;
+      const dz = (2 * span) / APRON_SEGMENTS;
+      for (let i = 0; i < pos.count; i++) {
+        const row = Math.floor(i / columns);
+        const col = i % columns;
+        const west = col > 0 ? deep[i - 1] : deep[i];
+        const east = col < columns - 1 ? deep[i + 1] : deep[i];
+        const north = row > 0 ? deep[i - columns] : deep[i];
+        const south = row < columns - 1 ? deep[i + columns] : deep[i];
+        // Never zero: the shader divides by this.
+        apronSlope[i] = Math.max(Math.hypot((east - west) / dx, (south - north) / dz), 1e-4);
+      }
+    };
+    fillApron();
     geo.setAttribute('aShoreDepth', new THREE.BufferAttribute(deep, 1));
+    geo.setAttribute('aShoreSlope', new THREE.BufferAttribute(apronSlope, 1));
+    geo.computeBoundingBox();
     geo.computeBoundingSphere();
     const apron = new THREE.Mesh(geo, material);
     apron.position.y = waterLevel() - 0.06;
+    apron.renderOrder = WATER_APRON_RENDER_ORDER;
     meshes.push(apron);
     group.add(apron);
     refits.push(() => {
+      fillApron();
       (geo.attributes.aShoreDepth as THREE.BufferAttribute).needsUpdate = true;
+      (geo.attributes.aShoreSlope as THREE.BufferAttribute).needsUpdate = true;
       apron.position.y = waterLevel() - 0.06;
     });
   }
@@ -341,12 +522,14 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
     geo.translate((x0 + x1) / 2, 0, (zone.zMin + zone.zMax) / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;
     const shoreDepth = new Float32Array(pos.count);
+    const shoreSlope = new Float32Array(pos.count);
     const columns = SEGMENTS_PER_ZONE + 1;
     const fillRow = (row: number): void => {
       const start = row * columns;
       const end = Math.min(pos.count, start + columns);
       for (let i = start; i < end; i++) {
         shoreDepth[i] = shoreDepthAt(pos.getX(i), pos.getZ(i), seed);
+        shoreSlope[i] = shoreSlopeAt(pos.getX(i), pos.getZ(i), seed);
       }
     };
     const fill = (): void => {
@@ -361,10 +544,12 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
       fill();
     }
     geo.setAttribute('aShoreDepth', new THREE.BufferAttribute(shoreDepth, 1));
+    geo.setAttribute('aShoreSlope', new THREE.BufferAttribute(shoreSlope, 1));
     geo.computeBoundingBox();
     geo.computeBoundingSphere();
     const mesh = new THREE.Mesh(geo, material);
     mesh.position.y = waterLevel();
+    mesh.renderOrder = WATER_SURFACE_RENDER_ORDER;
     // The renderer compiles a background zone's material while this mesh is
     // hidden, then reveals it. Adding it visible here lets the next rAF draw
     // (and synchronously upload/link) it before prepareZoneAt can prewarm it.
@@ -374,6 +559,7 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
     refits.push(() => {
       fill();
       (geo.attributes.aShoreDepth as THREE.BufferAttribute).needsUpdate = true;
+      (geo.attributes.aShoreSlope as THREE.BufferAttribute).needsUpdate = true;
       mesh.position.y = waterLevel();
     });
     return mesh;

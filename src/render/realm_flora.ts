@@ -34,6 +34,7 @@ import {
 import { loadGltf } from './assets/loader';
 import { registerPreload } from './assets/preload';
 import { GFX, surfaceMat } from './gfx';
+import { MIST_DRIFT_AMPLITUDE, SEA_LIGHT_RAYS, SEA_MIST_BANKS } from './sea_mist_core';
 
 const MUSHROOM_URLS = ['/models/props/mushroom_red.glb', '/models/props/mushroom_tan.glb'];
 const BOULDER_URL = '/models/props/rock_large_d.glb';
@@ -953,13 +954,10 @@ export function buildRealmFlora(seed: number): RealmFloraView {
       mctx.fillStyle = side;
       mctx.fillRect(0, 0, 128, 32);
       const mistTex = new THREE.CanvasTexture(mistCanvas);
-      for (const [mx, mz, w, hgt, op] of [
-        [-90, 1315, 150, 9, 0.32],
-        [40, 1350, 190, 11, 0.36],
-        [130, 1310, 120, 8, 0.3],
-        [-30, 1408, 240, 14, 0.44],
-        [110, 1420, 170, 12, 0.4],
-      ] as const) {
+      // Placements live in sea_mist_core.ts, where a guard test holds every
+      // bank (drift included) over open water: a bank that crosses land cuts a
+      // hard pale line across the terrain at its z.
+      for (const { x: mx, z: mz, width: w, height: hgt, opacity: op } of SEA_MIST_BANKS) {
         const mist = new THREE.Mesh(
           new THREE.PlaneGeometry(w, hgt),
           new THREE.MeshBasicMaterial({
@@ -994,13 +992,7 @@ export function buildRealmFlora(seed: number): RealmFloraView {
         rctx.fillStyle = fade;
         rctx.fillRect(0, 0, 32, 128);
         const rayTex = new THREE.CanvasTexture(rayCanvas);
-        for (const [rx, rz, hgt, op, phase] of [
-          [-120, 1340, 42, 0.1, 0],
-          [-45, 1385, 55, 0.13, 1.7],
-          [85, 1360, 48, 0.11, 3.1],
-          [150, 1395, 50, 0.12, 4.4],
-          [10, 1300, 38, 0.09, 5.6],
-        ] as const) {
+        for (const { x: rx, z: rz, height: hgt, opacity: op, phase } of SEA_LIGHT_RAYS) {
           const mat = new THREE.MeshBasicMaterial({
             map: rayTex,
             transparent: true,
@@ -1088,7 +1080,8 @@ export function buildRealmFlora(seed: number): RealmFloraView {
       }
       // mist banks drift, rays breathe, the flock wheels over the sound
       for (const bank of seaDrift) {
-        bank.mesh.position.x = bank.baseX + Math.sin(time * 0.05 * bank.speed) * 22;
+        bank.mesh.position.x =
+          bank.baseX + Math.sin(time * 0.05 * bank.speed) * MIST_DRIFT_AMPLITUDE;
       }
       for (const ray of seaRays) {
         ray.mat.opacity = ray.base * (0.7 + 0.3 * Math.sin(time * 0.4 + ray.phase));

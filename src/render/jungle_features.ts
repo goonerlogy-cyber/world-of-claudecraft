@@ -10,6 +10,7 @@ import { PALMREACH_PROPS, PALMREACH_ZONE } from '../sim/content/palmreach';
 import { REACH_DECKS, reachDeckClear } from '../sim/reach_decks';
 import { hash2 } from '../sim/rng';
 import {
+  isCliffFace,
   type ReachPalm,
   reachPalmSpots,
   roadDistance,
@@ -115,12 +116,44 @@ export const jungleFeaturesPreloadInternalsForTest = {
   propUrls: [...PALM_URLS, GREAT_TREE_URL, ...Object.values(REACH_PROP_URLS)],
 };
 
-interface Placement {
+export interface Placement {
   x: number;
   y: number;
   z: number;
   s: number;
   rot: number;
+}
+
+/** The fallen-coconut clusters dropped around the strand's palm trunks: a pure
+ * function of the world seed (placement only, no Three types), so both hosts
+ * and a Vitest agree on where they land. Each cluster snaps to terrainHeight at
+ * its exact (x, z), so a cliff face would throw it up the wall; isCliffFace
+ * rejects those the same way it rejects the palm that carried them. */
+export function reachCoconutSpots(seed: number): Placement[] {
+  const spots: Placement[] = [];
+  for (const sp of reachPalmSpots(seed)) {
+    if (hash2(sp.x, sp.z, seed + 5301) > 0.55) continue;
+    const n = 2 + Math.floor(hash2(sp.z, sp.x, seed + 5311) * 2);
+    for (let k = 0; k < n; k++) {
+      const ang = hash2(sp.x + k, sp.z, seed + 5321) * Math.PI * 2;
+      const dist = 2.6 + hash2(sp.x, sp.z + k, seed + 5331) * 2.2;
+      const x = sp.x + Math.sin(ang) * dist;
+      const z = sp.z + Math.cos(ang) * dist;
+      const y = terrainHeight(x, z, seed);
+      if (y < WATER_LEVEL + 0.4) continue;
+      if (roadDistance(x, z) < 3) continue;
+      if (!reachDeckClear(x, z, 0.8)) continue;
+      if (isCliffFace(x, z, seed)) continue;
+      spots.push({
+        x,
+        z,
+        y: y - 0.04,
+        s: 3.0 + hash2(k, sp.x, seed + 5341) * 1.75,
+        rot: hash2(z, x, seed + 5351) * Math.PI * 2,
+      });
+    }
+  }
+  return spots;
 }
 
 // bake a loaded scene into (geometry, material) parts: world matrices
@@ -242,31 +275,7 @@ export function buildJungleFeatures(seed: number): JungleFeaturesView {
   }
 
   // --- the fallen coconuts: clusters dropped around the palm trunks ---
-  {
-    const spots: Placement[] = [];
-    for (const sp of reachPalmSpots(seed)) {
-      if (hash2(sp.x, sp.z, seed + 5301) > 0.55) continue;
-      const n = 2 + Math.floor(hash2(sp.z, sp.x, seed + 5311) * 2);
-      for (let k = 0; k < n; k++) {
-        const ang = hash2(sp.x + k, sp.z, seed + 5321) * Math.PI * 2;
-        const dist = 2.6 + hash2(sp.x, sp.z + k, seed + 5331) * 2.2;
-        const x = sp.x + Math.sin(ang) * dist;
-        const z = sp.z + Math.cos(ang) * dist;
-        const y = terrainHeight(x, z, seed);
-        if (y < WATER_LEVEL + 0.4) continue;
-        if (roadDistance(x, z) < 3) continue;
-        if (!reachDeckClear(x, z, 0.8)) continue;
-        spots.push({
-          x,
-          z,
-          y: y - 0.04,
-          s: 3.0 + hash2(k, sp.x, seed + 5341) * 1.75,
-          rot: hash2(z, x, seed + 5351) * Math.PI * 2,
-        });
-      }
-    }
-    instanceProp('coconuts', spots);
-  }
+  instanceProp('coconuts', reachCoconutSpots(seed));
 
   // --- the still water dressing: lily rafts and reeds on the lakes ---
   {

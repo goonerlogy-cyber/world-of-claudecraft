@@ -18,7 +18,13 @@ import { registerPreload } from './assets/preload';
 import { GFX } from './gfx';
 import { idleSlot } from './idle_queue';
 import { impactCraterTerrainBlend } from './impact_terrain';
-import { chunkIntersectsRegion, normalTexelBounds } from './terrain_region_core';
+import {
+  chunkIntersectsRegion,
+  normalTexelBounds,
+  owningRectIndex,
+  type TexelBounds,
+  type WorldRect,
+} from './terrain_region_core';
 import { groundDetailTexture, groundSplatMaps, macroNoiseTexture } from './textures';
 
 // Chunked terrain across the whole 360x1080 zone strip.
@@ -1253,12 +1259,38 @@ export function buildTerrain(seed: number, priorityPoint?: { x: number; z: numbe
     return false;
   };
 
+  // The zone rectangles do NOT tile the world box. Three kinds of cell fall
+  // outside every one of them: the whole quadrant west of Eastbrook Vale (no
+  // realm sits at x < -180 for z -180..180), the centre column north of
+  // Frostveil, and the grid's last row, which overhangs WORLD_MAX_Z and so
+  // carries the northern 20yd of the Drakelands rim. Those cells still hold
+  // ground a player reaches on foot: the tongue of land running south out of
+  // the Willowfen border around (-195, 161) sits 1.6yd ABOVE the waterline.
+  // Leaving them unowned meant no zone's build ever meshed them, so that
+  // ground rendered as a hole you could see (and fall) through.
+  const zoneRects: WorldRect[] = ZONES.map((zone) => ({
+    minX: zone.xMin ?? STRIP_MIN_X,
+    maxX: zone.xMax ?? STRIP_MAX_X,
+    minZ: zone.zMin,
+    maxZ: zone.zMax,
+  }));
+  const insideAnyZone = (x: number, z: number): boolean =>
+    zoneRects.some((r) => x >= r.minX && x < r.maxX && z >= r.minZ && z < r.maxZ);
+
   const bandIndexAt = (cx: number, cz: number): number => {
     const x0 = -WORLD_MAX_X + cx * CHUNK_SIZE;
     const z0 = WORLD_MIN_Z + cz * CHUNK_SIZE;
-    if (wallChunkAt(x0, z0, CHUNK_SIZE)) return 0;
     const centerX = x0 + CHUNK_SIZE / 2;
     const centerZ = z0 + CHUNK_SIZE / 2;
+    // Cells outside every realm (see zoneRects) are open sea floor and the
+    // outer face of the rim: no quest, camp, or road ever lands there, and the
+    // sim drowns a player who swims out. They take the coarsest band whatever
+    // wallChunkAt says, so the gap fill costs a handful of merged super-chunks
+    // instead of a dense grid over water nobody stands on. Checked BEFORE the
+    // wall promotion, which would otherwise hand the empty south-west quadrant
+    // the 1.2u spacing meant for the terraced inter-zone walls.
+    if (!insideAnyZone(centerX, centerZ)) return bands.length - 1;
+    if (wallChunkAt(x0, z0, CHUNK_SIZE)) return 0;
     let hubDist = Infinity;
     for (const zn of ZONES) {
       hubDist = Math.min(hubDist, Math.hypot(centerX - zn.hub.x, centerZ - zn.hub.z));
@@ -1345,22 +1377,13 @@ export function buildTerrain(seed: number, priorityPoint?: { x: number; z: numbe
   // renderer rebuildTerrain) stops adding chunks instead of building on a
   // setTimeout chain for the rest of the session.
   let cancelled = false;
-  const cellOwnerId = (cx: number, cz: number): string | null => {
+  // Every cell of the grid gets exactly one owner: the zone containing it,
+  // else (the gap cells described at zoneRects) the nearest zone rectangle.
+  // See owningRectIndex for why nearest-rect and not zoneAt's z-band clamp.
+  const cellOwnerId = (cx: number, cz: number): string => {
     const x = -WORLD_MAX_X + (cx + 0.5) * CHUNK_SIZE;
     const z = WORLD_MIN_Z + (cz + 0.5) * CHUNK_SIZE;
-    // zoneAt deliberately clamps gaps/out-of-bounds positions to the nearest
-    // playable zone. Terrain ownership must not: otherwise asking for one
-    // column can accidentally materialize chunks in an empty neighbouring
-    // column merely because that zone is the fallback for the same z band.
-    return (
-      ZONES.find(
-        (candidate) =>
-          z >= candidate.zMin &&
-          z < candidate.zMax &&
-          x >= (candidate.xMin ?? STRIP_MIN_X) &&
-          x < (candidate.xMax ?? STRIP_MAX_X),
-      )?.id ?? null
-    );
+    return ZONES[owningRectIndex(x, z, zoneRects)].id;
   };
   const zoneCells = (zone: ZoneDef): [number, number][] => {
     const out: [number, number][] = [];
@@ -1376,12 +1399,12 @@ export function buildTerrain(seed: number, priorityPoint?: { x: number; z: numbe
   // timeout still forces progress under sustained load, so a later gating
   // caller awaiting the same shared task is never starved indefinitely.
   const yieldIdle = (): Promise<void> => idleSlot(IDLE_BUILD_TIMEOUT_MS);
-  const normalBoundsFor = (zone: ZoneDef) =>
+  const normalTexelsOver = (minX: number, minZ: number, maxX: number, maxZ: number) =>
     normalTexelBounds(
-      zone.xMin ?? STRIP_MIN_X,
-      zone.zMin,
-      zone.xMax ?? STRIP_MAX_X,
-      zone.zMax,
+      minX,
+      minZ,
+      maxX,
+      maxZ,
       -WORLD_MAX_X,
       WORLD_MIN_Z,
       WORLD_MAX_X * 2,
@@ -1390,6 +1413,29 @@ export function buildTerrain(seed: number, priorityPoint?: { x: number; z: numbe
       NORMAL_TEX_H,
       1,
     );
+  // The macro normal texels this zone's build must bake: its own rectangle,
+  // plus one region per owned cell lying outside it (the gap cells above).
+  // An unbaked texel stays flat, so without the extra regions the macro relief
+  // would stop dead at the realm border. Region-per-cell rather than one
+  // bounding box over rect + cells: the gap west of Eastbrook Vale is as wide
+  // as the realm itself, and a bbox would re-bake that whole empty quadrant.
+  const normalRegionsFor = (zone: ZoneDef, cells: readonly [number, number][]): TexelBounds[] => {
+    const minX = zone.xMin ?? STRIP_MIN_X;
+    const maxX = zone.xMax ?? STRIP_MAX_X;
+    const regions: TexelBounds[] = [];
+    const zoneBounds = normalTexelsOver(minX, zone.zMin, maxX, zone.zMax);
+    if (zoneBounds) regions.push(zoneBounds);
+    for (const [cx, cz] of cells) {
+      const x0 = -WORLD_MAX_X + cx * CHUNK_SIZE;
+      const z0 = WORLD_MIN_Z + cz * CHUNK_SIZE;
+      const inside =
+        x0 >= minX && x0 + CHUNK_SIZE <= maxX && z0 >= zone.zMin && z0 + CHUNK_SIZE <= zone.zMax;
+      if (inside) continue; // already covered by zoneBounds
+      const cellBounds = normalTexelsOver(x0, z0, x0 + CHUNK_SIZE, z0 + CHUNK_SIZE);
+      if (cellBounds) regions.push(cellBounds);
+    }
+    return regions;
+  };
   const ensureZone = (
     zone: ZoneDef,
     onProgress?: (done: number, total: number) => void,
@@ -1433,26 +1479,29 @@ export function buildTerrain(seed: number, priorityPoint?: { x: number; z: numbe
           cells.push(...nearby, ...rest);
         }
       }
-      const normalBounds = normalTex ? normalBoundsFor(zone) : null;
+      const normalRegions = normalTex ? normalRegionsFor(zone, cells) : [];
       const rowsPerSlice = 12;
-      const normalSlices = normalBounds
-        ? Math.ceil((normalBounds.j1 - normalBounds.j0 + 1) / rowsPerSlice)
-        : 0;
+      const normalSlices = normalRegions.reduce(
+        (slices, region) => slices + Math.ceil((region.j1 - region.j0 + 1) / rowsPerSlice),
+        0,
+      );
       const total = Math.max(1, normalSlices + cells.length);
       let done = 0;
-      if (normalTex && normalBounds) {
-        for (let j = normalBounds.j0; j <= normalBounds.j1; j += rowsPerSlice) {
-          if (cancelled) return;
-          bakeNormalRegion(
-            normalTex.image.data as Uint8Array,
-            seed,
-            normalBounds.i0,
-            normalBounds.i1,
-            j,
-            Math.min(normalBounds.j1, j + rowsPerSlice - 1),
-          );
-          onProgress?.(++done, total);
-          await yieldSlice();
+      if (normalTex && normalRegions.length > 0) {
+        for (const region of normalRegions) {
+          for (let j = region.j0; j <= region.j1; j += rowsPerSlice) {
+            if (cancelled) return;
+            bakeNormalRegion(
+              normalTex.image.data as Uint8Array,
+              seed,
+              region.i0,
+              region.i1,
+              j,
+              Math.min(region.j1, j + rowsPerSlice - 1),
+            );
+            onProgress?.(++done, total);
+            await yieldSlice();
+          }
         }
         normalTex.needsUpdate = true;
       }

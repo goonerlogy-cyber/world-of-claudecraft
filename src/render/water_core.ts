@@ -29,6 +29,15 @@ export const WATER_SCHEDULE_SLEEP = 2;
 // plus the horizon apron), so the field is a camera-anchored WINDOW rather than
 // one texture per lake: sized for a ~1 yard character wake to read clearly.
 export const WATER_FIELD_CELL_SIZE = 0.7;
+// Fraction of the field, in UV, over which its contribution ramps from nothing
+// to full at the window border. The field is a WINDOW, not the whole sea, so
+// something has to happen at its edge. Cutting it off hard puts a step in the
+// surface NORMAL (the slope drives N with a large gain), and because the window
+// is a camera-anchored square that step draws straight-edged seams across open
+// water that travel with the camera and survive any amount of colour tuning.
+// Feathering costs a band of reduced wake detail at ~34 yards (high tier) where
+// a character wake is already sub-pixel, and buys a seamless sea.
+export const WATER_FIELD_EDGE_FEATHER_UV = 0.12;
 // Re-anchor once the camera has drifted this fraction of the field half-size.
 // Hysteresis matters: re-anchoring every frame would scroll the state every
 // frame, and each scroll costs a full-field pass.
@@ -121,4 +130,41 @@ export function advanceWaterSchedule(
 // open water, negative on dry land.
 export function shoreDepthAt(x: number, z: number, seed: number): number {
   return waterLevel() - terrainHeight(x, z, seed);
+}
+
+/**
+ * Deepest the terrain generator ever puts the seabed below the water line.
+ * Measured across a 30 sample coastline survey: every sample tops out at
+ * exactly this, and depth 15 is reached by none of them. The colour ramp
+ * therefore cannot be widened, there is no deeper water to grade into.
+ */
+export const WATER_SEABED_CLAMP_YARDS = 6;
+/** Width of the surf band measured ALONG THE GROUND from the waterline. */
+export const WATER_FOAM_WIDTH_YARDS = 4.5;
+
+// Half-width of the central difference used for the seabed gradient, in yards.
+// The zone plane bakes at ~2 yard vertex spacing, so sampling wider than that
+// would smear a cove's slope into its neighbour's.
+const SHORE_SLOPE_SAMPLE_HALF_WIDTH = 1.5;
+// Below this the seabed is flat enough that depth carries no direction, and
+// dividing by it would explode the derived shoreline distance.
+const MIN_SHORE_SLOPE = 1e-3;
+
+/**
+ * Magnitude of the seabed gradient at (x, z): yards of depth gained per yard
+ * travelled. Pairs with shoreDepthAt to recover the HORIZONTAL distance to the
+ * waterline (depth / slope), which is the only shore signal that behaves the
+ * same on a steep shelf and a flat one.
+ *
+ * Measured motivation (30 coastline samples): the seabed is hard clamped at 6
+ * yards, and shelves range from reaching 3.2 yards in 4 yards of run to sitting
+ * at 0.2 yards deep for 40 yards. A single depth threshold cannot serve both,
+ * so foam keyed on depth alone either floods a flat bay or vanishes on a steep
+ * one.
+ */
+export function shoreSlopeAt(x: number, z: number, seed: number): number {
+  const h = SHORE_SLOPE_SAMPLE_HALF_WIDTH;
+  const dx = shoreDepthAt(x + h, z, seed) - shoreDepthAt(x - h, z, seed);
+  const dz = shoreDepthAt(x, z + h, seed) - shoreDepthAt(x, z - h, seed);
+  return Math.max(Math.hypot(dx, dz) / (2 * h), MIN_SHORE_SLOPE);
 }

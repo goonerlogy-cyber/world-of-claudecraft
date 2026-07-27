@@ -890,11 +890,7 @@ describe('spell visuals', () => {
     const bldg = PROPS.buildings[0];
     const bldgSpan = bldg.w + bldg.d;
     expect(
-      lineOfSightClear(
-        seed,
-        { x: bldg.x - bldgSpan, z: bldg.z },
-        { x: bldg.x + bldgSpan, z: bldg.z },
-      ),
+      lineOfSightClear(seed, { x: bldg.x - bldgSpan, z: bldg.z }, { x: bldg.x + bldgSpan, z: bldg.z }),
     ).toBe(false);
   });
 
