@@ -3207,7 +3207,19 @@ const AURA_RECIPES: Record<string, IconRecipe> = {
   // Breachmaker's source-scoped vulnerability debuff (kind 'vuln_source'), shown
   // on the target's debuff frame: a cracked guard struck by a blade
   aura_vuln_source: r('blood', 'earthBrown', ['sword', { p: 'sunburst', ...BR }], ['crack']),
+  // Ravenrift rune buffs, keyed by AURA id (the hud iconId resolver passes
+  // ids with a recipe through): identity beyond hue, per the owner direction:
+  // boots for Sprint, a sword for Battle, a shield for Ward.
+  bg_sprint_rune: r('fire', 'ember', ['boot'], ['motion', 'glow']),
+  bg_battle_rune: r('blood', 'blood', ['sword'], ['glow']),
+  bg_ward_rune: r('frost', 'ice', ['shield'], ['glow']),
 };
+
+/** True when `id` has a dedicated aura recipe (the hud iconId resolver lets
+ *  such ids through instead of collapsing them to the aura_<kind> generic). */
+export function hasAuraRecipe(id: string): boolean {
+  return id in AURA_RECIPES;
+}
 
 // Crests: class / mob-family / status glyphs, painted with the same primitive
 // vocabulary so unit-frame portraits and party rows match the spellbook art

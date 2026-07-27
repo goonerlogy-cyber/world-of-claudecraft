@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { ABILITIES } from '../src/sim/data';
-import { iconDataUrl } from '../src/ui/icons';
+import {
+  BATTLE_RUNE_AURA_ID,
+  SPRINT_RUNE_AURA_ID,
+  WARD_RUNE_AURA_ID,
+} from '../src/sim/social/battleground';
+import { hasAuraRecipe, iconDataUrl } from '../src/ui/icons';
 
 // Buff/debuff aura frames (the player buff bar and a mob's DoT debuffs, both via
 // Hud.renderAuras) request their icon with kind 'aura'. When the aura carries a
@@ -48,6 +53,15 @@ describe('aura icons reuse image-based ability art', () => {
       expect(iconDataUrl('aura', id), `aura ${id}`).toBe(expected);
       // and it matches what the action bar shows for the same ability
       expect(iconDataUrl('aura', id)).toBe(iconDataUrl('ability', id));
+    }
+  });
+
+  it('the Ravenrift rune buffs carry dedicated identity recipes (boots/sword/shield)', () => {
+    // The hud iconId resolver passes an aura id through ONLY when it has a
+    // recipe (or is an ability); without these rows the rune buffs collapse to
+    // the aura_<kind> generic and read as color-only, the playtest complaint.
+    for (const id of [SPRINT_RUNE_AURA_ID, BATTLE_RUNE_AURA_ID, WARD_RUNE_AURA_ID]) {
+      expect(hasAuraRecipe(id), `${id} needs its identity recipe`).toBe(true);
     }
   });
 });
