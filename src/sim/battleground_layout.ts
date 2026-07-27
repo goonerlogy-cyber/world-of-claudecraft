@@ -146,24 +146,41 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 27, z: 51 },
 ];
 
-// Heaped rubble in the Ruin Courtyard: knee-high masonry piles that BLOCK
-// MOVEMENT (walking through a solid-looking heap read as a bug in the
-// playtest) but sit below the eye line, so casts pass over them and the
-// camera clears them. Point-symmetric like everything else; the render
-// dressing derives its heap placements from THIS list, so what blocks is
-// exactly what renders.
-export const BG_RUBBLE_PILES: { x: number; z: number }[] = [
-  { x: 9.5, z: -10.5 }, // hugging the heart's corners, clear of the z 14 lane
-  { x: -9.5, z: 10.5 },
-  { x: -20, z: -50 }, // at the curtain feet
-  { x: 20, z: 50 },
-  { x: 44, z: -24 }, // rampart-side heaps
-  { x: -44, z: 24 },
-  { x: 3, z: -33 },
-  { x: -3, z: 33 },
-  { x: -33, z: -20 },
-  { x: 33, z: 20 },
+// The big rock formations of the Ruin Courtyard: hand-placed (the owner-
+// approved dramatic look at render scale BG_RUBBLE_SCALE), each a real
+// collider sized to its KIND from the decoded GLB solid body, point-
+// mirrored. The spots keep every route corridor, pad, crossing, and wall
+// clear at the big radii; the walk-the-route pins prove the lanes over the
+// live collider set. Tops are clamped below the eye line: movement cover,
+// never sight cover, and the camera clears them. The render dressing
+// derives its heaps from THIS list, so what blocks is exactly what renders.
+export interface BgRubblePile {
+  x: number;
+  z: number;
+  kind: 'rubble_large' | 'rocks_decorated';
+}
+export const BG_RUBBLE_PILES: BgRubblePile[] = [
+  { x: 9.5, z: -10.5, kind: 'rocks_decorated' }, // hugging the heart's corners
+  { x: -9.5, z: 10.5, kind: 'rocks_decorated' },
+  { x: -20, z: -50, kind: 'rubble_large' }, // the great mounds at the curtain feet
+  { x: 20, z: 50, kind: 'rubble_large' },
+  { x: 43, z: -24, kind: 'rubble_large' }, // rampart-side formations
+  { x: -43, z: 24, kind: 'rubble_large' },
+  { x: 3, z: -33, kind: 'rubble_large' }, // mid-courtyard set pieces
+  { x: -3, z: 33, kind: 'rubble_large' },
+  { x: -33, z: -20, kind: 'rocks_decorated' },
+  { x: 33, z: 20, kind: 'rocks_decorated' },
+  { x: -16, z: -9, kind: 'rocks_decorated' }, // by the heart's west face
+  { x: 16, z: 9, kind: 'rocks_decorated' },
+  { x: 30, z: -51, kind: 'rocks_decorated' }, // at the sealed curtain runs
+  { x: -30, z: 51, kind: 'rocks_decorated' },
+  { x: -44, z: -36, kind: 'rocks_decorated' },
+  { x: 44, z: 36, kind: 'rocks_decorated' },
 ];
+export function bgRubbleRadius(kind: BgRubblePile['kind']): number {
+  return kind === 'rubble_large' ? 4.6 : 2.0;
+}
+export const BG_RUBBLE_SCALE = 1.5;
 
 /** The z line of each curtain wall: the chamber boundaries. On the 4yd floor
  *  grid, so the theming bands land exactly on the walls. */
@@ -250,9 +267,7 @@ export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
 ];
 
 const PILLAR_R = 1.0;
-const RUBBLE_R = 2.3; // matches the rendered heap footprint (playtest: at 1.2
-// the pile's skirts were walk-through while its center blocked)
-const RUBBLE_TOP = 1.4; // BELOW SIGHT_HEIGHT: casts pass over, honestly
+const RUBBLE_TOP = 1.4; // heap sight/camera top: BELOW SIGHT_HEIGHT, casts pass over
 const CRATE_R = 0.8;
 
 // Visual tops for camera occlusion and the spell-sight low-obstacle skip
@@ -349,117 +364,6 @@ function layoutHash(a: number, b: number): number {
   return v - Math.floor(v);
 }
 
-// The corridors that must stay open, as the SAME polylines the route pins
-// walk (tests/battleground_band.test.ts): both flag routes, the breaker
-// lane, and the gatehouse S-jogs. A candidate must clear these AND their
-// point mirrors (its own mirror must stay clear of the authored lanes too).
-const SCATTER_LANES: [number, number][][] = [
-  // Route A, the main gates
-  [
-    [0, -118],
-    [10, -114],
-    [10, -104],
-    [10, -95],
-    [24, -92],
-    [26, -80],
-    [24, -70],
-    [14, -62],
-    [13, -50],
-    [13, -26],
-    [13, -12],
-    [13, 2],
-    [10, 14],
-    [0, 24],
-    [-13, 32],
-    [-13, 50],
-    [-13, 62],
-    [-13, 70],
-    [-24, 78],
-    [-26, 90],
-    [-14, 100],
-    [-10, 104],
-    [0, 118],
-  ],
-  // Route B, the sneak (mouth gap, gatehouse jog, west flank, north gate)
-  [
-    [0, -118],
-    [-10, -114],
-    [-13, -109],
-    [-13, -104],
-    [-18, -106],
-    [-44, -104],
-    [-44, -98],
-    [-44, -84],
-    [-36, -74],
-    [-33, -67.5],
-    [-22.5, -67.5],
-    [-22.5, -62],
-    [-24.5, -57],
-    [-30, -54],
-    [-30, -43],
-    [-38, -30],
-    [-38, 0],
-    [-38, 20],
-    [-38, 44],
-    [-13, 50],
-  ],
-  // the courtyard breaker lane, pinned walkable end to end
-  [
-    [20, 14],
-    [-20, 14],
-  ],
-  // both mouth-barricade gaps (pinned walks)
-  [
-    [-13, -102],
-    [-13, -109],
-  ],
-  [
-    [10, -102],
-    [10, -109],
-  ],
-  // the north gatehouse S-jog (pinned walk)
-  [
-    [22.5, 69],
-    [22.5, 62],
-    [24.5, 57],
-    [30, 54],
-    [30, 43],
-  ],
-];
-
-function segDist(px: number, pz: number, a: [number, number], b: [number, number]): number {
-  const dx = b[0] - a[0];
-  const dz = b[1] - a[1];
-  const len2 = dx * dx + dz * dz;
-  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / len2));
-  return Math.hypot(px - (a[0] + t * dx), pz - (a[1] + t * dz));
-}
-
-function laneDist(px: number, pz: number): number {
-  let best = Number.POSITIVE_INFINITY;
-  for (const lane of SCATTER_LANES) {
-    for (let i = 1; i < lane.length; i++) {
-      best = Math.min(best, segDist(px, pz, lane[i - 1], lane[i]));
-      // the point mirror of the lane, so the candidate's own mirror is clear
-      best = Math.min(
-        best,
-        segDist(px, pz, [-lane[i - 1][0], -lane[i - 1][1]], [-lane[i][0], -lane[i][1]]),
-      );
-    }
-  }
-  return best;
-}
-
-function wallDist(px: number, pz: number): number {
-  let best = Number.POSITIVE_INFINITY;
-  for (const w of battlegroundWallSegments()) {
-    const dx = Math.max(Math.abs(px - w.x) - w.hw, 0);
-    const dz = Math.max(Math.abs(pz - w.z) - w.hd, 0);
-    best = Math.min(best, Math.hypot(dx, dz));
-  }
-  return best;
-}
-
 // --- Floor tile selection (single source for render AND colliders) ---------
 export type BgZone = 'keep' | 'approach' | 'mid';
 /** The courtyard band ends at the curtain line, DERIVED so it cannot drift. */
@@ -517,19 +421,13 @@ function pickFloorKind(kinds: [BgFloorKind, number][], t: number): BgFloorKind {
 /** The 4yd floor grid the render tiling uses; tile centers sit at odd*2. */
 export const BG_FLOOR_CELL = 4;
 
-// The blocking cluster baked into floor_tile_large_rocks, MEASURED from the
-// decoded GLB (meshopt positions, node transform applied): centroid offset
-// within the tile, covering radius, and top height. The gravel tile
-// (floor_dirt_large_rocky) tops out at 0.29yd and stays walk-over.
-const ROCK_TILE_CLUSTER = { dx: -0.28, dz: 0.3, r: 1.25, top: 0.54 };
-
 /**
  * The floor tile at a grid cell center (instance-local). Deterministic and
  * point-mirrored: cells on the north half mirror the south cell's pick (yaw
- * plus a half turn), so the two teams' ground is exactly fair. A would-be
- * rocky tile whose cluster would pinch a corridor, pad, room, wall, other
- * collider, or the keep band is DOWNGRADED to its plain twin, so the tile
- * you see never lies about the collider under it.
+ * plus a half turn), so the two teams' ground is exactly fair. Every floor
+ * tile is WALKABLE, rocky or not (owner direction: the baked plates read as
+ * flat debris, and blocking them felt wrong); the rocks that block are the
+ * BG_RUBBLE_PILES formations, whose colliders match their rendered bodies.
  */
 export function bgFloorTileAt(cx: number, cz: number): { kind: BgFloorKind; ry: number } {
   if (cz > 0) {
@@ -537,74 +435,10 @@ export function bgFloorTileAt(cx: number, cz: number): { kind: BgFloorKind; ry: 
     return { kind: m.kind, ry: (m.ry + Math.PI) % (Math.PI * 2) };
   }
   const zone = bgZoneAt(cz);
-  let kind = pickFloorKind(BG_FLOOR_KINDS_BY_ZONE[zone], layoutHash(cx * 1.31, cz));
+  const kind = pickFloorKind(BG_FLOOR_KINDS_BY_ZONE[zone], layoutHash(cx * 1.31, cz));
   const ry = Math.floor(layoutHash(cz, cx) * 4) * (Math.PI / 2);
-  if (kind === 'floor_tile_large_rocks' && !rockClusterAllowed(cx, cz, ry)) {
-    kind = 'floor_tile_large';
-  }
   return { kind, ry };
 }
-
-function rotateOffset(dx: number, dz: number, ry: number): { dx: number; dz: number } {
-  const c = Math.cos(ry);
-  const sn = Math.sin(ry);
-  // three's object yaw: +ry turns +x toward -z (right-handed about +y)
-  return { dx: dx * c + dz * sn, dz: -dx * sn + dz * c };
-}
-
-function rockClusterAt(cx: number, cz: number, ry: number): { x: number; z: number } {
-  const o = rotateOffset(ROCK_TILE_CLUSTER.dx, ROCK_TILE_CLUSTER.dz, ry);
-  return { x: cx + o.dx, z: cz + o.dz };
-}
-
-function rockClusterAllowed(cx: number, cz: number, ry: number): boolean {
-  const { x, z } = rockClusterAt(cx, cz, ry);
-  const r = ROCK_TILE_CLUSTER.r;
-  if (bgZoneAt(cz) === 'keep') return false; // never a blocker in the bases
-  const roomBlocked =
-    Math.abs(x) >= 17 && Math.abs(x) <= 35 && Math.abs(z) >= 45 && Math.abs(z) <= 67;
-  if (roomBlocked) return false;
-  if (laneDist(x, z) < r + 1.1) return false;
-  if (wallDist(x, z) < r + 0.6) return false;
-  for (const o of [
-    ...BG_COVER_PILLARS.map((p) => ({ ...p, r: PILLAR_R })),
-    ...BG_COVER_CRATES.map((c) => ({ ...c, r: CRATE_R })),
-    ...BG_RUBBLE_PILES.map((p) => ({ ...p, r: RUBBLE_R })),
-  ]) {
-    if (Math.hypot(x - o.x, z - o.z) < r + o.r + 0.5) return false;
-  }
-  for (const rp of [...BG_SPEED_RUNES, ...BG_POWER_RUNES]) {
-    if (Math.hypot(x - rp.x, z - rp.z) < r + 2.5) return false;
-  }
-  return true;
-}
-
-let rockClusterMemo: { x: number; z: number }[] | null = null;
-/** One collider per surviving rocky tile, at the cluster's measured spot. */
-export function bgFloorRockClusters(): { x: number; z: number }[] {
-  if (rockClusterMemo) return rockClusterMemo;
-  const out: { x: number; z: number }[] = [];
-  for (
-    let cz = -(BG_HALF_Z - BG_FLOOR_CELL / 2);
-    cz <= BG_HALF_Z - BG_FLOOR_CELL / 2;
-    cz += BG_FLOOR_CELL
-  ) {
-    for (
-      let cx = -(BG_HALF_X - BG_FLOOR_CELL / 2);
-      cx <= BG_HALF_X - BG_FLOOR_CELL / 2;
-      cx += BG_FLOOR_CELL
-    ) {
-      const tile = bgFloorTileAt(cx, cz);
-      if (tile.kind !== 'floor_tile_large_rocks') continue;
-      out.push(rockClusterAt(cx, cz, tile.ry));
-    }
-  }
-  rockClusterMemo = out;
-  return out;
-}
-
-export const BG_ROCK_CLUSTER_R = ROCK_TILE_CLUSTER.r;
-export const BG_ROCK_CLUSTER_TOP = ROCK_TILE_CLUSTER.top;
 
 /** Full BG collision set in instance-local coordinates. Flag stands and speed
  *  runes are deliberately walkable (no collider). */
@@ -628,15 +462,12 @@ export function battlegroundColliders(): Collider[] {
     out.push({ type: 'circle', x: c.x, z: c.z, r: CRATE_R, cameraTopY: CRATE_TOP });
   }
   for (const rb of BG_RUBBLE_PILES) {
-    out.push({ type: 'circle', x: rb.x, z: rb.z, r: RUBBLE_R, cameraTopY: RUBBLE_TOP });
-  }
-  for (const rock of bgFloorRockClusters()) {
     out.push({
       type: 'circle',
-      x: rock.x,
-      z: rock.z,
-      r: BG_ROCK_CLUSTER_R,
-      cameraTopY: BG_ROCK_CLUSTER_TOP,
+      x: rb.x,
+      z: rb.z,
+      r: bgRubbleRadius(rb.kind),
+      cameraTopY: RUBBLE_TOP,
     });
   }
   return out;

@@ -21,6 +21,7 @@ import {
   BG_HALF_Z,
   BG_POWER_RUNES,
   BG_RUBBLE_PILES,
+  BG_RUBBLE_SCALE,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
@@ -556,32 +557,16 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   // BG_RUBBLE_PILES (real movement colliders, below the eye line), so what
   // blocks is exactly what renders; the flat rubble_half sheets stay
   // visual-only debris the boots read over.
-  // Heap scale is tuned so the mesh footprint matches the layout collider
-  // (playtest: an oversized mesh left walk-through skirts around the block).
+  // The big rock formations, at the owner-approved dramatic scale: kind and
+  // position come from the LAYOUT list whose colliders match these bodies.
   for (const rb of BG_RUBBLE_PILES) {
-    const kind = hash2(rb.x, rb.z) < 0.55 ? 'rubble_large' : 'rocks_decorated';
     dressing.push({
-      kind,
+      kind: rb.kind,
       x: rb.x,
       y: 0,
       z: rb.z,
       ry: hash2(rb.z, rb.x) * Math.PI * 2,
-      scale: [0.9, 0.9, 0.9],
-    });
-  }
-  // Ankle-high only: anything chunkier must live in BG_RUBBLE_PILES above.
-  for (const r of [
-    { x: -13, z: -9, kind: 'rubble_half', s: 0.9 },
-    { x: 30, z: -51, kind: 'rubble_half', s: 0.85 },
-    { x: -44, z: -36, kind: 'rubble_half', s: 0.9 },
-  ]) {
-    pushMirrored({
-      kind: r.kind,
-      x: r.x,
-      y: 0,
-      z: r.z,
-      ry: hash2(r.x, r.z) * Math.PI * 2,
-      scale: [r.s, r.s, r.s],
+      scale: [BG_RUBBLE_SCALE, BG_RUBBLE_SCALE, BG_RUBBLE_SCALE],
     });
   }
   // Garrison clutter in each keep's back corners, clear of the spawn ring,
