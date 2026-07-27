@@ -465,8 +465,9 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   // team's approach is better lit.
   const CROSSING_TORCHES: { x: number; z: number; ry: number }[] = [
     // south gatehouse (room x -32..-20, z -65..-47): west-wall inner face
-    { x: -32 + TORCH_WALL_INSET, z: -52, ry: Math.PI / 2 },
-    { x: -32 + TORCH_WALL_INSET, z: -61, ry: Math.PI / 2 },
+    // (inset measures from the wall CENTRE at x -33, landing ON the face)
+    { x: -33 + TORCH_WALL_INSET, z: -52, ry: Math.PI / 2 },
+    { x: -33 + TORCH_WALL_INSET, z: -61, ry: Math.PI / 2 },
     // the sealed rampart-side curtain run (x 18..49 at z -56): field face
     { x: 36.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
     { x: 44.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
