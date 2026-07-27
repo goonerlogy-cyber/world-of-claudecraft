@@ -125,7 +125,9 @@ legality), `cooldown_persist.ts` (cooldown save/load), `tab_target.ts`/`assist.t
 `dead_target.ts` (target cycling, /assist, dead-target selectability), `flee_speed.ts`,
 `mob/scan_counters.ts` (the per-tick mob scan-visit tally the server reads post-tick),
 `lockpick.ts` (the minigame core behind `delves/lockpick_controller.ts`), `map_doc.ts`
-(the custom-map document/validator), `geometry2d.ts`, `market_query.ts`,
+(the custom-map document/validator), `mana_regen.ts` (the Spirit mana-regen formula, full
+out of combat and the "mp5" combat share, shared by the tick, the readout, and the sheet),
+`geometry2d.ts`, `market_query.ts`,
 `market_listing_ids.ts` (the World Market's id allocator: the reserved house band plus
 the load-time reissue that keeps one row per id),
 `vendor_stack.ts`, `loot_master.ts`, `aura_classify.ts` (buff-vs-debuff, shared with the
