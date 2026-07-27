@@ -32,6 +32,20 @@ export { battlegroundRenderManifest } from './battleground_core';
 // the candle shrine, dirt grave floors) lives here so the base pack stays
 // lean for hosts that never enter the band.
 const BG_EXTRA_KIT: readonly string[] = [
+  'tree_pine_orange_large',
+  'tree_pine_orange_medium',
+  'tree_dead_large',
+  'tree_dead_medium',
+  'sword_shield',
+  'plaque_candles',
+  'banner_triple_red',
+  'banner_triple_blue',
+  'rubble_large',
+  'rubble_half',
+  'rocks_decorated',
+  'keg',
+  'barrel_large',
+  'haybale',
   'gravestone',
   'grave_a',
   'grave_B',
@@ -148,6 +162,7 @@ export function buildBattleground(
     manifest.wallBanners,
     manifest.torches,
     manifest.graves,
+    manifest.dressing,
   ]) {
     for (const pl of list) {
       const bucket = byKind.get(pl.kind);

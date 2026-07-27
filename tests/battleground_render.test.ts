@@ -335,6 +335,38 @@ describe('zone theming (visual only; colliders never move)', () => {
     expect(Math.min(...keep.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_KEEP_MIN_Z + 2);
   });
 
+  it('field dressing is visual-only, mirrored, and placed where it claims', () => {
+    expect(m.dressing.length).toBeGreaterThan(60); // the tree line alone is dozens
+    // Point symmetry (colors aside: the red/blue triple banners swap kinds).
+    const key = (x: number, z: number) => `${x.toFixed(3)}|${z.toFixed(3)}`;
+    const set = new Set(m.dressing.map((d) => key(d.x, d.z)));
+    for (const d of m.dressing) {
+      expect(set.has(key(-d.x, -d.z)), `dressing at (${d.x},${d.z}) has no mirror`).toBe(true);
+    }
+    // Trees live OUTSIDE the walls (skyline, never field furniture); rubble,
+    // trophies, and clutter live INSIDE the perimeter.
+    for (const d of m.dressing) {
+      const outside = Math.abs(d.x) > 50 || Math.abs(d.z) > 140;
+      if (d.kind.startsWith('tree_')) {
+        expect(outside, `tree at (${d.x},${d.z}) must sit outside the walls`).toBe(true);
+      } else {
+        expect(outside, `${d.kind} at (${d.x},${d.z}) must sit inside`).toBe(false);
+      }
+    }
+    // And none of it may share a spot with a collider footprint (visual-only
+    // dressing must never suggest cover that does not block): probe centers
+    // against the wall segments (trees are outside every wall by the check
+    // above; rubble/clutter spots are hand-placed clear).
+    for (const d of m.dressing) {
+      if (d.kind.startsWith('tree_')) continue;
+      for (const w of battlegroundWallSegments()) {
+        const inside =
+          Math.abs(d.x - w.x) < w.hw - 0.2 && Math.abs(d.z - w.z) < w.hd - 0.2 && d.y === 0;
+        expect(inside, `${d.kind} at (${d.x},${d.z}) is inside a wall footprint`).toBe(false);
+      }
+    }
+  });
+
   it('torches are point-symmetric, so neither approach is better lit', () => {
     const key = (x: number, z: number) => `${x.toFixed(2)}|${z.toFixed(2)}`;
     const set = new Set(m.torches.map((t) => key(t.x, t.z)));

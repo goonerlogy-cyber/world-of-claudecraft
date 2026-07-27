@@ -122,6 +122,10 @@ export interface BattlegroundRenderManifest {
   torches: BgModulePlacement[];
   /** Graveyard dressing inside each keep plot: stones, markers, a shrine. */
   graves: BgModulePlacement[];
+  /** Visual-only field dressing (never a collider): the tree line outside the
+   *  perimeter, wall trophies/plaques, gate banners, courtyard rubble, and
+   *  keep-corner garrison clutter. Point-mirrored (colors aside). */
+  dressing: BgModulePlacement[];
 }
 
 /** The heart ruin is the one thick (near-square) segment; every real wall run
@@ -235,6 +239,16 @@ const TORCH_WALL_INSET = 1.0;
 export const BG_TORCH_GLOW_H = 3.3;
 
 const GRAVE_MODULE_SCALE = 1.2;
+
+// Field dressing (visual only). The tree kinds ring the OUTSIDE of the
+// perimeter so the skyline reads like a real place (the Eastbrook-gap fix);
+// nothing there is walkable, so no collider question arises.
+const DRESSING_TREE_KINDS: [string, number][] = [
+  ['tree_pine_orange_large', 3],
+  ['tree_pine_orange_medium', 2],
+  ['tree_dead_large', 2],
+  ['tree_dead_medium', 1],
+];
 const CRATE_KINDS: [string, number][] = [
   ['crates_stacked', 2],
   ['box_stacked', 1],
@@ -505,6 +519,89 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     // the shrine anchors the far corner, away from the entrance
     { dx: 7.1, dz: -4.6, kind: 'shrine_candles' },
   ];
+  // --- Visual-only field dressing (zero colliders, point-mirrored) ----------
+  // Everything below is authored for the SOUTH half and mirrored
+  // ((x,z) -> (-x,-z), yaw + half turn); team-colored pieces swap kinds.
+  const dressing: BgModulePlacement[] = [];
+  const pushMirrored = (p: BgModulePlacement, mirrorKind?: string): void => {
+    dressing.push(p);
+    dressing.push({ ...p, kind: mirrorKind ?? p.kind, x: -p.x, z: -p.z, ry: p.ry + Math.PI });
+  };
+  // The tree line: pines and dead trees in bands beyond the walls, jittered
+  // deterministically, sunk slightly so trunks meet uneven outside ground.
+  const treeAt = (bx: number, bz: number): void => {
+    const jx = (hash2(bx, bz) - 0.5) * 5;
+    const jz = (hash2(bz, bx) - 0.5) * 5;
+    const kind = pickKind(DRESSING_TREE_KINDS, hash2(bx * 1.7, bz * 0.9));
+    const ts = 1.7 + hash2(bx * 0.31, bz * 2.3) * 0.9;
+    pushMirrored({
+      kind,
+      x: bx + jx,
+      y: -0.4,
+      z: bz + jz,
+      ry: hash2(bx, bz * 3.1) * Math.PI * 2,
+      scale: [ts, ts, ts],
+    });
+  };
+  for (let tz = -150; tz <= 150; tz += 11) treeAt(-58, tz); // west band (mirror: east)
+  for (let tx = -56; tx <= 56; tx += 11) treeAt(tx, -150); // south band (mirror: north)
+  // Wall dressing on the curtains' COURTYARD faces: crossed-sword trophies
+  // mid-wall and candle plaques at the wall foot, spaced between the runs.
+  const courtZ = -(BG_CURTAIN_Z - 1.1);
+  for (const t of [
+    { x: -10, y: 0, kind: 'plaque_candles', s: 1.4 },
+    { x: -1, y: 3.0, kind: 'sword_shield', s: 1.5 },
+    { x: 26, y: 3.0, kind: 'sword_shield', s: 1.5 },
+    { x: 44, y: 0, kind: 'plaque_candles', s: 1.4 },
+  ]) {
+    pushMirrored({ kind: t.kind, x: t.x, y: t.y, z: courtZ, ry: 0, scale: [t.s, t.s, t.s] });
+  }
+  // Team triple banners flanking each main gate on the courtyard face: the
+  // gate reads as a dressed threshold from mid-field (red south, blue north).
+  for (const gx of [6.5, 19.5]) {
+    pushMirrored(
+      { kind: 'banner_triple_red', x: gx, y: 0, z: courtZ, ry: 0, scale: [1.5, 1.5, 1.5] },
+      'banner_triple_blue',
+    );
+  }
+  // Courtyard rubble: collapsed-masonry piles hugging the ruin heart and the
+  // wall feet; low debris the boots read over, never movement blocking.
+  for (const r of [
+    { x: 11.5, z: -11.5, kind: 'rubble_large', s: 1.6 },
+    { x: -13, z: -9, kind: 'rubble_half', s: 1.5 },
+    { x: -20, z: -50, kind: 'rubble_large', s: 1.7 },
+    { x: 30, z: -51, kind: 'rubble_half', s: 1.4 },
+    { x: 44, z: -24, kind: 'rocks_decorated', s: 1.6 },
+    { x: -44, z: -36, kind: 'rubble_half', s: 1.5 },
+    { x: 5, z: -30, kind: 'rocks_decorated', s: 1.4 },
+    { x: -33, z: -20, kind: 'rocks_decorated', s: 1.5 },
+  ]) {
+    pushMirrored({
+      kind: r.kind,
+      x: r.x,
+      y: 0,
+      z: r.z,
+      ry: hash2(r.x, r.z) * Math.PI * 2,
+      scale: [r.s, r.s, r.s],
+    });
+  }
+  // Garrison clutter in each keep's back corners, clear of the spawn ring,
+  // the banners, and the graveyard mouth.
+  for (const c of [
+    { x: -13.5, z: -126, kind: 'keg', s: 1.5 },
+    { x: 13.4, z: -125.7, kind: 'barrel_large', s: 1.4 },
+    { x: 14.3, z: -124.1, kind: 'haybale', s: 1.3 },
+  ]) {
+    pushMirrored({
+      kind: c.kind,
+      x: c.x,
+      y: 0,
+      z: c.z,
+      ry: hash2(c.x, c.z) * Math.PI * 2,
+      scale: [c.s, c.s, c.s],
+    });
+  }
+
   const graves: BgModulePlacement[] = [];
   for (const base of BG_BASES) {
     const plot = BG_GRAVEYARDS[base.team];
@@ -534,5 +631,6 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     wallBanners,
     torches,
     graves,
+    dressing,
   };
 }
