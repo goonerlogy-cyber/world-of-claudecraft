@@ -231,16 +231,23 @@ const BIPED14: ClipMap = {
 };
 
 // Tripo orc rig (Orkadia dungeon: black/blue/red orc GLBs). Ships Idle_Loop,
-// Walk_Loop, Sprint_Loop, Punch_Jab, Sword_Attack (Red also Sword_Idle); it has
-// no death or hit-react clip, so death maps to the neutral idle pose (visual.ts
-// clamps a one-shot on its last frame) and `hit` is omitted (spider/raptor rigs
-// do the same).
+// Walk_Loop, Sprint_Loop, Punch_Jab, Sword_Attack (Red also Sword_Idle). The
+// batch had no death or hit-react take, so `Death` (a hips-driven topple that
+// clamps flat) and `Hit` (a short spine/neck flinch) are synthesized onto the
+// shipped Mixamo skeleton by scripts/_add_orc_death_anim.mjs (the Stone Cantor
+// precedent, _add_cantor_hit_anim.mjs); re-run it if the GLBs are regenerated.
+// A real Tripo death retarget exists (scripts/reanim_orc_death.mjs artifacts
+// under tmp/asset_pipeline/reanim_orc_death_*_orc/), but it targets Tripo's
+// 41-joint biped rig (Hip/Waist/Pelvis/...) after a full re-rig, not the
+// shipped 22-joint mixamorig:* skeleton, scripts/graft_orc_death.mjs verifies
+// the mismatch and refuses to graft, so the synthesized clips remain.
 const ORC_TRIPO: ClipMap = {
   idle: 'Idle_Loop',
   walk: 'Walk_Loop',
   run: 'Sprint_Loop',
   attack: ['Sword_Attack', 'Punch_Jab'],
-  death: 'Idle_Loop',
+  hit: ['Hit'],
+  death: 'Death',
 };
 
 // Tripo biped rig. These creatures come through the current biped
