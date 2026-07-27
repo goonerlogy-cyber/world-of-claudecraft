@@ -515,6 +515,9 @@ const INTERIOR_COLLIDERS: Record<string, Collider[]> = {
   sanctum: SANCTUM_COLLIDERS,
   temple: TEMPLE_COLLIDERS,
   nythraxis: NYTHRAXIS_COLLIDERS,
+  // Orkadia reuses the Sanctum room footprint (same colliders), re-themed
+  // green/black in the renderer; see src/render/dungeon.ts `orkadia` variant.
+  orkadia: SANCTUM_COLLIDERS,
   wildheart: WILDHEART_COLLIDERS,
   lastkeep: LASTKEEP_COLLIDERS,
 };

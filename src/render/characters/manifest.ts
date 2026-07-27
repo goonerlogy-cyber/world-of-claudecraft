@@ -230,6 +230,19 @@ const BIPED14: ClipMap = {
   death: 'Death',
 };
 
+// Tripo orc rig (Orkadia dungeon: black/blue/red orc GLBs). Ships Idle_Loop,
+// Walk_Loop, Sprint_Loop, Punch_Jab, Sword_Attack (Red also Sword_Idle); it has
+// no death or hit-react clip, so death maps to the neutral idle pose (visual.ts
+// clamps a one-shot on its last frame) and `hit` is omitted (spider/raptor rigs
+// do the same).
+const ORC_TRIPO: ClipMap = {
+  idle: 'Idle_Loop',
+  walk: 'Walk_Loop',
+  run: 'Sprint_Loop',
+  attack: ['Sword_Attack', 'Punch_Jab'],
+  death: 'Idle_Loop',
+};
+
 // Tripo biped rig. These creatures come through the current biped
 // pipeline, which retargets and bakes the complete game vocabulary directly.
 const TRIPO_BIPED_FULL_RIG: ClipMap = {
@@ -1069,6 +1082,29 @@ export const VISUALS: Record<string, VisualDef> = {
     tint: 'entity',
     tintStrength: 0.2, // skin washes pink fast
   },
+  // Orkadia orc war-camp (Tripo GLBs). Low tint strength so each orc keeps its
+  // own baked black/blue/red identity; the mob `color` only nudges it.
+  mob_orc_grunt: {
+    url: `${CREATURES}/black_orc.glb`,
+    height: 2.3,
+    clips: ORC_TRIPO,
+    tint: 'entity',
+    tintStrength: 0.1,
+  },
+  mob_orc_marauder: {
+    url: `${CREATURES}/blue_orc.glb`,
+    height: 2.4,
+    clips: ORC_TRIPO,
+    tint: 'entity',
+    tintStrength: 0.1,
+  },
+  mob_orc_warlord: {
+    url: `${CREATURES}/red_orc.glb`,
+    height: 2.6,
+    clips: ORC_TRIPO,
+    tint: 'entity',
+    tintStrength: 0.1,
+  },
   // Five Wildheart troll silhouettes use the same complete biped vocabulary,
   // but preserve their woven cloth, bone paint, feathers, and jungle palette.
   mob_wildheart_stalker: {
@@ -1578,6 +1614,10 @@ export const VISUALS: Record<string, VisualDef> = {
 // ---------------------------------------------------------------------------
 
 const MOB_KEYS: Record<string, string> = {
+  // Orkadia orc war-camp: each orc template renders its own Tripo GLB.
+  orkadia_grunt: 'mob_orc_grunt',
+  orkadia_marauder: 'mob_orc_marauder',
+  orkadia_warlord: 'mob_orc_warlord',
   wildheart_stalker: 'mob_wildheart_stalker',
   wildheart_ravager: 'mob_wildheart_ravager',
   wildheart_hexcaller: 'mob_wildheart_hexcaller',
