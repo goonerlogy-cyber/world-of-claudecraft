@@ -163,7 +163,6 @@ callout(-38, 0, -54, 3, 'flank rune + cover', '#8a6a3c');
 callout(8, 4, 54, 10, 'heart ruin 16x16 (hollow)', '#6b5b45');
 callout(16, 22, 54, 28, 'sightline breakers (two pairs)', INK);
 callout(13, -56, 54, -60, 'main gate (10yd)', INK);
-callout(40.5, -56, 54, -50, 'flank arch (5yd)', INK);
 callout(-26, -56, -54, -50, 'gatehouse (offset doors)', INK);
 callout(-26, -58, -54, -62, 'ambush crates', '#8a6a3c');
 callout(-30, -98, -54, -96, 'wing baffle', INK);
@@ -175,7 +174,7 @@ label(-54, -34.5, 'fog; enemies fade in', 14, AZURE, 'end');
 label(
   0,
   -(BG_HALF_Z + 9),
-  'Every move between chambers passes a crossing: the main gate, the flank arch, or the gatehouse jog.',
+  'Every move between chambers passes a crossing: the main gate or the gatehouse jog.',
   13.5,
   '#6b5b45',
 );

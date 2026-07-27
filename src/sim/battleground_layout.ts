@@ -6,9 +6,9 @@
 // PR #589 layout: the keeps, flags, and runes are kept, and the
 // space between them is carved into THREE CHAMBERS. Two full-width curtain
 // walls partition the field into each team's own field chamber and the walled
-// Ruin Courtyard between them; every move between chambers passes one of three
-// contested crossings per curtain (main gate, flank arch, or the gatehouse
-// room), and a low barricade breaks the straight charge into each keep mouth.
+// Ruin Courtyard between them; every move between chambers passes one of TWO
+// contested crossings per curtain (the main gate or the gatehouse room), and
+// a low barricade breaks the straight charge into each keep mouth.
 import type { Collider } from './colliders';
 
 export type BgTeam = 0 | 1; // 0 = Crimson (south, -z), 1 = Azure (north, +z)
@@ -136,7 +136,7 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 10, z: 102 },
   { x: 14, z: -76 },
   { x: -14, z: 76 },
-  { x: -42, z: -60 }, // by each flank-arch approach
+  { x: -42, z: -60 }, // by each rampart flank
   { x: 42, z: 60 },
   { x: 41, z: -4 }, // cover beside each flank rune
   { x: -41, z: 4 },
@@ -152,21 +152,20 @@ export const BG_CURTAIN_Z = 56;
 
 // The two curtain walls: full-width partitions at z = +-BG_CURTAIN_Z that
 // carve the field into three chambers (each team's field, the Ruin Courtyard
-// between). Each curtain is pierced by exactly three crossings, mirrored:
+// between). Each curtain is pierced by exactly TWO crossings, mirrored:
 //   main gate, 10yd, off-center toward the field side (Crimson's east);
-//   flank arch, 5yd, six yards off the far rampart;
 //   the gatehouse, whose walls the curtain terminates into (below).
+// (The old 5yd flank arch is sealed per the owner's two-routes rule: into a
+// chamber you come through the main gate or the gatehouse, nothing else.)
 // Every curtain segment butt-joins what it meets (the rampart inner face at
 // |x| 49, the gatehouse side walls), never overlaps it.
 export const BG_CURTAIN_WALLS: BgWallSeg[] = [
   { x: -41.5, z: -56, hw: 7.5, hd: 1 }, // rampart to gatehouse west wall
   { x: -5, z: -56, hw: 13, hd: 1 }, // gatehouse east wall to main gate (x 8..18)
-  { x: 28, z: -56, hw: 10, hd: 1 }, // main gate to flank arch (x 38..43)
-  { x: 46, z: -56, hw: 3, hd: 1 }, // flank arch to rampart
+  { x: 33.5, z: -56, hw: 15.5, hd: 1 }, // main gate to the rampart, one sealed run
   { x: 41.5, z: 56, hw: 7.5, hd: 1 }, // north curtain, point mirror
   { x: 5, z: 56, hw: 13, hd: 1 },
-  { x: -28, z: 56, hw: 10, hd: 1 },
-  { x: -46, z: 56, hw: 3, hd: 1 },
+  { x: -33.5, z: 56, hw: 15.5, hd: 1 },
 ];
 
 // The gatehouses: a room straddling each curtain (16yd wide, 20yd long over

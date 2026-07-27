@@ -126,10 +126,8 @@ describe('battleground render manifest derives from the layout', () => {
     const crossings: { z: number; lo: number; hi: number }[] = [
       { z: -56, lo: -34, hi: -18 }, // south gatehouse span (its room walls own it)
       { z: -56, lo: 8, hi: 18 }, // south main gate
-      { z: -56, lo: 38, hi: 43 }, // south flank arch
       { z: 56, lo: 18, hi: 34 }, // north mirrors
       { z: 56, lo: -18, hi: -8 },
-      { z: 56, lo: -43, hi: -38 },
     ];
     for (const c of crossings) {
       const intruders = [...m.walls, ...m.ruin].filter((p) => {

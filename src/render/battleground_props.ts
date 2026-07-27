@@ -18,6 +18,7 @@
 // group's own position/rotation stay renderer-owned.
 import * as THREE from 'three';
 import { BG_TEAM_COLORS } from '../sim/battleground_layout';
+import { RUNE_VISUALS } from '../sim/social/battleground';
 import { BG_RUNE_BOB_AMP } from './battleground_fx_core';
 import { surfaceMat } from './gfx';
 import { markSharedGeometry, markSharedMaterial } from './shared_resource';
@@ -38,6 +39,12 @@ const RUNE_GEM_Y = 1.15;
 // the holder so the tilt never accumulates error.
 const RUNE_GEM_TILT_Z = Math.PI / 4;
 const RUNE_GEM_TILT_X = Math.atan(Math.SQRT2);
+// Identity glyph floating over each pad (playtest direction: purpose must
+// read beyond hue): a boot for Sprint, a sword for Battle, a shield for Ward,
+// drawn once per type on a small canvas and billboarded above the gem.
+const RUNE_GLYPH_PX = 64;
+const RUNE_GLYPH_Y = 2.35;
+const RUNE_GLYPH_SCALE = 0.8;
 const RUNE_LIGHT_INTENSITY = 1.6;
 const RUNE_LIGHT_DISTANCE = 8;
 
@@ -57,7 +64,8 @@ export type BgObjectRefs =
     };
 
 let flagPoleGeo: THREE.CylinderGeometry | null = null;
-let pennantGeo: THREE.PlaneGeometry | null = null;
+let pennantGeo: THREE.ShapeGeometry | null = null;
+let flagFinialGeo: THREE.SphereGeometry | null = null;
 let carryRingGeo: THREE.RingGeometry | null = null;
 let runeDiscGeo: THREE.CircleGeometry | null = null;
 let runeGemGeo: THREE.BoxGeometry | null = null;
@@ -110,6 +118,84 @@ function gemMaterial(color: number): THREE.MeshBasicMaterial {
   return mat;
 }
 
+const glyphMats = new Map<string, THREE.SpriteMaterial>();
+
+function runeTypeForColor(color: number): keyof typeof RUNE_VISUALS | null {
+  for (const type of Object.keys(RUNE_VISUALS) as (keyof typeof RUNE_VISUALS)[]) {
+    if (RUNE_VISUALS[type].color === color) return type;
+  }
+  return null;
+}
+
+// White-on-outline silhouettes, deliberately chunky so they read at distance.
+function drawRuneGlyph(ctx: CanvasRenderingContext2D, type: keyof typeof RUNE_VISUALS): void {
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = '#000000cc';
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  if (type === 'sprint') {
+    // a boot: shaft down into a forward foot
+    ctx.moveTo(24, 8);
+    ctx.lineTo(40, 8);
+    ctx.lineTo(40, 34);
+    ctx.lineTo(54, 44);
+    ctx.lineTo(54, 54);
+    ctx.lineTo(24, 54);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else if (type === 'damage') {
+    // a sword, point up: blade, then guard, then grip
+    ctx.moveTo(32, 3);
+    ctx.lineTo(38, 12);
+    ctx.lineTo(38, 34);
+    ctx.lineTo(26, 34);
+    ctx.lineTo(26, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.rect(17, 34, 30, 7);
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.rect(28, 41, 8, 17);
+    ctx.fill();
+    ctx.stroke();
+  } else {
+    // a shield: flat top shoulders rounding to a point
+    ctx.moveTo(32, 6);
+    ctx.lineTo(52, 12);
+    ctx.lineTo(52, 30);
+    ctx.quadraticCurveTo(52, 48, 32, 58);
+    ctx.quadraticCurveTo(12, 48, 12, 30);
+    ctx.lineTo(12, 12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+}
+
+function runeGlyphMaterial(type: keyof typeof RUNE_VISUALS): THREE.SpriteMaterial | null {
+  const cached = glyphMats.get(type);
+  if (cached) return cached;
+  // Headless (Node tests / no 2D context): the pad simply carries no glyph.
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = RUNE_GLYPH_PX;
+  canvas.height = RUNE_GLYPH_PX;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return null;
+  drawRuneGlyph(ctx, type);
+  const map = new THREE.CanvasTexture(canvas);
+  map.colorSpace = THREE.SRGBColorSpace;
+  const mat = new THREE.SpriteMaterial({ map, transparent: true, depthWrite: false });
+  markSharedMaterial(mat);
+  glyphMats.set(type, mat);
+  return mat;
+}
+
 /**
  * Build the view body for one battleground ground object. `color` is the sim
  * entity's color (team color for a flag, gold for a rune); `height` feeds the
@@ -146,10 +232,26 @@ export function buildBattlegroundObject(
       light.position.y = RUNE_GEM_Y;
       group.add(light);
     }
+    // The identity glyph billboard: what the pad DOES, not just its hue.
+    const runeType = runeTypeForColor(color);
+    const glyphMat = runeType ? runeGlyphMaterial(runeType) : null;
+    if (glyphMat) {
+      const glyph = new THREE.Sprite(glyphMat);
+      glyph.position.y = RUNE_GLYPH_Y;
+      glyph.scale.set(RUNE_GLYPH_SCALE, RUNE_GLYPH_SCALE, 1);
+      group.add(glyph);
+    }
     group.userData.bg = { kind: 'rune', gem, gemBaseY: RUNE_GEM_Y } satisfies BgObjectRefs;
     // Nameplate anchor clears the gem's corner-down half-diagonal at the top
-    // of its hover (the bob amplitude lives in battleground_fx_core).
-    return { group, height: RUNE_GEM_Y + BG_RUNE_BOB_AMP + RUNE_GEM_SIZE + 0.3 };
+    // of its hover (the bob amplitude lives in battleground_fx_core) AND the
+    // glyph billboard above it.
+    return {
+      group,
+      height: Math.max(
+        RUNE_GEM_Y + BG_RUNE_BOB_AMP + RUNE_GEM_SIZE + 0.3,
+        RUNE_GLYPH_Y + RUNE_GLYPH_SCALE / 2 + 0.2,
+      ),
+    };
   }
 
   // bg_flag (and any future bg_ object defaults to the flag body): pole +
@@ -159,7 +261,19 @@ export function buildBattlegroundObject(
   flagPoleGeo ??= markSharedGeometry(
     new THREE.CylinderGeometry(FLAG_POLE_R, FLAG_POLE_R * 1.5, FLAG_POLE_H, 6),
   );
-  pennantGeo ??= markSharedGeometry(new THREE.PlaneGeometry(PENNANT_W, PENNANT_H));
+  if (!pennantGeo) {
+    // A swallowtail pennant (hoist at the pole, V notch on the fly), not the
+    // old bare rectangle: the flag itself should read as a war banner.
+    const shape = new THREE.Shape();
+    shape.moveTo(0, PENNANT_H / 2);
+    shape.lineTo(PENNANT_W, PENNANT_H / 2);
+    shape.lineTo(PENNANT_W - 0.4, 0);
+    shape.lineTo(PENNANT_W, -PENNANT_H / 2);
+    shape.lineTo(0, -PENNANT_H / 2);
+    shape.closePath();
+    pennantGeo = markSharedGeometry(new THREE.ShapeGeometry(shape));
+  }
+  flagFinialGeo ??= markSharedGeometry(new THREE.SphereGeometry(FLAG_POLE_R * 2.4, 8, 6));
   carryRingGeo ??= markSharedGeometry(
     new THREE.RingGeometry(CARRY_RING_INNER, CARRY_RING_OUTER, 24),
   );
@@ -169,8 +283,11 @@ export function buildBattlegroundObject(
   pole.position.y = FLAG_POLE_H / 2;
   lean.add(pole);
   const pennant = new THREE.Mesh(pennantGeo, pennantMaterial(color, lowGfx));
-  pennant.position.set(PENNANT_W / 2 + FLAG_POLE_R, FLAG_POLE_H - PENNANT_H / 2 - 0.1, 0);
+  pennant.position.set(FLAG_POLE_R, FLAG_POLE_H - PENNANT_H / 2 - 0.1, 0);
   lean.add(pennant);
+  const finial = new THREE.Mesh(flagFinialGeo, gemMaterial(0xd8b34a));
+  finial.position.y = FLAG_POLE_H + 0.06;
+  lean.add(finial);
   group.add(lean);
   const ring = new THREE.Mesh(carryRingGeo, glowMaterial(color));
   ring.rotation.x = -Math.PI / 2;

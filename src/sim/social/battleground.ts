@@ -47,7 +47,7 @@ const BG_COUNTDOWN = 8; // form-up gate at the keeps before the flags go live
 export const BG_CAPS_TO_WIN = 5; // first team to this many captures wins.
 // ^ Tuning knob number one post-launch: fall back to 3 if live cap pace runs
 // slower than the modeled 2-3 minutes per capture on even teams.
-export const BG_MAX_DURATION = 900; // 15 min cap; resolves on score, ties draw
+export const BG_MAX_DURATION = 720; // 12 min cap; resolves on score, ties draw
 export const BG_END_HOLD = 15; // post-match hold: the frozen result screen
 export const BG_WAVE_PERIOD = 10; // one respawn wave per team every 10s
 export const BG_WAVE_OFFSET = 5; // the two team clocks run staggered half-cycles

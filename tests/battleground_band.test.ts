@@ -167,11 +167,11 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     // 4 perimeter + (1 back + 3 side segs) x 2 keeps + 11 cover walls
     // + 8 curtain segments + 8 gatehouse walls + 2 barricades
     // + 8 graveyard fence rails (4 per corner yard)
-    expect(BG_CURTAIN_WALLS).toHaveLength(8);
+    expect(BG_CURTAIN_WALLS).toHaveLength(6);
     expect(BG_GATEHOUSE_WALLS).toHaveLength(8);
     expect(BG_KEEP_BARRICADES).toHaveLength(2);
     expect(BG_GRAVEYARD_FENCES).toHaveLength(8);
-    expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 8 + 8 + 2 + 8);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 6 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
@@ -245,20 +245,22 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     return at;
   }
 
-  it('the curtain wall is solid; the main gate and flank arch thread it', () => {
+  it('the curtain wall is solid; only the main gate threads it', () => {
     // straight into the south curtain between the crossings: stopped at its face
     const blocked = resolveMovement(SEED, o.x, o.z - 62, o.x, o.z - 50, 0.5);
     expect(blocked.z).toBeLessThan(o.z - 57.4);
     // the 10yd main gate (x 8..18) passes
     walk({ x: 13, z: -62 }, [{ x: 13, z: -50 }]);
-    // the 5yd flank arch (x 38..43) passes
-    walk({ x: 40.5, z: -62 }, [{ x: 40.5, z: -50 }]);
-    // the rampart-side stub is solid
+    // where the old flank arch opened (x 38..43): sealed solid now
+    const sealedArch = resolveMovement(SEED, o.x + 40.5, o.z - 62, o.x + 40.5, o.z - 50, 0.5);
+    expect(sealedArch.z).toBeLessThan(o.z - 57.4);
+    // the rampart-side run is solid
     const stub = resolveMovement(SEED, o.x + 46, o.z - 62, o.x + 46, o.z - 50, 0.5);
     expect(stub.z).toBeLessThan(o.z - 57.4);
-    // north curtain mirrors: main gate at x -18..-8, arch at x -43..-38
+    // north curtain mirrors: main gate at x -18..-8 passes, the mirror arch line is sealed
     walk({ x: -13, z: 62 }, [{ x: -13, z: 50 }]);
-    walk({ x: -40.5, z: 62 }, [{ x: -40.5, z: 50 }]);
+    const sealedNorth = resolveMovement(SEED, o.x - 40.5, o.z + 62, o.x - 40.5, o.z + 50, 0.5);
+    expect(sealedNorth.z).toBeGreaterThan(o.z + 57.4);
   });
 
   it('the gatehouse is a jogged through-route; its walls block everything else', () => {
@@ -303,13 +305,13 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
         `curtain sealed at (${x}, ${z})`,
       ).toBe(false);
     }
-    // through the main gate and the flank arch: clear
+    // through the main gate: clear; across the sealed old arch line: blocked
     expect(lineOfSightClear(SEED, { x: o.x + 13, z: o.z - 60 }, { x: o.x + 13, z: o.z - 52 })).toBe(
       true,
     );
     expect(
       lineOfSightClear(SEED, { x: o.x + 40.5, z: o.z - 60 }, { x: o.x + 40.5, z: o.z - 52 }),
-    ).toBe(true);
+    ).toBe(false);
     // the heart's 16yd core crosses every main-gate-to-main-gate ray, so the
     // two gates can never see each other; flag to flag is sealed too
     expect(lineOfSightClear(SEED, { x: o.x + 13, z: o.z - 56 }, { x: o.x - 13, z: o.z + 56 })).toBe(
@@ -320,23 +322,21 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     ).toBe(false);
   });
 
-  it('pins the crossing spans exactly: gate 8yd, arch 4yd, gatehouse doors 4 and 3', () => {
+  it('pins the crossing spans exactly: one 10yd gate per curtain, gatehouse doors 5 and 4', () => {
     const spans = (z: number) =>
       BG_CURTAIN_WALLS.filter((s) => s.z === z)
         .map((s) => [s.x - s.hw, s.x + s.hw])
         .sort((a, b) => a[0] - b[0]);
     // south curtain walls: rampart..gatehouse west, gatehouse east..main gate,
-    // main gate..flank arch, flank arch..rampart (openings are the gaps)
+    // main gate..rampart in ONE sealed run (openings are the gaps)
     expect(spans(-56)).toEqual([
       [-49, -34],
       [-18, 8],
-      [18, 38],
-      [43, 49],
+      [18, 49],
     ]);
     // the north curtain is the exact point mirror
     expect(spans(56)).toEqual([
-      [-49, -43],
-      [-38, -18],
+      [-49, -18],
       [-8, 18],
       [34, 49],
     ]);
@@ -404,7 +404,8 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     ]);
     // Route B, the sneak: out the narrow west mouth gap, around the wing
     // baffle, the gatehouse S-jog, up the courtyard's west flank past the
-    // rune, out the north flank arch, and home through the far mouth gap.
+    // rune, then across to the north main gate (the old flank arch is
+    // sealed), and home through the far mouth gap.
     walk({ x: 0, z: -BG_FLAG_Z }, [
       { x: -10, z: -114 },
       { x: -13, z: -109 }, // out the narrow west mouth gap past the barricade
@@ -423,12 +424,13 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       { x: -38, z: -30 }, // the courtyard west flank, over the rune pad
       { x: -38, z: 0 },
       { x: -38, z: 20 },
-      { x: -40.5, z: 34 },
-      { x: -40.5, z: 50 },
-      { x: -40.5, z: 62 }, // the north flank arch
-      { x: -40.5, z: 80 },
-      { x: -40, z: 96 },
-      { x: -20, z: 102 },
+      { x: -38, z: 44 }, // past the west breaker, still on the flank
+      { x: -13, z: 50 }, // cut across to the north main gate
+      { x: -13, z: 62 },
+      { x: -13, z: 70 },
+      { x: -24, z: 78 }, // around the mirrored S-approach
+      { x: -26, z: 90 },
+      { x: -14, z: 100 },
       { x: -10, z: 104 }, // Azure's narrow mouth gap
       { x: -10, z: 110 },
       { x: -4, z: 114 },

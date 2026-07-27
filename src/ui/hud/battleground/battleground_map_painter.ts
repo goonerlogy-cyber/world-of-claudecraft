@@ -74,7 +74,11 @@ export class BattlegroundMapPainter {
     );
     const cx = canvasSize / 2;
     const cy = canvasSize / 2;
-    const px = (x: number): number => cx + x * s;
+    // World-to-screen follows the minimap/world-map convention: +z (the away
+    // half) points UP, and the world's east is -x, so +x maps LEFT (px
+    // negates). Without the negation the plan mirrors east-west against the
+    // field the player is standing in (the playtest bug).
+    const px = (x: number): number => cx - x * s;
     const py = (z: number): number => cy - z * s;
     const flip = model.myTeam === 0 ? 1 : -1;
     const left = cx - model.halfX * s;
@@ -96,7 +100,8 @@ export class BattlegroundMapPainter {
     ctx.fillStyle = KEEP_FLOOR;
     for (const team of [0, 1] as const) {
       const b = keepInteriorBounds(team);
-      ctx.fillRect(px(b.minX), py(b.maxZ), (b.maxX - b.minX) * s, (b.maxZ - b.minZ) * s);
+      // px negates, so the rect's LEFT edge is the +x bound
+      ctx.fillRect(px(b.maxX), py(b.maxZ), (b.maxX - b.minX) * s, (b.maxZ - b.minZ) * s);
     }
 
     // Team end washes: your colour bleeds up from the bottom edge, theirs down
@@ -134,7 +139,7 @@ export class BattlegroundMapPainter {
     for (const plot of BG_GRAVEYARDS) {
       const x = plot.x * flip;
       const z = plot.z * flip;
-      const gx = px(x - plot.hw);
+      const gx = px(x + plot.hw); // px negates: left edge is the +x bound
       const gy = py(z + plot.hd);
       ctx.fillStyle = GRAVE_DIRT;
       ctx.fillRect(gx, gy, plot.hw * 2 * s, plot.hd * 2 * s);
@@ -151,7 +156,7 @@ export class BattlegroundMapPainter {
       const x = w.x * flip;
       const z = w.z * flip;
       ctx.fillStyle = w.fence ? FENCE_FILL : w.low ? WALL_LOW_FILL : WALL_FILL;
-      ctx.fillRect(px(x - w.hw), py(z + w.hd), w.hw * 2 * s, w.hd * 2 * s);
+      ctx.fillRect(px(x + w.hw), py(z + w.hd), w.hw * 2 * s, w.hd * 2 * s);
     }
 
     // Field frame on top of the walls, so the perimeter reads as one edge.
@@ -216,7 +221,9 @@ export class BattlegroundMapPainter {
     if (self) {
       ctx.save();
       ctx.translate(px(self.x), py(self.z));
-      ctx.rotate(self.facing);
+      // canvas rotates clockwise; facing increases turning left (the minimap
+      // player-arrow rule), so the arrow spins with -facing.
+      ctx.rotate(-self.facing);
       ctx.beginPath();
       ctx.moveTo(0, -SELF_R - 2);
       ctx.lineTo(SELF_R - 1, SELF_R);

@@ -1004,7 +1004,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     // what actually fails on a silent retune: every tuned number ships pinned.
     expect(BG_CARRIER_VULN_DELAY).toBe(75); // ~two 236yd flag runs
     expect(BG_CARRIER_VULN_INTERVAL).toBe(15);
-    expect(BG_MAX_DURATION).toBe(900); // 15 minute cap
+    expect(BG_MAX_DURATION).toBe(720); // 12 minute cap
     expect(BG_WAVE_PERIOD).toBe(10);
     expect(BG_WAVE_OFFSET).toBe(5);
     expect(BG_POWER_RUNE_VALUE).toBeCloseTo(0.15, 10);
@@ -1061,7 +1061,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(sim.isHostileTo(foe, a)).toBe(true);
   });
 
-  it('an equal score at the 900s cap is a draw: Elo moves by the 0.5 draw math, no W/L', () => {
+  it('an equal score at the 720s cap is a draw: Elo moves by the 0.5 draw math, no W/L', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     // skew the team averages so the draw math must move points

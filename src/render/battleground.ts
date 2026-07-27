@@ -183,12 +183,31 @@ export function buildBattleground(
     group.add(mesh);
   }
 
-  // Team banners flanking each keep: pole cylinder + team-color cloth plane.
+  // Team standards flanking each keep: pole + crossbar + gold finial, with a
+  // swallowtail cloth HUNG from the crossbar (the old bare quad read as a
+  // square stuck on a stick, the playtest's "doesn't look like a banner").
   // Unlit cloth so the team read is identical on every tier.
   const poleGeo = new THREE.CylinderGeometry(BANNER_POLE_R, BANNER_POLE_R * 1.4, BANNER_POLE_H, 6);
-  const clothGeo = new THREE.PlaneGeometry(BANNER_CLOTH_W, BANNER_CLOTH_H);
-  ownGeos.push(poleGeo, clothGeo);
+  const crossbarGeo = new THREE.CylinderGeometry(
+    BANNER_POLE_R * 0.6,
+    BANNER_POLE_R * 0.6,
+    BANNER_CLOTH_W + 0.5,
+    6,
+  );
+  const finialGeo = new THREE.SphereGeometry(BANNER_POLE_R * 2.2, 10, 8);
+  // Swallowtail: full-width rectangle ending in a V notch at the bottom hem.
+  const clothShape = new THREE.Shape();
+  clothShape.moveTo(-BANNER_CLOTH_W / 2, 0);
+  clothShape.lineTo(BANNER_CLOTH_W / 2, 0);
+  clothShape.lineTo(BANNER_CLOTH_W / 2, -(BANNER_CLOTH_H - 0.55));
+  clothShape.lineTo(0, -BANNER_CLOTH_H);
+  clothShape.lineTo(-BANNER_CLOTH_W / 2, -(BANNER_CLOTH_H - 0.55));
+  clothShape.closePath();
+  const clothGeo = new THREE.ShapeGeometry(clothShape);
+  ownGeos.push(poleGeo, crossbarGeo, finialGeo, clothGeo);
   const poleMat = surfaceMat({ color: POLE_COLOR, roughness: 0.9 });
+  const finialMat = new THREE.MeshBasicMaterial({ color: 0xd8b34a });
+  ownMats.push(finialMat);
   const clothMats = new Map<number, THREE.MeshBasicMaterial>();
   const clothMat = (color: number): THREE.MeshBasicMaterial => {
     let mat = clothMats.get(color);
@@ -205,20 +224,33 @@ export function buildBattleground(
     pole.position.set(banner.x, BANNER_POLE_H / 2, banner.z);
     pole.castShadow = !opts.lowGfx;
     group.add(pole);
+    const finial = new THREE.Mesh(finialGeo, finialMat);
+    finial.position.set(banner.x, BANNER_POLE_H + 0.12, banner.z);
+    group.add(finial);
+    // Crossbar spreads inward toward the keep's centre line; the cloth hangs
+    // from it, top edge tight under the bar, facing down the field.
+    const inward = -Math.sign(banner.x || 1);
+    const barX = banner.x + inward * (BANNER_CLOTH_W / 2 + BANNER_POLE_R);
+    const bar = new THREE.Mesh(crossbarGeo, poleMat);
+    bar.rotation.z = Math.PI / 2;
+    bar.position.set(barX, BANNER_POLE_H - 0.35, banner.z);
+    group.add(bar);
     const cloth = new THREE.Mesh(clothGeo, clothMat(color));
-    // Hang from just under the pole tip, spread inward toward the keep's
-    // centre line; the plane faces down the field (double-sided), so the team
-    // color reads from mid-field.
-    cloth.position.set(
-      banner.x - Math.sign(banner.x || 1) * (BANNER_CLOTH_W / 2 + BANNER_POLE_R),
-      BANNER_POLE_H - BANNER_CLOTH_H / 2 - 0.15,
-      banner.z,
-    );
+    cloth.position.set(barX, BANNER_POLE_H - 0.42, banner.z);
     group.add(cloth);
   }
 
-  // Flag pedestals: a stone drum plus an additive team-color glow column, so
-  // each flag home reads across the field on every tier.
+  // Flag pedestals: a stepped stone plinth (wide base + drum + a solid
+  // team-color trim ring) under the additive glow column, so each flag home
+  // reads as a built MONUMENT across the field on every tier.
+  const pedestalBaseGeo = new THREE.CylinderGeometry(
+    PEDESTAL_R * 1.55,
+    PEDESTAL_R * 1.75,
+    PEDESTAL_H * 0.55,
+    12,
+  );
+  const trimGeo = new THREE.TorusGeometry(PEDESTAL_R * 0.98, 0.07, 8, 24);
+  ownGeos.push(pedestalBaseGeo, trimGeo);
   const pedestalGeo = new THREE.CylinderGeometry(PEDESTAL_R, PEDESTAL_R * 1.15, PEDESTAL_H, 10);
   const glowGeo = new THREE.CylinderGeometry(
     PEDESTAL_R * 0.72,
@@ -232,10 +264,18 @@ export function buildBattleground(
   const pedestalMat = surfaceMat({ color: STONE_COLOR, roughness: 0.9 });
   for (const stand of manifest.flagPedestals) {
     const color = BG_TEAM_COLORS[stand.team];
+    const base = new THREE.Mesh(pedestalBaseGeo, pedestalMat);
+    base.position.set(stand.x, (PEDESTAL_H * 0.55) / 2, stand.z);
+    base.receiveShadow = true;
+    group.add(base);
     const drum = new THREE.Mesh(pedestalGeo, pedestalMat);
-    drum.position.set(stand.x, PEDESTAL_H / 2, stand.z);
+    drum.position.set(stand.x, PEDESTAL_H * 0.55 + PEDESTAL_H / 2, stand.z);
     drum.receiveShadow = true;
     group.add(drum);
+    const trim = new THREE.Mesh(trimGeo, clothMat(color));
+    trim.rotation.x = Math.PI / 2;
+    trim.position.set(stand.x, PEDESTAL_H * 0.55 + PEDESTAL_H - 0.02, stand.z);
+    group.add(trim);
     const glowMat = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
@@ -246,7 +286,7 @@ export function buildBattleground(
     });
     ownMats.push(glowMat);
     const glow = new THREE.Mesh(glowGeo, glowMat);
-    glow.position.set(stand.x, PEDESTAL_H + PEDESTAL_GLOW_H / 2, stand.z);
+    glow.position.set(stand.x, PEDESTAL_H * 1.55 + PEDESTAL_GLOW_H / 2, stand.z);
     group.add(glow);
   }
 

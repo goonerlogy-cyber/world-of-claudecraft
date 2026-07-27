@@ -393,15 +393,18 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
         scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
       });
     }
-    // shield banners at the mouth corners greet the attacker's approach
+    // shield banners greet the attacker just inside the mouth, hung ON the
+    // side-wall inner faces (they used to stand free in the opening itself,
+    // which read as misplaced set dressing rather than a hung banner)
     const mouthZ = base.flag.z - dir * KEEP_MOUTH_DZ;
-    for (const mx of [-KEEP_HALF_X + BANNER_WALL_INSET + 1, KEEP_HALF_X - BANNER_WALL_INSET - 1]) {
+    const jambZ = mouthZ + dir * 1.6; // one step inside, on the side-wall span
+    for (const sx of [-1, 1]) {
       wallBanners.push({
         kind: kinds.mouth,
-        x: mx,
+        x: sx * (KEEP_HALF_X - BANNER_WALL_INSET),
         y: 0,
-        z: mouthZ,
-        ry: faceField,
+        z: jambZ,
+        ry: sx === -1 ? Math.PI / 2 : -Math.PI / 2, // cloth faces into the keep
         scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
       });
     }
@@ -423,10 +426,12 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     // north curtain carries blue at 5, -3 and -13.
     const curtainZ = dir * (BG_CURTAIN_Z + BANNER_WALL_INSET);
     const faceOwnField = dir === -1 ? Math.PI : 0; // cloth faces the team's field
+    // The gate-jamb shields sit two yards INTO the solid runs (hugging the
+    // exact gate edges left them reading detached beside the opening).
     const curtainSpots: { x: number; kind: string }[] = [
       { x: -5, kind: kinds.side },
-      { x: 7, kind: kinds.mouth },
-      { x: 19, kind: kinds.mouth },
+      { x: 5, kind: kinds.mouth },
+      { x: 21, kind: kinds.mouth },
     ];
     for (const spot of curtainSpots) {
       wallBanners.push({
@@ -454,15 +459,15 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   }
   // The contested crossings get their own light (playtest polish): two
   // torches inside each gatehouse room on its outer-wall inner face (the
-  // ambush corners read instead of sitting in murk), and one at each flank
-  // arch jamb on the curtain's field face. Every placement below is written
+  // ambush corners read instead of sitting in murk), and a pair on the sealed
+  // rampart-side curtain run's field face. Every placement below is written
   // for the SOUTH side and point-mirrored ((x,z) -> (-x,-z)), so neither
   // team's approach is better lit.
   const CROSSING_TORCHES: { x: number; z: number; ry: number }[] = [
     // south gatehouse (room x -32..-20, z -65..-47): west-wall inner face
     { x: -32 + TORCH_WALL_INSET, z: -52, ry: Math.PI / 2 },
     { x: -32 + TORCH_WALL_INSET, z: -61, ry: Math.PI / 2 },
-    // south flank arch (x 38..43 at z -56): jamb torches on the field face
+    // the sealed rampart-side curtain run (x 18..49 at z -56): field face
     { x: 36.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
     { x: 44.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
   ];

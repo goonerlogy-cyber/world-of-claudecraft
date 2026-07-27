@@ -8,7 +8,7 @@
 // facet type), so a single fixture covers both worlds.
 import * as THREE from 'three';
 import { describe, expect, it } from 'vitest';
-import { BattlegroundFx } from '../src/render/battleground_fx';
+import { BattlegroundFx, BG_RING_ALLY, BG_RING_ENEMY } from '../src/render/battleground_fx';
 import { BG_RUNE_BOB_AMP } from '../src/render/battleground_fx_core';
 import { type BgObjectRefs, buildBattlegroundObject } from '../src/render/battleground_props';
 import type { Vfx } from '../src/render/vfx';
@@ -181,7 +181,7 @@ describe('BattlegroundFx.update', () => {
     expect(lean.position.y).toBeCloseTo(0.5 + 0.1, 5);
   });
 
-  it('rides a team ring on every visible match player, hidden on corpses, torn down with the match', () => {
+  it('rides an identity ring on every visible match player: green ally, red enemy, hidden on corpses, torn down with the match', () => {
     const h = makeHarness();
     const match = h.sim.bgInfo?.match;
     if (!match) throw new Error('missing match');
@@ -202,13 +202,21 @@ describe('BattlegroundFx.update', () => {
     h.views.set(70, { group: g70 });
     h.views.set(71, { group: g71 });
     h.fx.update(0.1);
-    const ring70 = g70.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
-    const ring71 = g71.children.find((c) => c instanceof THREE.Mesh) as THREE.Mesh;
+    const ring70 = g70.children.find((c) => c instanceof THREE.Group) as THREE.Group;
+    const ring71 = g71.children.find((c) => c instanceof THREE.Group) as THREE.Group;
     expect(ring70).toBeTruthy();
     expect(ring71).toBeTruthy();
-    // each ring wears its OWN team hue (identity, independent of nameplates)
-    expect((ring70.material as THREE.MeshBasicMaterial).color.getHex()).toBe(BG_TEAM_COLORS[0]);
-    expect((ring71.material as THREE.MeshBasicMaterial).color.getHex()).toBe(BG_TEAM_COLORS[1]);
+    // RELATIVE colors, not team hues (the red-is-hostile convention): the
+    // viewer is Crimson (myTeam 0), so their teammate rings GREEN and the
+    // Azure enemy rings RED; the underlay mesh beneath is the contrast rim.
+    const colorMesh = (g: THREE.Group) => g.children[1] as THREE.Mesh;
+    expect((colorMesh(ring70).material as THREE.MeshBasicMaterial).color.getHex()).toBe(
+      BG_RING_ALLY,
+    );
+    expect((colorMesh(ring71).material as THREE.MeshBasicMaterial).color.getHex()).toBe(
+      BG_RING_ENEMY,
+    );
+    expect(ring70.children).toHaveLength(2); // dark underlay + color ring
     expect(ring70.visible).toBe(true);
     expect(ring71.visible).toBe(false); // a corpse shows no ring
     // match over: every ring leaves the scene graph

@@ -236,7 +236,7 @@ Press `G` to open the PvP window (Ravenrift is its primary tab, beside the 1v1 a
 
 - **Team wave respawns** (no graveyard run): each team's fallen rise together on a staggered wave clock at their keep, briefly spawn-protected until they act.
 - **Anti-turtle carrier fatigue**: hold the enemy flag too long and you take ever-increasing damage until it is captured, dropped, or returned. The flag also refuses to hide: grabbing it breaks stealth, and a carrier who turns invisible drops it on the spot.
-- **Three chambers, contested crossings**: two full-width curtain walls carve the field into each team's own field chamber and the walled Ruin Courtyard between them; every move between chambers passes the wide main gate, the narrow flank arch, or the gatehouse room with its offset doors. Each keep is sealed except its mouth, a low barricade breaks the straight charge into it, and **Sprint Runes** wait at the flag approaches and flanks. The whole map is point-symmetric, so neither team is favored.
+- **Three chambers, contested crossings**: two full-width curtain walls carve the field into each team's own field chamber and the walled Ruin Courtyard between them; every move between chambers passes the wide main gate or the gatehouse room with its offset doors. Each keep is sealed except its mouth, a low barricade breaks the straight charge into it, and **Sprint Runes** wait at the flag approaches and flanks. The whole map is point-symmetric, so neither team is favored.
 - A persistent per-character **battleground rating** (Elo over team averages, base 1500) with an all-time leaderboard (`GET /api/battleground/leaderboard`), and Honor for played-out wins and losses.
 
 ### Playing together
