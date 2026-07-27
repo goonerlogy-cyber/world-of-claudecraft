@@ -47,6 +47,7 @@ import {
 import { applyFocusBonus, applyFocusTierBonus, type FocusAllocation } from './professions/focus';
 import {
   effectiveFocusComponents,
+  forfeitsEveryMappedYield,
   HARVEST_COMPONENT_ITEMS,
   type HarvestTier,
   harvestTierQuantity,
@@ -222,7 +223,14 @@ export function autoLootForParty(ctx: SimContext, mobId: number, triggerPid: num
  * #1142 semantics: empty or covering every tagged component spreads across
  * every tag (the #1141 behavior); picking fewer concentrates the effort for
  * a higher tier per component, per resolveCorpseFocusHarvest in
- * professions/gathering.ts.
+ * professions/gathering.ts. That array is sanitized before any of it is read
+ * (effectiveFocusComponents): repeats collapse (#2474) and tags this corpse
+ * does not carry drop out (#2504), so `['hide','hide']` and `['hide','junk']`
+ * are both exactly `['hide']` here and in the pre-claim capacity gate below,
+ * and a pick of nothing but junk is exactly the empty pick (it spreads).
+ * A pick that survives sanitization but names only families with no item
+ * behind them is REFUSED pre-claim instead (#2509, see the gate below), so no
+ * selection can spend a single-use corpse for nothing.
  */
 export function harvestCorpse(
   ctx: SimContext,
@@ -271,6 +279,61 @@ export function harvestCorpse(
   // derivation is rng-free, so a refused command below still draws nothing.
   const chosen =
     components ?? (componentTags ?? []).filter((tag) => (meta.townFocus[tag] ?? 0) > 0);
+  // #2509: refuse a pick that forfeits EVERYTHING this corpse had to give,
+  // before the claim is spent. Measured pre-fix on old_greyjaw (hide, fang,
+  // claw) with ['claw']: the claim was spent, one tier roll was drawn, nothing
+  // was granted, and the harvestResult ledger was skipped (it is gated on
+  // `granted.length > 0`), so the player burned a single-use corpse for no
+  // items and NO chat line at all. Nine shipped templates mix mapped and
+  // unmapped families, and on the three `gills, hide` murlocs a single
+  // checkbox is enough to hit it.
+  //
+  // Placed with the capacity gate below, for the same three reasons that one
+  // is here: pre-claim (a refusal must leave the corpse for the next
+  // harvester), rng-free (a refused command must not shift the world's draw
+  // order), and reading the same `effectiveFocusComponents` set the roll will.
+  // It fires exactly when the `wanted` loop below would come out empty, and
+  // the bags-full gate needs `wanted` non-empty, so neither can mask the
+  // other's message. The predicate itself lives beside effectiveFocusComponents
+  // (professions/gathering.ts) because the picker's view-core mirrors it; one
+  // rule, one place, or the two drift the first time the spread rule moves.
+  //
+  // Deliberately NOT narrowed inside effectiveFocusComponents the way an
+  // uncarried tag is (#2504): the concentration bonus is
+  // `taggedComponents.length - effectiveChosen.length`, so dropping a
+  // carried-but-unmapped entry from the pick would raise the bonus on every
+  // mixed pick and break the documented "an explicit full cover spreads
+  // exactly like an empty pick" equivalence. Measured on old_greyjaw seed 5:
+  // ['hide','claw'] yields rough_hide 3 at bonus 1 today and would become the
+  // bonus-2 ['hide'] world (rough_hide 4 plus a pristine_hide), and the
+  // check-every-box ['hide','fang','claw'] would stop spreading. This refusal
+  // re-tunes nothing: every pick that yields anything behaves exactly as before.
+  //
+  // Scope, the other half of the #2504 comment: that one covers a tag the
+  // corpse does not CARRY, which sanitizes away and spreads. This covers a tag
+  // it carries that HARVEST_COMPONENT_ITEMS does not map (claw, tusk, gills,
+  // horn). A corpse whose tags ALL map to nothing (fen_troll: claw, tusk) is
+  // untouched on purpose: no pick forfeits anything there, so it keeps the
+  // documented deferred-design path (claim spent, zero yield, zero emits) that
+  // tests/corpse_harvest_sim.test.ts and
+  // tests/corpse_harvest_result_event.test.ts both pin. That is what the
+  // predicate's second half buys, and it is why the pin stays green rather
+  // than being re-argued away.
+  //
+  // This also covers the DERIVED pick, not just an explicit one: an omitted
+  // `components` resolves through meta.townFocus, so a persisted `{ claw: 5 }`
+  // makes the plain interact press take this arm too. Refusing is the better
+  // outcome there as well: the corpse survives for a pick that can pay out,
+  // instead of being burned by a focus the player cannot see. #2511 has since
+  // closed the route that could WRITE such a focus (set_town_focus rejects a
+  // key outside HARVEST_COMPONENT_ITEMS, and the load arm drops one an older
+  // save carries), so this arm is now defense in depth on the derived pick
+  // rather than a reachable path; tests/corpse_harvest_sim.test.ts still
+  // drives it by poking meta directly, which is what a pre-#2511 save was.
+  if (forfeitsEveryMappedYield(componentTags ?? [], chosen)) {
+    ctx.error(meta.entityId, 'Nothing you selected can be harvested from that corpse.');
+    return;
+  }
   const wanted: InvSlot[] = [];
   for (const component of effectiveFocusComponents(componentTags ?? [], chosen)) {
     const wantedItemId = HARVEST_COMPONENT_ITEMS[component];
