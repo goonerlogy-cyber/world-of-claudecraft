@@ -27,16 +27,17 @@ export interface SweepHit {
   /** Outward unit contact normal in world XZ (points from surface to body). */
   nx: number;
   nz: number;
-  /** Index into the queried collider list. */
-  index: number;
 }
 
 // Rotate a world offset into an OBB's local frame (three.js rotation.y
-// convention, matching colliders.ts rotY).
-function rotY(lx: number, lz: number, rot: number): { x: number; z: number } {
+// convention, matching colliders.ts rotY), writing into `out`: this runs
+// two to three times per OBB sweep on the per-tick hot path, so it must not
+// allocate.
+function rotYInto(lx: number, lz: number, rot: number, out: { x: number; z: number }): void {
   const c = Math.cos(rot);
   const s = Math.sin(rot);
-  return { x: lx * c + lz * s, z: -lx * s + lz * c };
+  out.x = lx * c + lz * s;
+  out.z = -lx * s + lz * c;
 }
 
 // Scratch, module-local: this runs per body per tick, allocation-free.
@@ -108,12 +109,8 @@ export function sweepCollider(
 
   // OBB: work in the box's local frame, where it is an axis-aligned rounded
   // rectangle of extents (hw + r, hd + r) with corner radius r.
-  const ls = rotY(x - c.x, z - c.z, -c.rot);
-  const ld = rotY(dx, dz, -c.rot);
-  localStart.x = ls.x;
-  localStart.z = ls.z;
-  localDelta.x = ld.x;
-  localDelta.z = ld.z;
+  rotYInto(x - c.x, z - c.z, -c.rot, localStart);
+  rotYInto(dx, dz, -c.rot, localDelta);
   const ex = c.hw + r;
   const ez = c.hd + r;
   const sx = localStart.x;
@@ -127,10 +124,10 @@ export function sweepCollider(
     const pz = ez - Math.abs(sz);
     const lnx = px <= pz ? Math.sign(sx || 1) : 0;
     const lnz = px <= pz ? 0 : Math.sign(sz || 1);
-    const wn = rotY(lnx, lnz, c.rot);
+    rotYInto(lnx, lnz, c.rot, worldNormal);
     out.t = 0;
-    out.nx = wn.x;
-    out.nz = wn.z;
+    out.nx = worldNormal.x;
+    out.nz = worldNormal.z;
     return true;
   }
 
@@ -190,17 +187,15 @@ export function sweepCollider(
     const cornerX = Math.sign(hx) * c.hw;
     const cornerZ = Math.sign(hz) * c.hd;
     if (!sweepPointCircle(sx, sz, vx, vz, cornerX, cornerZ, r, out)) return false;
-    const wn = rotY(out.nx, out.nz, c.rot);
-    out.nx = wn.x;
-    out.nz = wn.z;
+    rotYInto(out.nx, out.nz, c.rot, worldNormal);
+    out.nx = worldNormal.x;
+    out.nz = worldNormal.z;
     return true;
   }
 
   const lnx = enterAxis === 1 ? enterSign : 0;
   const lnz = enterAxis === 2 ? enterSign : 0;
-  const wn = rotY(lnx, lnz, c.rot);
-  worldNormal.x = wn.x;
-  worldNormal.z = wn.z;
+  rotYInto(lnx, lnz, c.rot, worldNormal);
   out.t = tEnter;
   out.nx = worldNormal.x;
   out.nz = worldNormal.z;
@@ -237,17 +232,19 @@ export function overlapCollider(
     out.depth = min - d;
     return true;
   }
-  const l = rotY(x - c.x, z - c.z, -c.rot);
+  rotYInto(x - c.x, z - c.z, -c.rot, localStart);
   const ex = c.hw + r;
   const ez = c.hd + r;
-  if (Math.abs(l.x) >= ex || Math.abs(l.z) >= ez) return false;
-  const px = ex - Math.abs(l.x);
-  const pz = ez - Math.abs(l.z);
-  const lnx = px <= pz ? Math.sign(l.x || 1) : 0;
-  const lnz = px <= pz ? 0 : Math.sign(l.z || 1);
-  const wn = rotY(lnx, lnz, c.rot);
-  out.nx = wn.x;
-  out.nz = wn.z;
+  const lx = localStart.x;
+  const lz = localStart.z;
+  if (Math.abs(lx) >= ex || Math.abs(lz) >= ez) return false;
+  const px = ex - Math.abs(lx);
+  const pz = ez - Math.abs(lz);
+  const lnx = px <= pz ? Math.sign(lx || 1) : 0;
+  const lnz = px <= pz ? 0 : Math.sign(lz || 1);
+  rotYInto(lnx, lnz, c.rot, worldNormal);
+  out.nx = worldNormal.x;
+  out.nz = worldNormal.z;
   out.depth = Math.min(px, pz);
   return true;
 }
