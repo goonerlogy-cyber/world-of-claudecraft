@@ -7447,6 +7447,7 @@ type BgExtraKey =
   | 'teamAzure'
   | 'errInBattleground'
   | 'errQueueDead'
+  | 'errQueueInMatch'
   | 'errMemberQueued'
   | 'errNoFlag'
   | 'errPartyTooLarge'
@@ -7469,6 +7470,7 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   teamAzure: 'Azure',
   errInBattleground: 'You are already in a battleground.',
   errQueueDead: 'You cannot queue for Ravenrift while dead.',
+  errQueueInMatch: 'You cannot queue for Ravenrift while in another match.',
   errMemberQueued: 'A party member is already queued or in a match.',
   errNoFlag: 'There is no flag within reach.',
   errPartyTooLarge: 'Your party is too large for Ravenrift. It queues parties of up to 5.',
@@ -7492,6 +7494,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '蔚蓝队',
     errInBattleground: '你已经在战场中了。',
     errQueueDead: '死亡状态下无法排队进入鸦裂谷。',
+    errQueueInMatch: '比赛进行中无法排队进入鸦裂谷。',
     errMemberQueued: '有队友已在队列或比赛中。',
     errNoFlag: '附近没有可夺取的旗帜。',
     errPartyTooLarge: '你的队伍人数超出鸦裂谷上限。最多5人小队可排队。',
@@ -7513,6 +7516,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '蔚藍隊',
     errInBattleground: '你已經在戰場中了。',
     errQueueDead: '死亡狀態下無法排隊進入鴉裂谷。',
+    errQueueInMatch: '比賽進行中無法排隊進入鴉裂谷。',
     errMemberQueued: '有隊友已在佇列或比賽中。',
     errNoFlag: '附近沒有可奪取的旗幟。',
     errPartyTooLarge: '你的隊伍人數超出鴉裂谷上限。最多5人隊伍可排隊。',
@@ -7535,6 +7539,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: 'アズール',
     errInBattleground: 'すでに戦場にいます。',
     errQueueDead: '死亡中はレイヴンリフトのキューに参加できません。',
+    errQueueInMatch: '別の試合中はレイヴンリフトのキューに参加できません。',
     errMemberQueued: 'パーティメンバーがすでにキューまたは試合に参加しています。',
     errNoFlag: '手の届く範囲に旗がありません。',
     errPartyTooLarge:
@@ -7561,6 +7566,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '청람팀',
     errInBattleground: '이미 전장에 있습니다.',
     errQueueDead: '죽은 상태로는 레이븐리프트 대기열에 참가할 수 없습니다.',
+    errQueueInMatch: '다른 경기 중에는 레이븐리프트 대기열에 참가할 수 없습니다.',
     errMemberQueued: '파티원이 이미 대기열이나 경기에 참가 중입니다.',
     errNoFlag: '근처에 잡을 수 있는 깃발이 없습니다.',
     errPartyTooLarge:
@@ -7586,6 +7592,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: 'Лазурных',
     errInBattleground: 'Вы уже находитесь на поле боя.',
     errQueueDead: 'Нельзя встать в очередь Вороньего Разлома, будучи мертвым.',
+    errQueueInMatch: 'Нельзя встать в очередь Вороньего Разлома во время другого матча.',
     errMemberQueued: 'Кто-то из группы уже в очереди или в матче.',
     errNoFlag: 'Поблизости нет флага, который можно взять.',
     errPartyTooLarge:
@@ -8821,6 +8828,10 @@ const RULES: Rule[] = [
   { re: /^You seize a Ward Rune!$/, build: () => tBg('seizeWardRune') },
   { re: /^You are already in a battleground\.$/, build: () => tBg('errInBattleground') },
   { re: /^You cannot queue for Ravenrift while dead\.$/, build: () => tBg('errQueueDead') },
+  {
+    re: /^You cannot queue for Ravenrift while in another match\.$/,
+    build: () => tBg('errQueueInMatch'),
+  },
   {
     re: /^A party member is already queued or in a match\.$/,
     build: () => tBg('errMemberQueued'),

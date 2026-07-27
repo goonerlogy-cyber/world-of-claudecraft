@@ -1727,6 +1727,10 @@ export class GameServer {
     // JAILED_BLOCKED_COMMANDS). A live Vale Cup match resolves as a desertion,
     // same as leave(); idempotent when they are in neither.
     this.sim.arenaQueueLeave(target.pid);
+    // A live arena/fiesta match resolves as a desertion too: leaving the
+    // arenaMatches entry behind silently gated releaseSpirit for the rest of
+    // the mode's duration (and let the arena timeout teleport a prisoner).
+    this.sim.arenaResolveDesertion(target.pid);
     this.sim.vcupQueueLeave(target.pid);
     this.sim.vcupResolveDesertion(target.pid);
     this.sim.leaveCardMinigameEntirely(target.pid);

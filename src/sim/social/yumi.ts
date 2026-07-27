@@ -99,7 +99,9 @@ export function pruneYumiQueue(ctx: SimContext, fmt: YumiFormat): void {
   const keep = (unit: ArenaQueueUnit) =>
     unit.pids.every((id) => {
       const e = ctx.entities.get(id);
-      return !!e && !e.dead && !ctx.arenaMatches.has(id);
+      // A Ravenrift member must never be seated into a yumi maze mid-match
+      // (the cross-queue hole behind the stale-arenaMatches release bug).
+      return !!e && !e.dead && !ctx.arenaMatches.has(id) && !ctx.bgMatches.has(id);
     });
   if (fmt === 'yumi3') ctx.arenaQueueYumi3 = ctx.arenaQueueYumi3.filter(keep);
   else ctx.arenaQueueYumi5 = ctx.arenaQueueYumi5.filter(keep);
@@ -179,8 +181,12 @@ export function startYumiMatch(
   const metas = allPids.map((pid) => ctx.players.get(pid));
   if (slot === null || entities.some((e) => !e) || metas.some((m) => !m)) {
     const queue = yumiQueue(ctx, format);
-    const okA = teamA.every((pid) => ctx.entities.get(pid) && !ctx.arenaMatches.has(pid));
-    const okB = teamB.every((pid) => ctx.entities.get(pid) && !ctx.arenaMatches.has(pid));
+    const okA = teamA.every(
+      (pid) => ctx.entities.get(pid) && !ctx.arenaMatches.has(pid) && !ctx.bgMatches.has(pid),
+    );
+    const okB = teamB.every(
+      (pid) => ctx.entities.get(pid) && !ctx.arenaMatches.has(pid) && !ctx.bgMatches.has(pid),
+    );
     if (okB) queue.unshift({ pids: teamB, rating: arenaMod.arenaTeamRating(ctx, teamB, '2v2') });
     if (okA) queue.unshift({ pids: teamA, rating: arenaMod.arenaTeamRating(ctx, teamA, '2v2') });
     return;

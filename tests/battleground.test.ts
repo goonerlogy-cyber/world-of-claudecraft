@@ -293,6 +293,58 @@ describe('Ravenrift: the post-match hold (frozen result screen)', () => {
   });
 });
 
+describe('Ravenrift: release is never gated by a stale arena entry (playtest regression)', () => {
+  it('releases into the team graveyard even while arenaMatches still holds an entry', () => {
+    // The playtest bug: a leaked arenaMatches entry (jail/cross-queue holes)
+    // made releasePlayerSpirit silently no-op for one player all match. The
+    // bg membership must WIN over the arena guard.
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const victim = match.teams[0][1];
+    kill(sim, victim, match.teams[1][0]);
+    sim.tick();
+    // The stale leak lands AFTER the death (no tick runs over the stub entry:
+    // updateArena would choke on a shapeless match; the release path only
+    // asks arenaMatches.has, which is exactly what the real leak exposed).
+    sim.arenaMatches.set(victim, {} as never);
+    sim.releaseSpirit(victim);
+    const e = sim.entities.get(victim)!;
+    expect(e.ghost).toBe(true);
+    expect(inGraveyard(sim, match, victim, 0)).toBe(true);
+    sim.arenaMatches.delete(victim);
+  });
+
+  it('refuses the Ravenrift queue while in an arena match (the front door)', () => {
+    const sim = makeWorld();
+    const a = sim.addPlayer('warrior', 'A');
+    tp(sim, a, 0, -40);
+    sim.entities.get(a)!.level = BG_MIN_LEVEL;
+    sim.arenaMatches.set(a, {} as never);
+    sim.bgQueueJoin(a);
+    expect(sim.bgInfoFor(a)!.queued).toBe(false);
+    sim.arenaMatches.delete(a);
+    sim.bgQueueJoin(a);
+    expect(sim.bgInfoFor(a)!.queued).toBe(true);
+  });
+
+  it('a fighter seated by the form-up never keeps ghost/corpse state into the battle', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    expect(match.state).toBe('countdown');
+    const victim = match.teams[0][0];
+    kill(sim, victim); // environmental death during the form-up
+    sim.tick();
+    sim.releaseSpirit(victim);
+    expect(sim.entities.get(victim)!.ghost).toBe(true);
+    toActive(sim, match);
+    const e = sim.entities.get(victim)!;
+    expect(e.dead).toBe(false);
+    expect(e.ghost).toBe(false);
+    expect(e.corpsePos).toBe(null);
+  });
+});
+
 describe('Ravenrift: the level 20 queue floor', () => {
   it('refuses an under-leveled solo queue and admits exactly BG_MIN_LEVEL', () => {
     expect(BG_MIN_LEVEL).toBe(20);

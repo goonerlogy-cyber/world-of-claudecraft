@@ -174,6 +174,10 @@ export function bgQueueJoin(ctx: SimContext, pid?: number, opts?: { bypassLevel?
     ctx.error(id, 'You cannot queue for Ravenrift while dead.');
     return;
   }
+  if (ctx.arenaMatches.has(id)) {
+    ctx.error(id, 'You cannot queue for Ravenrift while in another match.');
+    return;
+  }
   if (!opts?.bypassLevel && r.e.level < BG_MIN_LEVEL) {
     ctx.error(id, `Ravenrift requires level ${BG_MIN_LEVEL}.`);
     return;
@@ -197,7 +201,7 @@ export function bgQueueJoin(ctx: SimContext, pid?: number, opts?: { bypassLevel?
   }
   const members = party ? [...party.members] : [id];
   for (const m of members) {
-    if (ctx.bgMatches.has(m) || bgGroupContaining(ctx, m)) {
+    if (ctx.bgMatches.has(m) || ctx.arenaMatches.has(m) || bgGroupContaining(ctx, m)) {
       ctx.error(id, 'A party member is already queued or in a match.');
       return;
     }
@@ -343,7 +347,12 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
     match.waveIn = [BG_WAVE_PERIOD, BG_WAVE_OFFSET];
     for (const pid of bgAllPids(match)) {
       const e = ctx.entities.get(pid);
-      if (e) ctx.readyArenaFighter(e, { clearPrep: true });
+      if (e) {
+        ctx.readyArenaFighter(e, { clearPrep: true });
+        e.ghost = false;
+        e.corpsePos = null;
+        e.corpseInstanceId = null;
+      }
       ctx.emit({
         type: 'log',
         text: 'The Ravenrift battle begins: take their flag!',
@@ -536,6 +545,11 @@ function placeInBg(
   e.prevFacing = e.facing;
   ctx.rebucket(e);
   ctx.readyArenaFighter(e, { clearPrep: true });
+  // readyArenaFighter revives but does NOT clear the spirit arm: a fighter
+  // seated (or re-seated by the form-up hold) must never stay a ghost.
+  e.ghost = false;
+  e.corpsePos = null;
+  e.corpseInstanceId = null;
 }
 
 function spawnFlagEntity(ctx: SimContext, flag: BgFlagState): void {
