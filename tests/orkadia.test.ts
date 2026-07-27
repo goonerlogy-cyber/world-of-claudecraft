@@ -6,9 +6,21 @@
 // Deeds pair, so a future edit that drops any of them reds here.
 
 import { describe, expect, it } from 'vitest';
+import { resolvePosition } from '../src/sim/colliders';
 import { DEEDS } from '../src/sim/content/deeds';
 import { ORKADIA_DUNGEON_DEFS, ORKADIA_MOBS } from '../src/sim/content/orkadia';
-import { BUILTIN_WORLD, DUNGEONS, MOBS, zoneAt } from '../src/sim/data';
+import {
+  ARENA_X,
+  BUILTIN_WORLD,
+  DELVE_BAND_X_MIN,
+  DUNGEONS,
+  dungeonAt,
+  instanceOrigin,
+  isArenaPos,
+  isDelvePos,
+  MOBS,
+  zoneAt,
+} from '../src/sim/data';
 import { enterDungeon } from '../src/sim/instances/dungeons';
 import { Sim } from '../src/sim/sim';
 import type { Entity, WorldContent } from '../src/sim/types';
@@ -89,6 +101,36 @@ describe('Orkadia dungeon content', () => {
     expect(templates).toContain('orkadia_marauder');
     // every spawned mob is an orc.
     for (const t of templates) expect(t.startsWith('orkadia_')).toBe(true);
+  });
+
+  it('classifies its instance origin as a dungeon, not the arena band (pitch-black-room regression)', () => {
+    // Root cause of the "Orkadia renders completely black, no lights" bug: index 6
+    // puts the instance origin at ARENA_X + 300, past the arena anchor (ARENA_X)
+    // but still west of the delve band. The old wide arena band (ARENA_X_MIN up to
+    // the delve band) swallowed it, so dungeonAt() returned null: the renderer took
+    // the arena branch and never built the interior (no geometry, no torch lights),
+    // and the collider resolver routed the player against ARENA_COLLIDERS instead of
+    // the Orkadia (Sanctum) set. The origin must classify as the Orkadia dungeon.
+    const origin = instanceOrigin(DUNGEONS.orkadia.index, 0);
+    expect(origin.x).toBeGreaterThan(ARENA_X); // sits past the arena anchor...
+    expect(origin.x).toBeLessThan(DELVE_BAND_X_MIN); // ...but west of the delve band
+    expect(dungeonAt(origin.x)?.id).toBe('orkadia');
+    expect(dungeonAt(origin.x)?.interior).toBe('orkadia');
+    expect(isArenaPos(origin.x)).toBe(false);
+    expect(isDelvePos(origin.x)).toBe(false);
+  });
+
+  it('resolves collision against its own interior colliders, not the arena', () => {
+    // A point buried in the Sanctum-derived side wall (instance-local |x| = 23,
+    // deep along z where only the dungeon side wall exists, not the short arena
+    // wall) must be pushed back out. Under the classification bug this position
+    // routed to ARENA_COLLIDERS ~300u away and moved not at all (the player clipped
+    // straight through Orkadia's walls into a black void).
+    const origin = instanceOrigin(DUNGEONS.orkadia.index, 0);
+    const wallPoint = { x: origin.x + 23, z: origin.z + 100 };
+    const resolved = resolvePosition(1, wallPoint.x, wallPoint.z, 1);
+    const moved = Math.hypot(resolved.x - wallPoint.x, resolved.z - wallPoint.z);
+    expect(moved).toBeGreaterThan(0.5); // collision fired: the Orkadia colliders are live
   });
 
   it('authors the Book of Deeds clear pair targeting the dungeon', () => {
