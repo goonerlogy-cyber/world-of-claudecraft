@@ -1,5 +1,8 @@
 # Orkadia Open World asset generation report
 
+El proceso completo, las decisiones de diseño, los prompts reutilizables y el checklist para
+futuros agentes están documentados en `docs/prd/orkadia-rework-playbook.md`.
+
 Starting Tripo balance: 3850 credits (0 frozen)
 
 Ending Tripo balance: 2660 credits (0 frozen)
