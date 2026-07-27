@@ -305,6 +305,10 @@ export function moveCharacter(
   let remZ = dz;
   let blocked = false;
   let stepped = 0;
+  // Entry state for the terrain-gate rollback below: rolling the position
+  // back to the depenetrated origin must also roll back any step-up the
+  // discarded motion committed, or `stepped`/`feetY` lie for this tick.
+  const entryFeetY = feetY;
 
   for (let iter = 0; iter < MAX_SLIDE_ITERATIONS; iter++) {
     const len = Math.hypot(remX, remZ);
@@ -430,9 +434,14 @@ export function moveCharacter(
       const gz = slope?.z ?? 0;
       const glen = Math.hypot(gx, gz);
       // Back to the DEPENETRATED origin, never the raw input: a body that
-      // started embedded must keep the push-out that freed it.
+      // started embedded must keep the push-out that freed it. The rollback
+      // covers the WHOLE horizontal move, so any step-up committed inside the
+      // discarded motion unwinds with it: the reported feet and `stepped`
+      // stay honest, and the step smoother never sees a phantom up-then-down.
       px = depen.x;
       pz = depen.z;
+      feetY = entryFeetY;
+      stepped = 0;
       if (glen > 1e-6) {
         const ux = gx / glen;
         const uz = gz / glen;

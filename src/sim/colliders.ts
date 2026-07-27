@@ -1118,7 +1118,11 @@ function interiorCollidersFor(dungeonId: string | null, interior: string): Colli
 // ---------------------------------------------------------------------------
 
 const GRID_CELL = 16;
-const MAX_BODY_RADIUS = 0.8; // largest mover we resolve for
+/** Largest mover we resolve for. Doubles as the grid's registration margin:
+ *  every collider is inserted into all cells its bounds inflated by this
+ *  touch, which is what makes the single-cell support and glue reads below
+ *  complete (their reach beyond a collider's bounds never exceeds it). */
+export const MAX_BODY_RADIUS = 0.8;
 /** Fence/blocker wall half-thickness (yards); the editor's blocker overlay
  * reuses it so the drawn wall matches the collider exactly. */
 export const FENCE_HALF_DEPTH = 0.35;
@@ -1440,6 +1444,12 @@ export function supportHeightAt(
     return bestStandableTop(interiorCollidersFor(dungeonId, interior), x - ox, z - oz, r, maxY);
   }
   const grid = gridFor(seed);
+  // A single-cell read is complete BY CONSTRUCTION: gridFor registers every
+  // collider into all cells its bounds inflated by MAX_BODY_RADIUS (0.8)
+  // touch, and support can only reach r * SUPPORT_OVERLAP (at most 0.4)
+  // beyond a collider's footprint, so any collider able to support a body in
+  // this cell is registered here. tests/physics_audit_world.test.ts pins both
+  // the margin arithmetic and a boundary-straddling case.
   const list = grid.cells.get(cellKeyAt(x, z));
   if (!list) return -Infinity;
   return bestStandableTop(list, x, z, r, maxY);
@@ -1474,10 +1484,21 @@ export function slopeGlueHeight(
     oz = inst.oz;
   } else {
     const grid = gridFor(seed);
+    // The FROM cell is complete for the same registration-margin reason as
+    // supportHeightAt: the glued surface holds the feet at `fromX/fromZ`, so
+    // its bounds sit within the body's reach there, and one tick's stride
+    // plus the support reach stays inside MAX_BODY_RADIUS.
     list = grid.cells.get(cellKeyAt(fromX, fromZ));
   }
   if (!list) return -Infinity;
-  const reachR = r * SUPPORT_OVERLAP;
+  // Full body radius, deliberately wider than strict support's overlap gate:
+  // this query only ever follows the surface ALREADY underfoot, so holding
+  // the body on it while ANY of its disc still covers the top is the honest
+  // walk-to-the-edge. It is also what keeps the eventual step-down clean: the
+  // drop fires only once the disc fully clears the face, so the landing can
+  // never start embedded, and depenetration can never convert the overlap
+  // into free forward distance (the kerb-crossing speed exploit).
+  const reachR = r;
   let best = -Infinity;
   for (const c of list) {
     if (!c.standable || c.moveTopY === undefined) continue;

@@ -492,3 +492,44 @@ describe('parkour course parity: kernel vs live Sim, bit for bit', () => {
     expect(sim.player.pos.z).toBeGreaterThan(crateZ + 1);
   });
 });
+
+describe('step-up cannot manufacture speed', () => {
+  // The step commit advances the body up to STEP_COMMIT_DISTANCE while
+  // consuming only the remaining motion, so a single step-up can gain a
+  // fraction of one tick's run. This pins that the gain cannot COMPOUND: a
+  // whole staircase of kerbs crossed at a held run stays within a bounded
+  // margin of the same run on flat ground.
+  it('a staircase of kerbs averages within 5 percent of flat run speed', () => {
+    const CX = COURSE.x;
+    const distanceOver = (benches: WorldContent['props']['benches']): number => {
+      setActiveWorldContent(world({ benches }));
+      const sim = makeSim();
+      teleport(sim, CX, COURSE.z0 + 1);
+      const meta = sim.players.get(sim.player.id);
+      if (!meta) throw new Error('no meta');
+      const startZ = sim.player.pos.z;
+      for (let i = 0; i < 80; i++) {
+        Object.assign(meta.moveInput, mi({ forward: true }));
+        sim.tick();
+      }
+      return sim.player.pos.z - startZ;
+    };
+    // Kerb-height standables (the civic bench draws 0.40 tall, well inside
+    // MAX_STEP_HEIGHT) laid across the lane every 1.8 yd: every crossing is
+    // a fresh step-up commit (up, along the seat, off the far side).
+    const staircase = Array.from({ length: 8 }, (_, i) => ({
+      id: `kerb_${i}`,
+      assetId: '/models/dungeon/bench.glb',
+      x: CX,
+      z: COURSE.z0 + 3 + i * 1.8,
+      w: 1.8,
+      d: 0.6,
+      rot: 0,
+      height: 1,
+    }));
+    const course = distanceOver(staircase);
+    const flat = distanceOver([]);
+    expect(course).toBeGreaterThan(flat * 0.5); // the staircase was crossed
+    expect(course).toBeLessThanOrEqual(flat * 1.05);
+  });
+});

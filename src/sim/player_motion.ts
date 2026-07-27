@@ -17,7 +17,7 @@
 // deps at the identical call site, so the Sim's global draw order is unchanged
 // by the extraction.
 
-import { isInstancedRegion, MANTLE_REACH, slopeGlueHeight, supportHeightAt } from './colliders';
+import { isInstancedRegion, MANTLE_REACH, slopeGlueHeight } from './colliders';
 import { isRooted, isStunned } from './combat/cc';
 import { PLAYER_BODY_RADIUS, PLAYER_MAX_CLIMB_SLOPE, PLAYER_SWIM_DEPTH } from './pathfind';
 import {
@@ -477,27 +477,32 @@ function verticalPass(
     // stutter), so descent and ascent share the same reach.
     const run = Math.hypot(p.pos.x - p.prevPos.x, p.pos.z - p.prevPos.z);
     const maxStepDown = Math.max(MAX_STEP_HEIGHT, 0.4 + run * MAX_CLIMB_SLOPE);
+    // The slope glue comes FIRST, before either step-down or walk-off: it
+    // re-samples exactly the surface the body stood on at its previous
+    // position, at full body-radius reach. That covers two cases the strict
+    // support query (capped at the feet, the anti-levitation rule) cannot:
+    // walking UPHILL on a pitched top (a roof gable, a coffin lid), and
+    // walking OFF any top's edge, where the body stays on the surface while
+    // any of its disc still covers it. The second half is load-bearing for
+    // honesty: dropping the body the moment strict support ends would seat
+    // it still overlapping the prop's face, and the following depenetration
+    // would convert that overlap into free forward distance every crossing
+    // (the kerb speed exploit tests/parkour.test.ts pins away).
+    const glue = slopeGlueHeight(
+      deps.seed,
+      p.prevPos.x,
+      p.prevPos.z,
+      p.pos.x,
+      p.pos.z,
+      BODY_RADIUS,
+      p.pos.y,
+    );
+    if (glue > -Infinity && Math.abs(glue - p.pos.y) <= MAX_STEP_HEIGHT) {
+      p.pos.y = glue;
+      p.fallStartY = glue;
+      return;
+    }
     if (support < p.pos.y - maxStepDown) {
-      // Before calling this a walk-off: a body standing ON a pitched surface
-      // (a roof gable, a coffin lid) walking UPHILL finds no strict support
-      // (the query is capped at the feet so a taller prop BESIDE the body
-      // can never levitate it), but the surface underfoot itself may rise.
-      // The slope glue re-samples exactly the surface the body stood on at
-      // its previous position and carries the feet up it, within a stride.
-      const glue = slopeGlueHeight(
-        deps.seed,
-        p.prevPos.x,
-        p.prevPos.z,
-        p.pos.x,
-        p.pos.z,
-        BODY_RADIUS,
-        p.pos.y,
-      );
-      if (glue > -Infinity && Math.abs(glue - p.pos.y) <= MAX_STEP_HEIGHT) {
-        p.pos.y = glue;
-        p.fallStartY = glue;
-        return;
-      }
       // Walked off a ledge or a prop top (not a jump), so fences still block.
       // Momentum carries: the horizontal velocity this tick keeps driving the
       // fall (steerable via air control) instead of dropping dead straight.

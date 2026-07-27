@@ -5,15 +5,18 @@ import {
   DOCK_HUT_ROOF_TOP,
   isBlocked,
   MANTLE_REACH,
+  MAX_BODY_RADIUS,
   STALL_CANOPY_EAVE,
   STALL_CANOPY_TOP,
+  SUPPORT_OVERLAP,
+  supportHeightAt,
 } from '../src/sim/colliders';
 import { BUILTIN_WORLD, setActiveWorldContent } from '../src/sim/data';
 import { PLAYER_BODY_RADIUS } from '../src/sim/pathfind';
 import { MAX_STEP_HEIGHT } from '../src/sim/physics';
 import { findLedgeGrab, LEDGE_GRAB_MAX, LEDGE_GRAB_MIN } from '../src/sim/physics/ledge';
 import { GRAVITY, JUMP_VELOCITY } from '../src/sim/player_motion';
-import { GRAVE_COUNT, graveHeight, graveOffset } from '../src/sim/prop_layout';
+import { graveHeight, graveOffset } from '../src/sim/prop_layout';
 import { Sim } from '../src/sim/sim';
 import type { Entity, WorldContent } from '../src/sim/types';
 import { groundHeight, terrainHeight, terrainSteepnessAt, WATER_LEVEL } from '../src/sim/world';
@@ -272,6 +275,33 @@ describe('the climb through a live Sim', () => {
       if (p.onGround && Math.abs(p.pos.y - crateTop) < 0.05) reachedTop = true;
     }
     expect(reachedTop).toBe(true);
+  });
+});
+
+describe('the support query across grid-cell boundaries', () => {
+  it('holds a body in the neighbouring cell of the prop that supports it', () => {
+    // The grid registers every collider into all cells its bounds inflated
+    // by MAX_BODY_RADIUS touch, so the kernel's single-cell support read is
+    // complete even when the body stands across a 16 yd cell boundary from
+    // the prop. Straddle one deliberately: crate fully inside cell [16, 32),
+    // body in cell [0, 16), inside the support reach.
+    const crateX = 16.7;
+    const crateZ = 8;
+    setActiveWorldContent(world({ crates: [[crateX, crateZ]] }));
+    const shape = campCrateShape(crateX, crateZ, 0);
+    const top = groundHeight(crateX, crateZ, SEED) + shape.top;
+    const bodyX = 15.95; // the other side of the x = 16 boundary
+    expect(Math.floor(bodyX / 16)).not.toBe(Math.floor(crateX / 16));
+    expect(crateX - shape.r).toBeGreaterThan(16); // footprint fully past it
+    expect(supportHeightAt(SEED, bodyX, crateZ, R, top + 0.01)).toBeCloseTo(top, 6);
+  });
+
+  it('pins the registration margin that makes single-cell reads complete', () => {
+    // Support reaches r * SUPPORT_OVERLAP beyond a collider's bounds, and the
+    // slope glue adds at most one tick's stride: both must stay inside the
+    // grid's MAX_BODY_RADIUS insertion margin or a cell read could miss.
+    const maxTickStride = 0.5; // generous over the real ~0.35 (run speed x DT)
+    expect(R * SUPPORT_OVERLAP + maxTickStride).toBeLessThanOrEqual(MAX_BODY_RADIUS);
   });
 });
 
