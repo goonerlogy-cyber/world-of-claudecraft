@@ -1,5 +1,5 @@
 // The far-vista terrain painter: a whole-world coarse mesh (one Lambert
-// material, a few dozen frustum-culled tiles) drawn beyond the classic
+// material, about a dozen frustum-culled tiles) drawn beyond the classic
 // detail envelope so the horizon shows the real world instead of a fog
 // wall. All decisions live in far_terrain_core.ts (pure, Node-tested);
 // this file only owns the Three objects and the idle-paced build loop.
@@ -7,41 +7,39 @@
 // Cost model: the tiles are static world-space geometry built once per
 // session (about 100-200ms of terrainHeight sampling, spread across idle
 // slots, nearest tiles first). Per frame the layer costs one visibility
-// loop over ~40 tiles plus the draw of whatever survives the frustum;
-// tiles fully covered by resident near terrain hide so the far mesh never
-// adds overdraw where the detail world already paints every pixel.
+// loop over ~12 tiles plus the draw of whatever survives the frustum and
+// the fog wall: tiles beyond the live fog distance hide outright (their
+// pixels would be pure fog color, which the sky dome's horizon band
+// already paints), so the murk realms pay almost nothing. Fragments
+// inside the detail envelope are discarded in the shader; that overlap
+// band is where the real terrain owns every pixel.
 
 import * as THREE from 'three';
-import {
-  STRIP_MAX_X,
-  STRIP_MIN_X,
-  WORLD_MAX_X,
-  WORLD_MAX_Z,
-  WORLD_MIN_X,
-  WORLD_MIN_Z,
-  ZONES,
-} from '../sim/data';
+import { WORLD_MAX_X, WORLD_MAX_Z, WORLD_MIN_X, WORLD_MIN_Z } from '../sim/data';
 import {
   createFarTileBuilder,
   type FarTile,
   type FarVistaPlan,
+  farGridIndices,
+  farGridSide,
   farTileBuildOrder,
-  farTileCoveredByDetail,
   farTileVisible,
   planFarTiles,
-  type RectLike,
 } from './far_terrain_core';
 import { idleSlot } from './idle_queue';
 
-// Zone rects with the strip defaults applied (ZoneDef leaves xMin/xMax
-// undefined for strip-band zones).
-const zoneRects: RectLike[] = ZONES.map((zn) => ({
-  id: zn.id,
-  xMin: zn.xMin ?? STRIP_MIN_X,
-  xMax: zn.xMax ?? STRIP_MAX_X,
-  zMin: zn.zMin,
-  zMax: zn.zMax,
-}));
+// One Uint16 index buffer per (tileSize, spacing): every tile of one
+// spacing has identical topology, so a dozen tiles share one buffer.
+const indexCache = new Map<string, THREE.BufferAttribute>();
+function sharedIndexFor(tileSize: number, spacing: number): THREE.BufferAttribute {
+  const key = `${tileSize}:${spacing}`;
+  let index = indexCache.get(key);
+  if (!index) {
+    index = new THREE.BufferAttribute(farGridIndices(farGridSide(tileSize, spacing)), 1);
+    indexCache.set(key, index);
+  }
+  return index;
+}
 
 // An idle-paced build slice: about the same per-slice budget the near
 // terrain's streamed chunk builds use (IDLE_GEOMETRY_SLICE_MS scale). A
@@ -60,22 +58,23 @@ const FAR_DISCARD_MARGIN = 60;
 interface BuiltFarTile {
   tile: FarTile;
   mesh: THREE.Mesh;
-  covered: boolean;
 }
 
 export interface FarTerrainView {
   group: THREE.Group;
-  /** Per-frame visibility: the layer shows only outdoors, and each tile
-   *  hides once resident near terrain fully covers it. */
+  /** Per-frame visibility: the layer shows only outdoors; tiles beyond the
+   *  live fog wall hide; near-field fragments discard against detailFar. */
   update(
     camX: number,
     camZ: number,
     detailFar: number,
+    sceneFogFar: number,
     outdoor: boolean,
-    residentZoneIds: ReadonlySet<string>,
   ): void;
   /** Stops the in-flight background build (call before discarding). */
   cancelStreaming(): void;
+  /** Dispose every built tile geometry and the one shared material. */
+  dispose(): void;
   /** Build progress for diagnostics: built tiles / planned tiles. */
   builtTileCount(): number;
   plannedTileCount(): number;
@@ -90,7 +89,6 @@ export function buildFarTerrain(
   group.name = 'farTerrain';
   const built: BuiltFarTile[] = [];
   let cancelled = false;
-  let residentStamp = -1;
 
   if (!plan.enabled) {
     return {
@@ -99,6 +97,7 @@ export function buildFarTerrain(
       cancelStreaming: () => {
         cancelled = true;
       },
+      dispose: () => {},
       builtTileCount: () => 0,
       plannedTileCount: () => 0,
     };
@@ -129,7 +128,14 @@ export function buildFarTerrain(
       );
   };
 
-  const attachTile = (tile: FarTile, minY: number, maxY: number, geo: THREE.BufferGeometry) => {
+  const sharedIndex = sharedIndexFor(tiles[0].size, plan.spacing);
+
+  const attachTile = (
+    tile: FarTile,
+    minY: number,
+    maxY: number,
+    geo: THREE.BufferGeometry,
+  ): void => {
     geo.boundingBox = new THREE.Box3(
       new THREE.Vector3(tile.x0, minY, tile.z0),
       new THREE.Vector3(tile.x0 + tile.size, maxY, tile.z0 + tile.size),
@@ -141,9 +147,7 @@ export function buildFarTerrain(
     mesh.updateMatrixWorld(true);
     mesh.matrixAutoUpdate = false;
     group.add(mesh);
-    built.push({ tile, mesh, covered: false });
-    // force a coverage recompute on the next update
-    residentStamp = -1;
+    built.push({ tile, mesh });
   };
 
   const buildAll = async (): Promise<void> => {
@@ -162,7 +166,7 @@ export function buildFarTerrain(
       geo.setAttribute('position', new THREE.BufferAttribute(data.positions, 3));
       geo.setAttribute('normal', new THREE.BufferAttribute(data.normals, 3));
       geo.setAttribute('color', new THREE.BufferAttribute(data.colors, 3));
-      geo.setIndex(new THREE.BufferAttribute(data.indices, 1));
+      geo.setIndex(sharedIndex);
       attachTile(tile, data.minY, data.maxY, geo);
     }
   };
@@ -170,30 +174,22 @@ export function buildFarTerrain(
 
   return {
     group,
-    update(camX, camZ, detailFar, outdoor, residentZoneIds): void {
+    update(camX, camZ, detailFar, sceneFogFar, outdoor): void {
       group.visible = outdoor;
       if (!outdoor) return;
       farCut.value.set(camX, camZ, Math.max(0, detailFar - FAR_DISCARD_MARGIN));
-      if (residentZoneIds.size !== residentStamp) {
-        residentStamp = residentZoneIds.size;
-        for (const b of built) {
-          b.covered = farTileCoveredByDetail(
-            b.tile,
-            WORLD_MIN_X,
-            WORLD_MAX_X,
-            WORLD_MIN_Z,
-            WORLD_MAX_Z,
-            zoneRects,
-            residentZoneIds,
-          );
-        }
-      }
       for (const b of built) {
-        b.mesh.visible = farTileVisible(b.tile, camX, camZ, detailFar, b.covered);
+        b.mesh.visible = farTileVisible(b.tile, camX, camZ, sceneFogFar);
       }
     },
     cancelStreaming(): void {
       cancelled = true;
+    },
+    dispose(): void {
+      cancelled = true;
+      for (const b of built) b.mesh.geometry.dispose();
+      built.length = 0;
+      material.dispose();
     },
     builtTileCount: () => built.length,
     plannedTileCount: () => tiles.length,

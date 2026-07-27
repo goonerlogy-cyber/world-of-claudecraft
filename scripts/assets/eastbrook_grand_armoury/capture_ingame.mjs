@@ -354,7 +354,14 @@ function summarizePerfBlock(raw) {
     observed: raw.observed,
     ...evidence,
     rafFrameIntervalStats: frameStats(raw.rafDeltasMs, 60),
-    perfReportSummary: normalizeReport(raw.report),
+    // The summary attributes the block MEDIAN texture count: the report's
+    // instantaneous end-of-block read catches transient streaming textures
+    // (sky HDRI prewarms landing mid-block) and then disagrees with the
+    // sampled evidence it ships next to.
+    perfReportSummary: {
+      ...normalizeReport(raw.report),
+      textures: evidence.resourcesMedian.textures,
+    },
   };
 }
 

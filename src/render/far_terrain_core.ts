@@ -44,9 +44,12 @@ export const FAR_WORLD_MARGIN = 600;
  *  pokes through the dense near terrain where the two overlap. */
 export const FAR_MESH_DROP = 1.8;
 
-/** Far tiles fully covered by resident near terrain hide once their farthest
- *  corner sits this many units inside the detail far plane. */
-export const FAR_TILE_REVEAL_MARGIN = 40;
+/** A far tile draws only while some part of it is inside the fog wall plus
+ *  this margin; a tile past it would render at exactly the fog color the
+ *  sky dome's horizon band already shows, so hiding it is invisible. This
+ *  is what keeps the murk realms (the marsh's 124u wall, the Wraithwood's
+ *  260) from paying for a vista they can never see. */
+export const FAR_TILE_FOG_MARGIN = 30;
 
 export interface FarVistaPlan {
   /** false leaves the renderer exactly as it was (low tier, constrained). */
@@ -154,61 +157,25 @@ export function farTileBuildOrder(tiles: readonly FarTile[], px: number, pz: num
     .map((t) => t.i);
 }
 
-export interface RectLike {
-  xMin: number;
-  xMax: number;
-  zMin: number;
-  zMax: number;
-  id: string;
-}
-
 /**
- * True when the near-detail world fully covers the tile: the tile sits
- * inside the zone-rect world AND every zone rect it intersects is resident.
- * Zone rects partition the world, so intersect-all-resident is an exact
- * coverage test; a tile reaching past the world rect keeps its rim and sea
- * band and is never covered.
- */
-export function farTileCoveredByDetail(
-  tile: FarTile,
-  worldMinX: number,
-  worldMaxX: number,
-  worldMinZ: number,
-  worldMaxZ: number,
-  zones: readonly RectLike[],
-  residentZoneIds: ReadonlySet<string>,
-): boolean {
-  const x1 = tile.x0 + tile.size;
-  const z1 = tile.z0 + tile.size;
-  if (tile.x0 < worldMinX || x1 > worldMaxX || tile.z0 < worldMinZ || z1 > worldMaxZ) {
-    return false;
-  }
-  for (const zone of zones) {
-    const intersects =
-      zone.xMin < x1 && zone.xMax > tile.x0 && zone.zMin < z1 && zone.zMax > tile.z0;
-    if (intersects && !residentZoneIds.has(zone.id)) return false;
-  }
-  return true;
-}
-
-/**
- * Per-frame visibility for one far tile. A tile hides only when the near
- * terrain already covers everything it would draw: its farthest corner is
- * comfortably inside the detail far plane AND its ground is resident. Every
- * other tile stays on and lets the camera frustum cull it.
+ * Per-frame visibility for one far tile: draw while the tile's NEAREST
+ * point sits inside the live fog wall (plus margin). Beyond it every
+ * fragment lands at exactly the fog color the dome's horizon band already
+ * paints, so the hide is invisible; the camera frustum culls the rest.
+ * (Near-field overlap with the detail terrain is handled per fragment by
+ * the painter's discard, not per tile: the tile grid is far coarser than
+ * the detail envelope.)
  */
 export function farTileVisible(
   tile: FarTile,
   camX: number,
   camZ: number,
-  detailFar: number,
-  coveredByDetail: boolean,
+  sceneFogFar: number,
 ): boolean {
-  if (!coveredByDetail) return true;
   const half = tile.size / 2;
-  const dx = Math.abs(camX - tile.cx) + half;
-  const dz = Math.abs(camZ - tile.cz) + half;
-  return Math.hypot(dx, dz) >= detailFar - FAR_TILE_REVEAL_MARGIN;
+  const dx = Math.max(Math.abs(camX - tile.cx) - half, 0);
+  const dz = Math.max(Math.abs(camZ - tile.cz) - half, 0);
+  return Math.hypot(dx, dz) < sceneFogFar + FAR_TILE_FOG_MARGIN;
 }
 
 /** Vertex count per tile edge for a spacing that divides the tile size. */
@@ -221,6 +188,9 @@ export function farGridSide(tileSize: number, spacing: number): number {
  * fixed diagonal. Fits Uint16 for every shipped spacing (97x97 max).
  */
 export function farGridIndices(side: number): Uint16Array {
+  if (side * side > 65536) {
+    throw new Error(`far grid side ${side} overflows Uint16 indices`);
+  }
   const cells = side - 1;
   const out = new Uint16Array(cells * cells * 6);
   let k = 0;
@@ -288,6 +258,7 @@ const TONE = {
   hazyPeak: srgbHexToLinear(TERRAIN_TONES.hazyPeak),
   emberForest: srgbHexToLinear(TERRAIN_TONES.emberForest),
   emberScorch: srgbHexToLinear(TERRAIN_TONES.emberScorch),
+  emberBasalt: srgbHexToLinear(TERRAIN_TONES.emberBasalt),
   snowCap: srgbHexToLinear(TERRAIN_TONES.snowCap),
 };
 
@@ -450,11 +421,17 @@ export function farGroundColor(
   const slopeRock = clamp01((slope - rockStart) * 2);
   if (slopeRock > 0) lerp3(out, TONE.rock, slopeRock);
 
-  // high ground: rock, then a noise-broken snow ramp
-  if (h > 22) lerp3(out, TONE.rock, clamp01((h - 22) / 10) * 0.6);
-  const snowPatch = fbm2(x * 0.05, z * 0.05, seed + 61, 2);
-  const snow = clamp01((h - 34 + (snowPatch - 0.5) * 14) / 26) * 0.85;
-  if (snow > 0) lerp3(out, TONE.snowCap, snow);
+  // high ground: rock, then a noise-broken snow ramp. The Drakelands'
+  // volcanic cones never take snow (terrain.ts holds the same rule): their
+  // high ground darkens toward bare basalt instead.
+  if (biome === 'ember') {
+    if (h > 20) lerp3(out, TONE.emberBasalt, clamp01((h - 20) / 8) * 0.8);
+  } else {
+    if (h > 22) lerp3(out, TONE.rock, clamp01((h - 22) / 10) * 0.6);
+    const snowPatch = fbm2(x * 0.05, z * 0.05, seed + 61, 2);
+    const snow = clamp01((h - 34 + (snowPatch - 0.5) * 14) / 26) * 0.85;
+    if (snow > 0) lerp3(out, TONE.snowCap, snow);
+  }
 
   // the Frostveil's blanket: snow down to the shore wherever frost blends in
   const frostW = biomeWeightAt('frost', x, z);
@@ -479,11 +456,13 @@ export function farGroundColor(
 // typed arrays the painter wraps into a BufferGeometry unchanged.
 // ---------------------------------------------------------------------------
 
+// Triangle indices are NOT part of the tile data: every tile of one
+// spacing shares the same topology, so callers build one farGridIndices
+// buffer and reuse it across tiles.
 export interface FarTileData {
   positions: Float32Array;
   normals: Float32Array;
   colors: Float32Array;
-  indices: Uint16Array;
   minY: number;
   maxY: number;
 }
@@ -563,7 +542,7 @@ export function createFarTileBuilder(tile: FarTile, spacing: number, seed: numbe
       if (heightRow < padded || vertexRow < side) {
         throw new Error('far tile builder not complete');
       }
-      return { positions, normals, colors, indices: farGridIndices(side), minY, maxY };
+      return { positions, normals, colors, minY, maxY };
     },
   };
 }

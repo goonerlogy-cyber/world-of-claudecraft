@@ -11,7 +11,7 @@ import {
   ZONES,
 } from '../sim/data';
 import { fbm2 } from '../sim/rng';
-import type { BiomeId, ZoneDef } from '../sim/types';
+import type { ZoneDef } from '../sim/types';
 import { inGardenMaze, roadDistance, terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import { loadTexture } from './assets/loader';
 import { registerPreload } from './assets/preload';
@@ -168,7 +168,7 @@ const impactScorchC = new THREE.Color(0x2a160c);
 const hazyPeakC = new THREE.Color(TERRAIN_TONES.hazyPeak); // world-rim mountains, atmospheric
 const emberForestC = new THREE.Color(TERRAIN_TONES.emberForest); // the Drakelands' green gatewood
 const emberScorchC = new THREE.Color(TERRAIN_TONES.emberScorch); // volcanic ground near the Drakemaw
-const emberBasaltC = new THREE.Color(0x4e3c34); // the cones' dark volcanic rock
+const emberBasaltC = new THREE.Color(TERRAIN_TONES.emberBasalt); // the cones' dark volcanic rock
 const cobbleC = new THREE.Color(TERRAIN_TONES.cobble); // the Amberfall's laid stone
 const cobbleDarkC = new THREE.Color(0x6e6b66); // ...its mortar-shadow cells
 const duskCliffC = new THREE.Color(0x544d58); // dark weathered sea-cliff stone

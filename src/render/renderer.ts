@@ -1567,11 +1567,16 @@ export class Renderer {
     }
     // Vista tiers push the far plane out to the whole-world diagonal so the
     // far mesh has room; the classic 950 stays wherever the vista is off.
+    // The near plane also steps out to 0.2 there: at near 0.1 the 24-bit
+    // depth buffer resolves only ~5 units at the 3200u horizon, right where
+    // the far mesh and the water apron run nearly coplanar along distant
+    // coasts. Doubling near doubles that resolution; the camera boom never
+    // comes within 0.85u of geometry (CAMERA_MIN_DIST minus the pad).
     this.farVista = farVistaPlan(GFX.tier, GFX.constrainedMemory);
     this.camera = new THREE.PerspectiveCamera(
       CAMERA_BASE_FOV,
       this.viewport.width / this.viewport.height,
-      0.1,
+      this.farVista.enabled ? 0.2 : 0.1,
       this.farVista.cameraFar,
     );
     // Nameplate Three/DOM ownership lives in the painter; it reads the
@@ -3302,9 +3307,13 @@ export class Renderer {
     this.updateAmbience(p.pos.x, this.camera.position.y, dt);
     this.budgetFireLights(p.pos.x, p.pos.z);
     const fogFar = this.subsystemCullFar();
-    // The foliage LOD swaps real trees for impostors relative to the fog, not at
-    // a fixed distance, so it needs both planes (src/render/foliage_lod.ts).
-    const fogNear = Math.min((this.scene.fog as THREE.Fog).near, fogFar * 0.55);
+    // The foliage LOD swaps real trees for impostors relative to the fog, not
+    // at a fixed distance, so it needs both planes (src/render/foliage_lod.ts).
+    // With the vista on, the near plane pairs with the CAPPED far the foliage
+    // culls against, never scene fog; vista-off keeps the classic value.
+    const fogNear = this.farVista.enabled
+      ? Math.min((this.scene.fog as THREE.Fog).near, fogFar * 0.55)
+      : (this.scene.fog as THREE.Fog).near;
     this.lastWaterSimulationPasses = this.waterView.update(
       this.time,
       this.camera.position.x,
@@ -3316,8 +3325,8 @@ export class Renderer {
       this.camera.position.x,
       this.camera.position.z,
       fogFar,
+      (this.scene.fog as THREE.Fog).far,
       this.fogState === 'outdoor',
-      this.preparedZones,
     );
     this.propsView.update(
       this.camera.position.x,
@@ -7778,17 +7787,21 @@ export class Renderer {
     // On vista tiers this is the DETAIL envelope, not scene fog: the far mesh
     // owns everything beyond it (far_terrain_core.ts).
     const fogFar = this.subsystemCullFar();
-    // The foliage LOD swaps real trees for impostors relative to the fog, not at
-    // a fixed distance, so it needs both planes (src/render/foliage_lod.ts).
-    const fogNear = Math.min((this.scene.fog as THREE.Fog).near, fogFar * 0.55);
+    // The foliage LOD swaps real trees for impostors relative to the fog, not
+    // at a fixed distance, so it needs both planes (src/render/foliage_lod.ts).
+    // With the vista on, the near plane pairs with the CAPPED far the foliage
+    // culls against, never scene fog; vista-off keeps the classic value.
+    const fogNear = this.farVista.enabled
+      ? Math.min((this.scene.fog as THREE.Fog).near, fogFar * 0.55)
+      : (this.scene.fog as THREE.Fog).near;
     this.queueVisibleZonePrepares(Math.max(fogFar, this.lastRequestedFogFar));
     this.terrainView.update(this.camera.position.x, this.camera.position.z, fogFar);
     this.farTerrainView.update(
       this.camera.position.x,
       this.camera.position.z,
       fogFar,
+      (this.scene.fog as THREE.Fog).far,
       this.fogState === 'outdoor',
-      this.preparedZones,
     );
     worldStart = markWorldPhase('terrain', worldStart);
     this.propsView.update(
@@ -8259,18 +8272,8 @@ export class Renderer {
     // The far-vista mesh samples the same heightfield, so a full rebuild
     // (map load / content swap) replaces it too: dispose the old tiles and
     // their one shared material, then rebuild from the current content.
-    this.farTerrainView.cancelStreaming();
-    const oldFar = this.farTerrainView.group;
-    this.scene.remove(oldFar);
-    let farMat: THREE.Material | null = null;
-    oldFar.traverse((o) => {
-      const m = o as THREE.Mesh;
-      if (m.isMesh) {
-        m.geometry.dispose();
-        farMat = m.material as THREE.Material;
-      }
-    });
-    (farMat as THREE.Material | null)?.dispose();
+    this.scene.remove(this.farTerrainView.group);
+    this.farTerrainView.dispose();
     this.farTerrainView = buildFarTerrain(this.sim.cfg.seed, this.farVista, {
       x: this.sim.player.pos.x,
       z: this.sim.player.pos.z,

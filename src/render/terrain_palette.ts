@@ -181,6 +181,7 @@ export const TERRAIN_TONES = {
   hazyPeak: 0xa8bdd4, // world-rim mountains, atmospheric
   emberForest: 0x729a4e, // the Drakelands' green gatewood
   emberScorch: 0x6a4a40, // volcanic ground near the Drakemaw
+  emberBasalt: 0x4e3c34, // the cones' dark volcanic rock (never snow-capped)
   cobble: 0x8f8c86, // the Amberfall's laid stone
   snowCap: 0xedf3fa,
 } as const;

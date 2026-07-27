@@ -10,7 +10,6 @@ import { idleSlot, runIdleQueue } from './idle_queue';
 import { waterNormalish, waterNormalMaps } from './textures';
 import { shoreDepthAt } from './water_core';
 import { WaterSimulation, type WaterWaveUniforms } from './water_simulation';
-import { MAX_OUTDOOR_FOG_FAR } from './zone_streaming';
 
 // Water for the whole zone strip.
 //
@@ -314,9 +313,9 @@ function buildShaderWater(seed: number, renderer?: THREE.WebGLRenderer): WaterVi
   // classic 850, so the apron grows with the tier's vista plan.
   {
     const vista = farVistaPlan(GFX.tier, GFX.constrainedMemory);
-    const reach = Math.max(MAX_OUTDOOR_FOG_FAR, vista.envelopeFar) + 400;
-    const width = (WORLD_MAX_X + reach) * 2;
-    const span = WORLD_MAX_Z - WORLD_MIN_Z + reach * 2;
+    const reach = vista.enabled ? WORLD_MAX_X + vista.envelopeFar + 400 : 0;
+    const width = vista.enabled ? reach * 2 : 3000;
+    const span = WORLD_MAX_Z - WORLD_MIN_Z + (vista.enabled ? reach * 2 : 2400);
     const geo = new THREE.PlaneGeometry(width, span, 1, 1).rotateX(-Math.PI / 2);
     geo.translate(0, 0, (WORLD_MIN_Z + WORLD_MAX_Z) / 2);
     const pos = geo.attributes.position as THREE.BufferAttribute;

@@ -5,7 +5,7 @@ import {
   createFarTileBuilder,
   detailCullFar,
   FAR_MESH_DROP,
-  FAR_TILE_REVEAL_MARGIN,
+  FAR_TILE_FOG_MARGIN,
   FAR_TILE_SIZE,
   FAR_WORLD_MARGIN,
   type FarTile,
@@ -13,7 +13,6 @@ import {
   farGridSide,
   farGroundColor,
   farTileBuildOrder,
-  farTileCoveredByDetail,
   farTileVisible,
   farVistaPlan,
   planFarTiles,
@@ -143,51 +142,38 @@ describe('planFarTiles: the whole grown world, aligned, no gaps', () => {
   });
 });
 
-describe('far tile visibility: covered tiles hide, everything else survives to the frustum', () => {
-  // A synthetic 2x2 zone partition of a 0..960 square world.
-  const zones = [
-    { id: 'a', xMin: 0, xMax: 480, zMin: 0, zMax: 480 },
-    { id: 'b', xMin: 480, xMax: 960, zMin: 0, zMax: 480 },
-    { id: 'c', xMin: 0, xMax: 480, zMin: 480, zMax: 960 },
-    { id: 'd', xMin: 480, xMax: 960, zMin: 480, zMax: 960 },
-  ];
-  const world = [0, 960, 0, 960] as const;
-  const tileAt = (x0: number, z0: number, size = 480): FarTile => ({
+describe('far tile visibility: the fog wall is the cull, fully fogged tiles cost nothing', () => {
+  const tileAt = (x0: number, z0: number, size = 960): FarTile => ({
     x0,
     z0,
     size,
     cx: x0 + size / 2,
     cz: z0 + size / 2,
   });
-  const covered = (tile: FarTile, resident: string[]) =>
-    farTileCoveredByDetail(tile, world[0], world[1], world[2], world[3], zones, new Set(resident));
 
-  it('a tile inside the world is covered only when every intersecting zone is resident', () => {
-    const inside = tileAt(240, 240); // straddles all four zones
-    expect(covered(inside, ['a', 'b', 'c', 'd'])).toBe(true);
-    expect(covered(inside, ['a', 'b', 'c'])).toBe(false);
-    const single = tileAt(0, 0); // exactly zone a
-    expect(covered(single, ['a'])).toBe(true);
-    expect(covered(single, [])).toBe(false);
-  });
-
-  it('a tile reaching past the world rect keeps its rim and sea band forever', () => {
-    expect(covered(tileAt(-480, 0), ['a', 'b', 'c', 'd'])).toBe(false);
-    expect(covered(tileAt(720, 720), ['a', 'b', 'c', 'd'])).toBe(false);
-  });
-
-  it('a covered tile hides only when its farthest corner sits inside the detail far', () => {
+  it('the tile under the camera always draws', () => {
     const tile = tileAt(0, 0);
-    // camera at the tile center: the farthest corner is half a diagonal away
-    const cornerDist = Math.hypot(240, 240);
-    expect(farTileVisible(tile, 240, 240, cornerDist + FAR_TILE_REVEAL_MARGIN + 1, true)).toBe(
-      false,
-    );
-    expect(farTileVisible(tile, 240, 240, cornerDist + FAR_TILE_REVEAL_MARGIN - 60, true)).toBe(
-      true,
-    );
-    // an uncovered tile never hides, whatever the distance
-    expect(farTileVisible(tile, 240, 240, 10_000, false)).toBe(true);
+    expect(farTileVisible(tile, 480, 480, 100)).toBe(true);
+  });
+
+  it('a tile hides once its nearest edge sits past the fog wall plus margin', () => {
+    const tile = tileAt(1000, 0);
+    // nearest edge along +x from a camera at the origin row: 1000 away
+    expect(farTileVisible(tile, 0, 480, 1000 - FAR_TILE_FOG_MARGIN + 1)).toBe(true);
+    expect(farTileVisible(tile, 0, 480, 1000 - FAR_TILE_FOG_MARGIN - 1)).toBe(false);
+  });
+
+  it('the murk realms shed almost the whole layer: a marsh-scale wall hides distant tiles', () => {
+    const marshWall = 124; // vistaFogFar(110, 3200, 850)
+    expect(farTileVisible(tileAt(0, 0), 100, 100, marshWall)).toBe(true);
+    expect(farTileVisible(tileAt(960, 0), 100, 100, marshWall)).toBe(false);
+    expect(farTileVisible(tileAt(0, 960), 100, 100, marshWall)).toBe(false);
+  });
+
+  it('an open-sky wall keeps the whole world visible', () => {
+    for (const tile of planFarTiles(WORLD_MIN_X, WORLD_MAX_X, WORLD_MIN_Z, WORLD_MAX_Z)) {
+      expect(farTileVisible(tile, 0, 1120, 3200)).toBe(true);
+    }
   });
 });
 
@@ -214,6 +200,10 @@ describe('far grid geometry', () => {
     expect(srgbHexToLinear(0x000000)).toEqual([0, 0, 0]);
     const [mid] = srgbHexToLinear(0x808080);
     expect(mid).toBeCloseTo(0.2158, 3);
+  });
+
+  it('refuses a grid side that would overflow the shared Uint16 index buffer', () => {
+    expect(() => farGridIndices(257)).toThrow(/Uint16/);
   });
 });
 
@@ -255,7 +245,6 @@ describe('createFarTileBuilder: real heights, deterministic, incremental', () =>
     expect(slow.positions).toEqual(fast.positions);
     expect(slow.normals).toEqual(fast.normals);
     expect(slow.colors).toEqual(fast.colors);
-    expect(slow.indices).toEqual(fast.indices);
   });
 
   it('colors are finite unit-range linear triples with unit normals', () => {
@@ -296,6 +285,13 @@ describe('farGroundColor: the far recipe reads like the world it stands in for',
     const [r, g, b] = color(-30, 1700);
     expect(r + g + b).toBeGreaterThan(1.2);
     expect(Math.abs(r - b)).toBeLessThan(0.25); // near-neutral white, not green
+  });
+
+  it('the Drakelands volcanic peaks never take snow: high ember ground is dark basalt', () => {
+    // The Drakemaw Caldera rim (sim world.ts EMBER_VOLCANOES, h up to ~27).
+    const [r, g, b] = color(390, 2320);
+    expect(r + g + b).toBeLessThan(1.0); // dark, nothing like the snowCap tone
+    expect(r).toBeGreaterThanOrEqual(b); // warm volcanic rock, not blue-white
   });
 
   it('the world rim fades toward the atmospheric haze tone', () => {
