@@ -5688,6 +5688,8 @@ export const de_DE: Partial<Record<TranslationKey, string>> = {
   'hudChrome.compass.SW': 'SW',
   'hudChrome.compass.W': 'W',
   'hudChrome.corpseHarvest.alreadyHarvested': 'Dieser Kadaver wurde bereits verwertet.',
+  'hudChrome.corpseHarvest.nothingSelectedYields':
+    'An diesem Kadaver gibt es nichts aus deiner Auswahl zu verwerten.',
   'hudChrome.corpseHarvest.componentAria': '{component} verwerten',
   'hudChrome.corpseHarvest.components.claw': 'Klaue',
   'hudChrome.corpseHarvest.components.fang': 'Fangzahn',
@@ -8304,7 +8306,7 @@ export const de_DE: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.railSol': 'SOL',
   'hudChrome.claudium.railStripe': 'Karte',
   'hudChrome.claudium.railWoc': 'WOC',
-  'hudChrome.claudium.railWocDiscount': '20% Rabatt',
+  'hudChrome.claudium.railWocDiscount': '{percent}% Rabatt',
   'hudChrome.claudium.railWocUnavailable': 'WOC-Preise sind derzeit nicht verfügbar.',
   'hudChrome.claudium.showAmounts': 'Alle Claudium-Mengen anzeigen',
   'hudChrome.claudium.skuRow': '{claudium} Claudium für {usd}',
