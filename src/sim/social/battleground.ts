@@ -298,8 +298,8 @@ export function updateBattleground(ctx: SimContext): void {
 
 function tickCountdown(ctx: SimContext, match: BgMatch): void {
   const origin = battlegroundOrigin(match.slot);
-  // Hold the form-up: a player who slips out of their keep (the mouth or the
-  // postern) before the gates open is set back on their spawn ring.
+  // Hold the form-up: a player who slips out of their keep mouth before the
+  // gates open is set back on their spawn ring.
   for (const team of [0, 1] as BgTeam[]) {
     const bounds = keepInteriorBounds(team);
     match.teams[team].forEach((pid, i) => {

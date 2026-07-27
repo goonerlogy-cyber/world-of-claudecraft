@@ -101,8 +101,8 @@ export interface BgTeamPoint {
 export interface BattlegroundRenderManifest {
   /** Hash-varied courtyard floor tiles covering the walled field. */
   floors: BgModulePlacement[];
-  /** Wall modules tiled along every SOLID wall segment (perimeter, keeps with
-   *  their postern gaps, thin cover walls). Never the heart-ruin block. */
+  /** Wall modules tiled along every SOLID wall segment (perimeter, sealed
+   *  keeps, thin cover walls). Never the heart-ruin block. */
   walls: BgModulePlacement[];
   /** The heart ruin: a hollow four-sided shell over the block's footprint. */
   ruin: BgModulePlacement[];
@@ -241,7 +241,7 @@ const CRATE_KINDS: [string, number][] = [
 ];
 
 // Tile one thin wall segment into near-8u wall modules (the remainder is
-// spread evenly so runs stay flush with the segment ends: the postern gap
+// spread evenly so runs stay flush with the segment ends: door and gate
 // edges are collider edges and must match exactly).
 function tileWallSegment(
   out: BgModulePlacement[],

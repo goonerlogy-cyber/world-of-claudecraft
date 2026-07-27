@@ -3,7 +3,7 @@
 // truth shared by BOTH the collider set (src/sim/colliders.ts) and the renderer
 // (src/render/battleground.ts), so what you fight around is what you see.
 // Sim layer: no three.js imports. The field is a rework of Dubtribe11's
-// PR #589 layout: the keeps, flags, runes, and postern gaps are kept, and the
+// PR #589 layout: the keeps, flags, and runes are kept, and the
 // space between them is carved into THREE CHAMBERS. Two full-width curtain
 // walls partition the field into each team's own field chamber and the walled
 // Ruin Courtyard between them; every move between chambers passes one of three
@@ -23,14 +23,14 @@ export const BG_WALL_T = 1; // wall half-thickness (collider + module)
 export const BG_WALL_HEIGHT = 6;
 export const BG_FLAG_Z = 118; // |z| of each team's flag stand
 
-// Keep enclosure: a back wall behind the flag and two side walls, open toward
-// the field. One side wall carries the postern gap (see keepWallSegments).
+// Keep enclosure: a back wall behind the flag and two SOLID side walls, open
+// only toward the field: the keep mouth is the one way in or out, so the only
+// two routes into a base area are the main gate and the gatehouse room.
 export const KEEP_HALF_X = 16;
 export const KEEP_BACK_DZ = 10; // back wall sits this far behind the flag
 const KEEP_SIDE_DZ = 0; // side walls centre on the flag line: they span the
 const KEEP_SIDE_HD = 10; // full back-wall-to-mouth-line depth, so the form-up
 // containment box (keepInteriorBounds) coincides exactly with the walls
-export const BG_POSTERN_GAP = 3; // width of the postern opening in one side wall
 
 export interface BgBaseDef {
   team: BgTeam;
@@ -173,8 +173,8 @@ export const BG_CURTAIN_WALLS: BgWallSeg[] = [
 // its end walls) with OFFSET doors (enter the field-side door on one half,
 // exit the courtyard-side door on the other), so crossing it is a jog past
 // ambush corners, not a straight run.
-// Each sits on its team's postern side, so a runner slipping out the postern
-// chains naturally into it. Walls butt-join the curtain segments exactly.
+// Each sits on its team's gatehouse flank (Crimson west, Azure east, the
+// point-symmetric mirror). Walls butt-join the curtain segments exactly.
 export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
   { x: -33, z: -56, hw: 1, hd: 9 }, // south gatehouse, west wall
   { x: -19, z: -56, hw: 1, hd: 9 }, // east wall
@@ -189,7 +189,7 @@ export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
 // Mouth barricades: one low wall 2yd field-side of each keep mouth, offset
 // across the mouth span so the straight line from the field to the flag is
 // broken: measured against the keep's own width, a runner rounds it through a
-// narrow lane on the postern side or a wide lane on the other (the open field
+// narrow lane on the gatehouse side or a wide lane on the other (the open field
 // beyond the keep's width flanks it entirely). Defenders get a hold point,
 // attackers pick a side. Sits OUTSIDE keepInteriorBounds, so the form-up
 // containment never reads it.
@@ -199,7 +199,7 @@ export const BG_KEEP_BARRICADES: BgWallSeg[] = [
 ];
 
 // Graveyards: a large fenced plot in the map corner BESIDE each keep, on its
-// postern-OPPOSITE flank (out of the flag room, per the owner's direction), so
+// gatehouse-OPPOSITE flank (out of the flag room, per the owner's direction), so
 // the keep interior stays a clean fight space and the yard reads as a real
 // place. A released spirit rises here and is bound to the plot until its
 // team's respawn wave (social/battleground.ts tickGraveyards). The stone
@@ -214,7 +214,7 @@ export interface BgGraveyardPlot {
   hd: number;
 }
 export const BG_GRAVEYARDS: [BgGraveyardPlot, BgGraveyardPlot] = [
-  { x: 33, z: -130, hw: 9, hd: 6 }, // Crimson: east corner beside the keep (postern is west)
+  { x: 33, z: -130, hw: 9, hd: 6 }, // Crimson: east corner beside the keep (gatehouse is west)
   { x: -33, z: 130, hw: 9, hd: 6 }, // Azure mirror
 ];
 export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
@@ -278,11 +278,10 @@ export function keepInteriorBounds(team: BgTeam): {
 }
 
 /**
- * Keep walls for one team, postern gap included. Crimson's postern opens in
- * its WEST wall and Azure's in its EAST wall, the point-symmetric mirror
- * ((x,z) -> (-x,-z)) the rest of the map follows, so neither side is favored.
- * The gap gives the flag grabber a second exit: main mouth toward mid cover,
- * postern toward the fast open flank near that side's flank rune.
+ * Keep walls for one team: a back wall and two SOLID side walls. The keep
+ * mouth is the ONLY opening (the owner's two-routes rule: into a base area
+ * you come through the main gate or the gatehouse room, nothing else), and
+ * the set stays point-symmetric ((x,z) -> (-x,-z)) so neither side is favored.
  */
 export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   const dir = team === 0 ? -1 : 1; // back wall is further from centre
@@ -290,17 +289,8 @@ export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   const backZ = flagZ + dir * KEEP_BACK_DZ;
   const sideZ = flagZ + dir * KEEP_SIDE_DZ;
   const segs: BgWallSeg[] = [{ x: 0, z: backZ, hw: KEEP_HALF_X, hd: BG_WALL_T }];
-  const posternX = team === 0 ? -KEEP_HALF_X : KEEP_HALF_X;
   for (const sx of [-KEEP_HALF_X, KEEP_HALF_X]) {
-    if (sx === posternX) {
-      // split the side wall around a BG_POSTERN_GAP opening centred mid-wall
-      const segHd = (KEEP_SIDE_HD - BG_POSTERN_GAP / 2) / 2;
-      const off = BG_POSTERN_GAP / 2 + segHd;
-      segs.push({ x: sx, z: sideZ - off, hw: BG_WALL_T, hd: segHd });
-      segs.push({ x: sx, z: sideZ + off, hw: BG_WALL_T, hd: segHd });
-    } else {
-      segs.push({ x: sx, z: sideZ, hw: BG_WALL_T, hd: KEEP_SIDE_HD });
-    }
+    segs.push({ x: sx, z: sideZ, hw: BG_WALL_T, hd: KEEP_SIDE_HD });
   }
   return segs;
 }

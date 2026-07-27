@@ -12,7 +12,6 @@ import {
   BG_HALF_X,
   BG_HALF_Z,
   BG_KEEP_BARRICADES,
-  BG_POSTERN_GAP,
   BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
@@ -92,7 +91,7 @@ describe('Ravenrift band: non-overlap with every other instance band', () => {
   });
 });
 
-describe('Ravenrift layout: postern gaps + point symmetry', () => {
+describe('Ravenrift layout: sealed keeps + point symmetry', () => {
   it('the whole collider set is point-symmetric ((x,z) -> (-x,-z)), so neither team is favored', () => {
     const colliders = battlegroundColliders();
     const key = (x: number, z: number, a: number, b: number) =>
@@ -106,18 +105,17 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     }
   });
 
-  it('each keep has exactly one postern gap, mirrored between teams', () => {
-    // Crimson (team 0) posterns WEST (x = -14); Azure mirrors EAST (x = +14):
-    // the split side wall shows as two segments on that side, one on the other.
-    const crimson = keepWallSegments(0);
-    const azure = keepWallSegments(1);
-    expect(crimson.filter((s) => s.x === -16)).toHaveLength(2);
-    expect(crimson.filter((s) => s.x === 16)).toHaveLength(1);
-    expect(azure.filter((s) => s.x === 16)).toHaveLength(2);
-    expect(azure.filter((s) => s.x === -16)).toHaveLength(1);
-    // the gap is BG_POSTERN_GAP wide, centred on the side-wall midline
-    const [lo, hi] = crimson.filter((s) => s.x === -16).sort((a, b) => a.z - b.z);
-    expect(hi.z - hi.hd - (lo.z + lo.hd)).toBeCloseTo(BG_POSTERN_GAP, 5);
+  it('each keep is sealed except the mouth: one solid segment per side, both teams', () => {
+    // The owner's two-routes rule: into a base area you come through the main
+    // gate or the gatehouse room, never a side gap, so each keep is exactly a
+    // back wall plus two single unbroken side walls.
+    for (const team of [0, 1] as const) {
+      const segs = keepWallSegments(team);
+      expect(segs).toHaveLength(3);
+      expect(segs.filter((s) => s.x === -16)).toHaveLength(1);
+      expect(segs.filter((s) => s.x === 16)).toHaveLength(1);
+      expect(segs.filter((s) => s.hw > s.hd)).toHaveLength(1); // the back wall
+    }
   });
 
   it('the keep side walls span back wall to mouth line exactly (containment = walls)', () => {
@@ -136,13 +134,13 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     }
   });
 
-  it('a path exists through the postern gap; the wall blocks everywhere else', () => {
+  it('the keep side walls block everywhere: the mouth is the only way out', () => {
     const o = battlegroundOrigin(0);
     const sideZ = o.z + BG_BASES[0].flag.z - 1; // Crimson west-wall midline (z - 119 local)
-    // through the gap: cross x = -16 at the wall midline
-    const through = resolveMovement(SEED, o.x - 14, sideZ, o.x - 19, sideZ, 0.5);
-    expect(through.x).toBeLessThan(o.x - 17);
-    // 5yd along the same wall: solid, the mover is stopped at the face
+    // at the wall midline (where the postern gap used to open): solid now
+    const mid = resolveMovement(SEED, o.x - 14, sideZ, o.x - 19, sideZ, 0.5);
+    expect(mid.x).toBeGreaterThan(o.x - 16);
+    // and 5yd along the same wall: also solid
     const blocked = resolveMovement(SEED, o.x - 14, sideZ + 5, o.x - 19, sideZ + 5, 0.5);
     expect(blocked.x).toBeGreaterThan(o.x - 16);
   });
@@ -173,7 +171,7 @@ describe('Ravenrift layout: postern gaps + point symmetry', () => {
     expect(BG_GATEHOUSE_WALLS).toHaveLength(8);
     expect(BG_KEEP_BARRICADES).toHaveLength(2);
     expect(BG_GRAVEYARD_FENCES).toHaveLength(8);
-    expect(battlegroundWallSegments()).toHaveLength(4 + 4 * 2 + 11 + 8 + 8 + 2 + 8);
+    expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 8 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
@@ -354,7 +352,7 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
     // Crimson barricade spans x -11..5 at z -107..-105: the flag-line charge stops
     const blocked = resolveMovement(SEED, o.x, o.z - 102, o.x, o.z - 110, 0.5);
     expect(blocked.z).toBeGreaterThan(o.z - 105);
-    // postern-side (west) gap: x = -13 threads it
+    // narrow (west) gap: x = -13 threads it
     walk({ x: -13, z: -102 }, [{ x: -13, z: -109 }]);
     // wide (east) gap: x = 10 threads it
     walk({ x: 10, z: -102 }, [{ x: 10, z: -109 }]);
@@ -377,7 +375,7 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
   it('each flag is reachable from the enemy keep with body radius 0.5, both routes', () => {
     // Route A, the main gates: out the wide mouth gap, through the south main
     // gate, across the courtyard between the heart and the breakers, out the
-    // north main gate, and in through Azure's postern-side mouth gap.
+    // north main gate, and in through Azure's narrow mouth gap.
     walk({ x: 0, z: -BG_FLAG_Z }, [
       { x: 10, z: -114 },
       { x: 10, z: -104 }, // the wide mouth gap
@@ -399,19 +397,19 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       { x: -24, z: 78 }, // around the mirrored S-approach
       { x: -26, z: 90 },
       { x: -14, z: 100 },
-      { x: -10, z: 104 }, // Azure's postern-side mouth gap
+      { x: -10, z: 104 }, // Azure's narrow mouth gap
       { x: -10, z: 110 },
       { x: -6, z: 114 },
       { x: 0, z: BG_FLAG_Z },
     ]);
-    // Route B, the sneak: out the postern-side mouth gap, around the wing
+    // Route B, the sneak: out the narrow west mouth gap, around the wing
     // baffle, the gatehouse S-jog, up the courtyard's west flank past the
     // rune, out the north flank arch, and home through the far mouth gap.
     walk({ x: 0, z: -BG_FLAG_Z }, [
       { x: -10, z: -114 },
-      { x: -14, z: -119 }, // out through the postern gap
-      { x: -19, z: -119 },
-      { x: -21, z: -112 },
+      { x: -13, z: -109 }, // out the narrow west mouth gap past the barricade
+      { x: -13, z: -104 },
+      { x: -18, z: -106 },
       { x: -44, z: -104 }, // the rampart-side gap past the wing baffle
       { x: -44, z: -98 },
       { x: -44, z: -84 },
@@ -431,7 +429,7 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       { x: -40.5, z: 80 },
       { x: -40, z: 96 },
       { x: -20, z: 102 },
-      { x: -10, z: 104 }, // Azure's postern-side mouth gap
+      { x: -10, z: 104 }, // Azure's narrow mouth gap
       { x: -10, z: 110 },
       { x: -4, z: 114 },
       { x: 0, z: BG_FLAG_Z },
@@ -448,7 +446,7 @@ describe('Ravenrift chamber routes: curtains, gates, gatehouses, barricades', ()
       const plot = BG_GRAVEYARDS[team];
       // The yard lives in the map corner BESIDE the keep: inside the
       // perimeter with wall clearance, fully OUTSIDE the keep interior
-      // (never in the flag room), on the postern-opposite flank.
+      // (never in the flag room), on the gatehouse-opposite flank.
       expect(Math.abs(plot.x) + plot.hw).toBeLessThanOrEqual(BG_HALF_X - 2);
       expect(Math.abs(plot.z) + plot.hd).toBeLessThanOrEqual(BG_HALF_Z - 2);
       const bounds = keepInteriorBounds(team);

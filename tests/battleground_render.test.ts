@@ -3,7 +3,7 @@
 // builder (src/render/battleground.ts) instantiates verbatim. The manifest
 // derives from src/sim/battleground_layout.ts, the SAME record the collider
 // set reads, so these pins are the see-what-you-collide-with guarantee:
-// every solid wall segment yields wall modules, the postern gaps stay open,
+// every solid wall segment yields wall modules, the keep side walls seal solid,
 // the heart ruin renders hollow over its solid collider footprint, and the
 // field's dressing (rune pads, flag pedestals, banners) is present and
 // point-symmetric like the layout itself.
@@ -28,7 +28,6 @@ import {
   BG_GATEHOUSE_WALLS,
   BG_GRAVEYARD_FENCES,
   BG_KEEP_BARRICADES,
-  BG_POSTERN_GAP,
   BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_WALL_T,
@@ -82,35 +81,48 @@ describe('battleground render manifest derives from the layout', () => {
     }
   });
 
-  it('keeps the postern gap columns open: no wall module inside the gap span', () => {
+  it('keeps are sealed: each side-wall column is one solid, gap-free module run', () => {
     for (const base of BG_BASES) {
-      // The postern wall column: Crimson's west (x=-16), Azure's east (x=+16),
-      // recovered from the layout (the segment column split into TWO runs).
-      const sideX = base.team === 0 ? -16 : 16;
-      const column = battlegroundWallSegments().filter(
-        (s) =>
-          !isRuinBlock(s) &&
-          s.hd > s.hw && // a z-run: courtyard x-runs sharing the x are not walls of this column
-          s.x === sideX &&
-          Math.sign(s.z) === Math.sign(base.flag.z),
-      );
-      expect(column.length, `team ${base.team} postern column`).toBe(2);
-      const [a, b] = [...column].sort((s1, s2) => s1.z - s2.z);
-      const gapLo = a.z + a.hd;
-      const gapHi = b.z - b.hd;
-      expect(gapHi - gapLo).toBeCloseTo(BG_POSTERN_GAP, 6);
-      const intruders = [...m.walls, ...m.ruin].filter((p) => {
-        if (p.x !== sideX) return false;
-        const span = moduleSpan(p);
-        return span.max > gapLo + 1e-6 && span.min < gapHi - 1e-6;
-      });
-      expect(intruders, `team ${base.team} postern gap must stay open`).toEqual([]);
+      for (const sideX of [-16, 16]) {
+        // A keep side column: a z-run at x = +/-16 on this keep's half.
+        const column = battlegroundWallSegments().filter(
+          (s) =>
+            !isRuinBlock(s) &&
+            s.hd > s.hw && // a z-run: courtyard x-runs sharing the x are not walls of this column
+            s.x === sideX &&
+            Math.sign(s.z) === Math.sign(base.flag.z),
+        );
+        expect(column.length, `team ${base.team} side column x=${sideX}`).toBe(1);
+        const seg = column[0];
+        // The modules tiling that column leave NO gap: sorted spans chain
+        // contiguously from the mouth line to the back wall.
+        const spans = m.walls
+          .filter((p) => p.x === sideX)
+          .map(moduleSpan)
+          .filter(
+            (sp) =>
+              sp.axis === 'z' && sp.min >= seg.z - seg.hd - 1e-6 && sp.max <= seg.z + seg.hd + 1e-6,
+          )
+          .sort((s1, s2) => s1.min - s2.min);
+        expect(spans.length, `team ${base.team} side x=${sideX} modules`).toBeGreaterThan(0);
+        let cursor = seg.z - seg.hd;
+        for (const sp of spans) {
+          expect(sp.min, `gap in team ${base.team} side x=${sideX}`).toBeLessThanOrEqual(
+            cursor + 1e-6,
+          );
+          cursor = Math.max(cursor, sp.max);
+        }
+        expect(cursor, `team ${base.team} side x=${sideX} reaches the back wall`).toBeCloseTo(
+          seg.z + seg.hd,
+          6,
+        );
+      }
     }
   });
 
   it('leaves every curtain crossing open and dresses the gatehouses in one kind', () => {
     // no wall or ruin module may intrude into a crossing span on the curtain
-    // line (the render-side twin of the postern-gap pin)
+    // line (the render-side twin of the sealed-keep pin)
     const crossings: { z: number; lo: number; hi: number }[] = [
       { z: -56, lo: -34, hi: -18 }, // south gatehouse span (its room walls own it)
       { z: -56, lo: 8, hi: 18 }, // south main gate

@@ -22,7 +22,6 @@ import {
   BG_COVER_PILLARS,
   BG_HALF_X,
   BG_HALF_Z,
-  BG_POSTERN_GAP,
   BG_POWER_RUNES,
   BG_SPEED_RUNES,
   battlegroundWallSegments,
@@ -109,7 +108,7 @@ for (const base of BG_BASES) {
   );
 }
 
-// ---- walls (perimeter + keeps incl. posterns + curtains + gatehouses) ------
+// ---- walls (perimeter + sealed keeps + curtains + gatehouses) --------------
 const LOW_WALL = '#7d6a52';
 for (const s of battlegroundWallSegments()) {
   const ruin = isRuinBlock(s);
@@ -158,8 +157,6 @@ label(0, -78, 'CRIMSON FIELD', 18, CRIMSON, 'middle', 700);
 label(0, 36, 'THE RUIN COURTYARD', 18, '#5e7a3a', 'middle', 700);
 callout(2, 118, 54, 114, 'flag stand + capture point', AZURE);
 callout(3.5, 122, 54, 122, 'spawn ring (wave respawn)', AZURE);
-callout(16, 119, 54, 130, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
-callout(-16, -119, -54, -125, `postern gap (${BG_POSTERN_GAP}yd)`, INK);
 callout(0, 91, 54, 89, 'flag-approach rune', '#8a6a3c');
 callout(38, 0, 54, -3, 'flank rune + cover', '#8a6a3c');
 callout(-38, 0, -54, 3, 'flank rune + cover', '#8a6a3c');
