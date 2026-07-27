@@ -120,6 +120,9 @@ export function advanceClimb(p: Entity): boolean {
   const c = p.climb;
   if (!c) return false;
   // Death, or CC that would break any other scripted move, drops the body.
+  // `fallStartY` is deliberately left at its pre-jump value: the fall that
+  // follows a broken climb is the same fall the jump started, so its damage
+  // measures from where the body left the ground, not from mid-pull.
   if (p.dead || isStunned(p)) {
     p.climb = null;
     p.onGround = false;

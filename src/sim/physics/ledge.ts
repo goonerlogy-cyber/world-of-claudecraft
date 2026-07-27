@@ -25,6 +25,7 @@ import {
   queryOpenWorldColliders,
   supportHeightAt,
 } from '../colliders';
+import { isArenaPos, isDelvePos, isYumiMazePos } from '../data';
 import { groundHeight, terrainSteepnessAt } from '../world';
 
 /** A ledge must be at least this far above the feet, or it is a step. */
@@ -97,6 +98,13 @@ function fitsOn(x: number, z: number, feetY: number, radius: number): boolean {
  * arms can reach counts, and it must be somewhere the body actually fits.
  */
 export function findLedgeGrab(q: LedgeQuery, x: number, y: number, z: number): LedgeGrab | null {
+  // Delve, arena, and Yumi bands keep flat floors and their own collider
+  // contracts (delve modules live on the run, not in any set this function
+  // consults), so the climb is EXPLICITLY inert there. Without this guard
+  // the inertness would only be emergent from those bands' flat floors, and
+  // a future floor-relief change (dungeons just gained one) could arm a
+  // climb against an empty fit/headroom candidate set.
+  if (isDelvePos(x) || isArenaPos(x) || isYumiMazePos(x)) return null;
   // Intent direction: real motion wins, because a body drifting sideways past
   // a wall should not snap onto whatever it happens to be facing.
   const speed = Math.hypot(q.vx, q.vz);

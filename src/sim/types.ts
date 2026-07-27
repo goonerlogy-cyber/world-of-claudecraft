@@ -2730,7 +2730,23 @@ export interface DamageTick {
   amount: number;
 }
 
-export interface Entity {
+/**
+ * Fields the SIM NEVER WRITES: client-side mirrors decoded from the wire
+ * (src/net/online.ts) so the online renderer can pose movement modes it does
+ * not simulate. Grouping them behind this one interface is the type-level
+ * registry that keeps golden traces clean by construction rather than by
+ * comment: the sim's own entities never carry these, and any NEW wire mirror
+ * lands HERE, never loose on `Entity`. The pattern's authoritative twin is
+ * the sim-side field of the same feature (`climb` for the pair below).
+ */
+export interface ClientMirroredEntityFields {
+  /** Mirror of an in-flight climb: the wire carries progress, not the arc.
+   *  0..1 through the pull at the snapshot cadence; the visual smooths it. */
+  climbing?: boolean;
+  climbProgress?: number;
+}
+
+export interface Entity extends ClientMirroredEntityFields {
   // Transient talent-proc counters and internal cooldowns (combat/talent_procs.ts).
   // Never serialized; reset on death.
   procState?: { counters: Record<string, number>; icds: Record<string, number> };
@@ -2952,13 +2968,6 @@ export interface Entity {
   // Authoritative ledge-climb pull-up. Like `leap`, it owns movement while it
   // runs; see `src/sim/climb.ts`.
   climb?: LedgeClimb | null;
-  // CLIENT MIRROR of the above: the wire carries the climb's progress, not
-  // the arc, so the online renderer can pose a climb it does not simulate.
-  // Never set by the sim (which has the real `climb`), so both stay out of
-  // golden traces. `climbProgress` is 0..1 through the pull, advancing at the
-  // snapshot cadence; the visual smooths between updates.
-  climbing?: boolean;
-  climbProgress?: number;
   followTargetId: number | null; // /follow: auto-walk after another player until interrupted
   savedMana: number; // druid forms: mana put aside while running on rage/energy
   sitting: boolean;
