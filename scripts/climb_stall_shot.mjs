@@ -212,7 +212,9 @@ async function captureRoof(name, spot) {
 // tests/climb.test.ts; on the live seed their surroundings (steep cemetery
 // bank, sloped dock deck) make them poor camera subjects, so the stall is the
 // showcase.
-const stallOk = await captureRoof('stall', { x: -8.5, z: -1.5, facing: 0 });
+// The World Market rebuild stall at (-5.5, 9.5, rot 2.508844): approach its
+// front face along the stall's local +z (the flat 2.7 canopy deck).
+const stallOk = await captureRoof('stall', { x: -3.97, z: 7.4, facing: -0.63 });
 
 console.log(`RESULT stall=${stallOk ? 'OK' : 'FAIL'}`);
 await browser.close();

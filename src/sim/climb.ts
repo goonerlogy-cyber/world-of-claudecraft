@@ -17,10 +17,12 @@
 // Pure sim: no rng, no wall clock. `Sim.updatePlayerMovement` runs the driver
 // in its short-circuit chain and the renderer reads the same state to pose it.
 
+import { supportHeightAt } from './colliders';
 import { isRooted, isStunned } from './combat/cc';
 import { PLAYER_BODY_RADIUS } from './pathfind';
 import { findLedgeGrab, LEDGE_GRAB_MAX, LEDGE_GRAB_MIN } from './physics/ledge';
 import { DT, type Entity, type LedgeClimb } from './types';
+import { groundHeight } from './world';
 
 /** Pull-up pacing: the duration scales with how far the body actually rises,
  *  so hopping onto a low ledge stays snappy while hauling up onto a stall
@@ -39,6 +41,17 @@ const CLIMB_RISE_PHASE = 0.62;
 const CLIMB_SETTLE_EPS = 1e-3;
 /** A climb only starts while genuinely airborne and not already rising fast. */
 const CLIMB_MAX_RISE_SPEED = 2.5;
+
+/**
+ * The pull-up is for lips ABOVE YOUR HEAD: a ledge lower than this over the
+ * floor the body is jumping from is silent-vault territory (the mantle
+ * covers rises up to jump apex + MANTLE_REACH, about 1.83 from flat ground),
+ * so a hop onto a crate or a bench never plays the full-body climb. Measured
+ * against the floor DIRECTLY BENEATH the body at grab time, so chained
+ * parkour (crate to canopy) also stays a quick vault while a ground-level
+ * jump at the same canopy is a real climb.
+ */
+export const CLIMB_MIN_OVERHEAD = 1.8;
 
 const smooth = (t: number): number => {
   const c = Math.min(1, Math.max(0, t));
@@ -64,6 +77,14 @@ export function tryStartClimb(p: Entity, seed: number): boolean {
     p.pos.z,
   );
   if (!grab) return false;
+  // Only lips above the head earn the pull-up; anything lower stays in the
+  // silent vault's band. The reference floor is whatever the body would
+  // stand on right here: the terrain, or the standable top underfoot.
+  const floorY = Math.max(
+    groundHeight(p.pos.x, p.pos.z, seed),
+    supportHeightAt(seed, p.pos.x, p.pos.z, PLAYER_BODY_RADIUS, p.pos.y + 1e-3),
+  );
+  if (grab.topY - floorY < CLIMB_MIN_OVERHEAD) return false;
   const toY = grab.topY + CLIMB_SETTLE_EPS;
   p.climb = {
     from: { x: p.pos.x, y: p.pos.y, z: p.pos.z },

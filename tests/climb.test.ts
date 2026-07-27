@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { advanceClimb, climbDuration, tryStartClimb } from '../src/sim/climb';
+import { advanceClimb, CLIMB_MIN_OVERHEAD, climbDuration, tryStartClimb } from '../src/sim/climb';
 import {
   campCrateShape,
   DOCK_HUT_ROOF_TOP,
@@ -147,17 +147,23 @@ describe('the climb move', () => {
     }) as unknown as Entity;
 
   it('rises before it pulls forward, and lands standing on the surface', () => {
-    const cz = SPOT.z + 1.4;
-    setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
+    // An above-the-head lip: the stall canopy's gable end (ridge 2.54), the
+    // ridge turned along z so the approach meets the high line. Crates are
+    // silent-vault territory now (CLIMB_MIN_OVERHEAD).
+    const cz = SPOT.z + 2.2;
+    setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: cz, rot: Math.PI / 2, r: 1.7 }] }));
     const g = groundHeight(SPOT.x, cz, SEED);
-    const p = makeBody(SPOT.x, g, SPOT.z);
+    // Mid-jump feet: a 2.54 ridge sits above the ground-level grab band
+    // (LEDGE_GRAB_MAX above the FEET), exactly like a real jump at a canopy.
+    const startY = g + 0.6;
+    const p = makeBody(SPOT.x, startY, SPOT.z);
     expect(tryStartClimb(p, SEED)).toBe(true);
     const target = p.climb ? { ...p.climb.to } : null;
     const duration = p.climb ? p.climb.duration : 0;
     expect(target).not.toBeNull();
     if (!target) return;
     // The pull's pacing scales with its height.
-    expect(duration).toBeCloseTo(climbDuration(target.y - g), 6);
+    expect(duration).toBeCloseTo(climbDuration(target.y - startY), 6);
 
     const startZ = p.pos.z;
     let midRiseFraction = 0;
@@ -166,7 +172,7 @@ describe('the climb move', () => {
     while (advanceClimb(p) && ticks < 40) {
       ticks++;
       if (ticks === 3) {
-        midRiseFraction = (p.pos.y - g) / (target.y - g);
+        midRiseFraction = (p.pos.y - startY) / (target.y - startY);
         midForwardFraction = (p.pos.z - startZ) / (target.z - startZ);
       }
       // Never overshoots the destination on any axis.
@@ -208,11 +214,23 @@ describe('the climb move', () => {
     expect(tryStartClimb(stunned, SEED)).toBe(false);
   });
 
-  it('drops the body when a stun lands mid-climb', () => {
+  it('a crate hop stays a silent vault: the pull-up needs a lip above the head', () => {
     const cz = SPOT.z + 1.4;
     setActiveWorldContent(world({ crates: [[SPOT.x, cz]] }));
     const g = groundHeight(SPOT.x, cz, SEED);
-    const p = makeBody(SPOT.x, g, SPOT.z);
+    // Even with the grab probe perfectly placed mid-air beside the crate,
+    // the climb refuses a lip below CLIMB_MIN_OVERHEAD over the floor: the
+    // mantle owns it, so no full-body pull-up animation ever plays there.
+    const p = makeBody(SPOT.x, g + 0.3, SPOT.z);
+    expect(tryStartClimb(p, SEED)).toBe(false);
+    expect(p.climb).toBeNull();
+  });
+
+  it('drops the body when a stun lands mid-climb', () => {
+    const cz = SPOT.z + 2.2;
+    setActiveWorldContent(world({ stalls: [{ x: SPOT.x, z: cz, rot: Math.PI / 2, r: 1.7 }] }));
+    const g = groundHeight(SPOT.x, cz, SEED);
+    const p = makeBody(SPOT.x, g + 0.6, SPOT.z);
     expect(tryStartClimb(p, SEED)).toBe(true);
     advanceClimb(p);
     advanceClimb(p);
@@ -269,6 +287,12 @@ describe('the climb against real world geometry', () => {
     const crossHeight = graveHeight(1); // the cross in the grid's cycle
     expect(crossHeight).toBeGreaterThan(vaultReach);
     expect(crossHeight).toBeLessThanOrEqual(climbReach);
+    // No dead band in the ladder: everything below the climb's above-the-head
+    // floor is inside the silent vault's reach from flat ground, so gating
+    // the pull-up on tall lips never makes any height unreachable.
+    expect(CLIMB_MIN_OVERHEAD).toBeLessThanOrEqual(vaultReach);
+    // And the cross itself still earns the pull-up.
+    expect(crossHeight).toBeGreaterThanOrEqual(CLIMB_MIN_OVERHEAD);
   });
 
   it('carries a player from the ground onto a real graveyard cross', () => {

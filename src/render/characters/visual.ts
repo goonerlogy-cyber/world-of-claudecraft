@@ -147,6 +147,22 @@ const env01 = (t: number, a: number, b: number): number => {
 };
 const HIT_REACT_COOLDOWN = 0.9;
 
+// The climb's baked clips (player rigs all ship both): Spellcast_Raise's
+// first stretch throws the arms overhead (the reach to the lip), and
+// Sit_Floor_Down run BACKWARD is a floor-crouch rising to a stand (the
+// top-out over the lip). Scrub fractions are hand-tuned against the clips.
+const CLIMB_REACH_CLIP = 'Spellcast_Raise';
+const CLIMB_MANTLE_CLIP = 'Sit_Floor_Down';
+/** Fraction of Spellcast_Raise where the arms crest overhead; held there. */
+const CLIMB_REACH_CREST = 0.45;
+/** Climb phase by which the reach finishes rising to the crest. */
+const CLIMB_REACH_RISE_END = 0.3;
+/** Climb phase band over which reach hands off to the top-out. */
+const CLIMB_HANDOFF_START = 0.5;
+const CLIMB_HANDOFF_END = 0.72;
+/** Climb phase by which the top-out stands fully upright. */
+const CLIMB_TOPOUT_END = 0.98;
+
 // Lie_Idle already lays the rig flat — a touch of extra pitch reads as a
 // surface glide; clip-less rigs (creatures) get the full procedural prone
 const SWIM_PITCH_CLIP = 0.35;
@@ -281,6 +297,8 @@ export class CharacterVisual {
   private climbShinBones: (THREE.Object3D | null)[] | undefined;
   private climbTorsoBone: THREE.Object3D | null | undefined;
   private climbHeadBone: THREE.Object3D | null | undefined;
+  /** True while the climb's baked clips own the mixer (restore on release). */
+  private climbClipsActive = false;
   private spinAngle = 0;
   private spinOnceTimer = 0;
 
@@ -497,6 +515,9 @@ export class CharacterVisual {
 
     this.pendingDt = Math.min(MIXER_DT_CAP, this.pendingDt + dt);
     if (animate) {
+      // BEFORE the mixer integrates: scrub the climb's baked clips (weights
+      // and frozen times are mixer INPUTS, unlike the additive lifts below).
+      this.driveClimbClips();
       this.mixer.update(this.pendingDt);
       this.pendingDt = 0;
       // AFTER the mixer wrote the sampled pose: the sheathe gesture's additive
@@ -504,6 +525,63 @@ export class CharacterVisual {
       this.applyStowArmLift(dt);
       // Same rule for the climb's overhead reach.
       this.applyClimbPose();
+    }
+  }
+
+  /**
+   * The baked half of the climb, on the rigs that ship the clips (all player
+   * archetypes): the REACH rides Spellcast_Raise scrubbed up to its
+   * arms-overhead crest and held, and the TOP-OUT rides Sit_Floor_Down played
+   * in reverse (floor-crouch rising to a stand), cross-faded at the pull's
+   * midpoint. Both actions are paused and time-scrubbed by the climb phase,
+   * so the sim's real progress (netted via `cl`) drives every frame and no
+   * clock can drift. Rigs missing either clip keep the hand-authored bone
+   * pose in applyClimbPose.
+   */
+  private driveClimbClips(): void {
+    const active = this.climbBlend > 1e-3;
+    const reach = this.action(CLIMB_REACH_CLIP);
+    const mantle = this.action(CLIMB_MANTLE_CLIP);
+    if (!reach || !mantle) return;
+    if (!active) {
+      if (this.climbClipsActive) {
+        this.climbClipsActive = false;
+        reach.stop();
+        mantle.stop();
+        this.current?.setEffectiveWeight(1);
+      }
+      return;
+    }
+    this.climbClipsActive = true;
+    const t = this.climbPhase;
+    const k = this.climbBlend;
+    for (const a of [reach, mantle]) {
+      if (!a.isRunning()) {
+        a.reset();
+        a.setLoop(THREE.LoopOnce, 1);
+        a.clampWhenFinished = true;
+        a.play();
+      }
+      a.paused = true;
+      a.timeScale = 1;
+    }
+    // Hands fly overhead early and hold the crest through the hang.
+    const reachDur = reach.getClip().duration;
+    reach.time = Math.min(
+      reachDur - 1e-3,
+      reachDur * CLIMB_REACH_CREST * env01(t, 0, CLIMB_REACH_RISE_END),
+    );
+    // The top-out unwinds the sit: seated crouch at the lip, standing at 1.
+    const mantleDur = mantle.getClip().duration;
+    const rise = env01(t, CLIMB_HANDOFF_START, CLIMB_TOPOUT_END);
+    mantle.time = Math.max(1e-3, Math.min(mantleDur - 1e-3, mantleDur * (1 - rise)));
+    // Cross-fade reach into top-out at the pull's midpoint; the base action
+    // yields while the climb owns the body and returns as the blend releases.
+    const hand = env01(t, CLIMB_HANDOFF_START, CLIMB_HANDOFF_END);
+    reach.setEffectiveWeight(k * (1 - hand));
+    mantle.setEffectiveWeight(k * hand);
+    if (this.current && this.current !== reach && this.current !== mantle) {
+      this.current.setEffectiveWeight(1 - k);
     }
   }
 
@@ -541,6 +619,18 @@ export class CharacterVisual {
    */
   private applyClimbPose(): void {
     if (this.climbBlend <= 1e-3) return;
+    if (this.climbClipsActive) {
+      // The baked clips own the limbs; only the eyes-lead head tilt rides on
+      // top (neither clip looks up at the lip).
+      if (this.climbHeadBone === undefined) {
+        this.climbHeadBone = this.model.getObjectByName('head') ?? null;
+      }
+      if (this.climbHeadBone) {
+        const look = env01(this.climbPhase, 0, 0.18) * (1 - env01(this.climbPhase, 0.5, 0.85));
+        this.climbHeadBone.rotation.x += CLIMB_HEAD_TILT_RAD * look * this.climbBlend;
+      }
+      return;
+    }
     if (this.climbArmBones === undefined) {
       this.climbArmBones = CLIMB_ARM_BONES.map((n) => this.model.getObjectByName(n) ?? null);
     }
