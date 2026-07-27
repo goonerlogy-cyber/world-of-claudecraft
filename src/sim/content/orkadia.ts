@@ -33,7 +33,7 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     moveSpeed: 6.6,
     aggroRadius: 12,
     componentTags: ['hide'],
-    loot: [],
+    loot: [{ copper: 260, chance: 1 }],
     scale: 1.0,
     color: 0x3a4a2e, // mossy green-black warhide
   },
@@ -54,7 +54,7 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     moveSpeed: 6.4,
     aggroRadius: 13,
     componentTags: ['hide'],
-    loot: [],
+    loot: [{ copper: 420, chance: 1 }],
     scale: 1.12,
     color: 0x35506a, // steel-blue plate over green hide
   },
