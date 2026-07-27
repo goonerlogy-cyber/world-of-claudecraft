@@ -928,6 +928,10 @@ export const zh_CN: EnTranslations = {
         "dropped": "旗帜落地"
       },
       "respawnIn": "下一波:{seconds}秒后复活",
+      "resultVictory": "胜利!",
+      "resultDefeat": "战败",
+      "resultDraw": "平局",
+      "leavingIn": "{seconds}秒后离开战场",
       "killFeed": "{killer}击杀了{victim}",
       "killFeedFallen": "{victim}倒下了",
       "foundBanner": "战斗已就绪。你为{team}而战!",

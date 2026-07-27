@@ -8,6 +8,7 @@ import type { BgMatch } from '../src/sim/social/battleground';
 import {
   BG_CARRIER_VULN_DELAY,
   BG_CARRIER_VULN_INTERVAL,
+  BG_END_HOLD,
   BG_MAX_DURATION,
   BG_MIN_LEVEL,
   BG_MIN_RATING,
@@ -229,6 +230,66 @@ describe('Ravenrift: team parties for the match', () => {
     const party = sim.partyOf(roster[0])!;
     expect(party.members).toHaveLength(4);
     expect(party.members).not.toContain(deserter);
+  });
+});
+
+describe('Ravenrift: the post-match hold (frozen result screen)', () => {
+  function playToCaps() {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const carrier = match.teams[0][0];
+    for (let i = 0; i < 5; i++) captureOnce(sim, match, carrier);
+    return { sim, pids, match, carrier };
+  }
+
+  it('winning on caps freezes the match: state ended, result resolved, combat off, nobody moved home yet', () => {
+    const { sim, match, carrier } = playToCaps();
+    expect(match.state).toBe('ended');
+    expect(match.winner).toBe(0);
+    expect(match.resultRecorded).toBe(true);
+    // ratings + W/L landed at the freeze, not at the release
+    expect(sim.players.get(carrier)!.bgWins).toBe(1);
+    expect(sim.players.get(carrier)!.bgRating).toBeGreaterThan(1500);
+    // everyone is still inside the band, and cross-team combat is off
+    for (const pid of [...match.teams[0], ...match.teams[1]]) {
+      expect(isBgPos(sim.entities.get(pid)!.pos.x)).toBe(true);
+      expect(sim.bgMatchFor(pid)).toBe(match);
+    }
+    const enemy = match.teams[1][0];
+    // The hostility arm requires state 'active': the two sides read friendly
+    // again the moment the screen freezes, so no ability can target across.
+    expect(sim.isHostileTo(sim.entities.get(carrier)!, sim.entities.get(enemy)!)).toBe(false);
+    // the wire view carries the hold: state, winner, and the countdown slot
+    const view = sim.bgInfoFor(carrier)!.match!;
+    expect(view.state).toBe('ended');
+    expect(view.winner).toBe(0);
+    expect(view.countdown).toBeGreaterThan(0);
+    expect(view.countdown).toBeLessThanOrEqual(BG_END_HOLD);
+    // both flags came silently home for the screen
+    expect(match.flags[0].state).toBe('home');
+    expect(match.flags[1].state).toBe('home');
+  });
+
+  it('after the hold everyone is released home exactly once (parties unwound too)', () => {
+    const { sim, pids, match } = playToCaps();
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick();
+    for (const pid of pids) {
+      expect(sim.bgMatchFor(pid)).toBe(null);
+      expect(isBgPos(sim.entities.get(pid)!.pos.x)).toBe(false);
+      expect(sim.partyOf(pid)).toBe(null);
+    }
+    expect(match.fightersReleased).toBe(true);
+  });
+
+  it('a desertion-forfeit still ends immediately (no hold with an empty side)', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    for (const pid of [...match.teams[1]]) bgResolveDesertion(sim.ctx, pid);
+    expect(match.resultRecorded).toBe(true);
+    expect(match.fightersReleased).toBe(true);
+    for (const pid of match.teams[0]) expect(sim.bgMatchFor(pid)).toBe(null);
   });
 });
 
@@ -547,6 +608,11 @@ describe('Ravenrift: deliberate pickup + automatic return', () => {
       expect(match.scores[0]).toBe(cap + 1);
       if (cap < 4) expect(match.flags[1].state).toBe('home'); // captured flag resets home
     }
+    // The fifth capture freezes the match on the result screen first; the
+    // release home comes only after the BG_END_HOLD lapses.
+    expect(match.state).toBe('ended');
+    expect(sim.bgMatchFor(carrier)).toBe(match);
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick();
     ended = sim.bgMatchFor(carrier) === null;
     expect(ended).toBe(true);
     expect(match.scores[0]).toBe(5);
@@ -962,6 +1028,8 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(match.scores).toEqual([1, 1]);
     match.timer = BG_MAX_DURATION - 0.1;
     for (let i = 0; i < 5; i++) sim.tick();
+    expect(match.state).toBe('ended'); // the cap freezes the result screen first
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick();
     expect(sim.bgMatchFor(pids[0])).toBe(null);
     const expected = eloDelta(1600, 1400, 0.5); // negative: the favorite dropped a draw
     expect(expected).toBeLessThan(0);
@@ -1118,6 +1186,7 @@ describe('Ravenrift: review-hardening pins', () => {
     // ROLLOVER: the next award on a new UTC day re-keys the window and pays
     // the full price again (the reset arm in pvp/honor.ts dailyWindow)
     const honorAfterDayOne = sim.meta(winner)!.honor;
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick(); // run out the result screen
     sim.utcDay = '2026-07-27';
     for (const pid of pids) sim.bgQueueJoin(pid);
     sim.tick();
@@ -1154,6 +1223,7 @@ describe('Ravenrift: honor + persistence', () => {
     expect(sim.meta(winner)!.honor).toBe(BATTLEGROUND_WIN_HONOR);
     expect(sim.meta(winner)!.lifetimeHonor).toBe(BATTLEGROUND_WIN_HONOR);
     expect(sim.meta(loser)!.honor).toBe(BATTLEGROUND_LOSS_HONOR);
+    for (let i = 0; i < 20 * (BG_END_HOLD + 1); i++) sim.tick(); // run out the result screen
 
     // the same ten rematch: the repeat vs the SAME opposing team pays half
     for (const pid of pids) sim.bgQueueJoin(pid);

@@ -29,16 +29,19 @@ export interface BgPlayerInfo {
 }
 
 export interface BgMatchInfo {
-  state: 'countdown' | 'active';
+  // 'ended': the post-match hold, a frozen result screen over the field
+  // before everyone is sent home (combat is off; countdown carries the hold).
+  state: 'countdown' | 'active' | 'ended';
   myTeam: number; // 0 = Crimson, 1 = Azure
   capsToWin: number;
   scores: [number, number]; // [Crimson, Azure]
   flags: [BgFlagInfo, BgFlagInfo]; // indexed by home team
   players: BgPlayerInfo[];
-  countdown: number; // whole seconds left in the form-up gate (0 once live)
+  countdown: number; // whole seconds left in the form-up gate or the end hold
   timeLeft: number; // whole seconds until the match cap resolves on score
   waveIn: [number, number]; // whole seconds to each team's next respawn wave
   respawnIn: number; // = waveIn[myTeam] while you wait as a released ghost, else 0
+  winner: number | null; // ended only: the winning team, null for a draw
 }
 
 export interface BgInfo {

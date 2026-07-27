@@ -8373,8 +8373,32 @@
   }
   #bg-scoreboard:hover .bg-board,
   #bg-scoreboard:focus-within .bg-board,
-  #bg-scoreboard.expanded .bg-board {
+  #bg-scoreboard.expanded .bg-board,
+  #bg-scoreboard.ended .bg-board {
     display: block;
+  }
+  /* the frozen post-match result screen: verdict header over the pinned board */
+  #bg-scoreboard .bg-result {
+    display: none;
+  }
+  #bg-scoreboard.ended .bg-result {
+    display: block;
+    font-family: var(--title-font);
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-shadow: 1px 1px 4px #000;
+    padding: 2px 0 4px;
+  }
+  #bg-scoreboard.ended .bg-result.win {
+    color: #8fe06a;
+  }
+  #bg-scoreboard.ended .bg-result.loss {
+    color: #ff7a6a;
+  }
+  #bg-scoreboard.ended {
+    top: 48px;
+    min-width: 380px;
   }
   .bg-brow {
     display: grid;

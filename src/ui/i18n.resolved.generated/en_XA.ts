@@ -928,6 +928,10 @@ export const en_XA: EnTranslations = {
         "dropped": "[Ƒļáĝ óñ ţĥé ĝŕóúñð]"
       },
       "respawnIn": "[Ñéẋţ ŵáʋé: ŕéšþáŵñíñĝ íñ {seconds}]",
+      "resultVictory": "[Ʋíçţóŕý!]",
+      "resultDefeat": "[Ðéƒéáţ]",
+      "resultDraw": "[Ðŕáŵ]",
+      "leavingIn": "[Ļéáʋíñĝ ţĥé ƀáţţļéĝŕóúñð íñ {seconds}]",
       "killFeed": "[{killer} ƒéļļéð {victim}]",
       "killFeedFallen": "[{victim} ĥáš ƒáļļéñ]",
       "foundBanner": "[Ɓáţţļé ƒóúñð. Ýóú ƒíĝĥţ ƒóŕ ţĥé {team}!]",

@@ -72,6 +72,7 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
   timeLeft: 605,
   waveIn: [10, 5],
   respawnIn: 0,
+  winner: null,
   ...over,
 });
 
@@ -163,7 +164,7 @@ describe('battleground window view (pure core)', () => {
         '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true,"kills":0,"deaths":4,"captures":0},' +
         '{"pid":9,"name":"Cael","cls":"priest","team":1,' +
         '"carrying":false,"dead":false,"kills":5,"deaths":0,"captures":1}],"countdown":0,' +
-        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0}}',
+        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0,"winner":null}}',
     ) as BgInfo;
     const inputRest = { playerName: 'X', playerLevel: 20, party: null, allTime: null };
     expect(buildBgWindowView({ info: simShaped, ...inputRest })).toEqual(

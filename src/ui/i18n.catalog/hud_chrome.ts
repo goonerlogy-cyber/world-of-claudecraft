@@ -683,6 +683,11 @@ export const hudChromeStrings = {
       dropped: 'Flag on the ground',
     },
     respawnIn: 'Next wave: respawning in {seconds}',
+    // the frozen post-match result screen (state 'ended')
+    resultVictory: 'Victory!',
+    resultDefeat: 'Defeat',
+    resultDraw: 'Draw',
+    leavingIn: 'Leaving the battleground in {seconds}',
     // the top-right kill feed (and its combat-log twin lines)
     killFeed: '{killer} felled {victim}',
     killFeedFallen: '{victim} has fallen',

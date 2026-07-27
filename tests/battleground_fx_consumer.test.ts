@@ -40,6 +40,7 @@ function bgInfo(flags: [BgFlagInfo, BgFlagInfo]): BgInfo {
       timeLeft: 800,
       waveIn: [5, 10],
       respawnIn: 0,
+  winner: null,
     },
   };
 }

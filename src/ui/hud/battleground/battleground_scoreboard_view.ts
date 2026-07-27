@@ -31,13 +31,16 @@ export interface BgBoardRow {
 
 export interface BgScoreboardView {
   active: boolean;
-  state: 'countdown' | 'active';
+  state: 'countdown' | 'active' | 'ended';
   myTeam: number;
   scoreCrimson: number;
   scoreAzure: number;
   capsToWin: number;
-  /** Form-up seconds remaining (state 'countdown'), else 0. */
+  /** Form-up seconds remaining ('countdown') or the frozen result screen's
+   *  leave-in seconds ('ended'), else 0. */
   countdown: number;
+  /** ended only: 'win' | 'loss' | 'draw' from MY side, else null. */
+  result: 'win' | 'loss' | 'draw' | null;
   /** Remaining match time, split for the painter's clock key. */
   minutes: number;
   seconds: number;
@@ -62,6 +65,7 @@ const INACTIVE: BgScoreboardView = {
   scoreAzure: 0,
   capsToWin: 0,
   countdown: 0,
+  result: null,
   minutes: 0,
   seconds: 0,
   flagStates: ['home', 'home'],
@@ -85,6 +89,14 @@ export function buildBgScoreboardView(info: BgInfo | null, myPid: number): BgSco
     scoreAzure: m.scores[1],
     capsToWin: m.capsToWin,
     countdown: Math.max(0, Math.ceil(m.countdown)),
+    result:
+      m.state !== 'ended'
+        ? null
+        : m.winner === null
+          ? 'draw'
+          : m.winner === m.myTeam
+            ? 'win'
+            : 'loss',
     minutes: Math.floor(left / 60),
     seconds: left % 60,
     flagStates: [m.flags[0].state, m.flags[1].state],

@@ -928,6 +928,10 @@ export const ru_RU: EnTranslations = {
         "dropped": "Флаг на земле"
       },
       "respawnIn": "Следующая волна: возрождение через {seconds}",
+      "resultVictory": "Победа!",
+      "resultDefeat": "Поражение",
+      "resultDraw": "Ничья",
+      "leavingIn": "Вы покинете поле боя через {seconds}",
       "killFeed": "{killer} сразил(а) {victim}",
       "killFeedFallen": "{victim} пал(а) в бою",
       "foundBanner": "Битва найдена. Вы сражаетесь за {team}!",

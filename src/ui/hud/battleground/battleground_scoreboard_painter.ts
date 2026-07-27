@@ -42,6 +42,7 @@ export class BattlegroundScoreboard {
   private scoreAzureEl: HTMLElement | null = null;
   private clockEl: HTMLElement | null = null;
   private flagEls: [HTMLElement | null, HTMLElement | null] = [null, null];
+  private resultEl: HTMLElement | null = null;
   private fstateEls: [HTMLElement | null, HTMLElement | null] = [null, null];
   // Expanded-board row cells, aligned with view.board order (structural sig).
   private boardRows: { row: HTMLElement; k: HTMLElement; d: HTMLElement; c: HTMLElement }[] = [];
@@ -71,6 +72,7 @@ export class BattlegroundScoreboard {
         root.querySelector('.bg-fstate.crimson'),
         root.querySelector('.bg-fstate.azure'),
       ];
+      this.resultEl = root.querySelector('.bg-result');
       this.boardRows = [...root.querySelectorAll<HTMLElement>('.bg-brow.bg-bplayer')].map(
         (row) => ({
           row,
@@ -79,6 +81,23 @@ export class BattlegroundScoreboard {
           c: row.querySelector('.bb-c') as HTMLElement,
         }),
       );
+    }
+    // The frozen result screen: the board pins open over the field with the
+    // verdict line and the leave-in countdown until everyone is sent home.
+    w.toggleClass(root, 'ended', view.state === 'ended');
+    if (this.resultEl) {
+      w.setText(
+        this.resultEl,
+        view.result === null
+          ? ''
+          : view.result === 'win'
+            ? t('hudChrome.bg.resultVictory')
+            : view.result === 'loss'
+              ? t('hudChrome.bg.resultDefeat')
+              : t('hudChrome.bg.resultDraw'),
+      );
+      w.toggleClass(this.resultEl, 'win', view.result === 'win');
+      w.toggleClass(this.resultEl, 'loss', view.result === 'loss');
     }
     if (this.scoreCrimsonEl) w.setText(this.scoreCrimsonEl, num(view.scoreCrimson));
     if (this.scoreAzureEl) w.setText(this.scoreAzureEl, num(view.scoreAzure));
@@ -89,10 +108,12 @@ export class BattlegroundScoreboard {
         this.clockEl,
         view.state === 'countdown'
           ? t('hudChrome.bg.formUp', { seconds: num(view.countdown) })
-          : t('hudChrome.bg.clock', {
-              minutes: num(view.minutes),
-              seconds: String(view.seconds).padStart(2, '0'),
-            }),
+          : view.state === 'ended'
+            ? t('hudChrome.bg.leavingIn', { seconds: num(view.countdown) })
+            : t('hudChrome.bg.clock', {
+                minutes: num(view.minutes),
+                seconds: String(view.seconds).padStart(2, '0'),
+              }),
       );
     }
     for (const team of [0, 1] as const) {
@@ -206,6 +227,7 @@ export class BattlegroundScoreboard {
     // status flanking the match clock (the roster lives in the expanded
     // board, and the caps target lives in its header).
     return (
+      `<div class="bg-result"></div>` +
       `<div class="bg-score-line">` +
       `<span class="bg-team crimson${mine(0)}"${mineTitle(0)}><span class="bg-flag crimson" role="img"></span>${esc(t('hudChrome.bg.crimson'))}</span>` +
       `<span class="bg-score crimson"></span><span class="bg-score-colon">:</span><span class="bg-score azure"></span>` +

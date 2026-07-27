@@ -928,6 +928,10 @@ export const id_ID: EnTranslations = {
         "dropped": "Flag on the ground"
       },
       "respawnIn": "Next wave: respawning in {seconds}",
+      "resultVictory": "Victory!",
+      "resultDefeat": "Defeat",
+      "resultDraw": "Draw",
+      "leavingIn": "Leaving the battleground in {seconds}",
       "killFeed": "{killer} felled {victim}",
       "killFeedFallen": "{victim} has fallen",
       "foundBanner": "Battle found. You fight for the {team}!",
