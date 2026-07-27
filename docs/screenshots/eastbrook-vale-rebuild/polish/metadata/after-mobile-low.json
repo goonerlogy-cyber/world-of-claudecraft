@@ -4,14 +4,14 @@
   "shotPrefix": "after",
   "profile": "mobile-low",
   "townContractId": "polish-v2",
-  "sourceRevision": "feature/physics-engine-v0290@v0.31-merge",
+  "sourceRevision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
   "sourceFingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a",
   "polishProvenance": {
     "schemaVersion": 1,
     "mode": "composite-sha256",
     "algorithm": "sha256",
     "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-    "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+    "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
     "components": {
       "townAsset": {
         "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -19,7 +19,7 @@
       },
       "authoritativeLayout": {
         "path": "src/sim/eastbrook_layout.ts",
-        "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+        "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
       },
       "civicShader": {
         "path": "src/render/eastbrook_civic_beacon.ts",
@@ -77,7 +77,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -85,7 +85,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -93,7 +93,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -588,7 +588,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -600,13 +600,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -620,13 +620,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -640,13 +640,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -667,7 +667,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -683,7 +683,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -699,7 +699,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -849,11 +849,11 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 369,
-          "triangles": 1066767,
-          "geometries": 293,
-          "textures": 104,
-          "programs": 46,
+          "calls": 362,
+          "triangles": 1041176,
+          "geometries": 290,
+          "textures": 96,
+          "programs": 45,
           "contextLost": 0,
           "contextRestored": 0
         }
@@ -936,16 +936,16 @@
         "observedMs": 1402,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -960,7 +960,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -973,8 +973,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -990,7 +990,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -1355,7 +1355,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -1363,7 +1363,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -1371,7 +1371,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -1866,7 +1866,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -1878,13 +1878,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -1898,13 +1898,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -1918,13 +1918,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -1945,7 +1945,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -1961,7 +1961,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -1977,7 +1977,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -2127,9 +2127,9 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 166,
-          "triangles": 796097,
-          "geometries": 298,
+          "calls": 162,
+          "triangles": 790673,
+          "geometries": 297,
           "textures": 108,
           "programs": 48,
           "contextLost": 0,
@@ -2211,19 +2211,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1401,
+        "observedMs": 1400,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -2238,7 +2238,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -2251,8 +2251,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -2268,7 +2268,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -2633,7 +2633,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -2641,7 +2641,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -2649,7 +2649,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -3144,7 +3144,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -3156,13 +3156,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -3176,13 +3176,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -3196,13 +3196,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -3223,7 +3223,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -3239,7 +3239,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -3255,7 +3255,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -3405,8 +3405,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 370,
-          "triangles": 1017103,
+          "calls": 369,
+          "triangles": 1014393,
           "geometries": 298,
           "textures": 108,
           "programs": 48,
@@ -3489,19 +3489,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1401,
+        "observedMs": 1402,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -3516,7 +3516,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -3529,8 +3529,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -3546,7 +3546,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -3911,7 +3911,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -3919,7 +3919,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -3927,7 +3927,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -4422,7 +4422,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -4434,13 +4434,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -4454,13 +4454,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -4474,13 +4474,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -4501,7 +4501,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -4517,7 +4517,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -4533,7 +4533,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -4683,8 +4683,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 405,
-          "triangles": 1300429,
+          "calls": 407,
+          "triangles": 1300433,
           "geometries": 298,
           "textures": 108,
           "programs": 48,
@@ -4770,16 +4770,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -4794,7 +4794,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -4807,8 +4807,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -4824,7 +4824,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -5189,7 +5189,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -5197,7 +5197,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -5205,7 +5205,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -5700,7 +5700,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -5712,13 +5712,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -5732,13 +5732,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -5752,13 +5752,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -5779,7 +5779,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -5795,7 +5795,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -5811,7 +5811,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -5961,8 +5961,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 144,
-          "triangles": 606762,
+          "calls": 143,
+          "triangles": 608696,
           "geometries": 300,
           "textures": 110,
           "programs": 49,
@@ -6048,16 +6048,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -6072,7 +6072,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -6085,8 +6085,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -6102,7 +6102,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -6467,7 +6467,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -6475,7 +6475,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -6483,7 +6483,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -6978,7 +6978,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -6990,13 +6990,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -7010,13 +7010,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -7030,13 +7030,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -7057,7 +7057,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -7073,7 +7073,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -7089,7 +7089,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -7239,8 +7239,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 288,
-          "triangles": 810623,
+          "calls": 286,
+          "triangles": 809051,
           "geometries": 303,
           "textures": 111,
           "programs": 49,
@@ -7326,16 +7326,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -7350,7 +7350,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -7363,8 +7363,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -7380,7 +7380,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -7745,7 +7745,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -7753,7 +7753,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -7761,7 +7761,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -8256,7 +8256,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -8268,13 +8268,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -8288,13 +8288,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -8308,13 +8308,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -8335,7 +8335,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -8351,7 +8351,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -8367,7 +8367,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -8518,7 +8518,7 @@
         "contextRestored": 0,
         "resources": {
           "calls": 168,
-          "triangles": 741465,
+          "triangles": 739355,
           "geometries": 303,
           "textures": 111,
           "programs": 49,
@@ -8601,19 +8601,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1401,
+        "observedMs": 1402,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -8628,7 +8628,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -8641,8 +8641,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -8658,7 +8658,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -9023,7 +9023,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -9031,7 +9031,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -9039,7 +9039,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -9534,7 +9534,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -9546,13 +9546,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -9566,13 +9566,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -9586,13 +9586,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -9613,7 +9613,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -9629,7 +9629,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -9645,7 +9645,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -9795,8 +9795,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 375,
-          "triangles": 1348787,
+          "calls": 384,
+          "triangles": 1354369,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -9879,19 +9879,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1400,
+        "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -9906,7 +9906,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -9919,8 +9919,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -9936,7 +9936,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -10301,7 +10301,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -10309,7 +10309,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -10317,7 +10317,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -10812,7 +10812,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -10824,13 +10824,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -10844,13 +10844,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -10864,13 +10864,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -10891,7 +10891,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -10907,7 +10907,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -10923,7 +10923,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -11074,7 +11074,7 @@
         "contextRestored": 0,
         "resources": {
           "calls": 205,
-          "triangles": 943901,
+          "triangles": 938337,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -11157,19 +11157,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1401,
+        "observedMs": 1402,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -11184,7 +11184,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -11197,8 +11197,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -11214,7 +11214,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -11579,7 +11579,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -11587,7 +11587,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -11595,7 +11595,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -12090,7 +12090,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -12102,13 +12102,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -12122,13 +12122,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -12142,13 +12142,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -12169,7 +12169,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -12185,7 +12185,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -12201,7 +12201,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -12351,8 +12351,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 263,
-          "triangles": 914591,
+          "calls": 262,
+          "triangles": 914589,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -12438,16 +12438,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -12462,7 +12462,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -12475,8 +12475,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -12492,7 +12492,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -12857,7 +12857,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -12865,7 +12865,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -12873,7 +12873,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -13368,7 +13368,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -13380,13 +13380,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -13400,13 +13400,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -13420,13 +13420,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -13447,7 +13447,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -13463,7 +13463,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -13479,7 +13479,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -13629,8 +13629,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 226,
-          "triangles": 717479,
+          "calls": 221,
+          "triangles": 710117,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -13716,16 +13716,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -13740,7 +13740,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -13753,8 +13753,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -13770,7 +13770,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -14135,7 +14135,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -14143,7 +14143,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -14151,7 +14151,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -14646,7 +14646,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -14658,13 +14658,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -14678,13 +14678,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -14698,13 +14698,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -14725,7 +14725,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -14741,7 +14741,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -14757,7 +14757,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -14907,8 +14907,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 191,
-          "triangles": 633274,
+          "calls": 188,
+          "triangles": 625368,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -14994,16 +14994,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -15018,7 +15018,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -15031,8 +15031,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -15048,7 +15048,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -15413,7 +15413,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -15421,7 +15421,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -15429,7 +15429,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -15924,7 +15924,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -15936,13 +15936,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -15956,13 +15956,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -15976,13 +15976,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -16003,7 +16003,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -16019,7 +16019,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -16035,7 +16035,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -16185,8 +16185,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 210,
-          "triangles": 607671,
+          "calls": 202,
+          "triangles": 591855,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -16269,19 +16269,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1401,
+        "observedMs": 1402,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -16296,7 +16296,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -16309,8 +16309,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -16326,7 +16326,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -16691,7 +16691,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -16699,7 +16699,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -16707,7 +16707,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -17202,7 +17202,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -17214,13 +17214,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -17234,13 +17234,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -17254,13 +17254,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -17281,7 +17281,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -17297,7 +17297,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -17313,7 +17313,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -17463,8 +17463,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 294,
-          "triangles": 1028471,
+          "calls": 285,
+          "triangles": 1006941,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -17550,16 +17550,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -17574,7 +17574,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -17587,8 +17587,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -17604,7 +17604,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -18934,7 +18934,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -18942,7 +18942,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -18950,7 +18950,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -19445,7 +19445,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -19457,13 +19457,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -19477,13 +19477,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -19497,13 +19497,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -19524,7 +19524,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -19540,7 +19540,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -19556,7 +19556,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -19706,8 +19706,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 293,
-          "triangles": 837465,
+          "calls": 287,
+          "triangles": 825277,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -19793,16 +19793,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -19817,7 +19817,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -19830,8 +19830,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -19847,7 +19847,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -20212,7 +20212,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -20220,7 +20220,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -20228,7 +20228,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -20723,7 +20723,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -20735,13 +20735,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -20755,13 +20755,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -20775,13 +20775,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -20802,7 +20802,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -20818,7 +20818,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -20834,7 +20834,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -20984,8 +20984,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 389,
-          "triangles": 1134576,
+          "calls": 391,
+          "triangles": 1131724,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -21071,16 +21071,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -21095,7 +21095,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -21108,8 +21108,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -21125,7 +21125,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -21490,7 +21490,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -21498,7 +21498,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -21506,7 +21506,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -22001,7 +22001,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -22013,13 +22013,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -22033,13 +22033,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -22053,13 +22053,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -22080,7 +22080,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -22096,7 +22096,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -22112,7 +22112,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -22349,16 +22349,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -22373,7 +22373,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -22386,8 +22386,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -22403,7 +22403,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -22768,7 +22768,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -22776,7 +22776,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -22784,7 +22784,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -23279,7 +23279,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -23291,13 +23291,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -23311,13 +23311,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -23331,13 +23331,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -23358,7 +23358,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -23374,7 +23374,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -23390,7 +23390,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -23541,7 +23541,7 @@
         "contextRestored": 0,
         "resources": {
           "calls": 101,
-          "triangles": 792159,
+          "triangles": 790871,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -23627,16 +23627,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -23651,7 +23651,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -23664,8 +23664,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -23681,7 +23681,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -24046,7 +24046,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -24054,7 +24054,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -24062,7 +24062,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -24557,7 +24557,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -24569,13 +24569,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -24589,13 +24589,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -24609,13 +24609,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -24636,7 +24636,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -24652,7 +24652,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -24668,7 +24668,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -24818,8 +24818,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 130,
-          "triangles": 609149,
+          "calls": 133,
+          "triangles": 617055,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -24905,16 +24905,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -24929,7 +24929,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -24942,8 +24942,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -24959,7 +24959,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -25324,7 +25324,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -25332,7 +25332,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -25340,7 +25340,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -25835,7 +25835,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -25847,13 +25847,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -25867,13 +25867,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -25887,13 +25887,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -25914,7 +25914,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -25930,7 +25930,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -25946,7 +25946,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -26096,8 +26096,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 86,
-          "triangles": 476536,
+          "calls": 87,
+          "triangles": 478106,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -26183,16 +26183,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -26207,7 +26207,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -26220,8 +26220,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -26237,7 +26237,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -26602,7 +26602,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -26610,7 +26610,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -26618,7 +26618,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -27113,7 +27113,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -27125,13 +27125,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -27145,13 +27145,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -27165,13 +27165,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -27192,7 +27192,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -27208,7 +27208,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -27224,7 +27224,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -27374,8 +27374,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 247,
-          "triangles": 968103,
+          "calls": 245,
+          "triangles": 965243,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -27461,16 +27461,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -27485,7 +27485,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -27498,8 +27498,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -27515,7 +27515,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -27878,14 +27878,14 @@
               {
                 "phase": "t0",
                 "output": "/Users/maxpolaczuk/misc/world-of-claudecraft-physics/docs/screenshots/eastbrook-vale-rebuild/polish/after-civic-motion-mobile-low-motion-on-t0.png",
-                "bytes": 1778566,
-                "sha256": "19964aa7b111a429c51987fd86d3976c68bf546c93f56471ddb7ca0854583767"
+                "bytes": 1785405,
+                "sha256": "9d0e5f5fa1be8542c7d4897b25d4297c2acc8d490206c7957ce45bb2f07428ba"
               },
               {
                 "phase": "t1",
                 "output": "/Users/maxpolaczuk/misc/world-of-claudecraft-physics/docs/screenshots/eastbrook-vale-rebuild/polish/after-civic-motion-mobile-low-motion-on-t1.png",
-                "bytes": 1776516,
-                "sha256": "a48237764928e7b7b046a563b5aba66b2d8bf499ac5864d19cb167aea83ff2fd"
+                "bytes": 1785053,
+                "sha256": "c3f95bb04390737a317f8d5d052caa0e7b6a0c307a951f795dc35d7db2323f74"
               }
             ]
           },
@@ -27896,14 +27896,14 @@
               {
                 "phase": "t0",
                 "output": "/Users/maxpolaczuk/misc/world-of-claudecraft-physics/docs/screenshots/eastbrook-vale-rebuild/polish/after-civic-motion-mobile-low-reduced-motion-t0.png",
-                "bytes": 1778196,
-                "sha256": "f23fe84f80917e0b41a360de18739b78b11c60a3c716bfd6b7da7d57bb5d2f96"
+                "bytes": 1785163,
+                "sha256": "e0063b1359b815a275b9f6590099279e60a4983b5541defcd4e72ac11b58d09d"
               },
               {
                 "phase": "t1",
                 "output": "/Users/maxpolaczuk/misc/world-of-claudecraft-physics/docs/screenshots/eastbrook-vale-rebuild/polish/after-civic-motion-mobile-low-reduced-motion-t1.png",
-                "bytes": 1781124,
-                "sha256": "9e10efa67afc8add38ee965fcb51dcacb1651c4134cd1865c7c58803878b16c6"
+                "bytes": 1786355,
+                "sha256": "7c6d28e13e4a428bf5c03b5518e94c52bc59e48c179530caed97b9dbe47ef8f6"
               }
             ]
           }
@@ -27933,7 +27933,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -27941,7 +27941,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -27949,7 +27949,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -28444,7 +28444,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -28456,13 +28456,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -28476,13 +28476,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -28496,13 +28496,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -28523,7 +28523,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -28539,7 +28539,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -28555,7 +28555,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -28705,8 +28705,8 @@
         "contextLost": 0,
         "contextRestored": 0,
         "resources": {
-          "calls": 149,
-          "triangles": 662755,
+          "calls": 153,
+          "triangles": 676995,
           "geometries": 312,
           "textures": 112,
           "programs": 50,
@@ -28792,16 +28792,16 @@
         "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -28816,7 +28816,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -28829,8 +28829,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -28846,7 +28846,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
@@ -29211,7 +29211,7 @@
       "captureMode": "screenshots",
       "source": {
         "comparison": "polish-v2-worktree",
-        "revision": "feature/physics-engine-v0290@v0.31-merge",
+        "revision": "feature/physics-engine-v0290@v0.31-solid-landmarks",
         "fingerprint": "76e5620c78069b209a58d99ab7670c26a0edcc4f240f571f3dd130a859d97c6a"
       },
       "polishProvenance": {
@@ -29219,7 +29219,7 @@
         "mode": "composite-sha256",
         "algorithm": "sha256",
         "baselineRevision": "3ab740db453bd8b5858a52c304edc811c9d520ca",
-        "fingerprint": "6a10c7c6a988bb434bf27b5da663beb34fc47b8056e85e53a5cc89ea0837d9d7",
+        "fingerprint": "87ed5e185105f57bc20bc23157fcc62ecbf8d349319ccbf2631cf1f4132f2f90",
         "components": {
           "townAsset": {
             "source": "scripts/assets/eastbrook_town/source_fingerprint.mjs",
@@ -29227,7 +29227,7 @@
           },
           "authoritativeLayout": {
             "path": "src/sim/eastbrook_layout.ts",
-            "sha256": "f93308bbb1733816dbdb51961649dc51ba259dc74430a339d70e943c2438011e"
+            "sha256": "a6bf0520f63aaed2a3cd0b26e88917c40ad959d643ba63d83df9e7763c629c15"
           },
           "civicShader": {
             "path": "src/render/eastbrook_civic_beacon.ts",
@@ -29722,7 +29722,7 @@
           "url": "/textures/eastbrook_surface_atlas.webp",
           "state": "loaded",
           "textureUuids": [
-            "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+            "e641347d-2dec-486d-88d0-cd195d05dd91"
           ],
           "sharedTextureIdentity": true,
           "consumers": {
@@ -29734,13 +29734,13 @@
                   "name": "eastbrookTownRebuild",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 9
                   },
                   "observed": {
                     "materialBindings": 9,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -29754,13 +29754,13 @@
                   "name": "eastbrookGrandArmoury",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 5
                   },
                   "observed": {
                     "materialBindings": 5,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -29774,13 +29774,13 @@
                   "name": "bankerChestDecoration",
                   "metadata": {
                     "url": "/textures/eastbrook_surface_atlas.webp",
-                    "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+                    "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
                     "materialBindings": 4
                   },
                   "observed": {
                     "materialBindings": 4,
                     "textureUuids": [
-                      "35c48d08-a504-4a31-9ff1-f82b3331dacd"
+                      "e641347d-2dec-486d-88d0-cd195d05dd91"
                     ]
                   }
                 }
@@ -29801,7 +29801,7 @@
             "childMeshCount": 18,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 9
             }
           },
@@ -29817,7 +29817,7 @@
             "childMeshCount": 3,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           },
@@ -29833,7 +29833,7 @@
             "childMeshCount": 2,
             "surfaceAtlas": {
               "url": "/textures/eastbrook_surface_atlas.webp",
-              "textureUuid": "35c48d08-a504-4a31-9ff1-f82b3331dacd",
+              "textureUuid": "e641347d-2dec-486d-88d0-cd195d05dd91",
               "materialBindings": 2
             }
           }
@@ -30067,19 +30067,19 @@
       },
       "settle": {
         "requestedMs": 1400,
-        "observedMs": 1402,
+        "observedMs": 1401,
         "completed": true,
         "boot": {
-          "navigationAndBootMs": 18039,
+          "navigationAndBootMs": 21114,
           "bootSettleMs": 2000,
-          "preloadWaitMs": 0.5,
+          "preloadWaitMs": 0.8,
           "preload": {
             "tasks": 267,
-            "waitMs": 0.5,
+            "waitMs": 0.8,
             "complete": true
           },
           "rendererPrewarm": {
-            "elapsedMs": 5454.5,
+            "elapsedMs": 6602.8,
             "maxMs": 5000,
             "createdViews": 2,
             "candidateViews": 0,
@@ -30094,7 +30094,7 @@
             "compileTimedOut": false,
             "timedOut": true,
             "remainingMs": 0,
-            "budgetUsedRatio": 1.09,
+            "budgetUsedRatio": 1.32,
             "createdViewTypes": [
               "player:warrior",
               "object:mailbox"
@@ -30107,8 +30107,8 @@
                 "priority": 10,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 1.4,
-                "remainingMsAfter": 4997.9,
+                "elapsedMs": 1.5,
+                "remainingMsAfter": 4998,
                 "passes": 0,
                 "programsBefore": 0,
                 "programsAfter": 0,
@@ -30124,7 +30124,7 @@
                 "priority": 12,
                 "required": true,
                 "status": "completed",
-                "elapsedMs": 2.5,
+                "elapsedMs": 3,
                 "remainingMsAfter": 0,
                 "passes": 1,
                 "programsBefore": 37,
