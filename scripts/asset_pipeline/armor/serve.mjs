@@ -3,8 +3,9 @@
 // atlases/, work/, three.bundle.js, guide.html) from the untracked workspace
 // at tmp/asset_pipeline/armor_picker. Run from the repo root:
 //   node scripts/asset_pipeline/armor/serve.mjs [port]
-import { createServer } from 'node:http';
+
 import { readFile } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { dirname, extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,7 +32,12 @@ createServer(async (req, res) => {
     const file = join(root, path);
     if (!file.startsWith(root)) throw new Error('forbidden');
     const body = await readFile(file);
-    res.writeHead(200, { 'Content-Type': MIME[extname(file)] ?? 'application/octet-stream' });
+    // Forge artifacts are rewritten in place at stable URLs; never let the
+    // browser cache a stale GLB or manifest.
+    res.writeHead(200, {
+      'Content-Type': MIME[extname(file)] ?? 'application/octet-stream',
+      'Cache-Control': 'no-store',
+    });
     res.end(body);
   } catch {
     res.writeHead(404);

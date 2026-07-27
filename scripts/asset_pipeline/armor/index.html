@@ -153,6 +153,13 @@
     font-family: "Alegreya Sans", sans-serif; font-size: 13px; padding: 6px 8px;
   }
   .rowselect:focus { outline: 1px solid var(--gold); }
+  a.dl {
+    display: block; margin-top: 6px; padding: 6px 10px;
+    background: #1d1712; color: var(--gold-bright);
+    border: 1px solid var(--panel-edge); border-radius: 3px;
+    font-size: 12px; letter-spacing: .06em; text-decoration: none;
+  }
+  a.dl:hover { border-color: var(--gold); }
   .chip.stormcrystal::after { content: ""; position: absolute; right: 3px; top: 3px; width: 5px; height: 9px; background: #e8fbff; clip-path: polygon(50% 0, 100% 35%, 65% 100%, 0 55%); }
   .chip.none::after {
     content: ""; position: absolute; left: 4px; right: 4px; top: 50%; height: 1px;
@@ -198,7 +205,7 @@
   <nav id="roster" aria-label="Characters"></nav>
   <aside id="ledger">
     <h2>ARMOUR LEDGER</h2>
-    <div class="hint">Pick a finish per piece, or forge the full set</div>
+    <div class="hint">Choose a forged set, toggle pieces, style the head</div>
     <div id="setrow"><span class="setlabel">Full set</span></div>
     <div id="pieces"></div>
     <div id="controls">
