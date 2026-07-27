@@ -15,13 +15,6 @@
 
 import type { BgInfo } from '../../../world_api';
 
-export interface BgScoreboardPip {
-  name: string;
-  me: boolean;
-  dead: boolean;
-  carrying: boolean;
-}
-
 /** One expanded-board row (hover/tap on the strip). Raw class id: painter localizes. */
 export interface BgBoardRow {
   pid: number;
@@ -51,8 +44,6 @@ export interface BgScoreboardView {
   /** Flag states by home team (0 = Crimson, 1 = Azure). */
   flagStates: ['home' | 'carried' | 'dropped', 'home' | 'carried' | 'dropped'];
   carrierNames: [string | null, string | null];
-  pipsCrimson: BgScoreboardPip[];
-  pipsAzure: BgScoreboardPip[];
   /** Both rosters in team order for the expanded board; stats ride elided
    *  writer slots (stable row identity = the structural sig). */
   board: BgBoardRow[];
@@ -75,8 +66,6 @@ const INACTIVE: BgScoreboardView = {
   seconds: 0,
   flagStates: ['home', 'home'],
   carrierNames: [null, null],
-  pipsCrimson: [],
-  pipsAzure: [],
   board: [],
   respawnIn: 0,
   sig: 'off',
@@ -86,12 +75,6 @@ export function buildBgScoreboardView(info: BgInfo | null, myPid: number): BgSco
   const m = info?.match ?? null;
   if (!m) return INACTIVE;
   const left = Math.max(0, Math.floor(m.timeLeft));
-  const pip = (p: (typeof m.players)[number]): BgScoreboardPip => ({
-    name: p.name,
-    me: p.pid === myPid,
-    dead: p.dead,
-    carrying: p.carrying,
-  });
   const crimson = m.players.filter((p) => p.team === 0);
   const azure = m.players.filter((p) => p.team === 1);
   return {
@@ -106,8 +89,6 @@ export function buildBgScoreboardView(info: BgInfo | null, myPid: number): BgSco
     seconds: left % 60,
     flagStates: [m.flags[0].state, m.flags[1].state],
     carrierNames: [m.flags[0].carrierName, m.flags[1].carrierName],
-    pipsCrimson: crimson.map(pip),
-    pipsAzure: azure.map(pip),
     board: [...crimson, ...azure].map((p) => ({
       pid: p.pid,
       name: p.name,

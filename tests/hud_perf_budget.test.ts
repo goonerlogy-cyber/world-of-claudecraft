@@ -499,6 +499,12 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
 // the start of a decode and two of them reads that abandon a decode whose unit changed;
 // perf_graph is handed both its context and its color and reaches for neither.
 const CANVAS_PAINTERS: ReadonlyArray<ScannedPainter> = [
+  // the M-map Ravenrift schematic: canvas-only, redrawn on the map cadence
+  {
+    file: 'hud/battleground/battleground_map_painter.ts',
+    allow: {},
+    reflowAllow: { getComputedStyle: 1 },
+  },
   { file: 'hud/delve/delve_map_painter.ts', allow: {}, reflowAllow: { getComputedStyle: 1 } },
   { file: 'map_window_painter.ts', allow: {}, reflowAllow: { getComputedStyle: 1 } },
   { file: 'minimap_painter.ts', allow: {}, reflowAllow: { getComputedStyle: 1 } },

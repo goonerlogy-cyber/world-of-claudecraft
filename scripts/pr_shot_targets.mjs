@@ -74,6 +74,7 @@ export const TARGETS = [
       { key: 'carry-scoreboard', scene: 'carry' },
       { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
       { key: 'match-board', scene: 'board' },
+      { key: 'field-map', scene: 'map' },
       // last on purpose: it kills the player, which would pollute later scenes
       { key: 'graveyard', scene: 'graveyard' },
     ],
@@ -201,6 +202,18 @@ export const TARGETS = [
         await wait(400);
         return { clip: '#bg-scoreboard' };
       }
+      if (scene === 'map') {
+        // the M-key world map's Ravenrift surface (schematic + honest markers)
+        const mapOk = await page.evaluate(() => {
+          const game = window.__game;
+          if (!game.sim.bgMatchFor(game.sim.player.id)) return false; // staging lost
+          game.hud.toggleMap();
+          return true;
+        });
+        if (!mapOk) return { skip: 'match staging lost before the map scene' };
+        await wait(600);
+        return { clip: '#map-window' };
+      }
       if (scene === 'graveyard') {
         await page.evaluate(() => {
           const sim = window.__game.sim;
@@ -209,7 +222,10 @@ export const TARGETS = [
         });
         await wait(400);
         await page.evaluate(() => {
-          window.__game.sim.releaseSpirit();
+          // Drive the REAL death-overlay button, not the sim hook: this shot
+          // is also the regression check that the Release path works in a
+          // battleground (the sim-hook version masked a dead button once).
+          document.querySelector('#release-btn')?.click();
           window.__game.input.camDist = 13;
           window.__game.input.camPitch = 0.55;
         });

@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { battlegroundOrigin } from '../src/sim/data';
 import {
   type BgAllTimeEntry,
+  buildBgMapModel,
   buildBgScoreboardView,
   buildBgWindowView,
 } from '../src/ui/hud/battleground';
@@ -182,11 +184,8 @@ describe('battleground scoreboard view (pure core)', () => {
     expect(v.seconds).toBe(5);
     expect(v.flagStates).toEqual(['home', 'carried']);
     expect(v.carrierNames[1]).toBe('Ravven');
-    expect(v.pipsCrimson).toEqual([
-      { name: 'Ravven', me: true, dead: false, carrying: true },
-      { name: 'Bryn', me: false, dead: true, carrying: false },
-    ]);
-    expect(v.pipsAzure).toHaveLength(1);
+    expect(v.flagStates).toEqual(['home', 'carried']);
+    expect(v.carrierNames).toEqual([null, 'Ravven']);
     // The expanded board: both rosters in team order with the match tallies.
     expect(v.board).toHaveLength(3);
     expect(v.board[0]).toMatchObject({
@@ -238,5 +237,40 @@ describe('battleground scoreboard view (pure core)', () => {
     );
     expect(countdown.state).toBe('countdown');
     expect(countdown.countdown).toBe(6);
+  });
+});
+
+describe('battleground map view (pure core)', () => {
+  const origin = battlegroundOrigin(0);
+  const worldSlice = (myTeam: number, players: BgMatchInfo['players']) => ({
+    bgInfo: baseInfo({ match: baseMatch({ myTeam, players }) }),
+    playerId: 7,
+    player: { pos: { x: origin.x + 10, z: origin.z - 100 }, facing: 0.5 },
+    entities: new Map([
+      [8, { pos: { x: origin.x - 5, z: origin.z - 90 }, dead: true }],
+      [9, { pos: { x: origin.x + 20, z: origin.z + 50 }, dead: false }],
+    ]),
+  });
+
+  it('is inactive outside a match and outside the band', () => {
+    expect(buildBgMapModel({ ...worldSlice(0, []), bgInfo: null }).active).toBe(false);
+    const outside = worldSlice(0, []);
+    outside.player.pos.x = 0; // open world
+    expect(buildBgMapModel(outside).active).toBe(false);
+  });
+
+  it('maps TEAMMATES only (never enemies), field-local, oriented home-down', () => {
+    const players = baseMatch().players; // 7,8 crimson; 9 azure
+    const asCrimson = buildBgMapModel(worldSlice(0, players));
+    expect(asCrimson.active).toBe(true);
+    // teammate 8 present in field-local coords; enemy 9 NEVER mapped
+    expect(asCrimson.mates).toHaveLength(1);
+    expect(asCrimson.mates[0]).toMatchObject({ x: -5, z: -90, dead: true });
+    expect(asCrimson.self).toMatchObject({ x: 10, z: -100, facing: 0.5 });
+    // azure viewers see the SAME field flipped: their keep reads at the bottom
+    const players2 = players.map((p) => ({ ...p, team: 1 - p.team }));
+    const asAzure = buildBgMapModel(worldSlice(1, players2));
+    expect(asAzure.self).toMatchObject({ x: -10, z: 100 });
+    expect(asAzure.mates[0]).toMatchObject({ x: 5, z: 90 });
   });
 });
