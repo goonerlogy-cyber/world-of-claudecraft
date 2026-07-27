@@ -18,6 +18,10 @@ export const FIESTA_WIN_BONUS_HONOR = 40;
 // completion consolation (a draw pays the loss amount to both sides). Both
 // decay per repeated opposing-team via HONOR_REPEAT_DR (the Fiesta rule for
 // longer multi-player modes); forfeits pay nothing (social/battleground.ts).
+// 60/20 are DELIBERATE owner tuning, not a documented classic-era curve (the
+// one deliberate exception to the real-formulas rule, flagged in review):
+// sized against the arena payouts so a played-out battleground beats queue
+// value without dwarfing it. Revisit against live match data.
 export const BATTLEGROUND_WIN_HONOR = 60;
 export const BATTLEGROUND_LOSS_HONOR = 20;
 

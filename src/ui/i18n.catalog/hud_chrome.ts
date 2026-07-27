@@ -238,7 +238,7 @@ export const hudChromeStrings = {
     railSol: 'SOL',
     railUsdc: 'USDC',
     railWoc: 'WOC',
-    railWocDiscount: '20% off',
+    railWocDiscount: '{percent}% off',
     railWocUnavailable: 'WOC pricing is unavailable right now.',
     railNativeUnavailable: 'Crypto off.',
     amountLabel: 'Amount',
@@ -679,13 +679,20 @@ export const hudChromeStrings = {
     clock: '{minutes}:{seconds}',
     formUp: 'Form up: {seconds}',
     firstTo: 'First to {caps} captures',
-    flagCarriedBy: 'Carried by {name}',
     flagState: {
       home: 'Flag at the keep',
-      carried: 'Flag carried',
+      carried: 'Flag stolen!',
       dropped: 'Flag on the ground',
     },
     respawnIn: 'Next wave: respawning in {seconds}',
+    // the frozen post-match result screen (state 'ended')
+    resultVictory: 'Victory!',
+    resultDefeat: 'Defeat',
+    resultDraw: 'Draw',
+    leavingIn: 'Leaving the battleground in {seconds}',
+    // the top-right kill feed (and its combat-log twin lines)
+    killFeed: '{killer} felled {victim}',
+    killFeedFallen: '{victim} has fallen',
     // event banners + combat-log lines (hud.handleEvents)
     foundBanner: 'Battle found. You fight for the {team}!',
     countdownBanner: 'Ravenrift begins in {seconds}',
@@ -1475,6 +1482,11 @@ export const hudChromeStrings = {
     harvestTooltip:
       'Gathers the checked components. Each corpse can be harvested once, first come. Does not take the loot.',
     concentrateHint: 'Fewer chosen components yield a higher tier each.',
+    // #2509: claw, tusk, gills and horn are tagged on corpses but no harvest
+    // item is wired to them yet, so a selection of nothing but those would
+    // spend the single-use corpse for nothing. The command refuses it and the
+    // picker says why, in place: a disabled button's tooltip is unreachable.
+    nothingSelectedYields: 'Nothing you selected can be harvested from this corpse.',
     alreadyHarvested: 'This corpse has already been harvested.',
     componentAria: 'Harvest {component}',
     components: {

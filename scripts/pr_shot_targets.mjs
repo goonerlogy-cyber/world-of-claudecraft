@@ -52,7 +52,7 @@ async function openMarketBrowse(page) {
 export const TARGETS = [
   {
     key: 'ravenrift',
-    label: 'Ravenrift 5v5 battleground: field, postern, carry, queue window, mobile scoreboard',
+    label: 'Ravenrift 5v5 battleground: field, gatehouse, carry, queue window, mobile scoreboard',
     // Match the SOURCE files (the `.ts` suffixes keep the sim/render tests from
     // classifying as visual).
     when: [
@@ -69,7 +69,6 @@ export const TARGETS = [
       // honest witness for the spawn-clearance contract (no camDist override).
       { key: 'spawn-camera', scene: 'spawn' },
       { key: 'field', scene: 'field' },
-      { key: 'postern', scene: 'postern' },
       { key: 'gatehouse', scene: 'gatehouse' },
       { key: 'carry-scoreboard', scene: 'carry' },
       { key: 'scoreboard-mobile', scene: 'carry', mobile: true },
@@ -160,14 +159,6 @@ export const TARGETS = [
           game.input.camYaw = p.facing = myTeam === 0 ? 0 : Math.PI;
           game.input.camDist = 24;
           game.input.camPitch = 0.72;
-        } else if (sceneKey === 'postern') {
-          // just inside the Crimson keep, looking at its west postern gap
-          const home = match.flags[0].home;
-          tp(home.x - 8, home.z - 2);
-          p.facing = -Math.PI / 2;
-          game.input.camYaw = -Math.PI / 2;
-          game.input.camDist = 12;
-          game.input.camPitch = 0.42;
         } else if (sceneKey === 'gatehouse') {
           // inside the south gatehouse, on the courtyard-door line (x -30,
           // the 4yd door at x -32..-28), looking south through the room: the

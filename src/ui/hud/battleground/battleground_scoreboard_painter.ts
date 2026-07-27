@@ -42,6 +42,7 @@ export class BattlegroundScoreboard {
   private scoreAzureEl: HTMLElement | null = null;
   private clockEl: HTMLElement | null = null;
   private flagEls: [HTMLElement | null, HTMLElement | null] = [null, null];
+  private resultEl: HTMLElement | null = null;
   private fstateEls: [HTMLElement | null, HTMLElement | null] = [null, null];
   // Expanded-board row cells, aligned with view.board order (structural sig).
   private boardRows: { row: HTMLElement; k: HTMLElement; d: HTMLElement; c: HTMLElement }[] = [];
@@ -71,6 +72,7 @@ export class BattlegroundScoreboard {
         root.querySelector('.bg-fstate.crimson'),
         root.querySelector('.bg-fstate.azure'),
       ];
+      this.resultEl = root.querySelector('.bg-result');
       this.boardRows = [...root.querySelectorAll<HTMLElement>('.bg-brow.bg-bplayer')].map(
         (row) => ({
           row,
@@ -79,6 +81,23 @@ export class BattlegroundScoreboard {
           c: row.querySelector('.bb-c') as HTMLElement,
         }),
       );
+    }
+    // The frozen result screen: the board pins open over the field with the
+    // verdict line and the leave-in countdown until everyone is sent home.
+    w.toggleClass(root, 'ended', view.state === 'ended');
+    if (this.resultEl) {
+      w.setText(
+        this.resultEl,
+        view.result === null
+          ? ''
+          : view.result === 'win'
+            ? t('hudChrome.bg.resultVictory')
+            : view.result === 'loss'
+              ? t('hudChrome.bg.resultDefeat')
+              : t('hudChrome.bg.resultDraw'),
+      );
+      w.toggleClass(this.resultEl, 'win', view.result === 'win');
+      w.toggleClass(this.resultEl, 'loss', view.result === 'loss');
     }
     if (this.scoreCrimsonEl) w.setText(this.scoreCrimsonEl, num(view.scoreCrimson));
     if (this.scoreAzureEl) w.setText(this.scoreAzureEl, num(view.scoreAzure));
@@ -89,18 +108,19 @@ export class BattlegroundScoreboard {
         this.clockEl,
         view.state === 'countdown'
           ? t('hudChrome.bg.formUp', { seconds: num(view.countdown) })
-          : t('hudChrome.bg.clock', {
-              minutes: num(view.minutes),
-              seconds: String(view.seconds).padStart(2, '0'),
-            }),
+          : view.state === 'ended'
+            ? t('hudChrome.bg.leavingIn', { seconds: num(view.countdown) })
+            : t('hudChrome.bg.clock', {
+                minutes: num(view.minutes),
+                seconds: String(view.seconds).padStart(2, '0'),
+              }),
       );
     }
     for (const team of [0, 1] as const) {
       const state = view.flagStates[team];
-      const carrier = view.carrierNames[team];
-      const stateText = carrier
-        ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
-        : t(FLAG_STATE_KEYS[state]);
+      // No player names on the strip (owner direction): the call is about
+      // the FLAG ('Flag stolen!'), the combat log keeps the who.
+      const stateText = t(FLAG_STATE_KEYS[state]);
       const el = this.flagEls[team];
       if (el) {
         for (const s of FLAG_STATES) w.toggleClass(el, s, state === s);
@@ -118,7 +138,7 @@ export class BattlegroundScoreboard {
       const fs = this.fstateEls[team];
       if (fs) {
         for (const s of FLAG_STATES) w.toggleClass(fs, s, state === s);
-        w.setText(fs, carrier ?? (state === 'home' ? '' : t(FLAG_STATE_KEYS[state])));
+        w.setText(fs, state === 'home' ? '' : t(FLAG_STATE_KEYS[state]));
       }
     }
     for (let i = 0; i < this.boardRows.length && i < view.board.length; i++) {
@@ -170,12 +190,25 @@ export class BattlegroundScoreboard {
     const togglePin = (): void => {
       const pinned = el.classList.toggle('expanded');
       el.setAttribute('aria-expanded', pinned ? 'true' : 'false');
+      // Unpinning by a second click leaves FOCUS on the strip, and
+      // :focus-within alone would hold the board open (the stuck-open bug):
+      // release focus with the pin so the board actually closes.
+      if (!pinned) el.blur();
     };
     el.addEventListener('click', togglePin);
     el.addEventListener('keydown', (ev) => {
       if (ev.key !== 'Enter' && ev.key !== ' ') return;
       ev.preventDefault();
       togglePin();
+    });
+    // Clicking anywhere OFF the strip closes a pinned board (and drops the
+    // focus reveal): the board must never stay stuck over the fight.
+    document.addEventListener('pointerdown', (ev) => {
+      if (el.contains(ev.target as Node)) return;
+      if (!el.classList.contains('expanded') && document.activeElement !== el) return;
+      el.classList.remove('expanded');
+      el.setAttribute('aria-expanded', 'false');
+      el.blur();
     });
     layer.appendChild(el);
     this.root = el;
@@ -206,6 +239,7 @@ export class BattlegroundScoreboard {
     // status flanking the match clock (the roster lives in the expanded
     // board, and the caps target lives in its header).
     return (
+      `<div class="bg-result"></div>` +
       `<div class="bg-score-line">` +
       `<span class="bg-team crimson${mine(0)}"${mineTitle(0)}><span class="bg-flag crimson" role="img"></span>${esc(t('hudChrome.bg.crimson'))}</span>` +
       `<span class="bg-score crimson"></span><span class="bg-score-colon">:</span><span class="bg-score azure"></span>` +

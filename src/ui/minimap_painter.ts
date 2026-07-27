@@ -393,7 +393,7 @@ export class MinimapPainter {
   }
 
   // Rasterize the fixed battleground layout once: every wall segment (the
-  // perimeter, both keeps with their postern gaps, the cover walls and the
+  // perimeter, both sealed keeps, the cover walls and the
   // heart-ruin block) as a rect in the outline token (mirrored on x like the
   // live projection). Tier-identical: walls are actionable cover.
   private ensureBattlegroundBg(colors: MinimapColors): HTMLCanvasElement {

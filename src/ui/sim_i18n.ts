@@ -92,6 +92,16 @@ const baseEnTable = {
   'error.noLootPermission': "You don't have permission to loot that.",
   'error.corpseAlreadyHarvested': 'This corpse has already been harvested.',
   'error.corpseNothingToHarvest': 'That corpse has nothing to harvest.',
+  // #2509: the pick named only component families this corpse carries but that
+  // no harvest item is wired to yet, on a corpse that DOES carry a mapped one.
+  // Refused pre-claim, so the corpse survives for a pick that can pay out.
+  // "THAT corpse" deliberately, matching corpseNothingToHarvest above: this is
+  // a toast about a target out in the world. The picker's own in-place line
+  // (hudChrome.corpseHarvest.nothingSelectedYields) says "this corpse", because
+  // the window is open on it, the same deixis split alreadyHarvested already
+  // has. Two keys, so the EXACT reverse table sees no collision.
+  'error.corpseSelectionNothingToHarvest':
+    'Nothing you selected can be harvested from that corpse.',
   'error.gatherNodeMissing': 'That resource node does not exist.',
   'error.gatherNodeNotRespawned': 'This resource node has not respawned for you yet.',
   // Profession-choice quest denials (src/sim/quests/quest_commands.ts): the archetype
@@ -545,6 +555,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': "You don't have permission to loot that.",
     'error.corpseAlreadyHarvested': 'This corpse has already been harvested.',
     'error.corpseNothingToHarvest': 'That corpse has nothing to harvest.',
+    'error.corpseSelectionNothingToHarvest':
+      'Nothing you selected can be harvested from that corpse.',
     'error.gatherNodeMissing': 'That resource node does not exist.',
     'error.gatherNodeNotRespawned': 'This resource node has not respawned for you yet.',
     'error.vcupDeserter': 'The Groundskeeper remembers. Come back later.',
@@ -926,6 +938,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'No tienes permiso para saquear eso.',
     'error.corpseAlreadyHarvested': 'Este cadáver ya ha sido recolectado.',
     'error.corpseNothingToHarvest': 'Ese cadáver no tiene nada que recolectar.',
+    'error.corpseSelectionNothingToHarvest':
+      'Nada de lo que has seleccionado se puede recolectar de ese cadáver.',
     'error.gatherNodeMissing': 'Ese nodo de recursos no existe.',
     'error.gatherNodeNotRespawned': 'Este nodo de recursos aún no ha reaparecido para ti.',
     'error.vcupDeserter': 'El Guardacampo lo recuerda. Vuelve más tarde.',
@@ -1315,6 +1329,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'No tienes permiso para saquear eso.',
     'error.corpseAlreadyHarvested': 'Este cadáver ya ha sido recolectado.',
     'error.corpseNothingToHarvest': 'Ese cadáver no tiene nada que recolectar.',
+    'error.corpseSelectionNothingToHarvest':
+      'Nada de lo que has seleccionado se puede recolectar de ese cadáver.',
     'error.gatherNodeMissing': 'Ese nodo de recursos no existe.',
     'error.gatherNodeNotRespawned': 'Este nodo de recursos aún no ha reaparecido para ti.',
     'error.vcupDeserter': 'El Guardacampo lo recuerda. Vuelve más tarde.',
@@ -1712,6 +1728,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': "Vous n'avez pas la permission de ramasser cela.",
     'error.corpseAlreadyHarvested': 'Ce cadavre a déjà été dépecé.',
     'error.corpseNothingToHarvest': "Ce cadavre n'a rien à dépecer.",
+    'error.corpseSelectionNothingToHarvest':
+      "Ce cadavre n'a rien à dépecer parmi les composants cochés.",
     'error.gatherNodeMissing': "Ce nœud de ressources n'existe pas.",
     'error.gatherNodeNotRespawned': "Ce nœud de ressources n'est pas encore réapparu pour vous.",
     'error.vcupDeserter': "Le Gardien du terrain s'en souvient. Revenez plus tard.",
@@ -2109,6 +2127,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': "Vous n'avez pas la permission de ramasser cela.",
     'error.corpseAlreadyHarvested': 'Ce cadavre a déjà été dépecé.',
     'error.corpseNothingToHarvest': "Ce cadavre n'a rien à dépecer.",
+    'error.corpseSelectionNothingToHarvest':
+      "Ce cadavre n'a rien à dépecer parmi les composants cochés.",
     'error.gatherNodeMissing': "Ce nœud de ressources n'existe pas.",
     'error.gatherNodeNotRespawned': "Ce nœud de ressources n'est pas encore réapparu pour vous.",
     'error.vcupDeserter': "Le Gardien du terrain s'en souvient. Revenez plus tard.",
@@ -2379,6 +2399,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': "You don't have permission to loot that.",
     'error.corpseAlreadyHarvested': 'This corpse has already been harvested.',
     'error.corpseNothingToHarvest': 'That corpse has nothing to harvest.',
+    'error.corpseSelectionNothingToHarvest':
+      'Nothing you selected can be harvested from that corpse.',
     'error.gatherNodeMissing': 'That resource node does not exist.',
     'error.gatherNodeNotRespawned': 'This resource node has not respawned for you yet.',
     'error.vcupDeserter': 'The Groundskeeper remembers. Come back later.',
@@ -2678,6 +2700,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'Non hai il permesso di saccheggiare quello.',
     'error.corpseAlreadyHarvested': 'Questo cadavere è già stato raccolto.',
     'error.corpseNothingToHarvest': 'Questo cadavere non ha nulla da raccogliere.',
+    'error.corpseSelectionNothingToHarvest':
+      'Quel cadavere non ha nulla da raccogliere tra i componenti selezionati.',
     'error.gatherNodeMissing': 'Quel nodo di risorse non esiste.',
     'error.gatherNodeNotRespawned': 'Questo nodo di risorse non è ancora ricomparso per te.',
     'error.vcupDeserter': 'Il Custode del campo ricorda. Torna più tardi.',
@@ -3072,6 +3096,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'Ihr habt keine Erlaubnis, das zu plündern.',
     'error.corpseAlreadyHarvested': 'Dieser Kadaver wurde bereits verwertet.',
     'error.corpseNothingToHarvest': 'An diesem Kadaver gibt es nichts zu verwerten.',
+    'error.corpseSelectionNothingToHarvest':
+      'An diesem Kadaver gibt es nichts aus Eurer Auswahl zu verwerten.',
     'error.gatherNodeMissing': 'Dieses Ressourcenvorkommen existiert nicht.',
     'error.gatherNodeNotRespawned':
       'Dieses Ressourcenvorkommen ist für Euch noch nicht erneut erschienen.',
@@ -3523,6 +3549,7 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': '你没有拾取它的权限。',
     'error.corpseAlreadyHarvested': '这具尸体已经被采集过了。',
     'error.corpseNothingToHarvest': '这具尸体上没有可采集的东西。',
+    'error.corpseSelectionNothingToHarvest': '你选择的部位都无法从那具尸体上采集。',
     'error.gatherNodeMissing': '那个资源点不存在。',
     'error.gatherNodeNotRespawned': '这个资源点尚未为你刷新。',
     'error.vcupDeserter': '场地管理员记着呢。稍后再来吧。',
@@ -3903,6 +3930,7 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': '你沒有拾取它的權限。',
     'error.corpseAlreadyHarvested': '這具屍體已經被採集過了。',
     'error.corpseNothingToHarvest': '這具屍體上沒有可採集的東西。',
+    'error.corpseSelectionNothingToHarvest': '你選擇的部位都無法從那具屍體上採集。',
     'error.gatherNodeMissing': '那個資源點不存在。',
     'error.gatherNodeNotRespawned': '這個資源點尚未為你重新出現。',
     'error.vcupDeserter': '場地管理員記著呢。稍後再來吧。',
@@ -4287,6 +4315,7 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': '그 대상의 전리품을 획득할 권한이 없습니다.',
     'error.corpseAlreadyHarvested': '이 시체는 이미 채집되었습니다.',
     'error.corpseNothingToHarvest': '이 시체에서는 채집할 것이 없습니다.',
+    'error.corpseSelectionNothingToHarvest': '선택한 부위는 그 시체에서 채집할 수 없습니다.',
     'error.gatherNodeMissing': '그 자원 지점은 존재하지 않습니다.',
     'error.gatherNodeNotRespawned': '이 자원 지점은 아직 당신에게 다시 생성되지 않았습니다.',
     'error.vcupDeserter': '경기장 관리인은 기억하고 있습니다. 나중에 다시 오세요.',
@@ -4685,6 +4714,7 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'その戦利品を入手する権限がありません。',
     'error.corpseAlreadyHarvested': 'この死体はすでに採取されています。',
     'error.corpseNothingToHarvest': 'この死体から採取できるものはありません。',
+    'error.corpseSelectionNothingToHarvest': '選んだ部位はどれも、その死体から採取できません。',
     'error.gatherNodeMissing': 'その資源ポイントは存在しません。',
     'error.gatherNodeNotRespawned': 'この資源ポイントは、あなたにはまだ再出現していません。',
     'error.vcupDeserter': '整備人は覚えている。また後で来なさい。',
@@ -5009,6 +5039,8 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'Você não tem permissão para saquear isso.',
     'error.corpseAlreadyHarvested': 'Este cadáver já foi coletado.',
     'error.corpseNothingToHarvest': 'Esse cadáver não tem nada para coletar.',
+    'error.corpseSelectionNothingToHarvest':
+      'Nada do que você selecionou pode ser coletado desse cadáver.',
     'error.gatherNodeMissing': 'Esse ponto de recursos não existe.',
     'error.gatherNodeNotRespawned': 'Este ponto de recursos ainda não ressurgiu para você.',
     'error.vcupDeserter': 'O Zelador do campo se lembra. Volte mais tarde.',
@@ -5472,6 +5504,7 @@ const BASE_DICT: Record<SupportedLanguage, Partial<Record<BaseSimMessageKey, str
     'error.noLootPermission': 'У вас нет разрешения на добычу этого.',
     'error.corpseAlreadyHarvested': 'С этого трупа уже всё собрано.',
     'error.corpseNothingToHarvest': 'С этого трупа нечего собрать.',
+    'error.corpseSelectionNothingToHarvest': 'С этого трупа нельзя собрать ничего из выбранного.',
     'error.gatherNodeMissing': 'Этого источника ресурсов не существует.',
     'error.gatherNodeNotRespawned': 'Этот источник ресурсов ещё не восстановился для вас.',
     'error.vcupDeserter': 'Смотритель поля помнит. Возвращайся позже.',
@@ -7447,6 +7480,7 @@ type BgExtraKey =
   | 'teamAzure'
   | 'errInBattleground'
   | 'errQueueDead'
+  | 'errQueueInMatch'
   | 'errMemberQueued'
   | 'errNoFlag'
   | 'errPartyTooLarge'
@@ -7469,6 +7503,7 @@ const BG_EXTRA_EN: Record<BgExtraKey, string> = {
   teamAzure: 'Azure',
   errInBattleground: 'You are already in a battleground.',
   errQueueDead: 'You cannot queue for Ravenrift while dead.',
+  errQueueInMatch: 'You cannot queue for Ravenrift while in another match.',
   errMemberQueued: 'A party member is already queued or in a match.',
   errNoFlag: 'There is no flag within reach.',
   errPartyTooLarge: 'Your party is too large for Ravenrift. It queues parties of up to 5.',
@@ -7492,6 +7527,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '蔚蓝队',
     errInBattleground: '你已经在战场中了。',
     errQueueDead: '死亡状态下无法排队进入鸦裂谷。',
+    errQueueInMatch: '比赛进行中无法排队进入鸦裂谷。',
     errMemberQueued: '有队友已在队列或比赛中。',
     errNoFlag: '附近没有可夺取的旗帜。',
     errPartyTooLarge: '你的队伍人数超出鸦裂谷上限。最多5人小队可排队。',
@@ -7513,6 +7549,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '蔚藍隊',
     errInBattleground: '你已經在戰場中了。',
     errQueueDead: '死亡狀態下無法排隊進入鴉裂谷。',
+    errQueueInMatch: '比賽進行中無法排隊進入鴉裂谷。',
     errMemberQueued: '有隊友已在佇列或比賽中。',
     errNoFlag: '附近沒有可奪取的旗幟。',
     errPartyTooLarge: '你的隊伍人數超出鴉裂谷上限。最多5人隊伍可排隊。',
@@ -7535,6 +7572,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: 'アズール',
     errInBattleground: 'すでに戦場にいます。',
     errQueueDead: '死亡中はレイヴンリフトのキューに参加できません。',
+    errQueueInMatch: '別の試合中はレイヴンリフトのキューに参加できません。',
     errMemberQueued: 'パーティメンバーがすでにキューまたは試合に参加しています。',
     errNoFlag: '手の届く範囲に旗がありません。',
     errPartyTooLarge:
@@ -7561,6 +7599,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: '청람팀',
     errInBattleground: '이미 전장에 있습니다.',
     errQueueDead: '죽은 상태로는 레이븐리프트 대기열에 참가할 수 없습니다.',
+    errQueueInMatch: '다른 경기 중에는 레이븐리프트 대기열에 참가할 수 없습니다.',
     errMemberQueued: '파티원이 이미 대기열이나 경기에 참가 중입니다.',
     errNoFlag: '근처에 잡을 수 있는 깃발이 없습니다.',
     errPartyTooLarge:
@@ -7586,6 +7625,7 @@ const BG_EXTRA: Partial<Record<SupportedLanguage, Partial<Record<BgExtraKey, str
     teamAzure: 'Лазурных',
     errInBattleground: 'Вы уже находитесь на поле боя.',
     errQueueDead: 'Нельзя встать в очередь Вороньего Разлома, будучи мертвым.',
+    errQueueInMatch: 'Нельзя встать в очередь Вороньего Разлома во время другого матча.',
     errMemberQueued: 'Кто-то из группы уже в очереди или в матче.',
     errNoFlag: 'Поблизости нет флага, который можно взять.',
     errPartyTooLarge:
@@ -8821,6 +8861,10 @@ const RULES: Rule[] = [
   { re: /^You seize a Ward Rune!$/, build: () => tBg('seizeWardRune') },
   { re: /^You are already in a battleground\.$/, build: () => tBg('errInBattleground') },
   { re: /^You cannot queue for Ravenrift while dead\.$/, build: () => tBg('errQueueDead') },
+  {
+    re: /^You cannot queue for Ravenrift while in another match\.$/,
+    build: () => tBg('errQueueInMatch'),
+  },
   {
     re: /^A party member is already queued or in a match\.$/,
     build: () => tBg('errMemberQueued'),

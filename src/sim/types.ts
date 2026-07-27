@@ -3507,6 +3507,15 @@ export type SimEvent = { pid?: number } & (
       scoreCrimson: number;
       scoreAzure: number;
     }
+  // Kill feed: one per match member per player death (names resolve
+  // client-side against the localized feed line; teams color the entry).
+  | {
+      type: 'bgKill';
+      killerName: string | null; // null: an unattributed death (no enemy credit)
+      victimName: string;
+      killerTeam: number | null;
+      victimTeam: number;
+    }
   | {
       type: 'bgEnd';
       won: boolean;

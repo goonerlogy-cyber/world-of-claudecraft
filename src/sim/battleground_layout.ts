@@ -3,12 +3,12 @@
 // truth shared by BOTH the collider set (src/sim/colliders.ts) and the renderer
 // (src/render/battleground.ts), so what you fight around is what you see.
 // Sim layer: no three.js imports. The field is a rework of Dubtribe11's
-// PR #589 layout: the keeps, flags, runes, and postern gaps are kept, and the
+// PR #589 layout: the keeps, flags, and runes are kept, and the
 // space between them is carved into THREE CHAMBERS. Two full-width curtain
 // walls partition the field into each team's own field chamber and the walled
-// Ruin Courtyard between them; every move between chambers passes one of three
-// contested crossings per curtain (main gate, flank arch, or the gatehouse
-// room), and a low barricade breaks the straight charge into each keep mouth.
+// Ruin Courtyard between them; every move between chambers passes one of TWO
+// contested crossings per curtain (the main gate or the gatehouse room), and
+// a low barricade breaks the straight charge into each keep mouth.
 import type { Collider } from './colliders';
 
 export type BgTeam = 0 | 1; // 0 = Crimson (south, -z), 1 = Azure (north, +z)
@@ -23,14 +23,14 @@ export const BG_WALL_T = 1; // wall half-thickness (collider + module)
 export const BG_WALL_HEIGHT = 6;
 export const BG_FLAG_Z = 118; // |z| of each team's flag stand
 
-// Keep enclosure: a back wall behind the flag and two side walls, open toward
-// the field. One side wall carries the postern gap (see keepWallSegments).
+// Keep enclosure: a back wall behind the flag and two SOLID side walls, open
+// only toward the field: the keep mouth is the one way in or out, so the only
+// two routes into a base area are the main gate and the gatehouse room.
 export const KEEP_HALF_X = 16;
 export const KEEP_BACK_DZ = 10; // back wall sits this far behind the flag
 const KEEP_SIDE_DZ = 0; // side walls centre on the flag line: they span the
 const KEEP_SIDE_HD = 10; // full back-wall-to-mouth-line depth, so the form-up
 // containment box (keepInteriorBounds) coincides exactly with the walls
-export const BG_POSTERN_GAP = 3; // width of the postern opening in one side wall
 
 export interface BgBaseDef {
   team: BgTeam;
@@ -136,7 +136,7 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 10, z: 102 },
   { x: 14, z: -76 },
   { x: -14, z: 76 },
-  { x: -42, z: -60 }, // by each flank-arch approach
+  { x: -42, z: -60 }, // by each rampart flank
   { x: 42, z: 60 },
   { x: 41, z: -4 }, // cover beside each flank rune
   { x: -41, z: 4 },
@@ -146,35 +146,70 @@ export const BG_COVER_CRATES: { x: number; z: number }[] = [
   { x: 27, z: 51 },
 ];
 
+// The big rock formations of the Ruin Courtyard: hand-placed (the owner-
+// approved dramatic look at render scale BG_RUBBLE_SCALE), each a real
+// collider sized to its KIND from the decoded GLB solid body, point-
+// mirrored. The spots keep every route corridor, pad, crossing, and wall
+// clear at the big radii; the walk-the-route pins prove the lanes over the
+// live collider set. Tops are clamped below the eye line: movement cover,
+// never sight cover, and the camera clears them. The render dressing
+// derives its heaps from THIS list, so what blocks is exactly what renders.
+export interface BgRubblePile {
+  x: number;
+  z: number;
+  kind: 'rubble_large' | 'rocks_decorated';
+}
+export const BG_RUBBLE_PILES: BgRubblePile[] = [
+  { x: 9.5, z: -10.5, kind: 'rocks_decorated' }, // hugging the heart's corners
+  { x: -9.5, z: 10.5, kind: 'rocks_decorated' },
+  { x: -20, z: -50, kind: 'rubble_large' }, // the great mounds at the curtain feet
+  { x: 20, z: 50, kind: 'rubble_large' },
+  { x: 43, z: -24, kind: 'rubble_large' }, // rampart-side formations
+  { x: -43, z: 24, kind: 'rubble_large' },
+  { x: 3, z: -33, kind: 'rubble_large' }, // mid-courtyard set pieces
+  { x: -3, z: 33, kind: 'rubble_large' },
+  { x: -33, z: -20, kind: 'rocks_decorated' },
+  { x: 33, z: 20, kind: 'rocks_decorated' },
+  { x: -16, z: -9, kind: 'rocks_decorated' }, // by the heart's west face
+  { x: 16, z: 9, kind: 'rocks_decorated' },
+  { x: 30, z: -51, kind: 'rocks_decorated' }, // at the sealed curtain runs
+  { x: -30, z: 51, kind: 'rocks_decorated' },
+  { x: -44, z: -36, kind: 'rocks_decorated' },
+  { x: 44, z: 36, kind: 'rocks_decorated' },
+];
+export function bgRubbleRadius(kind: BgRubblePile['kind']): number {
+  return kind === 'rubble_large' ? 4.6 : 2.0;
+}
+export const BG_RUBBLE_SCALE = 1.5;
+
 /** The z line of each curtain wall: the chamber boundaries. On the 4yd floor
  *  grid, so the theming bands land exactly on the walls. */
 export const BG_CURTAIN_Z = 56;
 
 // The two curtain walls: full-width partitions at z = +-BG_CURTAIN_Z that
 // carve the field into three chambers (each team's field, the Ruin Courtyard
-// between). Each curtain is pierced by exactly three crossings, mirrored:
+// between). Each curtain is pierced by exactly TWO crossings, mirrored:
 //   main gate, 10yd, off-center toward the field side (Crimson's east);
-//   flank arch, 5yd, six yards off the far rampart;
 //   the gatehouse, whose walls the curtain terminates into (below).
+// (The old 5yd flank arch is sealed per the owner's two-routes rule: into a
+// chamber you come through the main gate or the gatehouse, nothing else.)
 // Every curtain segment butt-joins what it meets (the rampart inner face at
 // |x| 49, the gatehouse side walls), never overlaps it.
 export const BG_CURTAIN_WALLS: BgWallSeg[] = [
   { x: -41.5, z: -56, hw: 7.5, hd: 1 }, // rampart to gatehouse west wall
   { x: -5, z: -56, hw: 13, hd: 1 }, // gatehouse east wall to main gate (x 8..18)
-  { x: 28, z: -56, hw: 10, hd: 1 }, // main gate to flank arch (x 38..43)
-  { x: 46, z: -56, hw: 3, hd: 1 }, // flank arch to rampart
+  { x: 33.5, z: -56, hw: 15.5, hd: 1 }, // main gate to the rampart, one sealed run
   { x: 41.5, z: 56, hw: 7.5, hd: 1 }, // north curtain, point mirror
   { x: 5, z: 56, hw: 13, hd: 1 },
-  { x: -28, z: 56, hw: 10, hd: 1 },
-  { x: -46, z: 56, hw: 3, hd: 1 },
+  { x: -33.5, z: 56, hw: 15.5, hd: 1 },
 ];
 
 // The gatehouses: a room straddling each curtain (16yd wide, 20yd long over
 // its end walls) with OFFSET doors (enter the field-side door on one half,
 // exit the courtyard-side door on the other), so crossing it is a jog past
 // ambush corners, not a straight run.
-// Each sits on its team's postern side, so a runner slipping out the postern
-// chains naturally into it. Walls butt-join the curtain segments exactly.
+// Each sits on its team's gatehouse flank (Crimson west, Azure east, the
+// point-symmetric mirror). Walls butt-join the curtain segments exactly.
 export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
   { x: -33, z: -56, hw: 1, hd: 9 }, // south gatehouse, west wall
   { x: -19, z: -56, hw: 1, hd: 9 }, // east wall
@@ -189,7 +224,7 @@ export const BG_GATEHOUSE_WALLS: BgWallSeg[] = [
 // Mouth barricades: one low wall 2yd field-side of each keep mouth, offset
 // across the mouth span so the straight line from the field to the flag is
 // broken: measured against the keep's own width, a runner rounds it through a
-// narrow lane on the postern side or a wide lane on the other (the open field
+// narrow lane on the gatehouse side or a wide lane on the other (the open field
 // beyond the keep's width flanks it entirely). Defenders get a hold point,
 // attackers pick a side. Sits OUTSIDE keepInteriorBounds, so the form-up
 // containment never reads it.
@@ -199,7 +234,7 @@ export const BG_KEEP_BARRICADES: BgWallSeg[] = [
 ];
 
 // Graveyards: a large fenced plot in the map corner BESIDE each keep, on its
-// postern-OPPOSITE flank (out of the flag room, per the owner's direction), so
+// gatehouse-OPPOSITE flank (out of the flag room, per the owner's direction), so
 // the keep interior stays a clean fight space and the yard reads as a real
 // place. A released spirit rises here and is bound to the plot until its
 // team's respawn wave (social/battleground.ts tickGraveyards). The stone
@@ -214,7 +249,7 @@ export interface BgGraveyardPlot {
   hd: number;
 }
 export const BG_GRAVEYARDS: [BgGraveyardPlot, BgGraveyardPlot] = [
-  { x: 33, z: -130, hw: 9, hd: 6 }, // Crimson: east corner beside the keep (postern is west)
+  { x: 33, z: -130, hw: 9, hd: 6 }, // Crimson: east corner beside the keep (gatehouse is west)
   { x: -33, z: 130, hw: 9, hd: 6 }, // Azure mirror
 ];
 export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
@@ -232,6 +267,7 @@ export const BG_GRAVEYARD_FENCES: BgWallSeg[] = [
 ];
 
 const PILLAR_R = 1.0;
+const RUBBLE_TOP = 1.4; // heap sight/camera top: BELOW SIGHT_HEIGHT, casts pass over
 const CRATE_R = 0.8;
 
 // Visual tops for camera occlusion and the spell-sight low-obstacle skip
@@ -278,11 +314,10 @@ export function keepInteriorBounds(team: BgTeam): {
 }
 
 /**
- * Keep walls for one team, postern gap included. Crimson's postern opens in
- * its WEST wall and Azure's in its EAST wall, the point-symmetric mirror
- * ((x,z) -> (-x,-z)) the rest of the map follows, so neither side is favored.
- * The gap gives the flag grabber a second exit: main mouth toward mid cover,
- * postern toward the fast open flank near that side's flank rune.
+ * Keep walls for one team: a back wall and two SOLID side walls. The keep
+ * mouth is the ONLY opening (the owner's two-routes rule: into a base area
+ * you come through the main gate or the gatehouse room, nothing else), and
+ * the set stays point-symmetric ((x,z) -> (-x,-z)) so neither side is favored.
  */
 export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   const dir = team === 0 ? -1 : 1; // back wall is further from centre
@@ -290,17 +325,8 @@ export function keepWallSegments(team: BgTeam): BgWallSeg[] {
   const backZ = flagZ + dir * KEEP_BACK_DZ;
   const sideZ = flagZ + dir * KEEP_SIDE_DZ;
   const segs: BgWallSeg[] = [{ x: 0, z: backZ, hw: KEEP_HALF_X, hd: BG_WALL_T }];
-  const posternX = team === 0 ? -KEEP_HALF_X : KEEP_HALF_X;
   for (const sx of [-KEEP_HALF_X, KEEP_HALF_X]) {
-    if (sx === posternX) {
-      // split the side wall around a BG_POSTERN_GAP opening centred mid-wall
-      const segHd = (KEEP_SIDE_HD - BG_POSTERN_GAP / 2) / 2;
-      const off = BG_POSTERN_GAP / 2 + segHd;
-      segs.push({ x: sx, z: sideZ - off, hw: BG_WALL_T, hd: segHd });
-      segs.push({ x: sx, z: sideZ + off, hw: BG_WALL_T, hd: segHd });
-    } else {
-      segs.push({ x: sx, z: sideZ, hw: BG_WALL_T, hd: KEEP_SIDE_HD });
-    }
+    segs.push({ x: sx, z: sideZ, hw: BG_WALL_T, hd: KEEP_SIDE_HD });
   }
   return segs;
 }
@@ -318,6 +344,100 @@ export function battlegroundWallSegments(): BgWallSeg[] {
     ...BG_KEEP_BARRICADES,
     ...BG_GRAVEYARD_FENCES,
   ];
+}
+
+// --- The floor and its rock clusters ----------------------------------------
+// (owner direction, seventh pass): the field's rocky look comes from the
+// ROCKY FLOOR TILES themselves (the terrain the owner liked), and the chunky
+// cluster baked into floor_tile_large_rocks BLOCKS: the sim owns the tile
+// selection, emits one collider per rocky tile at the cluster's measured
+// in-tile position, and downgrades a would-be rocky tile to its plain twin
+// wherever the cluster would pinch a route corridor, pad, crossing room, or
+// wall, so what blocks is exactly what renders and the lanes stay open by
+// construction. The low gravel tile (floor_dirt_large_rocky, 0.29yd) stays
+// honestly walk-over. Rock placement is point-mirrored via a canonical south
+// half, so neither team's ground plays different.
+// Deterministic per-position hash (the render core's hash2; a local copy so
+// the sim layer stays import-clean). NOT gameplay randomness: static layout.
+function layoutHash(a: number, b: number): number {
+  const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+// --- Floor tile selection (single source for render AND colliders) ---------
+export type BgZone = 'keep' | 'approach' | 'mid';
+/** The courtyard band ends at the curtain line, DERIVED so it cannot drift. */
+export const BG_ZONE_MID_HALF_Z = BG_CURTAIN_Z;
+/** The garrison band starts at the keep mouth line, past the barricades. */
+export const BG_ZONE_KEEP_MIN_Z = BG_FLAG_Z - KEEP_MOUTH_DZ;
+
+export function bgZoneAt(z: number): BgZone {
+  const az = Math.abs(z);
+  if (az >= BG_ZONE_KEEP_MIN_Z) return 'keep';
+  if (az > BG_ZONE_MID_HALF_Z) return 'approach';
+  return 'mid';
+}
+
+export type BgFloorKind =
+  | 'floor_tile_large'
+  | 'floor_tile_large_rocks'
+  | 'floor_dirt_large'
+  | 'floor_dirt_large_rocky';
+
+// The owner-approved terrain mixes (the pre-flat-fix look, restored).
+const BG_FLOOR_KINDS_BY_ZONE: Record<BgZone, [BgFloorKind, number][]> = {
+  // garrison grounds: swept tile with the odd rocky patch
+  keep: [
+    ['floor_tile_large', 6],
+    ['floor_tile_large_rocks', 1],
+    ['floor_dirt_large', 1],
+  ],
+  // each team's field chamber: a kept road, clearly tidier than the courtyard
+  approach: [
+    ['floor_tile_large', 5],
+    ['floor_tile_large_rocks', 2],
+    ['floor_dirt_large', 1],
+  ],
+  // the ruin courtyard: broken earth almost wall to wall
+  mid: [
+    ['floor_tile_large', 1],
+    ['floor_tile_large_rocks', 2],
+    ['floor_dirt_large', 3],
+    ['floor_dirt_large_rocky', 4],
+  ],
+};
+
+function pickFloorKind(kinds: [BgFloorKind, number][], t: number): BgFloorKind {
+  let total = 0;
+  for (const [, w] of kinds) total += w;
+  let acc = 0;
+  for (const [name, w] of kinds) {
+    acc += w;
+    if (t * total < acc) return name;
+  }
+  return kinds[kinds.length - 1][0];
+}
+
+/** The 4yd floor grid the render tiling uses; tile centers sit at odd*2. */
+export const BG_FLOOR_CELL = 4;
+
+/**
+ * The floor tile at a grid cell center (instance-local). Deterministic and
+ * point-mirrored: cells on the north half mirror the south cell's pick (yaw
+ * plus a half turn), so the two teams' ground is exactly fair. Every floor
+ * tile is WALKABLE, rocky or not (owner direction: the baked plates read as
+ * flat debris, and blocking them felt wrong); the rocks that block are the
+ * BG_RUBBLE_PILES formations, whose colliders match their rendered bodies.
+ */
+export function bgFloorTileAt(cx: number, cz: number): { kind: BgFloorKind; ry: number } {
+  if (cz > 0) {
+    const m = bgFloorTileAt(-cx, -cz);
+    return { kind: m.kind, ry: (m.ry + Math.PI) % (Math.PI * 2) };
+  }
+  const zone = bgZoneAt(cz);
+  const kind = pickFloorKind(BG_FLOOR_KINDS_BY_ZONE[zone], layoutHash(cx * 1.31, cz));
+  const ry = Math.floor(layoutHash(cz, cx) * 4) * (Math.PI / 2);
+  return { kind, ry };
 }
 
 /** Full BG collision set in instance-local coordinates. Flag stands and speed
@@ -340,6 +460,15 @@ export function battlegroundColliders(): Collider[] {
   }
   for (const c of BG_COVER_CRATES) {
     out.push({ type: 'circle', x: c.x, z: c.z, r: CRATE_R, cameraTopY: CRATE_TOP });
+  }
+  for (const rb of BG_RUBBLE_PILES) {
+    out.push({
+      type: 'circle',
+      x: rb.x,
+      z: rb.z,
+      r: bgRubbleRadius(rb.kind),
+      cameraTopY: RUBBLE_TOP,
+    });
   }
   return out;
 }

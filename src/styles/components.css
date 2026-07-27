@@ -744,6 +744,15 @@
   .corpse-harvest-btn {
     width: 100%;
   }
+  /* #2509: why Harvest is refused, stated in place. A disabled button takes no
+     pointer events and leaves the tab order, so its tooltip is unreachable.
+     Sits BELOW the button (see corpse_harvest_window.ts) so showing it never
+     moves the control the player is reaching for. */
+  .corpse-harvest-warning {
+    font-size: 11px;
+    color: var(--color-text-error);
+    margin-top: 6px;
+  }
 
   /* ---------- town-focus ---------- */
   /* town focus (#1143): persistent town-set component harvest focus */
@@ -8276,6 +8285,83 @@
     text-align: center;
   }
 
+  /* kill feed: BIG banner entries stacked under the minimap block, clear of
+     the compass strip; names wear their team colors, the killer's team edges
+     the card. Actionable, tier-identical (fairness contract). */
+  #bg-killfeed {
+    position: absolute;
+    top: 285px;
+    right: 12px;
+    width: 380px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 7px;
+    pointer-events: none;
+    z-index: 17;
+  }
+  .bgkf-line {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    max-width: 100%;
+    font-family: var(--title-font);
+    font-size: 19px;
+    letter-spacing: 0.4px;
+    color: #d8d2c0;
+    background: linear-gradient(100deg, #10131add, #080a0eee);
+    border: 1px solid #3a4a66;
+    border-right-width: 5px;
+    border-radius: 8px;
+    padding: 7px 14px;
+    text-shadow: 1px 1px 3px #000;
+    box-shadow: 0 2px 12px #0009;
+    animation: bgkf-in 0.32s cubic-bezier(0.2, 1.4, 0.4, 1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bgkf-line.crimson {
+    border-right-color: var(--color-team-red);
+  }
+  .bgkf-line.azure {
+    border-right-color: var(--color-team-blue);
+  }
+  .bgkf-mark {
+    width: 19px;
+    height: 19px;
+    flex: none;
+    color: var(--gold);
+    filter: drop-shadow(1px 1px 2px #000);
+  }
+  .bgkf-name {
+    font-weight: 700;
+    font-size: 21px;
+  }
+  .bgkf-name.crimson {
+    color: #ff6a5c;
+  }
+  .bgkf-name.azure {
+    color: #6aa8ff;
+  }
+  .bgkf-verb {
+    color: #b8b09a;
+    font-size: 16px;
+  }
+  @keyframes bgkf-in {
+    from {
+      opacity: 0;
+      transform: translateX(26px) scale(1.12);
+    }
+    60% {
+      opacity: 1;
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* in-match scoreboard strip: pinned top centre; every state here is
      actionable information and paints identically on every graphics tier */
   #bg-scoreboard {
@@ -8332,8 +8418,32 @@
   }
   #bg-scoreboard:hover .bg-board,
   #bg-scoreboard:focus-within .bg-board,
-  #bg-scoreboard.expanded .bg-board {
+  #bg-scoreboard.expanded .bg-board,
+  #bg-scoreboard.ended .bg-board {
     display: block;
+  }
+  /* the frozen post-match result screen: verdict header over the pinned board */
+  #bg-scoreboard .bg-result {
+    display: none;
+  }
+  #bg-scoreboard.ended .bg-result {
+    display: block;
+    font-family: var(--title-font);
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: var(--gold);
+    text-shadow: 1px 1px 4px #000;
+    padding: 2px 0 4px;
+  }
+  #bg-scoreboard.ended .bg-result.win {
+    color: #8fe06a;
+  }
+  #bg-scoreboard.ended .bg-result.loss {
+    color: #ff7a6a;
+  }
+  #bg-scoreboard.ended {
+    top: 48px;
+    min-width: 380px;
   }
   .bg-brow {
     display: grid;

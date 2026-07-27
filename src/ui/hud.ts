@@ -316,6 +316,7 @@ import {
 import { MobileActionRingPainter } from './hud/action_bar/mobile_action_ring_painter';
 import { playerStealthed } from './hud/action_bar/player_stealthed';
 import {
+  BattlegroundKillFeed,
   BattlegroundMapPainter,
   BattlegroundScoreboard,
   buildBgMapModel,
@@ -371,7 +372,7 @@ import {
   tOptional,
   tPlural,
 } from './i18n';
-import { iconDataUrl, QUALITY_COLOR, raidMarkerDataUrl } from './icons';
+import { hasAuraRecipe, iconDataUrl, QUALITY_COLOR, raidMarkerDataUrl } from './icons';
 import { InspectWindow } from './inspect_window';
 import { itemArmorTypeLabelKey } from './item_armor_type';
 import { requiredClassesForTooltip } from './item_class_restriction';
@@ -3451,7 +3452,7 @@ export class Hud {
   // is why the tooltip here is NAME-ONLY: no seconds line, no effect summary.
   private readonly partyAurasDeps: PartyRowAuraDeps = {
     view: {
-      iconId: (a) => (ABILITIES[a.id] ? a.id : `aura_${a.kind}`),
+      iconId: (a) => (ABILITIES[a.id] || hasAuraRecipe(a.id) ? a.id : `aura_${a.kind}`),
       auraName: (a) =>
         ABILITIES[a.id] ? abilityDisplayName(ABILITIES[a.id]) : auraDisplayNameFromSource(a.name),
       formatStacks: (n) => formatNumber(n, { maximumFractionDigits: 0 }),
@@ -3537,7 +3538,7 @@ export class Hud {
   // switch lands next tick, but the object itself is never reallocated.
   private readonly auraDurationUnits = { s: 's', m: 'm', h: 'h', d: 'd' };
   private readonly aurasViewDeps: AurasDeps = {
-    iconId: (a) => (ABILITIES[a.id] ? a.id : `aura_${a.kind}`),
+    iconId: (a) => (ABILITIES[a.id] || hasAuraRecipe(a.id) ? a.id : `aura_${a.kind}`),
     auraName: (a) =>
       ABILITIES[a.id] ? abilityDisplayName(ABILITIES[a.id]) : auraDisplayNameFromSource(a.name),
     formatStacks: (n) => formatNumber(n, { maximumFractionDigits: 0 }),
@@ -3965,6 +3966,10 @@ export class Hud {
   private readonly bgScoreboard = new BattlegroundScoreboard({
     layer: () => document.getElementById('ui'),
     writers: this.writerFacet,
+  });
+  // Top-right kill feed: event-pushed lines, expiry-pruned per frame.
+  private readonly bgKillFeed = new BattlegroundKillFeed({
+    layer: () => document.getElementById('ui'),
   });
   // Pre-match Vale Cup briefing overlay (rules + role kit + team sheet + Ready).
   // Self-mounting full-screen card shown only while cupInfo.match.phase is
@@ -7794,6 +7799,7 @@ export class Hud {
       this.updateArenaStatus();
       this.updateFiestaHud();
       this.bgScoreboard.update(buildBgScoreboardView(this.sim.bgInfo, this.sim.playerId));
+      this.bgKillFeed.update(performance.now() / 1000);
       this.yumiPainter.update(this.sim.arenaInfo);
       // Vale Cup surfaces (mediumHud like the arena/fiesta ones): the indicator
       // button, the in-match strip, and the open window redraw.
@@ -10233,7 +10239,28 @@ export class Hud {
           }
           break;
         }
+        case 'bgKill': {
+          // The feed gets the transient stack; the combat log keeps the line
+          // durably (and for assistive tech: the feed itself is aria-hidden).
+          this.bgKillFeed.push(
+            {
+              killerName: ev.killerName,
+              victimName: ev.victimName,
+              killerTeam: ev.killerTeam,
+              victimTeam: ev.victimTeam,
+            },
+            performance.now() / 1000,
+          );
+          this.combatLog(
+            ev.killerName === null
+              ? t('hudChrome.bg.killFeedFallen', { victim: ev.victimName })
+              : t('hudChrome.bg.killFeed', { killer: ev.killerName, victim: ev.victimName }),
+            ev.killerTeam === 0 ? '#ff8a7a' : ev.killerTeam === 1 ? '#7fb2ff' : '#cfc6a8',
+          );
+          break;
+        }
         case 'bgEnd': {
+          this.bgKillFeed.clear();
           const delta = ev.ratingAfter - ev.ratingBefore;
           const params = {
             crimson: formatNumber(ev.scoreCrimson, { maximumFractionDigits: 0 }),

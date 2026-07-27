@@ -115,7 +115,10 @@ export function releasePlayerSpirit(
   if (!r) return;
   const { meta, e: p } = r;
   if (!p.dead || p.ghost) return; // not dead, or already a spirit
-  if (ctx.arenaMatches.has(p.id)) return; // arena/fiesta run their own respawn
+  // Arena/fiesta run their own respawn, BUT a live Ravenrift membership wins:
+  // a stale arenaMatches entry (jail/cross-queue leaks) once held this gate
+  // shut for a whole bg match, so the guard must never outrank the bg arm.
+  if (ctx.arenaMatches.has(p.id) && !ctx.bgMatches.has(p.id)) return;
   // Ravenrift keeps the classic release: the spirit rises in the team's keep
   // graveyard plot and waits there for the wave (never a graveyard-walk out).
   const bgMatch = ctx.bgMatches.get(p.id) ?? null;

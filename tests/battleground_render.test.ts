@@ -3,7 +3,7 @@
 // builder (src/render/battleground.ts) instantiates verbatim. The manifest
 // derives from src/sim/battleground_layout.ts, the SAME record the collider
 // set reads, so these pins are the see-what-you-collide-with guarantee:
-// every solid wall segment yields wall modules, the postern gaps stay open,
+// every solid wall segment yields wall modules, the keep side walls seal solid,
 // the heart ruin renders hollow over its solid collider footprint, and the
 // field's dressing (rune pads, flag pedestals, banners) is present and
 // point-symmetric like the layout itself.
@@ -28,7 +28,6 @@ import {
   BG_GATEHOUSE_WALLS,
   BG_GRAVEYARD_FENCES,
   BG_KEEP_BARRICADES,
-  BG_POSTERN_GAP,
   BG_POWER_RUNES,
   BG_SPEED_RUNES,
   BG_WALL_T,
@@ -82,42 +81,53 @@ describe('battleground render manifest derives from the layout', () => {
     }
   });
 
-  it('keeps the postern gap columns open: no wall module inside the gap span', () => {
+  it('keeps are sealed: each side-wall column is one solid, gap-free module run', () => {
     for (const base of BG_BASES) {
-      // The postern wall column: Crimson's west (x=-16), Azure's east (x=+16),
-      // recovered from the layout (the segment column split into TWO runs).
-      const sideX = base.team === 0 ? -16 : 16;
-      const column = battlegroundWallSegments().filter(
-        (s) =>
-          !isRuinBlock(s) &&
-          s.hd > s.hw && // a z-run: courtyard x-runs sharing the x are not walls of this column
-          s.x === sideX &&
-          Math.sign(s.z) === Math.sign(base.flag.z),
-      );
-      expect(column.length, `team ${base.team} postern column`).toBe(2);
-      const [a, b] = [...column].sort((s1, s2) => s1.z - s2.z);
-      const gapLo = a.z + a.hd;
-      const gapHi = b.z - b.hd;
-      expect(gapHi - gapLo).toBeCloseTo(BG_POSTERN_GAP, 6);
-      const intruders = [...m.walls, ...m.ruin].filter((p) => {
-        if (p.x !== sideX) return false;
-        const span = moduleSpan(p);
-        return span.max > gapLo + 1e-6 && span.min < gapHi - 1e-6;
-      });
-      expect(intruders, `team ${base.team} postern gap must stay open`).toEqual([]);
+      for (const sideX of [-16, 16]) {
+        // A keep side column: a z-run at x = +/-16 on this keep's half.
+        const column = battlegroundWallSegments().filter(
+          (s) =>
+            !isRuinBlock(s) &&
+            s.hd > s.hw && // a z-run: courtyard x-runs sharing the x are not walls of this column
+            s.x === sideX &&
+            Math.sign(s.z) === Math.sign(base.flag.z),
+        );
+        expect(column.length, `team ${base.team} side column x=${sideX}`).toBe(1);
+        const seg = column[0];
+        // The modules tiling that column leave NO gap: sorted spans chain
+        // contiguously from the mouth line to the back wall.
+        const spans = m.walls
+          .filter((p) => p.x === sideX)
+          .map(moduleSpan)
+          .filter(
+            (sp) =>
+              sp.axis === 'z' && sp.min >= seg.z - seg.hd - 1e-6 && sp.max <= seg.z + seg.hd + 1e-6,
+          )
+          .sort((s1, s2) => s1.min - s2.min);
+        expect(spans.length, `team ${base.team} side x=${sideX} modules`).toBeGreaterThan(0);
+        let cursor = seg.z - seg.hd;
+        for (const sp of spans) {
+          expect(sp.min, `gap in team ${base.team} side x=${sideX}`).toBeLessThanOrEqual(
+            cursor + 1e-6,
+          );
+          cursor = Math.max(cursor, sp.max);
+        }
+        expect(cursor, `team ${base.team} side x=${sideX} reaches the back wall`).toBeCloseTo(
+          seg.z + seg.hd,
+          6,
+        );
+      }
     }
   });
 
   it('leaves every curtain crossing open and dresses the gatehouses in one kind', () => {
     // no wall or ruin module may intrude into a crossing span on the curtain
-    // line (the render-side twin of the postern-gap pin)
+    // line (the render-side twin of the sealed-keep pin)
     const crossings: { z: number; lo: number; hi: number }[] = [
       { z: -56, lo: -34, hi: -18 }, // south gatehouse span (its room walls own it)
       { z: -56, lo: 8, hi: 18 }, // south main gate
-      { z: -56, lo: 38, hi: 43 }, // south flank arch
       { z: 56, lo: 18, hi: 34 }, // north mirrors
       { z: 56, lo: -18, hi: -8 },
-      { z: 56, lo: -43, hi: -38 },
     ];
     for (const c of crossings) {
       const intruders = [...m.walls, ...m.ruin].filter((p) => {
@@ -281,8 +291,8 @@ describe('the band fog is view distance, tier-identical (source pin)', () => {
     const start = src.indexOf("desired === 'battleground'");
     expect(start).toBeGreaterThan(-1);
     const branch = src.slice(start, src.indexOf('} else if', start + 1));
-    expect(branch).toContain('fog.near = 55');
-    expect(branch).toContain('fog.far = 130');
+    expect(branch).toContain('fog.near = 70');
+    expect(branch).toContain('fog.far = 210');
     expect(branch).not.toContain('lowGfx');
     expect(branch).not.toContain('Governor');
   });
@@ -323,6 +333,40 @@ describe('zone theming (visual only; colliders never move)', () => {
     expect(Math.min(...approach.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_MID_HALF_Z + 2);
     expect(Math.max(...approach.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_KEEP_MIN_Z - 2);
     expect(Math.min(...keep.map((f) => Math.abs(f.z)))).toBe(BG_ZONE_KEEP_MIN_Z + 2);
+  });
+
+  it('field dressing is visual-only, mirrored, and placed where it claims', () => {
+    expect(m.dressing.length).toBeGreaterThan(60); // the tree line alone is dozens
+    // Point symmetry (colors aside: the red/blue triple banners swap kinds).
+    const key = (x: number, z: number) => `${x.toFixed(3)}|${z.toFixed(3)}`;
+    const set = new Set(m.dressing.map((d) => key(d.x, d.z)));
+    for (const d of m.dressing) {
+      expect(set.has(key(-d.x, -d.z)), `dressing at (${d.x},${d.z}) has no mirror`).toBe(true);
+    }
+    // Trees live OUTSIDE the walls (skyline, never field furniture); rubble,
+    // trophies, and clutter live INSIDE the perimeter.
+    for (const d of m.dressing) {
+      const outside = Math.abs(d.x) > 50 || Math.abs(d.z) > 140;
+      if (d.kind.startsWith('tree_')) {
+        expect(outside, `tree at (${d.x},${d.z}) must sit outside the walls`).toBe(true);
+      } else {
+        expect(outside, `${d.kind} at (${d.x},${d.z}) must sit inside`).toBe(false);
+      }
+    }
+    // And none of it may share a spot with a collider footprint (visual-only
+    // dressing must never suggest cover that does not block): probe centers
+    // against the wall segments (trees are outside every wall by the check
+    // above; rubble/clutter spots are hand-placed clear).
+    for (const d of m.dressing) {
+      if (d.kind.startsWith('tree_')) continue;
+      for (const w of battlegroundWallSegments()) {
+        // Wall-hung cloth deliberately sits AT the face plane (inset 0.78 from
+        // a 1.0 half-thickness), so only a truly BURIED center fails here.
+        const inside =
+          Math.abs(d.x - w.x) < w.hw - 0.35 && Math.abs(d.z - w.z) < w.hd - 0.35 && d.y === 0;
+        expect(inside, `${d.kind} at (${d.x},${d.z}) is inside a wall footprint`).toBe(false);
+      }
+    }
   });
 
   it('torches are point-symmetric, so neither approach is better lit', () => {

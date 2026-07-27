@@ -1,10 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { battlegroundOrigin } from '../src/sim/data';
 import {
+  BG_KILL_FEED_MAX,
+  BG_KILL_FEED_TTL,
   type BgAllTimeEntry,
   buildBgMapModel,
   buildBgScoreboardView,
   buildBgWindowView,
+  pruneBgKillLines,
+  pushBgKillLine,
 } from '../src/ui/hud/battleground';
 import type { BgInfo, BgMatchInfo } from '../src/world_api';
 
@@ -68,6 +72,7 @@ const baseMatch = (over: Partial<BgMatchInfo> = {}): BgMatchInfo => ({
   timeLeft: 605,
   waveIn: [10, 5],
   respawnIn: 0,
+  winner: null,
   ...over,
 });
 
@@ -159,7 +164,7 @@ describe('battleground window view (pure core)', () => {
         '{"pid":8,"name":"Bryn","cls":"mage","team":0,"carrying":false,"dead":true,"kills":0,"deaths":4,"captures":0},' +
         '{"pid":9,"name":"Cael","cls":"priest","team":1,' +
         '"carrying":false,"dead":false,"kills":5,"deaths":0,"captures":1}],"countdown":0,' +
-        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0}}',
+        '"timeLeft":605,"waveIn":[10,5],"respawnIn":0,"winner":null}}',
     ) as BgInfo;
     const inputRest = { playerName: 'X', playerLevel: 20, party: null, allTime: null };
     expect(buildBgWindowView({ info: simShaped, ...inputRest })).toEqual(
@@ -237,6 +242,37 @@ describe('battleground scoreboard view (pure core)', () => {
     );
     expect(countdown.state).toBe('countdown');
     expect(countdown.countdown).toBe(6);
+  });
+});
+
+describe('battleground kill feed (pure core)', () => {
+  const kill = (n: number) => ({
+    killerName: `K${n}`,
+    victimName: `V${n}`,
+    killerTeam: 0,
+    victimTeam: 1,
+  });
+
+  it('stamps expiry, caps the stack at the max, oldest first out', () => {
+    let lines: ReturnType<typeof pushBgKillLine> = [];
+    for (let i = 0; i < BG_KILL_FEED_MAX + 2; i++) lines = pushBgKillLine(lines, kill(i), 100 + i);
+    expect(lines).toHaveLength(BG_KILL_FEED_MAX);
+    expect(lines[0].killerName).toBe('K2'); // the two oldest dropped
+    expect(lines.at(-1)).toMatchObject({
+      killerName: `K${BG_KILL_FEED_MAX + 1}`,
+      expiresAt: 100 + BG_KILL_FEED_MAX + 1 + BG_KILL_FEED_TTL,
+    });
+  });
+
+  it('prunes only lapsed lines and returns the SAME array when nothing lapsed (elision)', () => {
+    let lines: ReturnType<typeof pushBgKillLine> = [];
+    lines = pushBgKillLine(lines, kill(0), 100);
+    lines = pushBgKillLine(lines, kill(1), 104);
+    expect(pruneBgKillLines(lines, 101)).toBe(lines); // reference-equal: no repaint
+    const pruned = pruneBgKillLines(lines, 100 + BG_KILL_FEED_TTL);
+    expect(pruned).toHaveLength(1);
+    expect(pruned[0].killerName).toBe('K1');
+    expect(pruneBgKillLines(pruned, 104 + BG_KILL_FEED_TTL)).toHaveLength(0);
   });
 });
 

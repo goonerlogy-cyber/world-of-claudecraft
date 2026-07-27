@@ -20,12 +20,16 @@ import {
   BG_HALF_X,
   BG_HALF_Z,
   BG_POWER_RUNES,
+  BG_RUBBLE_PILES,
+  BG_RUBBLE_SCALE,
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
+  type BgFloorKind,
   type BgTeam,
   type BgWallSeg,
   battlegroundWallSegments,
+  bgFloorTileAt,
   KEEP_BACK_DZ,
   KEEP_HALF_X,
   KEEP_MOUTH_DZ,
@@ -101,8 +105,8 @@ export interface BgTeamPoint {
 export interface BattlegroundRenderManifest {
   /** Hash-varied courtyard floor tiles covering the walled field. */
   floors: BgModulePlacement[];
-  /** Wall modules tiled along every SOLID wall segment (perimeter, keeps with
-   *  their postern gaps, thin cover walls). Never the heart-ruin block. */
+  /** Wall modules tiled along every SOLID wall segment (perimeter, sealed
+   *  keeps, thin cover walls). Never the heart-ruin block. */
   walls: BgModulePlacement[];
   /** The heart ruin: a hollow four-sided shell over the block's footprint. */
   ruin: BgModulePlacement[];
@@ -122,6 +126,10 @@ export interface BattlegroundRenderManifest {
   torches: BgModulePlacement[];
   /** Graveyard dressing inside each keep plot: stones, markers, a shrine. */
   graves: BgModulePlacement[];
+  /** Visual-only field dressing (never a collider): the tree line outside the
+   *  perimeter, wall trophies/plaques, gate banners, courtyard rubble, and
+   *  keep-corner garrison clutter. Point-mirrored (colors aside). */
+  dressing: BgModulePlacement[];
 }
 
 /** The heart ruin is the one thick (near-square) segment; every real wall run
@@ -161,40 +169,17 @@ const RUIN_HEIGHT_LEVELS = [1, 0.8, 0.6];
 // COURTYARD between the curtains is broken, overgrown ground littered with
 // rubble. Bands key on |z|, so the two halves stay exact mirrors and neither
 // team's end reads differently in gameplay terms (theme, never information).
-export type BgZone = 'keep' | 'approach' | 'mid';
-/** The courtyard band ends at the curtain line, DERIVED so it cannot drift. */
-export const BG_ZONE_MID_HALF_Z = BG_CURTAIN_Z;
-/** The garrison band starts at the keep mouth line, past the barricades. */
-export const BG_ZONE_KEEP_MIN_Z = BG_FLAG_Z - KEEP_MOUTH_DZ;
+// The zone bands and the floor-tile selection LIVE IN THE LAYOUT now (the
+// sim emits colliders from the same picks); re-exported here for the render
+// consumers and the pinned tests.
+export {
+  BG_ZONE_KEEP_MIN_Z,
+  BG_ZONE_MID_HALF_Z,
+  type BgZone,
+  bgZoneAt,
+} from '../sim/battleground_layout';
 
-export function bgZoneAt(z: number): BgZone {
-  const az = Math.abs(z);
-  if (az >= BG_ZONE_KEEP_MIN_Z) return 'keep';
-  if (az > BG_ZONE_MID_HALF_Z) return 'approach';
-  return 'mid';
-}
-
-const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
-  // garrison grounds: swept tile with the odd rocky patch
-  keep: [
-    ['floor_tile_large', 6],
-    ['floor_tile_large_rocks', 1],
-    ['floor_dirt_large', 1],
-  ],
-  // each team's field chamber: a kept road, clearly tidier than the courtyard
-  approach: [
-    ['floor_tile_large', 5],
-    ['floor_tile_large_rocks', 2],
-    ['floor_dirt_large', 1],
-  ],
-  // the ruin courtyard: broken earth almost wall to wall
-  mid: [
-    ['floor_tile_large', 1],
-    ['floor_tile_large_rocks', 2],
-    ['floor_dirt_large', 3],
-    ['floor_dirt_large_rocky', 4],
-  ],
-};
+import { bgZoneAt } from '../sim/battleground_layout';
 
 // Rubble/overgrowth accents scattered over the ruin courtyard (small kit tiles laid
 // proud of the floor). Deliberately clear of the rune pads so the gold rings
@@ -219,7 +204,9 @@ const KEEP_BANNER_KINDS: Record<BgTeam, { center: string; side: string; mouth: s
   1: { center: 'banner_patterna_blue', side: 'banner_thin_blue', mouth: 'banner_shield_blue' },
 };
 const BANNER_MODULE_SCALE = 1.5; // 4u kit banner -> 6u, the wall height
-const BANNER_WALL_INSET = 1.1; // stood just inside the wall face
+const BANNER_WALL_INSET = 0.78; // hung INTO the face plane: at 1.1 the cloth
+// floated a visible gap off the wall (playtest note), so the pivot now sits
+// slightly inside the masonry and the cloth emerges flush
 
 // Torch-lit ramparts: mounted torches along the perimeter side walls plus the
 // keep back walls, mirrored. The builder adds a small warm glow at each
@@ -235,13 +222,23 @@ const TORCH_WALL_INSET = 1.0;
 export const BG_TORCH_GLOW_H = 3.3;
 
 const GRAVE_MODULE_SCALE = 1.2;
+
+// Field dressing (visual only). The tree kinds ring the OUTSIDE of the
+// perimeter so the skyline reads like a real place (the Eastbrook-gap fix);
+// nothing there is walkable, so no collider question arises.
+const DRESSING_TREE_KINDS: [string, number][] = [
+  ['tree_pine_orange_large', 3],
+  ['tree_pine_orange_medium', 2],
+  ['tree_dead_large', 2],
+  ['tree_dead_medium', 1],
+];
 const CRATE_KINDS: [string, number][] = [
   ['crates_stacked', 2],
   ['box_stacked', 1],
 ];
 
 // Tile one thin wall segment into near-8u wall modules (the remainder is
-// spread evenly so runs stay flush with the segment ends: the postern gap
+// spread evenly so runs stay flush with the segment ends: door and gate
 // edges are collider edges and must match exactly).
 function tileWallSegment(
   out: BgModulePlacement[],
@@ -294,12 +291,16 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   for (let z = -(BG_HALF_Z - FLOOR_CELL / 2); z <= BG_HALF_Z - FLOOR_CELL / 2; z += FLOOR_CELL) {
     for (let x = -(BG_HALF_X - FLOOR_CELL / 2); x <= BG_HALF_X - FLOOR_CELL / 2; x += FLOOR_CELL) {
       const zone = bgZoneAt(z);
+      // The tile pick comes from the LAYOUT (bgFloorTileAt): the sim emits a
+      // collider for every rocky tile's baked cluster, so selection must be
+      // one function or the ground would lie about what blocks.
+      const tile = bgFloorTileAt(x, z);
       floors.push({
-        kind: pickKind(FLOOR_KINDS_BY_ZONE[zone], hash2(x * 1.31, z)),
+        kind: tile.kind,
         x,
         y: BG_FLOOR_Y,
         z,
-        ry: Math.floor(hash2(z, x) * 4) * QUARTER,
+        ry: tile.ry,
         scale: [1, 1, 1],
       });
       // rubble/overgrowth only inside the courtyard band, clear of the rune
@@ -393,15 +394,18 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
         scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
       });
     }
-    // shield banners at the mouth corners greet the attacker's approach
+    // shield banners greet the attacker just inside the mouth, hung ON the
+    // side-wall inner faces (they used to stand free in the opening itself,
+    // which read as misplaced set dressing rather than a hung banner)
     const mouthZ = base.flag.z - dir * KEEP_MOUTH_DZ;
-    for (const mx of [-KEEP_HALF_X + BANNER_WALL_INSET + 1, KEEP_HALF_X - BANNER_WALL_INSET - 1]) {
+    const jambZ = mouthZ + dir * 1.6; // one step inside, on the side-wall span
+    for (const sx of [-1, 1]) {
       wallBanners.push({
         kind: kinds.mouth,
-        x: mx,
+        x: sx * (KEEP_HALF_X - BANNER_WALL_INSET),
         y: 0,
-        z: mouthZ,
-        ry: faceField,
+        z: jambZ,
+        ry: sx === -1 ? Math.PI / 2 : -Math.PI / 2, // cloth faces into the keep
         scale: [BANNER_MODULE_SCALE, BANNER_MODULE_SCALE, BANNER_MODULE_SCALE],
       });
     }
@@ -423,10 +427,12 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     // north curtain carries blue at 5, -3 and -13.
     const curtainZ = dir * (BG_CURTAIN_Z + BANNER_WALL_INSET);
     const faceOwnField = dir === -1 ? Math.PI : 0; // cloth faces the team's field
+    // The gate-jamb shields sit two yards INTO the solid runs (hugging the
+    // exact gate edges left them reading detached beside the opening).
     const curtainSpots: { x: number; kind: string }[] = [
       { x: -5, kind: kinds.side },
-      { x: 7, kind: kinds.mouth },
-      { x: 19, kind: kinds.mouth },
+      { x: 5, kind: kinds.mouth },
+      { x: 21, kind: kinds.mouth },
     ];
     for (const spot of curtainSpots) {
       wallBanners.push({
@@ -452,6 +458,33 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       });
     }
   }
+  // The contested crossings get their own light (playtest polish): two
+  // torches inside each gatehouse room on its outer-wall inner face (the
+  // ambush corners read instead of sitting in murk), and a pair on the sealed
+  // rampart-side curtain run's field face. Every placement below is written
+  // for the SOUTH side and point-mirrored ((x,z) -> (-x,-z)), so neither
+  // team's approach is better lit.
+  const CROSSING_TORCHES: { x: number; z: number; ry: number }[] = [
+    // south gatehouse (room x -32..-20, z -65..-47): west-wall inner face
+    // (inset measures from the wall CENTRE at x -33, landing ON the face)
+    { x: -33 + TORCH_WALL_INSET, z: -52, ry: Math.PI / 2 },
+    { x: -33 + TORCH_WALL_INSET, z: -61, ry: Math.PI / 2 },
+    // the sealed rampart-side curtain run (x 18..49 at z -56): field face
+    { x: 36.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
+    { x: 44.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
+  ];
+  for (const t of CROSSING_TORCHES) {
+    for (const m of [1, -1]) {
+      torches.push({
+        kind: 'torch_mounted',
+        x: m * t.x,
+        y: 0,
+        z: m * t.z,
+        ry: m === 1 ? t.ry : t.ry + Math.PI,
+        scale: [TORCH_MODULE_SCALE, TORCH_MODULE_SCALE, TORCH_MODULE_SCALE],
+      });
+    }
+  }
   // Graveyard dressing: exact point mirrors between the two plots (offsets
   // negated, yaw rotated a half turn), fixed kinds per spot.
   const GRAVE_SPOTS: { dx: number; dz: number; kind: string; y?: number }[] = [
@@ -473,6 +506,86 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     // the shrine anchors the far corner, away from the entrance
     { dx: 7.1, dz: -4.6, kind: 'shrine_candles' },
   ];
+  // --- Visual-only field dressing (zero colliders, point-mirrored) ----------
+  // Everything below is authored for the SOUTH half and mirrored
+  // ((x,z) -> (-x,-z), yaw + half turn); team-colored pieces swap kinds.
+  const dressing: BgModulePlacement[] = [];
+  const pushMirrored = (p: BgModulePlacement, mirrorKind?: string): void => {
+    dressing.push(p);
+    dressing.push({ ...p, kind: mirrorKind ?? p.kind, x: -p.x, z: -p.z, ry: p.ry + Math.PI });
+  };
+  // The tree line: pines and dead trees in bands beyond the walls, jittered
+  // deterministically, sunk slightly so trunks meet uneven outside ground.
+  const treeAt = (bx: number, bz: number): void => {
+    const jx = (hash2(bx, bz) - 0.5) * 5;
+    const jz = (hash2(bz, bx) - 0.5) * 5;
+    const kind = pickKind(DRESSING_TREE_KINDS, hash2(bx * 1.7, bz * 0.9));
+    const ts = 1.7 + hash2(bx * 0.31, bz * 2.3) * 0.9;
+    pushMirrored({
+      kind,
+      x: bx + jx,
+      y: -0.4,
+      z: bz + jz,
+      ry: hash2(bx, bz * 3.1) * Math.PI * 2,
+      scale: [ts, ts, ts],
+    });
+  };
+  for (let tz = -150; tz <= 150; tz += 11) treeAt(-58, tz); // west band (mirror: east)
+  for (let tx = -56; tx <= 56; tx += 11) treeAt(tx, -150); // south band (mirror: north)
+  // Wall dressing on the curtains' COURTYARD faces: crossed-sword trophies
+  // mid-wall and candle plaques at the wall foot, spaced between the runs.
+  const courtZ = -(BG_CURTAIN_Z - BANNER_WALL_INSET);
+  for (const t of [
+    { x: -10, y: 0, kind: 'plaque_candles', s: 1.4 },
+    { x: -1, y: 3.0, kind: 'sword_shield', s: 1.5 },
+    { x: 26, y: 3.0, kind: 'sword_shield', s: 1.5 },
+    { x: 44, y: 0, kind: 'plaque_candles', s: 1.4 },
+  ]) {
+    pushMirrored({ kind: t.kind, x: t.x, y: t.y, z: courtZ, ry: 0, scale: [t.s, t.s, t.s] });
+  }
+  // Team triple banners flanking each main gate on the courtyard face: the
+  // gate reads as a dressed threshold from mid-field (red south, blue north).
+  // Two yards INTO the solid runs and slightly smaller: at the exact jambs
+  // the wide triple overhung the gate opening (playtest note).
+  for (const gx of [4.5, 21.5]) {
+    pushMirrored(
+      { kind: 'banner_triple_red', x: gx, y: 0, z: courtZ, ry: 0, scale: [1.3, 1.3, 1.3] },
+      'banner_triple_blue',
+    );
+  }
+  // Courtyard rubble, two families. The chunky HEAPS derive from the layout's
+  // BG_RUBBLE_PILES (real movement colliders, below the eye line), so what
+  // blocks is exactly what renders; the flat rubble_half sheets stay
+  // visual-only debris the boots read over.
+  // The big rock formations, at the owner-approved dramatic scale: kind and
+  // position come from the LAYOUT list whose colliders match these bodies.
+  for (const rb of BG_RUBBLE_PILES) {
+    dressing.push({
+      kind: rb.kind,
+      x: rb.x,
+      y: 0,
+      z: rb.z,
+      ry: hash2(rb.z, rb.x) * Math.PI * 2,
+      scale: [BG_RUBBLE_SCALE, BG_RUBBLE_SCALE, BG_RUBBLE_SCALE],
+    });
+  }
+  // Garrison clutter in each keep's back corners, clear of the spawn ring,
+  // the banners, and the graveyard mouth.
+  for (const c of [
+    { x: -13.5, z: -126, kind: 'keg', s: 1.5 },
+    { x: 13.4, z: -125.7, kind: 'barrel_large', s: 1.4 },
+    { x: 14.3, z: -124.1, kind: 'haybale', s: 1.3 },
+  ]) {
+    pushMirrored({
+      kind: c.kind,
+      x: c.x,
+      y: 0,
+      z: c.z,
+      ry: hash2(c.x, c.z) * Math.PI * 2,
+      scale: [c.s, c.s, c.s],
+    });
+  }
+
   const graves: BgModulePlacement[] = [];
   for (const base of BG_BASES) {
     const plot = BG_GRAVEYARDS[base.team];
@@ -502,5 +615,6 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
     wallBanners,
     torches,
     graves,
+    dressing,
   };
 }

@@ -34,6 +34,7 @@ import type { SimContext } from '../sim_context';
 import { releasePlayerSpirit } from '../spirit';
 import { type Aura, DT, type Entity, type Vec3 } from '../types';
 import { eloDelta, snapshotArenaReturnPools } from './arena';
+import { formBgTeamParty, unwindBgAutoPartyFor, unwindBgTeamParties } from './battleground_party';
 
 // --- Ravenrift tuning consts (rating reuses the arena's exported eloDelta) ---
 export const BG_BASE_RATING = 1500; // every character starts here on the ladder
@@ -46,7 +47,8 @@ const BG_COUNTDOWN = 8; // form-up gate at the keeps before the flags go live
 export const BG_CAPS_TO_WIN = 5; // first team to this many captures wins.
 // ^ Tuning knob number one post-launch: fall back to 3 if live cap pace runs
 // slower than the modeled 2-3 minutes per capture on even teams.
-export const BG_MAX_DURATION = 900; // 15 min cap; resolves on score, ties draw
+export const BG_MAX_DURATION = 720; // 12 min cap; resolves on score, ties draw
+export const BG_END_HOLD = 15; // post-match hold: the frozen result screen
 export const BG_WAVE_PERIOD = 10; // one respawn wave per team every 10s
 export const BG_WAVE_OFFSET = 5; // the two team clocks run staggered half-cycles
 // Carrier vulnerability (the WSG Focused Assault lineage): after holding an
@@ -64,7 +66,7 @@ const BG_FLAG_RETURN_TIME = 20; // a dropped flag auto-returns home after this
 const BG_PICKUP_RADIUS = 2.5; // press the flag action this close to grab it
 const BG_CAPTURE_RADIUS = 4; // carry the enemy flag this close to your stand
 const BG_RUNE_RADIUS = 2.5; // step this close to a speed rune to claim it
-const BG_RUNE_COOLDOWN = 22; // a claimed rune recharges over this
+const BG_RUNE_COOLDOWN = 30; // a claimed rune recharges over this (owner: 22 felt too fast)
 const BG_RUNE_SPEED = 1.4; // sprint multiplier the rune grants
 const BG_RUNE_DURATION = 10; // seconds of haste per rune
 // Power runes: a short, honest edge worth a detour, never a win condition
@@ -108,18 +110,26 @@ export interface BgMatch {
   scores: [number, number];
   flags: [BgFlagState, BgFlagState];
   runes: BgRuneState[];
-  state: 'countdown' | 'active';
-  timer: number; // countdown remaining, then elapsed seconds once active
+  state: 'countdown' | 'active' | 'ended';
+  timer: number; // countdown remaining, elapsed seconds while active, then the end hold
+  winner: BgTeam | null; // set when the result resolves; null is a draw once ended
   waveIn: [number, number]; // seconds until each team's next respawn wave
   returns: Map<number, { x: number; z: number; facing: number }>;
   preMatchPools: Map<number, ArenaReturnPools>;
   pendingFlagPress: Set<number>; // deliberate presses, resolved next update
   honorTeamKeys: [string, string]; // snapshotted at start (rename-proof DR keys)
+  // false for /dev bg force-starts (jgyy review): a dev-forced, possibly
+  // asymmetric match must never move the real ladder, W/L, or honor.
+  rated: boolean;
   // Per-player match tallies for the scoreboard (seeded to zeros at start;
   // a deserter's row drops with their team entry).
   stats: Map<number, { kills: number; deaths: number; captures: number }>;
   ratingAvg: [number, number]; // team average rating at start, for Elo
+  // Per team: pids auto-added to the team party at start (never the surviving
+  // base premade), unwound at match end or on desertion (battleground_party.ts).
+  autoPartyPids: [number[], number[]];
   resultRecorded: boolean;
+  fightersReleased: boolean; // releaseBgFighters ran (teardown is once-only)
   // per-tick memo of the viewer-identical match view (server hot-path rule:
   // build shared things once per tick, never per viewer)
   viewTick: number;
@@ -167,6 +177,10 @@ export function bgQueueJoin(ctx: SimContext, pid?: number, opts?: { bypassLevel?
     ctx.error(id, 'You cannot queue for Ravenrift while dead.');
     return;
   }
+  if (ctx.arenaMatches.has(id)) {
+    ctx.error(id, 'You cannot queue for Ravenrift while in another match.');
+    return;
+  }
   if (!opts?.bypassLevel && r.e.level < BG_MIN_LEVEL) {
     ctx.error(id, `Ravenrift requires level ${BG_MIN_LEVEL}.`);
     return;
@@ -190,7 +204,7 @@ export function bgQueueJoin(ctx: SimContext, pid?: number, opts?: { bypassLevel?
   }
   const members = party ? [...party.members] : [id];
   for (const m of members) {
-    if (ctx.bgMatches.has(m) || bgGroupContaining(ctx, m)) {
+    if (ctx.bgMatches.has(m) || ctx.arenaMatches.has(m) || bgGroupContaining(ctx, m)) {
       ctx.error(id, 'A party member is already queued or in a match.');
       return;
     }
@@ -279,6 +293,13 @@ export function updateBattleground(ctx: SimContext): void {
       tickCountdown(ctx, match);
       continue;
     }
+    if (match.state === 'ended') {
+      // The frozen result screen: no combat (the hostility arm requires
+      // 'active'), no flags, no waves; just the hold running out.
+      match.timer -= DT;
+      if (match.timer <= 0) releaseBgFighters(ctx, match);
+      continue;
+    }
     match.timer += DT;
     // Graveyards before the wave: an auto-release landing on the wave tick
     // still catches that wave, and the raise position is post-ward.
@@ -288,18 +309,18 @@ export function updateBattleground(ctx: SimContext): void {
     tickFlags(ctx, match);
     match.pendingFlagPress.clear();
     if (match.timer >= BG_MAX_DURATION && !match.resultRecorded) {
-      // The 12-minute cap resolves on score; an equal score is a draw.
+      // The match cap resolves on score; an equal score is a draw.
       const w: BgTeam | null =
         match.scores[0] === match.scores[1] ? null : match.scores[0] > match.scores[1] ? 0 : 1;
-      endBgMatch(ctx, match, w, 'timeout');
+      enterBgEndHold(ctx, match, w, 'timeout');
     }
   }
 }
 
 function tickCountdown(ctx: SimContext, match: BgMatch): void {
   const origin = battlegroundOrigin(match.slot);
-  // Hold the form-up: a player who slips out of their keep (the mouth or the
-  // postern) before the gates open is set back on their spawn ring.
+  // Hold the form-up: a player who slips out of their keep mouth before the
+  // gates open is set back on their spawn ring.
   for (const team of [0, 1] as BgTeam[]) {
     const bounds = keepInteriorBounds(team);
     match.teams[team].forEach((pid, i) => {
@@ -329,7 +350,12 @@ function tickCountdown(ctx: SimContext, match: BgMatch): void {
     match.waveIn = [BG_WAVE_PERIOD, BG_WAVE_OFFSET];
     for (const pid of bgAllPids(match)) {
       const e = ctx.entities.get(pid);
-      if (e) ctx.readyArenaFighter(e, { clearPrep: true });
+      if (e) {
+        ctx.readyArenaFighter(e, { clearPrep: true });
+        e.ghost = false;
+        e.corpsePos = null;
+        e.corpseInstanceId = null;
+      }
       ctx.emit({
         type: 'log',
         text: 'The Ravenrift battle begins: take their flag!',
@@ -400,7 +426,12 @@ function bgTeamAvg(ctx: SimContext, pids: number[]): number {
   );
 }
 
-export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]): void {
+export function startBgMatch(
+  ctx: SimContext,
+  teamA: number[],
+  teamB: number[],
+  opts?: { rated?: boolean },
+): void {
   const slot = freeBgSlot(ctx);
   if (slot === null) {
     // Hand the seats back as two TEAM-SIZED groups: a single welded ten-group
@@ -464,13 +495,17 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
     runes,
     state: 'countdown',
     timer: BG_COUNTDOWN,
+    winner: null,
     waveIn: [BG_WAVE_PERIOD, BG_WAVE_OFFSET],
     returns,
     preMatchPools,
     pendingFlagPress: new Set(),
     honorTeamKeys: [honorTeamIdentity(ctx, teamA), honorTeamIdentity(ctx, teamB)],
+    rated: opts?.rated !== false,
     ratingAvg: [bgTeamAvg(ctx, teamA), bgTeamAvg(ctx, teamB)],
+    autoPartyPids: [[], []],
     resultRecorded: false,
+    fightersReleased: false,
     viewTick: -1,
     viewShared: null,
   };
@@ -482,6 +517,9 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
       placeInBg(ctx, match, pid, team, i);
     });
   }
+  // Weld each team into one party for the match (party chat + party frames);
+  // only the auto-added links are remembered, so they can be unwound later.
+  match.autoPartyPids = [formBgTeamParty(ctx, teamA), formBgTeamParty(ctx, teamB)];
   for (const team of [0, 1] as BgTeam[]) {
     for (const pid of match.teams[team]) {
       ctx.emit({ type: 'bgFound', team, pid });
@@ -516,6 +554,11 @@ function placeInBg(
   e.prevFacing = e.facing;
   ctx.rebucket(e);
   ctx.readyArenaFighter(e, { clearPrep: true });
+  // readyArenaFighter revives but does NOT clear the spirit arm: a fighter
+  // seated (or re-seated by the form-up hold) must never stay a ghost.
+  e.ghost = false;
+  e.corpsePos = null;
+  e.corpseInstanceId = null;
 }
 
 function spawnFlagEntity(ctx: SimContext, flag: BgFlagState): void {
@@ -837,7 +880,7 @@ function captureFlag(
       pid: mp,
     }),
   );
-  if (match.scores[scoringTeam] >= BG_CAPS_TO_WIN) endBgMatch(ctx, match, scoringTeam, 'caps');
+  if (match.scores[scoringTeam] >= BG_CAPS_TO_WIN) enterBgEndHold(ctx, match, scoringTeam, 'caps');
 }
 
 // Returns a flag to its stand. `silent` skips the event (capture emits its own).
@@ -903,8 +946,9 @@ function dropFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState, at: Entity
   );
 }
 
-/** Death hook (combat/damage.ts): carrier death drops the flag in place. The
- *  wave clock revives the fallen; there is no release, corpse, or ghost run. */
+/** Death hook (combat/damage.ts): carrier death drops the flag in place, the
+ *  tallies move, and every match member gets the kill-feed event. The corpse
+ *  then waits for the player's own release (spirit.ts owns the rite). */
 export function bgOnPlayerDeath(ctx: SimContext, e: Entity, killer: Entity | null): void {
   const match = ctx.bgMatches.get(e.id);
   if (!match || match.state !== 'active') return;
@@ -921,10 +965,25 @@ export function bgOnPlayerDeath(ctx: SimContext, e: Entity, killer: Entity | nul
       : killer?.ownerId != null
         ? ctx.entities.get(killer.ownerId)
         : null;
-  if (!creditEntity || ctx.bgMatches.get(creditEntity.id) !== match) return;
-  if (bgTeamOf(match, creditEntity.id) === bgTeamOf(match, e.id)) return;
-  const killerStats = match.stats.get(creditEntity.id);
-  if (killerStats) killerStats.kills++;
+  const credited =
+    creditEntity &&
+    ctx.bgMatches.get(creditEntity.id) === match &&
+    bgTeamOf(match, creditEntity.id) !== bgTeamOf(match, e.id)
+      ? creditEntity
+      : null;
+  if (credited) {
+    const killerStats = match.stats.get(credited.id);
+    if (killerStats) killerStats.kills++;
+  }
+  // Kill feed: names + teams only (the client owns the localized line); an
+  // uncredited death still feeds, with a null killer.
+  const victimName = ctx.players.get(e.id)?.name ?? '';
+  const killerName = credited ? (ctx.players.get(credited.id)?.name ?? '') : null;
+  const killerTeam = credited ? bgTeamOf(match, credited.id) : null;
+  const victimTeam = bgTeamOf(match, e.id);
+  for (const pid of bgAllPids(match)) {
+    ctx.emit({ type: 'bgKill', pid, killerName, victimName, killerTeam, victimTeam });
+  }
 }
 
 /** Disconnect/leave/jail mid-match: the deserter takes the rating loss and a
@@ -939,7 +998,7 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   }
   const team = bgTeamOf(match, pid);
   const deserter = ctx.players.get(pid);
-  if (deserter && !match.resultRecorded) {
+  if (deserter && match.rated && !match.resultRecorded) {
     const other = team === 0 ? 1 : 0;
     // The loss delta at score 0 from the deserter's side; no honor (forfeit rule).
     const delta = eloDelta(match.ratingAvg[team], match.ratingAvg[other], 0);
@@ -972,6 +1031,9 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   match.stats.delete(pid);
   match.pendingFlagPress.delete(pid);
   ctx.bgMatches.delete(pid);
+  // A deserter auto-added to the team party leaves it too; a premade member
+  // keeps their own group (they deserted the match, not their friends).
+  unwindBgAutoPartyFor(ctx, match.autoPartyPids, pid);
   if (match.teams[0].length === 0 || match.teams[1].length === 0) {
     const winner: BgTeam | null =
       match.teams[0].length === 0 && match.teams[1].length === 0
@@ -983,9 +1045,53 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   }
 }
 
+/** Dev/test only: resolve the caller's live match NOW on the current score
+ *  (ties draw) through the normal end-hold flow, so the frozen result screen
+ *  and the release are exercised exactly like a played-out finish. Returns
+ *  false when the caller is not in an unresolved match. */
+export function devEndBg(ctx: SimContext, pid: number): boolean {
+  const match = ctx.bgMatches.get(pid);
+  if (!match || match.resultRecorded) return false;
+  const w: BgTeam | null =
+    match.scores[0] === match.scores[1] ? null : match.scores[0] > match.scores[1] ? 0 : 1;
+  enterBgEndHold(ctx, match, w, 'timeout');
+  return true;
+}
+
+// The played-out ending: resolve the result on the spot, then hold everyone
+// on a frozen result screen (state 'ended', combat off) for BG_END_HOLD
+// before releaseBgFighters sends them home. Flags come home silently so no
+// carry outlives the battle.
+function enterBgEndHold(
+  ctx: SimContext,
+  match: BgMatch,
+  winnerTeam: BgTeam | null,
+  reason: 'caps' | 'timeout',
+): void {
+  if (match.resultRecorded) return;
+  resolveBgResult(ctx, match, winnerTeam, reason);
+  match.state = 'ended';
+  match.timer = BG_END_HOLD;
+  for (const flag of match.flags) returnFlag(ctx, match, flag, '', true);
+}
+
 // winnerTeam null = draw: Elo moves by the draw math (score 0.5) and no W/L
 // is recorded. Honor pays on played-out results only, never on forfeit.
+// Immediate variant (forfeits, teardown paths, tests): resolve AND release in
+// one call; the played-out tick path goes through enterBgEndHold instead.
 export function endBgMatch(
+  ctx: SimContext,
+  match: BgMatch,
+  winnerTeam: BgTeam | null,
+  reason: 'caps' | 'timeout' | 'forfeit',
+): void {
+  resolveBgResult(ctx, match, winnerTeam, reason);
+  releaseBgFighters(ctx, match);
+}
+
+/** The RESULT half: ratings, W/L, honor, deeds, and the bgEnd events. Runs
+ *  exactly once per match (resultRecorded); never touches bodies or slots. */
+function resolveBgResult(
   ctx: SimContext,
   match: BgMatch,
   winnerTeam: BgTeam | null,
@@ -993,36 +1099,26 @@ export function endBgMatch(
 ): void {
   if (match.resultRecorded) return;
   match.resultRecorded = true;
-  for (const pid of bgAllPids(match)) ctx.bgMatches.delete(pid);
-  ctx.bgBusySlots.delete(match.slot);
-  for (const flag of match.flags) {
-    clearCarrierVuln(ctx, flag);
-    if (flag.entityId >= 0 && ctx.entities.has(flag.entityId)) ctx.dropEntity(flag.entityId);
-  }
-  for (const rune of match.runes) {
-    if (rune.entityId >= 0 && ctx.entities.has(rune.entityId)) ctx.dropEntity(rune.entityId);
-  }
-
+  match.winner = winnerTeam;
   // Team Elo over team-average ratings, zero-sum by construction: one delta is
   // computed from the winner's perspective and applied with opposite signs
   // (the rating floor is the only, deliberate, exception).
   const score0 = winnerTeam === null ? 0.5 : winnerTeam === 0 ? 1 : 0;
-  const delta0 = eloDelta(match.ratingAvg[0], match.ratingAvg[1], score0);
+  const delta0 = match.rated ? eloDelta(match.ratingAvg[0], match.ratingAvg[1], score0) : 0;
   for (const team of [0, 1] as BgTeam[]) {
     const delta = team === 0 ? delta0 : -delta0;
     const won = winnerTeam === team;
     const opponentKey = match.honorTeamKeys[team === 0 ? 1 : 0];
     for (const pid of match.teams[team]) {
       const meta = ctx.players.get(pid);
-      const e = ctx.entities.get(pid);
       if (!meta) continue;
       const before = meta.bgRating;
       meta.bgRating = Math.max(BG_MIN_RATING, before + delta);
-      if (winnerTeam !== null) {
+      if (match.rated && winnerTeam !== null) {
         if (won) meta.bgWins++;
         else meta.bgLosses++;
       }
-      if (reason !== 'forfeit') {
+      if (match.rated && reason !== 'forfeit') {
         awardBattlegroundHonor(
           ctx,
           meta,
@@ -1041,6 +1137,30 @@ export function endBgMatch(
         ratingBefore: before,
         ratingAfter: meta.bgRating,
       });
+    }
+  }
+}
+
+/** The RELEASE half: field teardown and everyone home. Runs exactly once
+ *  (fightersReleased), at the end of the hold or immediately on a forfeit. */
+function releaseBgFighters(ctx: SimContext, match: BgMatch): void {
+  if (match.fightersReleased) return;
+  match.fightersReleased = true;
+  for (const pid of bgAllPids(match)) ctx.bgMatches.delete(pid);
+  ctx.bgBusySlots.delete(match.slot);
+  // Unwind the match-formed party links FIRST, so the disband/leave notices
+  // land before the fighters are teleported home (premades stay intact).
+  unwindBgTeamParties(ctx, match.autoPartyPids);
+  for (const flag of match.flags) {
+    clearCarrierVuln(ctx, flag);
+    if (flag.entityId >= 0 && ctx.entities.has(flag.entityId)) ctx.dropEntity(flag.entityId);
+  }
+  for (const rune of match.runes) {
+    if (rune.entityId >= 0 && ctx.entities.has(rune.entityId)) ctx.dropEntity(rune.entityId);
+  }
+  for (const team of [0, 1] as BgTeam[]) {
+    for (const pid of match.teams[team]) {
+      const e = ctx.entities.get(pid);
       // Send the fighter home to where they queued from. The match is a
       // parenthesis, not a rest stop: HP, resource, cooldowns and CC DR are
       // handed back exactly as carried in (the arena issue #1600 rule).
@@ -1149,13 +1269,16 @@ function sharedMatchView(ctx: SimContext, match: BgMatch): import('../../world_a
     scores: [match.scores[0], match.scores[1]],
     flags,
     players,
-    countdown: match.state === 'countdown' ? Math.ceil(match.timer) : 0,
+    countdown: match.state === 'active' ? 0 : Math.max(0, Math.ceil(match.timer)),
     timeLeft:
       match.state === 'active'
         ? Math.max(0, Math.ceil(BG_MAX_DURATION - match.timer))
-        : BG_MAX_DURATION,
+        : match.state === 'ended'
+          ? 0
+          : BG_MAX_DURATION,
     waveIn: [Math.ceil(match.waveIn[0]), Math.ceil(match.waveIn[1])],
     respawnIn: 0, // per-viewer; overwritten in bgInfoFor
+    winner: match.state === 'ended' ? match.winner : null,
   };
   match.viewTick = ctx.tickCount;
   match.viewShared = shared;
@@ -1177,5 +1300,5 @@ export function devStartBg(ctx: SimContext): void {
   ctx.bgQueue = ctx.bgQueue
     .map((g) => ({ ...g, pids: g.pids.filter((p) => !take.includes(p)) }))
     .filter((g) => g.pids.length > 0);
-  startBgMatch(ctx, teamA, teamB);
+  startBgMatch(ctx, teamA, teamB, { rated: false });
 }

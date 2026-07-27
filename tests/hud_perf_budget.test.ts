@@ -440,19 +440,6 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
     allow: { '.className': 14, '.setAttribute': 3 },
     reflowAllow: {},
   },
-  // the Ravenrift scoreboard builds its skeleton in ONE sig-gated innerHTML
-  // write and mounts its three roots once (role + aria-live pairs); every
-  // per-frame write (scores, clock, flag/pip classes, respawn, board cells)
-  // is facet-routed. The one .classList is the mount-time click/keyboard
-  // handler that pins the expanded board open (user-event-driven, never
-  // per-frame); the extra setAttribute are the mount-time focusable strip's
-  // aria-label plus the aria-expanded pair the same handler flips (the
-  // spawn-protection line's mount pair left with the mechanic).
-  {
-    file: 'hud/battleground/battleground_scoreboard_painter.ts',
-    allow: { '.innerHTML': 1, '.setAttribute': 6, '.classList': 1 },
-    reflowAllow: {},
-  },
   // Three pooled aura-node construction writes plus one lazy overflow chip.
   { file: 'auras_painter.ts', allow: { '.className': 4 }, reflowAllow: {} },
   {
@@ -469,6 +456,25 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
   {
     file: 'deed_tracker_painter.ts',
     allow: { '.innerHTML': 1, '.setAttribute': 3, '.removeAttribute': 3 },
+    reflowAllow: {},
+  },
+  // The Ravenrift scoreboard rebuilds its skeleton in ONE innerHTML write only
+  // when the STRUCTURAL sig changes (new match / roster change); the seven
+  // setAttribute calls are the mount-time a11y wiring plus the pin toggle
+  // and the outside-click unpin, and the three classList uses are those same
+  // user-event handlers (toggle, stuck-open check, outside-click close).
+  // Every per-frame write is facet-routed.
+  {
+    file: 'hud/battleground/battleground_scoreboard_painter.ts',
+    allow: { '.innerHTML': 1, '.setAttribute': 7, '.classList': 3 },
+    reflowAllow: {},
+  },
+  // The bg kill feed rebuilds its tiny stack in ONE innerHTML write, on a
+  // death or an expiry only (the per-frame update elides on the pure core's
+  // reference equality); the setAttribute runs once at mount.
+  {
+    file: 'hud/battleground/battleground_kill_feed_painter.ts',
+    allow: { '.innerHTML': 1, '.setAttribute': 1 },
     reflowAllow: {},
   },
 ];
@@ -499,7 +505,8 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
 // the start of a decode and two of them reads that abandon a decode whose unit changed;
 // perf_graph is handed both its context and its color and reaches for neither.
 const CANVAS_PAINTERS: ReadonlyArray<ScannedPainter> = [
-  // the M-map Ravenrift schematic: canvas-only, redrawn on the map cadence
+  // the M-map Ravenrift field plan: canvas-only, redrawn on the map cadence;
+  // like minimap it caches its one --color-* group resolve for the session
   {
     file: 'hud/battleground/battleground_map_painter.ts',
     allow: {},

@@ -2615,14 +2615,16 @@ export class Renderer {
       this.sun.target.position.set(pp.x, pp.y, pp.z);
     }
     this.sky.position.set(this.camera.position.x, 0, this.camera.position.z);
-    this.sky.visible = this.fogState === 'outdoor';
+    // Ravenrift is OPEN-AIR: the dome and sun render over the band exactly
+    // like the overworld (hiding them left a black void above the ramparts).
+    this.sky.visible = this.fogState === 'outdoor' || this.fogState === 'battleground';
     if (this.sky.visible) {
       this.skyView.setCameraZ(this.camera.position.z, dt);
       this.updateEnvBiome(dt);
     }
     for (const sp of this.sunSprites) {
       sp.position.copy(this.camera.position).addScaledVector(this.sunDir, 760);
-      sp.visible = this.fogState === 'outdoor';
+      sp.visible = this.sky.visible;
     }
     this.updateGodRays();
     this.nameplatePainter.update(true);
@@ -4983,12 +4985,16 @@ export class Renderer {
       } else if (desired === 'battleground') {
         // Ravenrift is OPEN-AIR at immersive scale (100x280): true
         // view-distance fog, the open world's own rule. The fight around you
-        // (~a chamber) reads clearly; past ~120yd the haze owns the frame, so
-        // the far chambers are places you travel to, not read from spawn.
-        // Symmetric for both teams: distance, never information.
+        // (~a chamber) reads clearly; the far keep's detail still dissolves
+        // before the 236yd flag-to-flag line, so the far chambers stay places
+        // you travel to, not read from spawn. Pushed back from the original
+        // 55/130 after the playtest: the tighter wall of haze swallowed the
+        // sky and flattened the light; at 70/210 the dome and ramparts
+        // breathe while the tactical veil holds. Symmetric for both teams:
+        // distance, never information.
         fog.color.setHex(0xaecbe0);
-        fog.near = 55;
-        fog.far = 130;
+        fog.near = 70;
+        fog.far = 210;
       } else if (desired === 'practice') {
         // The private practice pitch under its futuristic sky: tint the fog to
         // the sky variant and push it well back so the pitch reads clear and lit
@@ -6282,23 +6288,22 @@ export class Renderer {
       this.sun.target.position.set(pp.x, pp.y, pp.z);
     }
     worldStart = markWorldPhase('shadows', worldStart);
-    // sky dome + sun disc ride along with the camera
+    // sky dome + sun disc ride along with the camera. The battleground is
+    // OPEN-AIR: dome, sun, and weather render over the band exactly like the
+    // overworld (hiding them left a black void above the ramparts).
     this.sky.position.set(this.camera.position.x, 0, this.camera.position.z);
-    this.sky.visible = this.fogState === 'outdoor';
+    const openAir = this.fogState === 'outdoor' || this.fogState === 'battleground';
+    this.sky.visible = openAir;
     if (this.sky.visible) {
       this.skyView.setCameraZ(this.camera.position.z, dt);
       this.updateEnvBiome(dt);
     }
     // precipitation only falls outdoors; indoors/underwater pass null to clear
-    this.weather.update(
-      this.camera.position,
-      dt,
-      this.fogState === 'outdoor' ? zoneBiomeAt(p.pos.z) : null,
-    );
+    this.weather.update(this.camera.position, dt, openAir ? zoneBiomeAt(p.pos.z) : null);
     worldStart = markWorldPhase('sky', worldStart);
     for (const sp of this.sunSprites) {
       sp.position.copy(this.camera.position).addScaledVector(this.sunDir, 760);
-      sp.visible = this.fogState === 'outdoor';
+      sp.visible = openAir;
     }
     worldStart = markWorldPhase('sunSprites', worldStart);
     this.updateGodRays();
@@ -6507,7 +6512,7 @@ export class Renderer {
   // light shafts fade in as the camera turns toward the sun, outdoor only
   private updateGodRays(): void {
     if (this.godRays.length === 0) return;
-    const outdoor = this.fogState === 'outdoor';
+    const outdoor = this.fogState === 'outdoor' || this.fogState === 'battleground';
     // azimuth-only alignment — the chase cam always pitches down while the
     // sun sits high, so a full 3D dot product would never light the shafts
     this.camera.getWorldDirection(this.tmpV);
