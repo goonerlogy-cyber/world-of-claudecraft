@@ -179,25 +179,26 @@ export function bgZoneAt(z: number): BgZone {
   return 'mid';
 }
 
+// NO tall-rock tile variants anywhere: the boulder clusters baked into
+// floor_tile_large_rocks / floor_dirt_large_rocky read as solid formations a
+// player then walks straight through (playtest). The broken-ground look now
+// comes from dirt tiles plus the FLAT cracked/weed accents; the only tall
+// rocks on the field are the collider-backed BG_RUBBLE_PILES heaps.
 const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
-  // garrison grounds: swept tile with the odd rocky patch
+  // garrison grounds: swept tile with the odd dirt patch
   keep: [
     ['floor_tile_large', 6],
-    ['floor_tile_large_rocks', 1],
-    ['floor_dirt_large', 1],
+    ['floor_dirt_large', 2],
   ],
   // each team's field chamber: a kept road, clearly tidier than the courtyard
   approach: [
     ['floor_tile_large', 5],
-    ['floor_tile_large_rocks', 2],
-    ['floor_dirt_large', 1],
+    ['floor_dirt_large', 3],
   ],
   // the ruin courtyard: broken earth almost wall to wall
   mid: [
-    ['floor_tile_large', 1],
-    ['floor_tile_large_rocks', 2],
-    ['floor_dirt_large', 3],
-    ['floor_dirt_large_rocky', 4],
+    ['floor_tile_large', 2],
+    ['floor_dirt_large', 8],
   ],
 };
 
