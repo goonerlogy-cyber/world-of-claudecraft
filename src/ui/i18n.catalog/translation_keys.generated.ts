@@ -5264,7 +5264,6 @@ export type TranslationKeyFlat =
   | 'hudChrome.bg.enterQueue'
   | 'hudChrome.bg.enterQueueParty'
   | 'hudChrome.bg.firstTo'
-  | 'hudChrome.bg.flagCarriedBy'
   | 'hudChrome.bg.flagDroppedLog'
   | 'hudChrome.bg.flagReturnedBanner'
   | 'hudChrome.bg.flagReturnedLog'

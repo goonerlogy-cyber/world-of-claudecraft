@@ -457,13 +457,14 @@ const HOT_PAINTERS: ReadonlyArray<ScannedPainter> = [
     reflowAllow: {},
   },
   // The Ravenrift scoreboard rebuilds its skeleton in ONE innerHTML write only
-  // when the STRUCTURAL sig changes (new match / roster change); the six
-  // setAttribute calls are the mount-time a11y wiring plus the sig-gated
-  // aria-expanded pin toggle, and the one classList is that same pin toggle
-  // (user-event cadence). Every per-frame write is facet-routed.
+  // when the STRUCTURAL sig changes (new match / roster change); the seven
+  // setAttribute calls are the mount-time a11y wiring plus the pin toggle
+  // and the outside-click unpin, and the three classList uses are those same
+  // user-event handlers (toggle, stuck-open check, outside-click close).
+  // Every per-frame write is facet-routed.
   {
     file: 'hud/battleground/battleground_scoreboard_painter.ts',
-    allow: { '.innerHTML': 1, '.setAttribute': 6, '.classList': 1 },
+    allow: { '.innerHTML': 1, '.setAttribute': 7, '.classList': 3 },
     reflowAllow: {},
   },
   // The bg kill feed rebuilds its tiny stack in ONE innerHTML write, on a

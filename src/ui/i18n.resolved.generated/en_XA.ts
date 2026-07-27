@@ -921,10 +921,9 @@ export const en_XA: EnTranslations = {
       "clock": "[{minutes}:{seconds}]",
       "formUp": "[Ƒóŕɱ úþ: {seconds}]",
       "firstTo": "[Ƒíŕšţ ţó {caps} çáþţúŕéš]",
-      "flagCarriedBy": "[Çáŕŕíéð ƀý {name}]",
       "flagState": {
         "home": "[Ƒļáĝ áţ ţĥé ķééþ]",
-        "carried": "[Ƒļáĝ çáŕŕíéð]",
+        "carried": "[Ƒļáĝ šţóļéñ!]",
         "dropped": "[Ƒļáĝ óñ ţĥé ĝŕóúñð]"
       },
       "respawnIn": "[Ñéẋţ ŵáʋé: ŕéšþáŵñíñĝ íñ {seconds}]",

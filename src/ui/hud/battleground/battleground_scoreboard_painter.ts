@@ -118,10 +118,9 @@ export class BattlegroundScoreboard {
     }
     for (const team of [0, 1] as const) {
       const state = view.flagStates[team];
-      const carrier = view.carrierNames[team];
-      const stateText = carrier
-        ? t('hudChrome.bg.flagCarriedBy', { name: carrier })
-        : t(FLAG_STATE_KEYS[state]);
+      // No player names on the strip (owner direction): the call is about
+      // the FLAG ('Flag stolen!'), the combat log keeps the who.
+      const stateText = t(FLAG_STATE_KEYS[state]);
       const el = this.flagEls[team];
       if (el) {
         for (const s of FLAG_STATES) w.toggleClass(el, s, state === s);
@@ -139,7 +138,7 @@ export class BattlegroundScoreboard {
       const fs = this.fstateEls[team];
       if (fs) {
         for (const s of FLAG_STATES) w.toggleClass(fs, s, state === s);
-        w.setText(fs, carrier ?? (state === 'home' ? '' : t(FLAG_STATE_KEYS[state])));
+        w.setText(fs, state === 'home' ? '' : t(FLAG_STATE_KEYS[state]));
       }
     }
     for (let i = 0; i < this.boardRows.length && i < view.board.length; i++) {
@@ -191,12 +190,25 @@ export class BattlegroundScoreboard {
     const togglePin = (): void => {
       const pinned = el.classList.toggle('expanded');
       el.setAttribute('aria-expanded', pinned ? 'true' : 'false');
+      // Unpinning by a second click leaves FOCUS on the strip, and
+      // :focus-within alone would hold the board open (the stuck-open bug):
+      // release focus with the pin so the board actually closes.
+      if (!pinned) el.blur();
     };
     el.addEventListener('click', togglePin);
     el.addEventListener('keydown', (ev) => {
       if (ev.key !== 'Enter' && ev.key !== ' ') return;
       ev.preventDefault();
       togglePin();
+    });
+    // Clicking anywhere OFF the strip closes a pinned board (and drops the
+    // focus reveal): the board must never stay stuck over the fight.
+    document.addEventListener('pointerdown', (ev) => {
+      if (el.contains(ev.target as Node)) return;
+      if (!el.classList.contains('expanded') && document.activeElement !== el) return;
+      el.classList.remove('expanded');
+      el.setAttribute('aria-expanded', 'false');
+      el.blur();
     });
     layer.appendChild(el);
     this.root = el;

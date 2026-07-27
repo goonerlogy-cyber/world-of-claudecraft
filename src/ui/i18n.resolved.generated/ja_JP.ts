@@ -921,10 +921,9 @@ export const ja_JP: EnTranslations = {
       "clock": "{minutes}:{seconds}",
       "formUp": "整列:{seconds}",
       "firstTo": "先取{caps}キャプチャー",
-      "flagCarriedBy": "{name}が運搬中",
       "flagState": {
         "home": "旗は砦にある",
-        "carried": "旗は運搬中",
+        "carried": "旗が奪われた!",
         "dropped": "旗は地面にある"
       },
       "respawnIn": "次のウェーブ:{seconds}秒後に復活",

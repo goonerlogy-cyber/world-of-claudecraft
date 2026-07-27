@@ -67,18 +67,25 @@ export class BattlegroundKillFeed {
       l.killerName === null
         ? t('hudChrome.bg.killFeedFallen', { victim: V })
         : t('hudChrome.bg.killFeed', { killer: K, victim: V });
-    const parts = tpl
-      .split(/([\u0001\u0002])/)
-      .map((seg) => {
-        if (seg === K) {
-          return `<span class="bgkf-name ${teamCls(l.killerTeam)}">${esc(l.killerName ?? '')}</span>`;
-        }
-        if (seg === V) {
-          return `<span class="bgkf-name ${teamCls(l.victimTeam)}">${esc(l.victimName)}</span>`;
-        }
-        return seg ? `<span class="bgkf-verb">${esc(seg)}</span>` : '';
-      })
-      .join('');
+    const nameSpan = (name: string, team: number | null): string =>
+      `<span class="bgkf-name ${teamCls(team)}">${esc(name)}</span>`;
+    const segs: string[] = [];
+    let buf = '';
+    for (const ch of tpl) {
+      if (ch !== K && ch !== V) {
+        buf += ch;
+        continue;
+      }
+      if (buf) segs.push(`<span class="bgkf-verb">${esc(buf)}</span>`);
+      buf = '';
+      segs.push(
+        ch === K
+          ? nameSpan(l.killerName ?? '', l.killerTeam)
+          : nameSpan(l.victimName, l.victimTeam),
+      );
+    }
+    if (buf) segs.push(`<span class="bgkf-verb">${esc(buf)}</span>`);
+    const parts = segs.join('');
     // A crossed-swords mark leads the entry (inline SVG: no fonts, no images).
     const mark =
       '<svg class="bgkf-mark" viewBox="0 0 24 24" aria-hidden="true">' +

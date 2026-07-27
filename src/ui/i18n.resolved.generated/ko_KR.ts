@@ -921,10 +921,9 @@ export const ko_KR: EnTranslations = {
       "clock": "{minutes}:{seconds}",
       "formUp": "집결: {seconds}",
       "firstTo": "{caps}회 선취 시 승리",
-      "flagCarriedBy": "{name} 운반 중",
       "flagState": {
         "home": "깃발이 요새에 있음",
-        "carried": "깃발 운반 중",
+        "carried": "깃발을 빼앗겼습니다!",
         "dropped": "깃발이 바닥에 있음"
       },
       "respawnIn": "다음 웨이브: {seconds}초 후 부활",

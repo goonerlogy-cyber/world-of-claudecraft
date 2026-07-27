@@ -921,10 +921,9 @@ export const ru_RU: EnTranslations = {
       "clock": "{minutes}:{seconds}",
       "formUp": "Построение: {seconds}",
       "firstTo": "До {caps} захватов",
-      "flagCarriedBy": "Несет {name}",
       "flagState": {
         "home": "Флаг в крепости",
-        "carried": "Флаг несут",
+        "carried": "Флаг украден!",
         "dropped": "Флаг на земле"
       },
       "respawnIn": "Следующая волна: возрождение через {seconds}",

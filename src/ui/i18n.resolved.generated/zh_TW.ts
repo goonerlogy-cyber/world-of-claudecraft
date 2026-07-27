@@ -921,10 +921,9 @@ export const zh_TW: EnTranslations = {
       "clock": "{minutes}:{seconds}",
       "formUp": "列隊:{seconds}",
       "firstTo": "先奪得{caps}次旗幟",
-      "flagCarriedBy": "{name}攜帶中",
       "flagState": {
         "home": "旗幟在要塞",
-        "carried": "旗幟被攜帶",
+        "carried": "旗幟被奪!",
         "dropped": "旗幟落地"
       },
       "respawnIn": "下一波:{seconds}秒後復活",

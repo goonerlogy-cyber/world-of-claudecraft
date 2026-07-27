@@ -921,10 +921,9 @@ export const vi_VN: EnTranslations = {
       "clock": "{minutes}:{seconds}",
       "formUp": "Form up: {seconds}",
       "firstTo": "First to {caps} captures",
-      "flagCarriedBy": "Carried by {name}",
       "flagState": {
         "home": "Flag at the keep",
-        "carried": "Flag carried",
+        "carried": "Flag stolen!",
         "dropped": "Flag on the ground"
       },
       "respawnIn": "Next wave: respawning in {seconds}",
