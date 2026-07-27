@@ -4983,12 +4983,16 @@ export class Renderer {
       } else if (desired === 'battleground') {
         // Ravenrift is OPEN-AIR at immersive scale (100x280): true
         // view-distance fog, the open world's own rule. The fight around you
-        // (~a chamber) reads clearly; past ~120yd the haze owns the frame, so
-        // the far chambers are places you travel to, not read from spawn.
-        // Symmetric for both teams: distance, never information.
+        // (~a chamber) reads clearly; the far keep's detail still dissolves
+        // before the 236yd flag-to-flag line, so the far chambers stay places
+        // you travel to, not read from spawn. Pushed back from the original
+        // 55/130 after the playtest: the tighter wall of haze swallowed the
+        // sky and flattened the light; at 70/210 the dome and ramparts
+        // breathe while the tactical veil holds. Symmetric for both teams:
+        // distance, never information.
         fog.color.setHex(0xaecbe0);
-        fog.near = 55;
-        fog.far = 130;
+        fog.near = 70;
+        fog.far = 210;
       } else if (desired === 'practice') {
         // The private practice pitch under its futuristic sky: tint the fog to
         // the sky variant and push it well back so the pitch reads clear and lit

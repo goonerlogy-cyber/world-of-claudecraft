@@ -452,6 +452,32 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
       });
     }
   }
+  // The contested crossings get their own light (playtest polish): two
+  // torches inside each gatehouse room on its outer-wall inner face (the
+  // ambush corners read instead of sitting in murk), and one at each flank
+  // arch jamb on the curtain's field face. Every placement below is written
+  // for the SOUTH side and point-mirrored ((x,z) -> (-x,-z)), so neither
+  // team's approach is better lit.
+  const CROSSING_TORCHES: { x: number; z: number; ry: number }[] = [
+    // south gatehouse (room x -32..-20, z -65..-47): west-wall inner face
+    { x: -32 + TORCH_WALL_INSET, z: -52, ry: Math.PI / 2 },
+    { x: -32 + TORCH_WALL_INSET, z: -61, ry: Math.PI / 2 },
+    // south flank arch (x 38..43 at z -56): jamb torches on the field face
+    { x: 36.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
+    { x: 44.5, z: -(BG_CURTAIN_Z + TORCH_WALL_INSET), ry: 0 },
+  ];
+  for (const t of CROSSING_TORCHES) {
+    for (const m of [1, -1]) {
+      torches.push({
+        kind: 'torch_mounted',
+        x: m * t.x,
+        y: 0,
+        z: m * t.z,
+        ry: m === 1 ? t.ry : t.ry + Math.PI,
+        scale: [TORCH_MODULE_SCALE, TORCH_MODULE_SCALE, TORCH_MODULE_SCALE],
+      });
+    }
+  }
   // Graveyard dressing: exact point mirrors between the two plots (offsets
   // negated, yaw rotated a half turn), fixed kinds per spot.
   const GRAVE_SPOTS: { dx: number; dz: number; kind: string; y?: number }[] = [

@@ -293,8 +293,8 @@ describe('the band fog is view distance, tier-identical (source pin)', () => {
     const start = src.indexOf("desired === 'battleground'");
     expect(start).toBeGreaterThan(-1);
     const branch = src.slice(start, src.indexOf('} else if', start + 1));
-    expect(branch).toContain('fog.near = 55');
-    expect(branch).toContain('fog.far = 130');
+    expect(branch).toContain('fog.near = 70');
+    expect(branch).toContain('fog.far = 210');
     expect(branch).not.toContain('lowGfx');
     expect(branch).not.toContain('Governor');
   });
