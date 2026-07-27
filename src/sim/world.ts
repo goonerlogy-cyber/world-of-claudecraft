@@ -11,8 +11,6 @@ import {
   dungeonAt,
   getActiveWorldContent,
   getContentGeneration,
-  instanceOrigin,
-  instanceSlotForZ,
   ROADS,
   STRIP_MAX_X,
   STRIP_MIN_X,

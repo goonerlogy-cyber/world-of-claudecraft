@@ -57,6 +57,7 @@ import {
 import { rectShellWallSegments, stubFaceSegments } from './dungeon_wall_segments';
 import { sharedUniforms } from './gfx';
 import { buildLastKeepDressing, ensureLastKeepDressing } from './lastkeep_dressing';
+import { buildOrkadiaFieldInterior } from './orkadia_props';
 import { buildInfernalDecor, ensureInfernalDecorAssets } from './rift_decor';
 import { radialGlowTexture } from './textures';
 import { buildWildheartFieldInterior } from './wildheart_props';
@@ -97,10 +98,10 @@ export type DungeonInteriorVariant =
   // isDelveVariant, but light with a sickly bog-green torch tint; the trash
   // rooms route through the ossuary dressing path, the apse through the finale).
   | 'delve_marsh'
-  | 'delve_marsh_apse'
-  // Orkadia orc war-camp (classic DungeonDef interior 'orkadia'): the Sanctum
-  // room kit re-lit with toxic-green warpyres over near-black volcanic stone.
-  | 'orkadia';
+  | 'delve_marsh_apse';
+// NOTE: the 'orkadia' DungeonDef interior is NOT a room-kit variant: it is an
+// open-air war-camp field built by orkadia_props.ts (see buildInterior's early
+// route), so it has no entry in this union.
 
 /** True for any delve module variant (Collapsed Reliquary or Drowned Litany). */
 export function isDelveVariant(variant: DungeonInteriorVariant): boolean {
@@ -165,10 +166,6 @@ const TORCH_COLORS: Record<Variant, TorchColors> = {
   delve_marsh: { flame: 0x6abf6a, emissive: 0x2f6f2f, light: 0x6aff8c },
   // the drowned apse burns brighter and colder: a cyan corpse-glow over the stage
   delve_marsh_apse: { flame: 0x7fe6c0, emissive: 0x2f8f6f, light: 0x6affb0 },
-  // Orkadia burns with toxic warpyre green: hot poison-green flame over the
-  // dark volcanic stone of the orc war-camp, a touch brighter than the
-  // necromantic sanctum green so the war-hall reads clearly under it.
-  orkadia: { flame: 0x9dff66, emissive: 0x3aa82a, light: 0x86f060 },
 };
 
 // The Drowned Litany reuses the same KayKit crypt-stone wall/floor/pillar kit as
@@ -200,12 +197,6 @@ const DROWNED_FLOOR_TINT = 0x93a2b4;
 // rift style uses, so no other interior is touched.
 const KEEP_WALL_TINT = 0xe4d6bd;
 const KEEP_FLOOR_TINT = 0xdccdb2;
-
-// Orkadia carries its near-black volcanic stone grade through the general
-// wall/floor tint path (the same emit() override the authored citadel uses),
-// so the shared crypt-stone kit reads dark under the green warpyres.
-const ORKADIA_WALL_TINT = 0x8a9c6a;
-const ORKADIA_FLOOR_TINT = 0x5c6742;
 
 // The Drowned Temple is flooded — a translucent, self-animating water sheet
 // (driven by the shared uTime so it needs no per-frame plumbing) with cheap
@@ -763,6 +754,21 @@ export class DungeonInteriors {
     },
   ): Promise<THREE.Group> {
     await ensureDungeonAssets();
+    // Orkadia is the first OPEN-AIR interior (a war-camp field, not a room
+    // kit): it builds from its own preloaded prop GLBs and shared placement
+    // table (src/sim/orkadia_field.ts), so it needs none of the KayKit room
+    // machinery below. Same lazy per-slot contract: the group is positioned at
+    // the claimed slot's origin and added to the scene.
+    if (interior === 'orkadia') {
+      const group = buildOrkadiaFieldInterior({
+        lowGfx: this.lowGfx,
+        flames: this.flames,
+        fireLights: this.fireLights,
+      });
+      group.position.set(ox, 0, oz);
+      this.scene.add(group);
+      return group;
+    }
     if (interior === 'wildheart') {
       const group = buildWildheartFieldInterior({
         lowGfx: this.lowGfx,
@@ -779,7 +785,7 @@ export class DungeonInteriors {
     // while collision used the real delve footprint, drifting walls and floor.
     const layout =
       opts?.layout ??
-      (interior === 'sanctum' || interior === 'orkadia'
+      (interior === 'sanctum'
         ? SANCTUM_LAYOUT
         : interior === 'temple'
           ? TEMPLE_LAYOUT
@@ -901,15 +907,7 @@ export class DungeonInteriors {
       }
     }
 
-    // Orkadia carries its near-black volcanic stone grade through the general
-    // wall/floor tint path (the same emit() override the authored citadel uses),
-    // so the shared crypt-stone kit reads dark under the green warpyres.
-    this.emit(
-      group,
-      p,
-      variant,
-      variant === 'orkadia' ? { wall: ORKADIA_WALL_TINT, floor: ORKADIA_FLOOR_TINT } : undefined,
-    );
+    this.emit(group, p, variant);
     if (arenaWalls) {
       for (const wall of arenaWalls.all) this.emitArenaHideable(group, wall, variant);
     }
@@ -1305,7 +1303,6 @@ export class DungeonInteriors {
     }
     if (interior === 'nythraxis') return 'nythraxis';
     if (interior === 'sanctum') return 'sanctum';
-    if (interior === 'orkadia') return 'orkadia';
     if (interior === 'temple') return 'temple';
     // The Last Keep gets its own warm castle grade (clean stone, candle light,
     // kcas furniture). Explicit so the overflow band's origin x can never

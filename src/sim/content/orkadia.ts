@@ -1,10 +1,11 @@
-// Orkadia: a hand-authored orc war-camp dungeon dug into the black volcanic
-// rock of the Drakelands, its halls lit by toxic-green warpyres. The overworld
-// entrance is a skull-and-tusk gate near the Trollmoot raiding camp; inside, the
-// green/black `orkadia` interior grade reuses the tested Sanctum room geometry
-// and collider set (see src/render/dungeon.ts `orkadia` variant and
-// INTERIOR_COLLIDERS in src/sim/colliders.ts), so what you see is what you
-// collide with.
+// Orkadia: a hand-authored orc war-camp dungeon held in the black volcanic
+// rock of the Drakelands, an open field lit by toxic-green warpyres. The
+// overworld entrance is a skull-and-tusk gate near the Trollmoot raiding camp;
+// inside, the `orkadia` interior variant is the first open-field dungeon
+// interior: outdoor ground, sky, and the war-camp prop set instead of a closed
+// room kit (see src/render/dungeon.ts `orkadia` variant, the placement table in
+// src/sim/orkadia_field.ts, and INTERIOR_COLLIDERS in src/sim/colliders.ts), so
+// what you see is what you collide with.
 //
 // Three orc creatures (the black_orc / blue_orc / red_orc Tripo GLBs) crew the
 // camp: the Bloodtusk Grunt line packs, the heavier Ironhide Marauder elites,
