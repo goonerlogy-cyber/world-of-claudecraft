@@ -683,6 +683,9 @@ export const hudChromeStrings = {
       dropped: 'Flag on the ground',
     },
     respawnIn: 'Next wave: respawning in {seconds}',
+    // the top-right kill feed (and its combat-log twin lines)
+    killFeed: '{killer} felled {victim}',
+    killFeedFallen: '{victim} has fallen',
     // event banners + combat-log lines (hud.handleEvents)
     foundBanner: 'Battle found. You fight for the {team}!',
     countdownBanner: 'Ravenrift begins in {seconds}',

@@ -294,6 +294,14 @@ const HOT_PAINTERS: ReadonlyArray<{
     allow: { '.innerHTML': 1, '.setAttribute': 6, '.classList': 1 },
     reflowAllow: {},
   },
+  // The bg kill feed rebuilds its tiny stack in ONE innerHTML write, on a
+  // death or an expiry only (the per-frame update elides on the pure core's
+  // reference equality); the setAttribute runs once at mount.
+  {
+    file: 'hud/battleground/battleground_kill_feed_painter.ts',
+    allow: { '.innerHTML': 1, '.setAttribute': 1 },
+    reflowAllow: {},
+  },
   { file: 'auras_painter.ts', allow: { '.className': 3 }, reflowAllow: {} },
   {
     file: 'fct_painter.ts',

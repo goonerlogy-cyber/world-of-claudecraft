@@ -865,6 +865,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagState.carried': 'Флаг несут',
   'hudChrome.bg.flagState.dropped': 'Флаг на земле',
   'hudChrome.bg.respawnIn': 'Следующая волна: возрождение через {seconds}',
+  'hudChrome.bg.killFeed': '{killer} сразил(а) {victim}',
+  'hudChrome.bg.killFeedFallen': '{victim} пал(а) в бою',
   'hudChrome.bg.foundBanner': 'Битва найдена. Вы сражаетесь за {team}!',
   'hudChrome.bg.countdownBanner': 'Вороний Разлом начнется через {seconds}',
   'hudChrome.bg.startBanner': 'Захватите флаг!',

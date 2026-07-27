@@ -928,6 +928,8 @@ export const it_IT: EnTranslations = {
         "dropped": "Flag on the ground"
       },
       "respawnIn": "Next wave: respawning in {seconds}",
+      "killFeed": "{killer} felled {victim}",
+      "killFeedFallen": "{victim} has fallen",
       "foundBanner": "Battle found. You fight for the {team}!",
       "countdownBanner": "Ravenrift begins in {seconds}",
       "startBanner": "Capture the flag!",

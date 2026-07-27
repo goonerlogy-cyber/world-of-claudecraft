@@ -422,6 +422,7 @@ const BG_WIRE_RESET_EVENTS = new Set([
   'bgFound',
   'bgStart',
   'bgFlag',
+  'bgKill', // the board tallies moved: refresh them with the feed line
   'bgEnd',
 ]);
 // Vale Cup readout cadence: the CupInfo payload carries whole-second clocks and

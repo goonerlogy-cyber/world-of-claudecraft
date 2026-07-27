@@ -928,6 +928,8 @@ export const ko_KR: EnTranslations = {
         "dropped": "깃발이 바닥에 있음"
       },
       "respawnIn": "다음 웨이브: {seconds}초 후 부활",
+      "killFeed": "{killer}이(가) {victim}을(를) 처치했습니다",
+      "killFeedFallen": "{victim}이(가) 쓰러졌습니다",
       "foundBanner": "전투 성사. 당신은 {team} 소속입니다!",
       "countdownBanner": "레이븐리프트 시작까지 {seconds}",
       "startBanner": "깃발을 빼앗아라!",

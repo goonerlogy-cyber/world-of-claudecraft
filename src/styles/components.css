@@ -8276,6 +8276,47 @@
     text-align: center;
   }
 
+  /* kill feed: a short right-side stack under the minimap; killer's team
+     colors the entry. Actionable, tier-identical (fairness contract). */
+  #bg-killfeed {
+    position: absolute;
+    top: 240px;
+    right: 12px;
+    width: 230px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 3px;
+    pointer-events: none;
+    z-index: 17;
+  }
+  .bgkf-line {
+    font-size: 12px;
+    color: #e8e2d2;
+    background: #0a0c10c8;
+    border-right: 3px solid #8a8a8a;
+    border-radius: 4px;
+    padding: 2px 7px;
+    text-shadow: 1px 1px 2px #000;
+    animation: bgkf-in 0.18s ease-out;
+  }
+  .bgkf-line.crimson {
+    border-right-color: var(--color-team-red);
+  }
+  .bgkf-line.azure {
+    border-right-color: var(--color-team-blue);
+  }
+  @keyframes bgkf-in {
+    from {
+      opacity: 0;
+      transform: translateX(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* in-match scoreboard strip: pinned top centre; every state here is
      actionable information and paints identically on every graphics tier */
   #bg-scoreboard {

@@ -863,6 +863,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagState.carried': '旗は運搬中',
   'hudChrome.bg.flagState.dropped': '旗は地面にある',
   'hudChrome.bg.respawnIn': '次のウェーブ:{seconds}秒後に復活',
+  'hudChrome.bg.killFeed': '{killer}が{victim}を倒した',
+  'hudChrome.bg.killFeedFallen': '{victim}が倒れた',
   'hudChrome.bg.foundBanner': 'マッチ成立。あなたは{team}として戦います!',
   'hudChrome.bg.countdownBanner': 'レイヴンリフト開始まで{seconds}',
   'hudChrome.bg.startBanner': '旗を奪え!',

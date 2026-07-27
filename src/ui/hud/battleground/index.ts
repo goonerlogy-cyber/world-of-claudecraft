@@ -1,3 +1,5 @@
+export * from './battleground_kill_feed_painter';
+export * from './battleground_kill_feed_view';
 export * from './battleground_map_painter';
 export * from './battleground_map_view';
 export * from './battleground_scoreboard_painter';

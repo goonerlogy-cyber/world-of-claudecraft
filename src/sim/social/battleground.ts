@@ -911,8 +911,9 @@ function dropFlag(ctx: SimContext, match: BgMatch, flag: BgFlagState, at: Entity
   );
 }
 
-/** Death hook (combat/damage.ts): carrier death drops the flag in place. The
- *  wave clock revives the fallen; there is no release, corpse, or ghost run. */
+/** Death hook (combat/damage.ts): carrier death drops the flag in place, the
+ *  tallies move, and every match member gets the kill-feed event. The corpse
+ *  then waits for the player's own release (spirit.ts owns the rite). */
 export function bgOnPlayerDeath(ctx: SimContext, e: Entity, killer: Entity | null): void {
   const match = ctx.bgMatches.get(e.id);
   if (!match || match.state !== 'active') return;
@@ -929,10 +930,25 @@ export function bgOnPlayerDeath(ctx: SimContext, e: Entity, killer: Entity | nul
       : killer?.ownerId != null
         ? ctx.entities.get(killer.ownerId)
         : null;
-  if (!creditEntity || ctx.bgMatches.get(creditEntity.id) !== match) return;
-  if (bgTeamOf(match, creditEntity.id) === bgTeamOf(match, e.id)) return;
-  const killerStats = match.stats.get(creditEntity.id);
-  if (killerStats) killerStats.kills++;
+  const credited =
+    creditEntity &&
+    ctx.bgMatches.get(creditEntity.id) === match &&
+    bgTeamOf(match, creditEntity.id) !== bgTeamOf(match, e.id)
+      ? creditEntity
+      : null;
+  if (credited) {
+    const killerStats = match.stats.get(credited.id);
+    if (killerStats) killerStats.kills++;
+  }
+  // Kill feed: names + teams only (the client owns the localized line); an
+  // uncredited death still feeds, with a null killer.
+  const victimName = ctx.players.get(e.id)?.name ?? '';
+  const killerName = credited ? (ctx.players.get(credited.id)?.name ?? '') : null;
+  const killerTeam = credited ? bgTeamOf(match, credited.id) : null;
+  const victimTeam = bgTeamOf(match, e.id);
+  for (const pid of bgAllPids(match)) {
+    ctx.emit({ type: 'bgKill', pid, killerName, victimName, killerTeam, victimTeam });
+  }
 }
 
 /** Disconnect/leave/jail mid-match: the deserter takes the rating loss and a

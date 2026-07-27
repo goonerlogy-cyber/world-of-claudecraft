@@ -928,6 +928,8 @@ export const ja_JP: EnTranslations = {
         "dropped": "旗は地面にある"
       },
       "respawnIn": "次のウェーブ:{seconds}秒後に復活",
+      "killFeed": "{killer}が{victim}を倒した",
+      "killFeedFallen": "{victim}が倒れた",
       "foundBanner": "マッチ成立。あなたは{team}として戦います!",
       "countdownBanner": "レイヴンリフト開始まで{seconds}",
       "startBanner": "旗を奪え!",

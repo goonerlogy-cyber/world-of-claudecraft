@@ -838,6 +838,8 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagState.carried': '旗幟被攜帶',
   'hudChrome.bg.flagState.dropped': '旗幟落地',
   'hudChrome.bg.respawnIn': '下一波:{seconds}秒後復活',
+  'hudChrome.bg.killFeed': '{killer}擊殺了{victim}',
+  'hudChrome.bg.killFeedFallen': '{victim}倒下了',
   'hudChrome.bg.foundBanner': '戰鬥已就緒。你為{team}而戰!',
   'hudChrome.bg.countdownBanner': '鴉裂谷{seconds}秒後開戰',
   'hudChrome.bg.startBanner': '奪取旗幟!',

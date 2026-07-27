@@ -5275,6 +5275,8 @@ export type TranslationKeyFlat =
   | 'hudChrome.bg.flagTakenLog'
   | 'hudChrome.bg.formUp'
   | 'hudChrome.bg.foundBanner'
+  | 'hudChrome.bg.killFeed'
+  | 'hudChrome.bg.killFeedFallen'
   | 'hudChrome.bg.ladderAllTime'
   | 'hudChrome.bg.leaveQueue'
   | 'hudChrome.bg.levelRequirement'

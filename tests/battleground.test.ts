@@ -290,6 +290,29 @@ describe('Ravenrift: match tallies (kills, deaths, captures)', () => {
     rows = sim.bgInfoFor(killer)!.match!.players;
     expect(rows.find((p) => p.pid === killer)).toMatchObject({ kills: 1, captures: 1 });
   });
+
+  it('feeds every match member a bgKill event with names and teams', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    toActive(sim, match);
+    const killer = match.teams[0][0];
+    const victim = match.teams[1][0];
+    kill(sim, victim, killer);
+    const evs = sim.tick().filter((e) => e.type === 'bgKill');
+    expect(evs).toHaveLength(10); // one per match member, both teams
+    const mine = evs.find((e) => 'pid' in e && e.pid === killer)!;
+    expect(mine).toMatchObject({
+      killerName: sim.players.get(killer)!.name,
+      victimName: sim.players.get(victim)!.name,
+      killerTeam: 0,
+      victimTeam: 1,
+    });
+    // a team kill still feeds, unattributed: null killer, null killer team
+    kill(sim, match.teams[0][1], match.teams[0][2]);
+    const evs2 = sim.tick().filter((e) => e.type === 'bgKill');
+    expect(evs2).toHaveLength(10);
+    expect(evs2[0]).toMatchObject({ killerName: null, killerTeam: null, victimTeam: 0 });
+  });
 });
 
 describe('Ravenrift: power runes (Battle / Ward)', () => {

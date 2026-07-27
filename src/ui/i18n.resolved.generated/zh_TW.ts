@@ -928,6 +928,8 @@ export const zh_TW: EnTranslations = {
         "dropped": "旗幟落地"
       },
       "respawnIn": "下一波:{seconds}秒後復活",
+      "killFeed": "{killer}擊殺了{victim}",
+      "killFeedFallen": "{victim}倒下了",
       "foundBanner": "戰鬥已就緒。你為{team}而戰!",
       "countdownBanner": "鴉裂谷{seconds}秒後開戰",
       "startBanner": "奪取旗幟!",

@@ -862,6 +862,8 @@ export const ko_KR: Partial<Record<TranslationKey, string>> = {
   'hudChrome.bg.flagState.carried': '깃발 운반 중',
   'hudChrome.bg.flagState.dropped': '깃발이 바닥에 있음',
   'hudChrome.bg.respawnIn': '다음 웨이브: {seconds}초 후 부활',
+  'hudChrome.bg.killFeed': '{killer}이(가) {victim}을(를) 처치했습니다',
+  'hudChrome.bg.killFeedFallen': '{victim}이(가) 쓰러졌습니다',
   'hudChrome.bg.foundBanner': '전투 성사. 당신은 {team} 소속입니다!',
   'hudChrome.bg.countdownBanner': '레이븐리프트 시작까지 {seconds}',
   'hudChrome.bg.startBanner': '깃발을 빼앗아라!',
