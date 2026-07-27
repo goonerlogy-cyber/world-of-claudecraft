@@ -315,7 +315,12 @@ import {
 } from './hud/action_bar/mobile_action_page_view';
 import { MobileActionRingPainter } from './hud/action_bar/mobile_action_ring_painter';
 import { playerStealthed } from './hud/action_bar/player_stealthed';
-import { BattlegroundScoreboard, buildBgScoreboardView } from './hud/battleground';
+import {
+  BattlegroundMapPainter,
+  BattlegroundScoreboard,
+  buildBgMapModel,
+  buildBgScoreboardView,
+} from './hud/battleground';
 import { ChatAnnouncer } from './hud/chat/chat_announcer';
 import { chatChannelColor } from './hud/chat/chat_channels';
 import { ChatGeometryController } from './hud/chat/chat_geometry_controller';
@@ -3924,6 +3929,7 @@ export class Hud {
 
   // Ravenrift in-match scoreboard strip + wave-respawn overlay (self-mounting,
   // elided writers; hud/battleground/).
+  private readonly bgMapPainter = new BattlegroundMapPainter();
   private readonly bgScoreboard = new BattlegroundScoreboard({
     layer: () => document.getElementById('ui'),
     writers: this.writerFacet,
@@ -8487,6 +8493,16 @@ export class Hud {
     const p = this.sim.player;
     const summaryEl = $('#map-summary');
 
+    if (mapWindowMode(this.sim) === 'battleground') {
+      // The Ravenrift surface: the field schematic + the honest marker set
+      // (self + teammates; the fog's no-scouting rule owns everything else).
+      this.mapQuestAreas = [];
+      this.mapNpcMarkers = [];
+      this.bgMapPainter.paint(ctx, buildBgMapModel(this.sim), S);
+      this.setText(summaryEl, t('hud.core.mapSummary', { zone: t('hudChrome.bg.title') }));
+      return;
+    }
+
     if (mapWindowMode(this.sim) === 'delve') {
       // The delve painter owns the full world-map schematic render (the area
       // title is drawn on-canvas, since the world map has no DOM zone label).
@@ -10114,7 +10130,7 @@ export class Hud {
               t('hudChrome.bg.capturedLog', { name: ev.byName, team, ...scores }),
               '#ffd24a',
             );
-            audio.questDone();
+            audio.bgCapture();
           } else if (ev.action === 'taken') {
             // Match-critical calls ride the across-screen banner (the mail
             // banner family) with their own banner-sink keys. Drops stay
@@ -10122,7 +10138,7 @@ export class Hud {
             // least urgent call of the three.
             this.showBanner(t('hudChrome.bg.flagTakenBanner', { takers, team }));
             this.combatLog(t('hudChrome.bg.flagTakenLog', { name: ev.byName, team }), '#ff9a3c');
-            audio.fiestaDown();
+            audio.bgFlagTaken();
           } else if (ev.action === 'dropped') {
             this.combatLog(t('hudChrome.bg.flagDroppedLog', { team }), '#cfc6a8');
           } else {

@@ -323,6 +323,8 @@ const HOT_PAINTERS: ReadonlyArray<{
 // cadence-throttled nameplate_painter, are intentionally outside this HUD-painter file.)
 const CANVAS_PAINTERS: ReadonlyArray<string> = [
   'hud/delve/delve_map_painter.ts',
+  // the M-map Ravenrift schematic: canvas-only, redrawn on the map cadence
+  'hud/battleground/battleground_map_painter.ts',
   'map_window_painter.ts',
   'minimap_painter.ts',
   'perf_graph_painter.ts',

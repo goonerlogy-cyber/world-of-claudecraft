@@ -8337,11 +8337,22 @@
   }
   .bg-brow {
     display: grid;
-    grid-template-columns: 1fr 52px 52px 60px;
+    grid-template-columns: minmax(0, 1fr) 52px 56px 68px;
     gap: 4px;
     align-items: center;
     font-size: 12px;
-    line-height: 1.6;
+    line-height: 1;
+    min-height: 22px;
+    padding: 0 8px;
+    border-radius: 4px;
+  }
+  /* even, banded player rows (the classic scoreboard read): alternating
+     washes so the table scans as rows, never floating numbers */
+  .bg-brow.bg-bplayer {
+    background: #ffffff08;
+  }
+  .bg-brow.bg-bplayer:nth-of-type(odd) {
+    background: #ffffff03;
   }
   .bg-brow.bg-bhead {
     color: #d8cba0;
@@ -8350,7 +8361,13 @@
     text-transform: uppercase;
   }
   .bg-bteam {
-    margin-top: 6px;
+    margin-top: 8px;
+    margin-bottom: 3px;
+    padding: 0 8px 2px;
+    font-size: 10.5px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    border-bottom: 1px solid #ffffff14;
   }
   /* a clear breath between the two team sections */
   .bg-bteam.azure {

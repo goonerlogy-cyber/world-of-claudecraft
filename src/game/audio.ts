@@ -312,6 +312,20 @@ export class GameAudio {
     this.play(UI_CUES.fiestaRevive);
   }
 
+  // Ravenrift flag moments want WEIGHT. No dedicated recordings yet (the SFX
+  // asset flow is a follow-up), so each layers two existing cues into one
+  // bigger hit: the war-horn challenge over the heavy down-sting for a take,
+  // the fanfare over the fight-starts hit for a capture.
+  bgFlagTaken(): void {
+    this.play(UI_CUES.duelChallenge);
+    this.play(UI_CUES.fiestaDown);
+  }
+
+  bgCapture(): void {
+    this.play(UI_CUES.achievement);
+    this.play(UI_CUES.duelStart);
+  }
+
   // Card Duel: live in-match feedback, same ungated category as the Fiesta
   // cues above (match win/lose reuse duelEnd()/arenaLoss() directly, no
   // dedicated methods needed for those).

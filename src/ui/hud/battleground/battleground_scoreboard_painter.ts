@@ -112,10 +112,13 @@ export class BattlegroundScoreboard {
       }
       // The visible status line under each side: 'Flag at the keep' at rest,
       // the enemy carrier's NAME while carried, 'Flag on the ground' dropped.
+      // The status line speaks only when there is a CALL: the enemy
+      // carrier's name while taken, the grounded line while dropped. At rest
+      // it stays empty (repeating 'at the keep' under both names was noise).
       const fs = this.fstateEls[team];
       if (fs) {
         for (const s of FLAG_STATES) w.toggleClass(fs, s, state === s);
-        w.setText(fs, carrier ?? t(FLAG_STATE_KEYS[state]));
+        w.setText(fs, carrier ?? (state === 'home' ? '' : t(FLAG_STATE_KEYS[state])));
       }
     }
     for (let i = 0; i < this.boardRows.length && i < view.board.length; i++) {

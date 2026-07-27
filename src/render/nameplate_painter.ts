@@ -210,7 +210,10 @@ export class NameplatePainter {
       const deadEnemy = e.dead && (e.hostile || (e.kind === 'player' && this.isHostilePlayer(e)));
       let stateMask = 0;
       if (isCurrentTarget) stateMask |= STATE_CURRENT_TARGET;
-      if (e.hostile) stateMask |= STATE_HOSTILE;
+      // Enemy PLAYERS too, not just mobs: a battleground/duel/arena opponent
+      // must read hostile-red, never friendly-blue (same predicate the
+      // dead-enemy arm above already trusts).
+      if (e.hostile || (e.kind === 'player' && this.isHostilePlayer(e))) stateMask |= STATE_HOSTILE;
       if (deadEnemy) stateMask |= STATE_DEAD_ENEMY;
       if (e.ownerId === p.id) stateMask |= STATE_MY_PET;
       if (e.aggroTargetId === p.id) stateMask |= STATE_AGGROED_ON_ME;
