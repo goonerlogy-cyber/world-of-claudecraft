@@ -68,13 +68,14 @@ const BG_RECEIVER_KINDS = new Set([
 const TORCH_GLOW_R = 0.24;
 const TORCH_GLOW_COLOR = 0xffb254;
 const TORCH_GLOW_OPACITY = 0.85;
-const BANNER_POLE_H = 7.6;
+// Standards stay UNDER the 6yd rampart top: at 7.6 the cloth poked above the
+// back wall and read as floating squares from the field side.
+const BANNER_POLE_H = 5.5;
 const BANNER_POLE_R = 0.09;
 const BANNER_CLOTH_W = 1.5;
 const BANNER_CLOTH_H = 2.3;
 const PEDESTAL_R = 1.35;
 const PEDESTAL_H = 0.5;
-const PEDESTAL_GLOW_H = 2.4;
 const PEDESTAL_GLOW_OPACITY = 0.32;
 const RUNE_PAD_INNER_R = 0.85;
 const RUNE_PAD_OUTER_R = 1.3;
@@ -252,16 +253,15 @@ export function buildBattleground(
   const trimGeo = new THREE.TorusGeometry(PEDESTAL_R * 0.98, 0.07, 8, 24);
   ownGeos.push(pedestalBaseGeo, trimGeo);
   const pedestalGeo = new THREE.CylinderGeometry(PEDESTAL_R, PEDESTAL_R * 1.15, PEDESTAL_H, 10);
-  const glowGeo = new THREE.CylinderGeometry(
-    PEDESTAL_R * 0.72,
-    PEDESTAL_R * 1.05,
-    PEDESTAL_GLOW_H,
-    12,
-    1,
-    true,
-  );
+  const glowGeo = new THREE.RingGeometry(PEDESTAL_R * 1.55, PEDESTAL_R * 2.0, 24);
   ownGeos.push(pedestalGeo, glowGeo);
   const pedestalMat = surfaceMat({ color: STONE_COLOR, roughness: 0.9 });
+  // Corner braziers: four short posts on the base step, each carrying a small
+  // team-color flame orb: the monument read, replacing the old soft glow cone
+  // (the playtest's "oval light", which washed the stand instead of framing it).
+  const brazierPostGeo = new THREE.CylinderGeometry(0.09, 0.12, 0.85, 6);
+  const brazierOrbGeo = new THREE.SphereGeometry(0.16, 8, 6);
+  ownGeos.push(brazierPostGeo, brazierOrbGeo);
   for (const stand of manifest.flagPedestals) {
     const color = BG_TEAM_COLORS[stand.team];
     const base = new THREE.Mesh(pedestalBaseGeo, pedestalMat);
@@ -276,18 +276,45 @@ export function buildBattleground(
     trim.rotation.x = Math.PI / 2;
     trim.position.set(stand.x, PEDESTAL_H * 0.55 + PEDESTAL_H - 0.02, stand.z);
     group.add(trim);
+    // A crisp base ring of light hugging the plinth foot (tier-identical),
+    // instead of the tall additive cone.
     const glowMat = new THREE.MeshBasicMaterial({
       color,
       transparent: true,
-      opacity: PEDESTAL_GLOW_OPACITY,
+      opacity: PEDESTAL_GLOW_OPACITY + 0.15,
       depthWrite: false,
       side: THREE.DoubleSide,
       blending: THREE.AdditiveBlending,
     });
     ownMats.push(glowMat);
-    const glow = new THREE.Mesh(glowGeo, glowMat);
-    glow.position.set(stand.x, PEDESTAL_H * 1.55 + PEDESTAL_GLOW_H / 2, stand.z);
-    group.add(glow);
+    const ringGlow = new THREE.Mesh(glowGeo, glowMat);
+    ringGlow.rotation.x = -Math.PI / 2;
+    ringGlow.position.set(stand.x, BG_FLOOR_Y + 0.05, stand.z);
+    group.add(ringGlow);
+    const orbMat = new THREE.MeshBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.9,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+    });
+    ownMats.push(orbMat);
+    for (const [ox, oz] of [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+    ]) {
+      const r = PEDESTAL_R * 1.35;
+      const bx = stand.x + (ox * r) / Math.SQRT2;
+      const bz = stand.z + (oz * r) / Math.SQRT2;
+      const post = new THREE.Mesh(brazierPostGeo, pedestalMat);
+      post.position.set(bx, PEDESTAL_H * 0.55 + 0.42, bz);
+      group.add(post);
+      const orb = new THREE.Mesh(brazierOrbGeo, orbMat);
+      orb.position.set(bx, PEDESTAL_H * 0.55 + 0.92, bz);
+      group.add(orb);
+    }
   }
 
   // Speed-rune pads: an additive gold ring at every rune entry (the rune
