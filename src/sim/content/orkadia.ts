@@ -34,7 +34,7 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     aggroRadius: 12,
     componentTags: ['hide'],
     loot: [{ copper: 260, chance: 1 }],
-    scale: 1.0,
+    scale: 1.7,
     color: 0x3a4a2e, // mossy green-black warhide
   },
   // Heavier elite (blue_orc.glb): the camp's iron-shielded shock troops.
@@ -55,7 +55,7 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
     aggroRadius: 13,
     componentTags: ['hide'],
     loot: [{ copper: 420, chance: 1 }],
-    scale: 1.12,
+    scale: 1.9,
     color: 0x35506a, // steel-blue plate over green hide
   },
   // Boss (red_orc.glb): Warlord Grommok Skullcleaver on the dais. A Warstomp
@@ -91,7 +91,7 @@ export const ORKADIA_MOBS: Record<string, MobTemplate> = {
       { itemId: 'deathlord_warplate', chance: 0.06, rollGroup: 'orkadia_bonus' },
       { itemId: 'cultist_flayer', chance: 0.06, rollGroup: 'orkadia_bonus' },
     ],
-    scale: 1.7,
+    scale: 2.9,
     color: 0x7a2418, // blood-red warpaint
   },
 };

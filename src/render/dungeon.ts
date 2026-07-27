@@ -166,9 +166,9 @@ const TORCH_COLORS: Record<Variant, TorchColors> = {
   // the drowned apse burns brighter and colder: a cyan corpse-glow over the stage
   delve_marsh_apse: { flame: 0x7fe6c0, emissive: 0x2f8f6f, light: 0x6affb0 },
   // Orkadia burns with toxic warpyre green: hot poison-green flame over the
-  // black volcanic stone of the orc war-camp, brighter and more acid than the
-  // necromantic sanctum green.
-  orkadia: { flame: 0x8fff5a, emissive: 0x1f5a1a, light: 0x6ae04a },
+  // dark volcanic stone of the orc war-camp, a touch brighter than the
+  // necromantic sanctum green so the war-hall reads clearly under it.
+  orkadia: { flame: 0x9dff66, emissive: 0x3aa82a, light: 0x86f060 },
 };
 
 // The Drowned Litany reuses the same KayKit crypt-stone wall/floor/pillar kit as
@@ -201,12 +201,11 @@ const DROWNED_FLOOR_TINT = 0x93a2b4;
 const KEEP_WALL_TINT = 0xe4d6bd;
 const KEEP_FLOOR_TINT = 0xdccdb2;
 
-// Orkadia grades the same shared crypt-stone kit toward near-black volcanic rock
-// with a faint green cast (walls/pillars) and blackened ash underfoot (floors),
-// applied via the general tintedMaterial() path in emit() so the toxic-green
-// warpyre light (TORCH_COLORS.orkadia) reads hard against the dark stone.
-const ORKADIA_WALL_TINT = 0x2b331f;
-const ORKADIA_FLOOR_TINT = 0x14160e;
+// Orkadia carries its near-black volcanic stone grade through the general
+// wall/floor tint path (the same emit() override the authored citadel uses),
+// so the shared crypt-stone kit reads dark under the green warpyres.
+const ORKADIA_WALL_TINT = 0x8a9c6a;
+const ORKADIA_FLOOR_TINT = 0x5c6742;
 
 // The Drowned Temple is flooded — a translucent, self-animating water sheet
 // (driven by the shared uTime so it needs no per-frame plumbing) with cheap
