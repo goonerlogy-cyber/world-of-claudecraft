@@ -19,7 +19,7 @@ import {
   BG_WALL_T,
   battlegroundColliders,
   battlegroundWallSegments,
-  bgRockScatter,
+  bgFloorRockClusters,
   KEEP_MOUTH_DZ,
   keepInteriorBounds,
   keepWallSegments,
@@ -170,6 +170,29 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     ).toBe(true);
   });
 
+  it('every rocky floor tile blocks at its baked cluster, mirrored, below the eye line', () => {
+    const o = battlegroundOrigin(0);
+    const clusters = bgFloorRockClusters();
+    // mirrored via the canonical half: every cluster has its point mirror
+    const key = (x: number, z: number) => `${x.toFixed(2)}|${z.toFixed(2)}`;
+    const set = new Set(clusters.map((c) => key(c.x, c.z)));
+    for (const c of clusters) {
+      expect(set.has(key(-c.x, -c.z)), `cluster at (${c.x},${c.z}) has no mirror`).toBe(true);
+      expect(Math.abs(c.z), 'never a blocker in the keep bands').toBeLessThan(108);
+    }
+    // walking into a cluster stops at its face; the cast passes over its top
+    const c = clusters[0];
+    const blocked = resolveMovement(SEED, o.x + c.x - 3, o.z + c.z, o.x + c.x + 3, o.z + c.z, 0.5);
+    expect(blocked.x).toBeLessThan(o.x + c.x - 0.9);
+    expect(
+      lineOfSightClear(
+        SEED,
+        { x: o.x + c.x - 3, z: o.z + c.z },
+        { x: o.x + c.x + 3, z: o.z + c.z },
+      ),
+    ).toBe(true);
+  });
+
   it('flag stands and rune pads are walkable (no collider on them)', () => {
     const o = battlegroundOrigin(1);
     for (const base of BG_BASES) {
@@ -199,10 +222,11 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 6 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_RUBBLE_PILES).toHaveLength(10);
-    // The rock field: dense, deterministic, mirrored pairs, every heap a
-    // real collider (the count pins the generator's output; a drift here
-    // means the scatter rules changed and the routes need re-walking).
-    expect(bgRockScatter()).toHaveLength(128);
+    // The rocky-tile clusters: dense, deterministic, mirrored via the
+    // canonical south half, one collider per surviving rocky tile (the count
+    // pins the selection; a drift here means the terrain rules changed and
+    // the routes need re-walking).
+    expect(bgFloorRockClusters()).toHaveLength(146);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
 

@@ -66,7 +66,7 @@ const BG_FLAG_RETURN_TIME = 20; // a dropped flag auto-returns home after this
 const BG_PICKUP_RADIUS = 2.5; // press the flag action this close to grab it
 const BG_CAPTURE_RADIUS = 4; // carry the enemy flag this close to your stand
 const BG_RUNE_RADIUS = 2.5; // step this close to a speed rune to claim it
-const BG_RUNE_COOLDOWN = 22; // a claimed rune recharges over this
+const BG_RUNE_COOLDOWN = 30; // a claimed rune recharges over this (owner: 22 felt too fast)
 const BG_RUNE_SPEED = 1.4; // sprint multiplier the rune grants
 const BG_RUNE_DURATION = 10; // seconds of haste per rune
 // Power runes: a short, honest edge worth a detour, never a win condition
@@ -118,6 +118,9 @@ export interface BgMatch {
   preMatchPools: Map<number, ArenaReturnPools>;
   pendingFlagPress: Set<number>; // deliberate presses, resolved next update
   honorTeamKeys: [string, string]; // snapshotted at start (rename-proof DR keys)
+  // false for /dev bg force-starts (jgyy review): a dev-forced, possibly
+  // asymmetric match must never move the real ladder, W/L, or honor.
+  rated: boolean;
   // Per-player match tallies for the scoreboard (seeded to zeros at start;
   // a deserter's row drops with their team entry).
   stats: Map<number, { kills: number; deaths: number; captures: number }>;
@@ -423,7 +426,12 @@ function bgTeamAvg(ctx: SimContext, pids: number[]): number {
   );
 }
 
-export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]): void {
+export function startBgMatch(
+  ctx: SimContext,
+  teamA: number[],
+  teamB: number[],
+  opts?: { rated?: boolean },
+): void {
   const slot = freeBgSlot(ctx);
   if (slot === null) {
     // Hand the seats back as two TEAM-SIZED groups: a single welded ten-group
@@ -493,6 +501,7 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
     preMatchPools,
     pendingFlagPress: new Set(),
     honorTeamKeys: [honorTeamIdentity(ctx, teamA), honorTeamIdentity(ctx, teamB)],
+    rated: opts?.rated !== false,
     ratingAvg: [bgTeamAvg(ctx, teamA), bgTeamAvg(ctx, teamB)],
     autoPartyPids: [[], []],
     resultRecorded: false,
@@ -989,7 +998,7 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   }
   const team = bgTeamOf(match, pid);
   const deserter = ctx.players.get(pid);
-  if (deserter && !match.resultRecorded) {
+  if (deserter && match.rated && !match.resultRecorded) {
     const other = team === 0 ? 1 : 0;
     // The loss delta at score 0 from the deserter's side; no honor (forfeit rule).
     const delta = eloDelta(match.ratingAvg[team], match.ratingAvg[other], 0);
@@ -1095,7 +1104,7 @@ function resolveBgResult(
   // computed from the winner's perspective and applied with opposite signs
   // (the rating floor is the only, deliberate, exception).
   const score0 = winnerTeam === null ? 0.5 : winnerTeam === 0 ? 1 : 0;
-  const delta0 = eloDelta(match.ratingAvg[0], match.ratingAvg[1], score0);
+  const delta0 = match.rated ? eloDelta(match.ratingAvg[0], match.ratingAvg[1], score0) : 0;
   for (const team of [0, 1] as BgTeam[]) {
     const delta = team === 0 ? delta0 : -delta0;
     const won = winnerTeam === team;
@@ -1105,11 +1114,11 @@ function resolveBgResult(
       if (!meta) continue;
       const before = meta.bgRating;
       meta.bgRating = Math.max(BG_MIN_RATING, before + delta);
-      if (winnerTeam !== null) {
+      if (match.rated && winnerTeam !== null) {
         if (won) meta.bgWins++;
         else meta.bgLosses++;
       }
-      if (reason !== 'forfeit') {
+      if (match.rated && reason !== 'forfeit') {
         awardBattlegroundHonor(
           ctx,
           meta,
@@ -1291,5 +1300,5 @@ export function devStartBg(ctx: SimContext): void {
   ctx.bgQueue = ctx.bgQueue
     .map((g) => ({ ...g, pids: g.pids.filter((p) => !take.includes(p)) }))
     .filter((g) => g.pids.length > 0);
-  startBgMatch(ctx, teamA, teamB);
+  startBgMatch(ctx, teamA, teamB, { rated: false });
 }

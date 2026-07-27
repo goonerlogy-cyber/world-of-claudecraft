@@ -17,6 +17,7 @@ import {
   BG_WAVE_PERIOD,
   bgResolveDesertion,
   devEndBg,
+  devStartBg,
   endBgMatch,
   updateBattleground,
 } from '../src/sim/social/battleground';
@@ -346,6 +347,36 @@ describe('Ravenrift: release is never gated by a stale arena entry (playtest reg
   });
 });
 
+describe('Ravenrift: dev-forced matches are unrated (jgyy review)', () => {
+  it('a devStartBg match moves no rating, W/L, or honor on resolve', () => {
+    const sim = makeWorld();
+    const pids: number[] = [];
+    for (let i = 0; i < 4; i++) {
+      const pid = sim.addPlayer('warrior', `D${i}`);
+      tp(sim, pid, 0, -40);
+      sim.entities.get(pid)!.level = BG_MIN_LEVEL;
+      pids.push(pid);
+      sim.bgQueueJoin(pid);
+    }
+    devStartBg(sim.ctx);
+    const match = sim.bgMatchFor(pids[0])!;
+    expect(match.rated).toBe(false);
+    toActive(sim, match);
+    const carrier = match.teams[0][0];
+    for (let i = 0; i < 5; i++) captureOnce(sim, match, carrier);
+    expect(match.state).toBe('ended');
+    for (const pid of pids) {
+      expect(sim.meta(pid)!.bgRating).toBe(1500);
+      expect(sim.meta(pid)!.bgWins).toBe(0);
+      expect(sim.meta(pid)!.bgLosses).toBe(0);
+      expect(sim.meta(pid)!.honor ?? 0).toBe(0);
+    }
+    // a queue-made match stays rated (the flag defaults true)
+    const { sim: sim2, pids: pids2 } = tenInQueue();
+    expect(sim2.bgMatchFor(pids2[0])!.rated).toBe(true);
+  });
+});
+
 describe('Ravenrift: /dev bg end (early resolve)', () => {
   it('resolves the match on the current score through the normal hold, once', () => {
     const { sim, pids } = tenInQueue();
@@ -415,6 +446,9 @@ describe('Ravenrift: match tallies (kills, deaths, captures)', () => {
     rows = sim.bgInfoFor(killer)!.match!.players;
     expect(rows.find((p) => p.pid === tkVictim)).toMatchObject({ deaths: 1 });
     expect(rows.find((p) => p.pid === tkDealer)).toMatchObject({ kills: 0 });
+    // and NOBODY else picked the team kill up by mistake (jgyy review): the
+    // only kill on the board is still the killer's first one.
+    expect(rows.reduce((sum, p) => sum + p.kills, 0)).toBe(1);
     // a capture lands on the carrier's row
     captureOnce(sim, match, killer);
     rows = sim.bgInfoFor(killer)!.match!.players;
@@ -1043,7 +1077,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(sim.meta(winner)!.bgRating).toBeGreaterThan(1500); // winner unaffected
   });
 
-  it('stepping on a sprint rune grants 1.4x haste for 10s and the rune recharges over 22s', () => {
+  it('stepping on a sprint rune grants 1.4x haste for 10s and the rune recharges over 30s', () => {
     const { sim, pids } = tenInQueue();
     const match = sim.bgMatchFor(pids[0])!;
     toActive(sim, match);
@@ -1059,7 +1093,7 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
     expect(sprint!.duration).toBeCloseTo(10, 5);
     expect(rune.active).toBe(false); // consumed, now recharging
     tp(sim, runner, rune.pos.x + 20, rune.pos.z); // step away
-    rune.cooldown = 0.1; // fast-forward the 22s recharge
+    rune.cooldown = 0.1; // fast-forward the 30s recharge
     sim.tick();
     sim.tick();
     expect(match.runes[0].active).toBe(true);
@@ -1108,6 +1142,13 @@ describe('Ravenrift: runes, hostility, and the match clock', () => {
       expect(sim.meta(pid)!.bgLosses).toBe(0);
     }
     for (const pid of match.teams[1]) expect(sim.meta(pid)!.bgRating).toBe(1400 - expected);
+  });
+
+  it('pins the decisive Elo delta to a literal (jgyy review: catches uniform scaling)', () => {
+    // 1600 vs 1400, decisive win for the favorite: the exact arena-formula
+    // output, pinned as a NUMBER so a K or curve change cannot pass silently.
+    expect(eloDelta(1600, 1400, 1)).toBe(8);
+    expect(eloDelta(1400, 1600, 1)).toBe(24); // the underdog's win pays more
   });
 
   it('team Elo is zero-sum on a decisive result', () => {

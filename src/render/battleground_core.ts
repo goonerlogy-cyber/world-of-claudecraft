@@ -24,10 +24,11 @@ import {
   BG_SPEED_RUNES,
   BG_WALL_HEIGHT,
   BG_WALL_T,
+  type BgFloorKind,
   type BgTeam,
   type BgWallSeg,
   battlegroundWallSegments,
-  bgRockScatter,
+  bgFloorTileAt,
   KEEP_BACK_DZ,
   KEEP_HALF_X,
   KEEP_MOUTH_DZ,
@@ -67,12 +68,6 @@ const QUARTER = Math.PI / 2;
 
 // Stable per-position hash (the dungeon.ts / jail_scene.ts trick; local copy
 // because dungeon.ts keeps its own private).
-// Alias for the dressing kind picks below (hash2 is used with loop indices
-// elsewhere; the rock field keys on world positions).
-function layoutKindHash(a: number, b: number): number {
-  return hash2(a, b);
-}
-
 function hash2(a: number, b: number): number {
   const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return s - Math.floor(s);
@@ -173,41 +168,17 @@ const RUIN_HEIGHT_LEVELS = [1, 0.8, 0.6];
 // COURTYARD between the curtains is broken, overgrown ground littered with
 // rubble. Bands key on |z|, so the two halves stay exact mirrors and neither
 // team's end reads differently in gameplay terms (theme, never information).
-export type BgZone = 'keep' | 'approach' | 'mid';
-/** The courtyard band ends at the curtain line, DERIVED so it cannot drift. */
-export const BG_ZONE_MID_HALF_Z = BG_CURTAIN_Z;
-/** The garrison band starts at the keep mouth line, past the barricades. */
-export const BG_ZONE_KEEP_MIN_Z = BG_FLAG_Z - KEEP_MOUTH_DZ;
+// The zone bands and the floor-tile selection LIVE IN THE LAYOUT now (the
+// sim emits colliders from the same picks); re-exported here for the render
+// consumers and the pinned tests.
+export {
+  BG_ZONE_KEEP_MIN_Z,
+  BG_ZONE_MID_HALF_Z,
+  type BgZone,
+  bgZoneAt,
+} from '../sim/battleground_layout';
 
-export function bgZoneAt(z: number): BgZone {
-  const az = Math.abs(z);
-  if (az >= BG_ZONE_KEEP_MIN_Z) return 'keep';
-  if (az > BG_ZONE_MID_HALF_Z) return 'approach';
-  return 'mid';
-}
-
-// NO tall-rock tile variants anywhere: the boulder clusters baked into
-// floor_tile_large_rocks / floor_dirt_large_rocky read as solid formations a
-// player then walks straight through (playtest). The broken-ground look now
-// comes from dirt tiles plus the FLAT cracked/weed accents; the only tall
-// rocks on the field are the collider-backed BG_RUBBLE_PILES heaps.
-const FLOOR_KINDS_BY_ZONE: Record<BgZone, [string, number][]> = {
-  // garrison grounds: swept tile with the odd dirt patch
-  keep: [
-    ['floor_tile_large', 6],
-    ['floor_dirt_large', 2],
-  ],
-  // each team's field chamber: a kept road, clearly tidier than the courtyard
-  approach: [
-    ['floor_tile_large', 5],
-    ['floor_dirt_large', 3],
-  ],
-  // the ruin courtyard: broken earth almost wall to wall
-  mid: [
-    ['floor_tile_large', 2],
-    ['floor_dirt_large', 8],
-  ],
-};
+import { bgZoneAt } from '../sim/battleground_layout';
 
 // Rubble/overgrowth accents scattered over the ruin courtyard (small kit tiles laid
 // proud of the floor). Deliberately clear of the rune pads so the gold rings
@@ -319,12 +290,16 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   for (let z = -(BG_HALF_Z - FLOOR_CELL / 2); z <= BG_HALF_Z - FLOOR_CELL / 2; z += FLOOR_CELL) {
     for (let x = -(BG_HALF_X - FLOOR_CELL / 2); x <= BG_HALF_X - FLOOR_CELL / 2; x += FLOOR_CELL) {
       const zone = bgZoneAt(z);
+      // The tile pick comes from the LAYOUT (bgFloorTileAt): the sim emits a
+      // collider for every rocky tile's baked cluster, so selection must be
+      // one function or the ground would lie about what blocks.
+      const tile = bgFloorTileAt(x, z);
       floors.push({
-        kind: pickKind(FLOOR_KINDS_BY_ZONE[zone], hash2(x * 1.31, z)),
+        kind: tile.kind,
         x,
         y: BG_FLOOR_Y,
         z,
-        ry: Math.floor(hash2(z, x) * 4) * QUARTER,
+        ry: tile.ry,
         scale: [1, 1, 1],
       });
       // rubble/overgrowth only inside the courtyard band, clear of the rune
@@ -581,24 +556,6 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   // BG_RUBBLE_PILES (real movement colliders, below the eye line), so what
   // blocks is exactly what renders; the flat rubble_half sheets stay
   // visual-only debris the boots read over.
-  // The rock field: every scatter heap derives from the layout's collider
-  // list (bgRockScatter), so the dense look and the blocking set are one.
-  for (const rock of bgRockScatter()) {
-    const kind =
-      layoutKindHash(rock.x, rock.z) < 0.5
-        ? 'rubble_large'
-        : layoutKindHash(rock.z, rock.x) < 0.6
-          ? 'rocks'
-          : 'rocks_decorated';
-    dressing.push({
-      kind,
-      x: rock.x,
-      y: 0,
-      z: rock.z,
-      ry: layoutKindHash(rock.x * 1.3, rock.z * 0.7) * Math.PI * 2,
-      scale: [rock.s, rock.s, rock.s],
-    });
-  }
   // Heap scale is tuned so the mesh footprint matches the layout collider
   // (playtest: an oversized mesh left walk-through skirts around the block).
   for (const rb of BG_RUBBLE_PILES) {
