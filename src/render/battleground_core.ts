@@ -27,6 +27,7 @@ import {
   type BgTeam,
   type BgWallSeg,
   battlegroundWallSegments,
+  bgRockScatter,
   KEEP_BACK_DZ,
   KEEP_HALF_X,
   KEEP_MOUTH_DZ,
@@ -66,6 +67,12 @@ const QUARTER = Math.PI / 2;
 
 // Stable per-position hash (the dungeon.ts / jail_scene.ts trick; local copy
 // because dungeon.ts keeps its own private).
+// Alias for the dressing kind picks below (hash2 is used with loop indices
+// elsewhere; the rock field keys on world positions).
+function layoutKindHash(a: number, b: number): number {
+  return hash2(a, b);
+}
+
 function hash2(a: number, b: number): number {
   const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
   return s - Math.floor(s);
@@ -574,6 +581,24 @@ export function battlegroundRenderManifest(): BattlegroundRenderManifest {
   // BG_RUBBLE_PILES (real movement colliders, below the eye line), so what
   // blocks is exactly what renders; the flat rubble_half sheets stay
   // visual-only debris the boots read over.
+  // The rock field: every scatter heap derives from the layout's collider
+  // list (bgRockScatter), so the dense look and the blocking set are one.
+  for (const rock of bgRockScatter()) {
+    const kind =
+      layoutKindHash(rock.x, rock.z) < 0.5
+        ? 'rubble_large'
+        : layoutKindHash(rock.z, rock.x) < 0.6
+          ? 'rocks'
+          : 'rocks_decorated';
+    dressing.push({
+      kind,
+      x: rock.x,
+      y: 0,
+      z: rock.z,
+      ry: layoutKindHash(rock.x * 1.3, rock.z * 0.7) * Math.PI * 2,
+      scale: [rock.s, rock.s, rock.s],
+    });
+  }
   // Heap scale is tuned so the mesh footprint matches the layout collider
   // (playtest: an oversized mesh left walk-through skirts around the block).
   for (const rb of BG_RUBBLE_PILES) {

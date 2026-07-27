@@ -19,6 +19,7 @@ import {
   BG_WALL_T,
   battlegroundColliders,
   battlegroundWallSegments,
+  bgRockScatter,
   KEEP_MOUTH_DZ,
   keepInteriorBounds,
   keepWallSegments,
@@ -198,6 +199,10 @@ describe('Ravenrift layout: sealed keeps + point symmetry', () => {
     expect(battlegroundWallSegments()).toHaveLength(4 + 3 * 2 + 11 + 6 + 8 + 2 + 8);
     expect(BG_COVER_PILLARS).toHaveLength(6);
     expect(BG_RUBBLE_PILES).toHaveLength(10);
+    // The rock field: dense, deterministic, mirrored pairs, every heap a
+    // real collider (the count pins the generator's output; a drift here
+    // means the scatter rules changed and the routes need re-walking).
+    expect(bgRockScatter()).toHaveLength(128);
     expect(BG_COVER_CRATES).toHaveLength(12);
   });
 

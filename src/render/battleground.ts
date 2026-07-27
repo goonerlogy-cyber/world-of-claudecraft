@@ -42,6 +42,7 @@ const BG_EXTRA_KIT: readonly string[] = [
   'banner_triple_blue',
   'rubble_large',
   'rubble_half',
+  'rocks',
   'rocks_decorated',
   'keg',
   'barrel_large',

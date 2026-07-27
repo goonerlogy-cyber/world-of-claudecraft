@@ -331,6 +331,183 @@ export function battlegroundWallSegments(): BgWallSeg[] {
   ];
 }
 
+// --- The rock field ---------------------------------------------------------
+// (owner direction, sixth pass): the dense courtyard rock scatter is BACK,
+// and every heap BLOCKS. A deterministic hash scatter over the open field
+// bands, kept clear of every route corridor, rune pad, crossing room, wall,
+// and existing collider BY CONSTRUCTION, then point-mirrored; the walk-the-
+// route pins then prove the lanes over the real collider set. Heap tops stay
+// below the eye line (RUBBLE_TOP): movement cover, never sight cover, and
+// the camera clears them. The render dressing derives its heap placements
+// from THIS list, so what blocks is exactly what renders.
+export interface BgRockPile {
+  x: number;
+  z: number;
+  r: number; // collider radius, matched to the rendered footprint
+  s: number; // render scale for the heap mesh
+}
+
+// Deterministic per-position hash (the render core's hash2; a local copy so
+// the sim layer stays import-clean). NOT gameplay randomness: static layout.
+function layoutHash(a: number, b: number): number {
+  const v = Math.sin(a * 127.1 + b * 311.7) * 43758.5453;
+  return v - Math.floor(v);
+}
+
+// The corridors that must stay open, as the SAME polylines the route pins
+// walk (tests/battleground_band.test.ts): both flag routes, the breaker
+// lane, and the gatehouse S-jogs. A candidate must clear these AND their
+// point mirrors (its own mirror must stay clear of the authored lanes too).
+const SCATTER_LANES: [number, number][][] = [
+  // Route A, the main gates
+  [
+    [0, -118],
+    [10, -114],
+    [10, -104],
+    [10, -95],
+    [24, -92],
+    [26, -80],
+    [24, -70],
+    [14, -62],
+    [13, -50],
+    [13, -26],
+    [13, -12],
+    [13, 2],
+    [10, 14],
+    [0, 24],
+    [-13, 32],
+    [-13, 50],
+    [-13, 62],
+    [-13, 70],
+    [-24, 78],
+    [-26, 90],
+    [-14, 100],
+    [-10, 104],
+    [0, 118],
+  ],
+  // Route B, the sneak (mouth gap, gatehouse jog, west flank, north gate)
+  [
+    [0, -118],
+    [-10, -114],
+    [-13, -109],
+    [-13, -104],
+    [-18, -106],
+    [-44, -104],
+    [-44, -98],
+    [-44, -84],
+    [-36, -74],
+    [-33, -67.5],
+    [-22.5, -67.5],
+    [-22.5, -62],
+    [-24.5, -57],
+    [-30, -54],
+    [-30, -43],
+    [-38, -30],
+    [-38, 0],
+    [-38, 20],
+    [-38, 44],
+    [-13, 50],
+  ],
+  // the courtyard breaker lane, pinned walkable end to end
+  [
+    [20, 14],
+    [-20, 14],
+  ],
+];
+
+function segDist(px: number, pz: number, a: [number, number], b: [number, number]): number {
+  const dx = b[0] - a[0];
+  const dz = b[1] - a[1];
+  const len2 = dx * dx + dz * dz;
+  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((px - a[0]) * dx + (pz - a[1]) * dz) / len2));
+  return Math.hypot(px - (a[0] + t * dx), pz - (a[1] + t * dz));
+}
+
+function laneDist(px: number, pz: number): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (const lane of SCATTER_LANES) {
+    for (let i = 1; i < lane.length; i++) {
+      best = Math.min(best, segDist(px, pz, lane[i - 1], lane[i]));
+      // the point mirror of the lane, so the candidate's own mirror is clear
+      best = Math.min(
+        best,
+        segDist(px, pz, [-lane[i - 1][0], -lane[i - 1][1]], [-lane[i][0], -lane[i][1]]),
+      );
+    }
+  }
+  return best;
+}
+
+function wallDist(px: number, pz: number): number {
+  let best = Number.POSITIVE_INFINITY;
+  for (const w of battlegroundWallSegments()) {
+    const dx = Math.max(Math.abs(px - w.x) - w.hw, 0);
+    const dz = Math.max(Math.abs(pz - w.z) - w.hd, 0);
+    best = Math.min(best, Math.hypot(dx, dz));
+  }
+  return best;
+}
+
+// Size tiers: collider radius matched to the rendered heap footprint
+// (rubble_large at scale 0.9 measures ~2.3yd of blocking rock).
+const SCATTER_TIERS: { r: number; s: number }[] = [
+  { r: 1.4, s: 0.55 },
+  { r: 1.8, s: 0.72 },
+  { r: 2.25, s: 0.88 },
+];
+const SCATTER_STEP = 6; // one candidate cell per 6yd over the south half
+const SCATTER_CHANCE = 0.52;
+
+function buildRockScatter(): BgRockPile[] {
+  const out: BgRockPile[] = [];
+  const others: { x: number; z: number; r: number }[] = [
+    ...BG_COVER_PILLARS.map((p) => ({ ...p, r: PILLAR_R })),
+    ...BG_COVER_CRATES.map((c) => ({ ...c, r: CRATE_R })),
+    ...BG_RUBBLE_PILES.map((p) => ({ ...p, r: RUBBLE_R })),
+  ];
+  // the gatehouse ROOMS stay clear: fights happen in there
+  const roomClear = (x: number, z: number): boolean =>
+    (Math.abs(x) >= 17 && Math.abs(x) <= 35 && Math.abs(z) >= 45 && Math.abs(z) <= 67) === false;
+  for (let cz = -98; cz <= -4; cz += SCATTER_STEP) {
+    for (let cx = -46; cx <= 46; cx += SCATTER_STEP) {
+      if (layoutHash(cx * 3.1, cz * 1.7) >= SCATTER_CHANCE) continue;
+      const x = cx + (layoutHash(cx, cz * 5.3) - 0.5) * 3.4;
+      const z = cz + (layoutHash(cx * 5.7, cz) - 0.5) * 3.4;
+      const tier = SCATTER_TIERS[Math.floor(layoutHash(cx * 7.9, cz * 2.3) * SCATTER_TIERS.length)];
+      if (Math.abs(z) > 98 || Math.abs(x) > 47) continue;
+      if (!roomClear(x, z) || !roomClear(-x, -z)) continue;
+      if (laneDist(x, z) < tier.r + 1.3) continue;
+      if (wallDist(x, z) < tier.r + 0.8) continue;
+      let clear = true;
+      for (const o of others) {
+        if (Math.hypot(x - o.x, z - o.z) < tier.r + o.r + 0.6) {
+          clear = false;
+          break;
+        }
+      }
+      if (!clear) continue;
+      for (const rp of [...BG_SPEED_RUNES, ...BG_POWER_RUNES]) {
+        if (Math.hypot(x - rp.x, z - rp.z) < tier.r + 2.5) {
+          clear = false;
+          break;
+        }
+      }
+      if (!clear) continue;
+      out.push({ x, z, r: tier.r, s: tier.s });
+      out.push({ x: -x, z: -z, r: tier.r, s: tier.s });
+      others.push({ x, z, r: tier.r }, { x: -x, z: -z, r: tier.r });
+    }
+  }
+  return out;
+}
+
+let rockScatterMemo: BgRockPile[] | null = null;
+/** The deterministic rock field (memoized; pure layout data). */
+export function bgRockScatter(): BgRockPile[] {
+  if (!rockScatterMemo) rockScatterMemo = buildRockScatter();
+  return rockScatterMemo;
+}
+
 /** Full BG collision set in instance-local coordinates. Flag stands and speed
  *  runes are deliberately walkable (no collider). */
 export function battlegroundColliders(): Collider[] {
@@ -354,6 +531,9 @@ export function battlegroundColliders(): Collider[] {
   }
   for (const rb of BG_RUBBLE_PILES) {
     out.push({ type: 'circle', x: rb.x, z: rb.z, r: RUBBLE_R, cameraTopY: RUBBLE_TOP });
+  }
+  for (const rock of bgRockScatter()) {
+    out.push({ type: 'circle', x: rock.x, z: rock.z, r: rock.r, cameraTopY: RUBBLE_TOP });
   }
   return out;
 }
