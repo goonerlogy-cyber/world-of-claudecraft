@@ -1,7 +1,7 @@
 // Canvas painter for the M-key world map's Ravenrift surface (the delve
 // schematic's routing sibling): an illustrated field plan drawn from the same
 // battleground_layout data the colliders use (walls, keeps, graveyard plots,
-// rune pads, flag stands), so the map can never drift from the real field,
+// flag stands), so the map can never drift from the real field,
 // plus the honest marker set the pure model provides (self + teammates only;
 // the fog's no-scouting rule owns everything else).
 //
@@ -13,12 +13,8 @@
 
 import {
   BG_BASES,
-  BG_COVER_CRATES,
-  BG_COVER_PILLARS,
   BG_CURTAIN_Z,
   BG_GRAVEYARDS,
-  BG_POWER_RUNES,
-  BG_SPEED_RUNES,
   battlegroundWallSegments,
   keepInteriorBounds,
 } from '../../../sim/battleground_layout';
@@ -41,21 +37,13 @@ const GRAVE_DIRT = '#8a7a5e';
 const WALL_FILL = '#333a48';
 const WALL_LOW_FILL = '#4e576a';
 const FENCE_FILL = '#6d5a41';
-const CRATE_FILL = '#7a5f3d';
 const FIELD_EDGE = '#262c38';
 const INK = '#00000090'; // dark edge that holds glyphs on the pale ground
 const CARRY_RING = '#ffb03c'; // the scoreboard's .carried orange
-// Rune hues mirror RUNE_VISUALS: sprint orange; the power pad flips between
-// Battle red and Ward cyan, so its glyph shows both halves.
-const RUNE_SPRINT = '#ff9a3c';
-const RUNE_BATTLE = '#e0392e';
-const RUNE_WARD = '#3ccfe8';
 
 const FIELD_PAD_PX = 18;
 const MATE_R = 4;
 const SELF_R = 6;
-const PILLAR_R = 1.2; // visual yards; the collider radius is not exported
-const CRATE_HALF = 1.2;
 
 export class BattlegroundMapPainter {
   private colors: BgMapColors | null = null;
@@ -166,33 +154,12 @@ export class BattlegroundMapPainter {
       ctx.fillRect(px(x - w.hw), py(z + w.hd), w.hw * 2 * s, w.hd * 2 * s);
     }
 
-    // Cover pillars and crates: they block movement, so the plan shows them.
-    ctx.fillStyle = WALL_FILL;
-    for (const p of BG_COVER_PILLARS) {
-      ctx.beginPath();
-      ctx.arc(px(p.x * flip), py(p.z * flip), Math.max(2, PILLAR_R * s), 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.fillStyle = CRATE_FILL;
-    for (const c of BG_COVER_CRATES) {
-      const half = Math.max(1.5, CRATE_HALF * s);
-      ctx.fillRect(px(c.x * flip) - half, py(c.z * flip) - half, half * 2, half * 2);
-    }
-
     // Field frame on top of the walls, so the perimeter reads as one edge.
+    // Pillars, crates, and the rune pads stay OFF the plan on purpose: the
+    // map answers routes and objectives, small furniture is just noise.
     ctx.strokeStyle = FIELD_EDGE;
     ctx.lineWidth = 2;
     ctx.strokeRect(left, top, fieldW, fieldH);
-
-    // Rune pads (sprint + power sites are public knowledge): sprint pads are
-    // orange diamonds; the power pad's diamond splits Battle red / Ward cyan
-    // because the live face flips per claim and the map stays static-honest.
-    for (const r of BG_SPEED_RUNES) {
-      this.runeDiamond(ctx, px(r.x * flip), py(r.z * flip), 3.5, RUNE_SPRINT, null);
-    }
-    for (const r of BG_POWER_RUNES) {
-      this.runeDiamond(ctx, px(r.x * flip), py(r.z * flip), 4.5, RUNE_BATTLE, RUNE_WARD);
-    }
 
     // Flag STANDS (static; live flag positions are deliberately not mapped).
     // The stands are the objective, so they read LARGE: a bold banner glyph
@@ -263,45 +230,6 @@ export class BattlegroundMapPainter {
       ctx.stroke();
       ctx.restore();
     }
-  }
-
-  /** A rune-site diamond with a dark edge; two colours split it left/right. */
-  private runeDiamond(
-    ctx: CanvasRenderingContext2D,
-    x: number,
-    y: number,
-    r: number,
-    colorLeft: string,
-    colorRight: string | null,
-  ): void {
-    ctx.save();
-    ctx.strokeStyle = INK;
-    ctx.lineWidth = 1;
-    ctx.fillStyle = colorLeft;
-    ctx.beginPath();
-    ctx.moveTo(x, y - r);
-    ctx.lineTo(x - r, y);
-    ctx.lineTo(x, y + r);
-    if (colorRight === null) ctx.lineTo(x + r, y);
-    ctx.closePath();
-    ctx.fill();
-    if (colorRight !== null) {
-      ctx.fillStyle = colorRight;
-      ctx.beginPath();
-      ctx.moveTo(x, y - r);
-      ctx.lineTo(x + r, y);
-      ctx.lineTo(x, y + r);
-      ctx.closePath();
-      ctx.fill();
-    }
-    ctx.beginPath();
-    ctx.moveTo(x, y - r);
-    ctx.lineTo(x + r, y);
-    ctx.lineTo(x, y + r);
-    ctx.lineTo(x - r, y);
-    ctx.closePath();
-    ctx.stroke();
-    ctx.restore();
   }
 
   private ownTint(model: BgMapModel, colors: BgMapColors): string {
