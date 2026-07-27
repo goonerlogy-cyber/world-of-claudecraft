@@ -64,7 +64,6 @@ import {
   DRAKELANDS_ZONE,
 } from './content/drakelands';
 import { DUNGEON_DEFS, DUNGEON_MOBS } from './content/dungeons';
-import { ORKADIA_DUNGEON_DEFS, ORKADIA_MOBS } from './content/orkadia';
 import {
   EVERGARDEN_CAMPS,
   EVERGARDEN_ITEMS,
@@ -147,6 +146,7 @@ import {
   NIGHTBLOOM_ZONE,
 } from './content/nightbloom';
 import { NOTICEBOARDS } from './content/noticeboards';
+import { ORKADIA_DUNGEON_DEFS, ORKADIA_MOBS } from './content/orkadia';
 import {
   PALMREACH_CAMPS,
   PALMREACH_ESCORTS,
