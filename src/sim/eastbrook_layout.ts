@@ -1074,6 +1074,9 @@ const SERVICES = {
     position: { x: 0, z: -7.5 },
     bodyRadius: 0.8,
     interactionRadius: 7,
+    // The pillar is a solid collider (the noticeboard pattern), so walkers
+    // aim for the posting spot in front of it, not the pillar's own point.
+    frontStandingPoint: { x: 0, z: -6.4 },
   },
   noticeboard: {
     id: 'eastbrook_noticeboard',
@@ -1127,10 +1130,12 @@ const SERVICES = {
     {
       id: 'eastbrook_mailbox_route',
       bodyRadius: 0.5,
+      // Ends at the pillar's standing point, not inside it: the Ravenpost
+      // is a solid collider now, and mail opens from interactionRadius 7.
       points: [
         { x: 2, z: -2 },
         { x: 1, z: -5 },
-        { x: 0, z: -7.5 },
+        { x: 0, z: -6.4 },
       ],
     },
     {

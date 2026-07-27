@@ -642,7 +642,7 @@ describe('Eastbrook runtime collision, spawn, and services', () => {
       })),
       {
         id: EASTBROOK_LAYOUT.services.mailbox.id,
-        point: EASTBROOK_LAYOUT.services.mailbox.position,
+        point: EASTBROOK_LAYOUT.services.mailbox.frontStandingPoint,
       },
       {
         id: EASTBROOK_LAYOUT.services.noticeboard.id,

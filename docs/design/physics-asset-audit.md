@@ -50,7 +50,11 @@ in zone2 and zone3 and in custom worlds; their audit anchors moved there.
 | Town wall | full-height OBB per segment | A railed parapet: stone slab, open iron railing, capped pillars. Extruded-2D cannot host a body between railing and coping, so the wall is DELIBERATELY solid: use the gates. Same honest-exception reasoning as the mud-hut stems. |
 | Civic well beacon | full-height circle | Sculpted monument (basin, pole, crystal): the top is statuary, not a platform, the wells rule again. |
 | Notice board | full-height OBB | A thin board; its top edge is no platform. |
-| Ravenpost mailbox | NO static collider | An interactable ground-object ENTITY placed via `findSafePos` (which itself reads the collider set); entities never join static collision in this engine. |
+| Ravenpost mailbox | full-height OBB (the pillar's lower body) | Spawned at its exact authored spot now (the noticeboard pattern); the raven crown is sculpture, not a platform. Walkers aim for its `frontStandingPoint`. |
+| Banker's strongbox | standable OBB at the drawn 1.3 lid | The sim resolves the spot while building the colliders (candidates keep the banker's interaction point clear; a too-cramped custom spot keeps the chest decorative) and `render/banker_chest.ts` places the mesh from the SAME record. |
+| Gather nodes (ore vein, wood pile) | standable circles at the drawn tops | The node GLBs draw at fixed spots whether or not they are ready to harvest. Herb clusters stay soft vegetation on purpose. `INTERACT_RANGE` (5) dwarfs the radii. |
+| Dungeon door arches | two full-height jamb OBBs, mouth OPEN | Walking into the mouth IS the enter trigger; the crown is out of climb reach. The Abandoned Crypt draws no arch and gets no jambs. |
+| Delve entrance portals | solid full-height slab OBB | A one-way threshold entered by talking to the warden; `delveExitDropZ` seats leavers mouth-side, clear of the slab. |
 | Marsh reeds | NO collider | Soft vegetation by the release's own contract (camera-hideable only); a body wades through. |
 | Drowned Court arena | full-height walls, flat floor | The arena-band contract: the reliquary tombs stay legacy full-height blocks DELIBERATELY, because the release's layout authors them as "a reliquary block midway along each aisle as the only extra cover" (dungeon_layout.ts): the cover extent is PvP balance, not scenery, even though the drawn shrine is smaller than the block. |
 

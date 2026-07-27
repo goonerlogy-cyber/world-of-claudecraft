@@ -1852,11 +1852,18 @@ export class Sim {
       }
     }
 
-    // Ravenpost mailboxes: one interactable raven pillar per town (draws no
-    // rng; findSafePos is deterministic, so the camp draws above are unmoved).
+    // Ravenpost mailboxes: one interactable raven pillar per town, spawned at
+    // its exact authored spot (the noticeboard pattern): the pillar is solid
+    // civic furniture with a static collider at this position, so the spawn
+    // must never relocate away from it (findSafePos would, since the collider
+    // sits exactly here). Draws no rng.
     for (const boxDef of worldContent.services?.mailboxes ?? []) {
-      const safe = this.findSafePos(boxDef.x, boxDef.z, waterLevel() + 0.6);
-      const box = createGroundObject(this.nextId++, '', 'Mailbox', this.groundPos(safe.x, safe.z));
+      const box = createGroundObject(
+        this.nextId++,
+        '',
+        'Mailbox',
+        this.groundPos(boxDef.x, boxDef.z),
+      );
       box.templateId = 'mailbox';
       box.objectItemId = null;
       box.lootable = true; // interactable

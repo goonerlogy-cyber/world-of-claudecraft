@@ -13,8 +13,11 @@ import {
 import {
   CHAPEL_HALL,
   CHAPEL_TOWER,
+  DELVE_ARCH_SCALE,
   DOCK_BOAT,
   DOCK_DRESSING,
+  delveArchMouthSign,
+  delveArchZ,
   propPlacementRoll,
 } from '../sim/prop_layout';
 import { hash2 } from '../sim/rng';
@@ -1421,18 +1424,20 @@ export function buildProps(seed: number, delveLabel?: (delveId: string) => strin
     // of the drowned door (z=505), so the whole assembly (arch, void plane,
     // braziers, name slab) flips together for the drowned delve. The flip is on
     // the placed group, never baked into the asset (its geometry is cached and
-    // shared by every marker).
-    const faceSign = isDrowned ? -1 : 1;
+    // shared by every marker). Sign, scale, and slab position are the shared
+    // prop_layout constants the arch's solid collider is built from, so the
+    // drawn slab and the wall it presents are always the same box.
+    const faceSign = delveArchMouthSign(dm.delveId);
 
     // Portal-door model with its own backing slab, no separate vault sphere needed.
     const arch = propAsset('delveEntrance2');
-    const SX = 3.6,
-      SY = 3.6,
-      SZ = 3.6;
+    const SX = DELVE_ARCH_SCALE,
+      SY = DELVE_ARCH_SCALE,
+      SZ = DELVE_ARCH_SCALE;
     // The arch sits on the far side of Halven from the approach, so he greets
     // arrivals with the glowing mouth framed behind him. The leaveDelve drop
-    // (doorPos.z - 4) stays on the mouth side for both delves.
-    const archZ = dm.z - faceSign * 4;
+    // (prop_layout delveExitDropZ) lands mouth-side, clear of the slab.
+    const archZ = delveArchZ(dm.z, dm.delveId);
     // Sample ground height at the arch's OWN placement (archZ), not Halven's
     // (dm.z): marsh terrain can slope/dip between the two, and sampling the
     // wrong z left the model's normalized (min-y at 0) base floating above the

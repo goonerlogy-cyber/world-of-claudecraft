@@ -1,19 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bankerChestSpots,
   type Collider,
   campCrateShape,
   colliderTopAt,
   DOCK_HUT_ROOF_EAVE,
   DOCK_HUT_ROOF_TOP,
   interiorColliderFrame,
+  isBlocked,
   queryOpenWorldColliders,
   STALL_CANOPY_EAVE,
   STALL_CANOPY_TOP,
   supportHeightAt,
 } from '../src/sim/colliders';
-import { ARENA_X, DUNGEONS, instanceOrigin, NPCS, YUMI_BAND_X_MIN } from '../src/sim/data';
+import {
+  ARENA_X,
+  BUILTIN_WORLD,
+  DUNGEONS,
+  GATHER_NODES,
+  instanceOrigin,
+  NPCS,
+  YUMI_BAND_X_MIN,
+} from '../src/sim/data';
 import { CRYPT_LAYOUT, DAIS_HEIGHT, tombSlotRoll } from '../src/sim/dungeon_layout';
-import { CHAPEL_HALL_ROOF_EAVE, CHAPEL_HALL_ROOF_TOP } from '../src/sim/prop_layout';
+import {
+  CHAPEL_HALL_ROOF_EAVE,
+  CHAPEL_HALL_ROOF_TOP,
+  DOOR_ARCH_JAMB_X,
+  delveArchZ,
+  delveExitDropZ,
+  GATHER_NODE_BODIES,
+} from '../src/sim/prop_layout';
 import { Sim } from '../src/sim/sim';
 import type { MoveInput } from '../src/sim/types';
 import { groundHeight, terrainHeight } from '../src/sim/world';
@@ -90,7 +107,9 @@ describe('full-height props reject standing (jump-spam 4s each)', () => {
     ['inn wall', -12.5, 16.5 - 4.8, 0],
     ['bank wall', 18 - 5.4, 10.5, Math.PI / 2],
     ['Grand Armoury wall', 12, -5.5, Math.PI / 2],
-    ['notice board', 10, -8 - 1.6, 0],
+    // Approach from the north so the post-slide run heads for open ground:
+    // the southern lane now passes the banker's standable strongbox.
+    ['notice board', 10, -8 + 1.6, Math.PI],
     ['town wall parapet', 0, -25.4, Math.PI],
   ];
   for (const [name, x, z, f] of cases) {
@@ -102,6 +121,73 @@ describe('full-height props reject standing (jump-spam 4s each)', () => {
       expect(stood).toBeLessThan(0.95);
     });
   }
+});
+
+describe('interactable landmarks are solid (the v0.31 walk-through sweep)', () => {
+  it('the Ravenpost pillar blocks, and its posting spot stays clear', () => {
+    // Authored at (0, -7.5); the pillar's shaft is a full-height OBB.
+    expect(isBlocked(SEED, 0, -7.5, 0.5)).toBe(true);
+    expect(isBlocked(SEED, 0, -6.4, 0.5)).toBe(false);
+    expect(supportHeightAt(SEED, 0, -7.5, 0.5, 1e9)).toBe(Number.NEGATIVE_INFINITY);
+  });
+
+  it("the banker's strongbox blocks and is standable at its drawn 1.3 lid", () => {
+    const spots = bankerChestSpots(SEED);
+    expect(spots.length).toBeGreaterThanOrEqual(3);
+    for (const spot of spots) {
+      expect(isBlocked(SEED, spot.x, spot.z, 0.5), `chest at ${spot.x},${spot.z}`).toBe(true);
+      const expected = groundHeight(spot.x, spot.z, SEED) + 1.3;
+      expect(supportHeightAt(SEED, spot.x, spot.z, 0.5, expected + 0.01)).toBeCloseTo(expected, 6);
+      // The banker's own point beside it stays reachable at route body radius.
+      expect(isBlocked(SEED, spot.anchorX, spot.anchorZ, 0.8), 'banker point').toBe(false);
+    }
+  });
+
+  it('ore veins and wood piles block and stand at their drawn tops; herbs stay soft', () => {
+    let ore = 0;
+    let wood = 0;
+    let herb = 0;
+    for (const node of GATHER_NODES) {
+      const body = GATHER_NODE_BODIES[node.type];
+      if (!body) {
+        expect(node.type).toBe('herb');
+        herb++;
+        continue;
+      }
+      if (node.type === 'ore') ore++;
+      else wood++;
+      expect(isBlocked(SEED, node.pos.x, node.pos.z, 0.5), node.id).toBe(true);
+      const expected = groundHeight(node.pos.x, node.pos.z, SEED) + body.top;
+      expect(
+        supportHeightAt(SEED, node.pos.x, node.pos.z, 0.5, expected + 0.01),
+        node.id,
+      ).toBeCloseTo(expected, 6);
+    }
+    expect(ore).toBeGreaterThan(0);
+    expect(wood).toBeGreaterThan(0);
+    expect(herb).toBeGreaterThan(0);
+  });
+
+  it('dungeon door jambs block while the mouth stays a walkable trigger lane', () => {
+    const door = DUNGEONS.hollow_crypt.doorPos;
+    for (const sx of [-DOOR_ARCH_JAMB_X, DOOR_ARCH_JAMB_X]) {
+      expect(isBlocked(SEED, door.x + sx, door.z, 0.4), `jamb ${sx}`).toBe(true);
+    }
+    // A body walking the centreline reaches the trigger point itself.
+    expect(isBlocked(SEED, door.x, door.z, 0.5)).toBe(false);
+    // The Abandoned Crypt draws no arch (invisible click box): no jambs.
+    const nyth = DUNGEONS.nythraxis_crypt.doorPos;
+    expect(isBlocked(SEED, nyth.x + DOOR_ARCH_JAMB_X, nyth.z, 0.4)).toBe(false);
+  });
+
+  it('the delve arch slab is solid and the exit drop lands clear of it', () => {
+    for (const dm of BUILTIN_WORLD.props.delveMarkers ?? []) {
+      const az = delveArchZ(dm.z, dm.delveId);
+      expect(isBlocked(SEED, dm.x, az, 0.5), dm.delveId).toBe(true);
+      const dropZ = delveExitDropZ(dm.z, dm.delveId);
+      expect(isBlocked(SEED, dm.x, dropZ, 0.6), `${dm.delveId} exit drop`).toBe(false);
+    }
+  });
 });
 
 describe('civic bench (rebuild furniture)', () => {

@@ -1,4 +1,13 @@
 import {
+  BANKER_CHEST_HALF_DEPTH,
+  BANKER_CHEST_HALF_WIDTH,
+  BANKER_CHEST_TARGET_HEIGHT,
+  type BankerChestBlockedAt,
+  type BankerChestLocalPlacement,
+  bankerChestCenterWorld,
+  resolveSolidBankerChestPlacement,
+} from './banker_chest_layout';
+import {
   buildingCameraHeight,
   buildingTerrainEnvelope,
   isEastbrookGrandArmoury,
@@ -7,11 +16,13 @@ import { STATIONS } from './content/professions';
 import {
   arenaOriginAt,
   DUNGEON_FLOOR_Y,
+  DUNGEON_LIST,
   DUNGEON_X_THRESHOLD,
   DUNGEONS,
   defaultDelveModules,
   delveAt,
   delveModuleLocal,
+  GATHER_NODES,
   getActiveWorldContent,
   INSTANCE_SLOT_COUNT,
   instanceOrigin,
@@ -39,12 +50,23 @@ import {
   CHAPEL_HALL_ROOF_TOP,
   CHAPEL_TOWER,
   campCrateShape,
+  DELVE_ARCH_HD,
+  DELVE_ARCH_HEIGHT,
+  DELVE_ARCH_HW,
   DOCK_BOAT,
   DOCK_DRESSING,
+  DOOR_ARCH_HEIGHT,
+  DOOR_ARCH_JAMB_HD,
+  DOOR_ARCH_JAMB_HW,
+  DOOR_ARCH_JAMB_X,
+  delveArchZ,
+  GATHER_NODE_BODIES,
   GRAVE_COUNT,
   GRAVE_RADIUS,
   graveHeight,
   graveOffset,
+  MAILBOX_HD,
+  MAILBOX_HW,
   MINE_CART,
   propPlacementRoll,
   SMITHY_DRESSING,
@@ -465,6 +487,87 @@ function staticWorldColliders(seed: number): Collider[] {
     });
   }
 
+  // Ravenpost mailboxes: authored civic furniture, spawned by the Sim at this
+  // exact spot (the noticeboard pattern). The pillar's lower body is the
+  // collider; the raven crown is sculpture, not a platform, so it stays
+  // full-height (the wells rule).
+  for (const box of content.services?.mailboxes ?? []) {
+    out.push({
+      type: 'obb',
+      x: box.x,
+      z: box.z,
+      hw: MAILBOX_HW,
+      hd: MAILBOX_HD,
+      rot: 0,
+      cameraTopY: topY(seed, box.x, box.z, 2.9),
+      camGhost: true,
+    });
+  }
+
+  // Gather nodes: the renderer draws every node's GLB at a fixed spot whether
+  // or not it is ready to harvest, so ore veins and wood piles are permanent
+  // solid, standable bodies; herb clusters stay soft vegetation on purpose
+  // (GATHER_NODE_BODIES). INTERACT_RANGE (5) dwarfs the radii, so collision
+  // never pushes a gatherer out of harvesting reach.
+  for (const node of GATHER_NODES) {
+    const nodeBody = GATHER_NODE_BODIES[node.type];
+    if (!nodeBody) continue;
+    const top = topY(seed, node.pos.x, node.pos.z, nodeBody.top);
+    out.push({
+      type: 'circle',
+      x: node.pos.x,
+      z: node.pos.z,
+      r: nodeBody.r,
+      cameraTopY: top,
+      moveTopY: top,
+      standable: true,
+      camGhost: true,
+    });
+  }
+
+  // Overworld dungeon door arches: only the two stone JAMBS collide, because
+  // walking into the mouth IS the enter trigger. The Abandoned Crypt's door
+  // draws no arch (an invisible click box at the mine), and two dungeons can
+  // share one doorway, so dedupe by position.
+  const doorSpots = new Set<string>();
+  for (const dungeon of DUNGEON_LIST) {
+    if (dungeon.overworldDoor === false) continue;
+    if (dungeon.id === 'nythraxis_crypt') continue;
+    const key = `${dungeon.doorPos.x},${dungeon.doorPos.z}`;
+    if (doorSpots.has(key)) continue;
+    doorSpots.add(key);
+    for (const sx of [-DOOR_ARCH_JAMB_X, DOOR_ARCH_JAMB_X]) {
+      const x = dungeon.doorPos.x + sx;
+      out.push({
+        type: 'obb',
+        x,
+        z: dungeon.doorPos.z,
+        hw: DOOR_ARCH_JAMB_HW,
+        hd: DOOR_ARCH_JAMB_HD,
+        rot: 0,
+        cameraTopY: topY(seed, x, dungeon.doorPos.z, DOOR_ARCH_HEIGHT),
+        camGhost: true,
+      });
+    }
+  }
+
+  // Delve entrance portals: the whole slab is a solid one-way threshold
+  // (players enter by talking to the warden; leaveDelve drops them mouth-side
+  // of this collider, see prop_layout delveExitDropZ).
+  for (const dm of PROPS.delveMarkers ?? []) {
+    const az = delveArchZ(dm.z, dm.delveId);
+    out.push({
+      type: 'obb',
+      x: dm.x,
+      z: az,
+      hw: DELVE_ARCH_HW,
+      hd: DELVE_ARCH_HD,
+      rot: 0,
+      cameraTopY: topY(seed, dm.x, az, DELVE_ARCH_HEIGHT),
+      camGhost: true,
+    });
+  }
+
   // mines: mound behind the timber portal, plus the portal's two upright
   // timber posts (the overhead lintel beams start above head height and
   // never block). Post positions/size mirror the render placement.
@@ -865,7 +968,77 @@ function staticWorldColliders(seed: number): Collider[] {
   // must not be jump-through mid-match (the north gate is the way in). Applies
   // for any active content, matching the flatten arm (crater-precedent leak).
   out.push(...valeCupColliders());
+
+  // The banker's strongbox, LAST: its placement algorithm samples the chest
+  // footprint against every collider above (the same choice the renderer used
+  // to make against the full grid before the chest itself became solid). The
+  // resolved spots are cached per grid so render/banker_chest.ts consumes the
+  // SAME spot instead of re-resolving against a grid that now contains the
+  // chest. Skipped for a banker whose own authored spot is blocked (a custom
+  // world's spawn would relocate the NPC and the chest would strand).
+  const chestSpots: BankerChestSpot[] = [];
+  const chestBlockedAt: BankerChestBlockedAt = (_s, x, z, r, ignoreFences) => {
+    const res = resolveAgainst(out, x, z, r, ignoreFences);
+    return Math.abs(res.x - x) > 1e-4 || Math.abs(res.z - z) > 1e-4;
+  };
+  for (const npc of Object.values(NPCS)) {
+    const rec = npc as { pos?: { x: number; z: number }; facing?: number; banker?: true };
+    if (!rec.banker || !rec.pos) continue;
+    const seat = resolveAgainst(out, rec.pos.x, rec.pos.z, 0.6);
+    if (Math.abs(seat.x - rec.pos.x) > 1e-4 || Math.abs(seat.z - rec.pos.z) > 1e-4) continue;
+    const anchor = { pos: rec.pos, facing: rec.facing ?? 0 };
+    const local = resolveSolidBankerChestPlacement(anchor, seed, chestBlockedAt);
+    if (!local) continue;
+    const center = bankerChestCenterWorld(anchor, local);
+    const top = topY(seed, center.x, center.z, BANKER_CHEST_TARGET_HEIGHT);
+    chestSpots.push({
+      anchorX: rec.pos.x,
+      anchorZ: rec.pos.z,
+      x: center.x,
+      z: center.z,
+      rotationY: anchor.facing + local.rotationY,
+      localPlacement: local,
+    });
+    out.push({
+      type: 'obb',
+      x: center.x,
+      z: center.z,
+      hw: BANKER_CHEST_HALF_WIDTH,
+      hd: BANKER_CHEST_HALF_DEPTH,
+      rot: anchor.facing + local.rotationY,
+      cameraTopY: top,
+      camGhost: true,
+      moveTopY: top,
+      standable: true,
+    });
+  }
+  lastBuiltBankerChestSpots = chestSpots;
+
   return out;
+}
+
+/** A resolved banker-chest spot: where the strongbox stands and collides. */
+export interface BankerChestSpot {
+  anchorX: number;
+  anchorZ: number;
+  x: number;
+  z: number;
+  rotationY: number;
+  localPlacement: BankerChestLocalPlacement;
+}
+
+// Captured by the most recent staticWorldColliders run and stored per grid,
+// so bankerChestSpots(seed) always reflects the active world's build.
+let lastBuiltBankerChestSpots: BankerChestSpot[] = [];
+const bankerChestSpotsByGrid = new WeakMap<object, BankerChestSpot[]>();
+
+/**
+ * The resolved banker-chest placements for the active world at `seed`: the
+ * single source render/banker_chest.ts places the mesh from, so the drawn
+ * chest and its standable collider are always the same box.
+ */
+export function bankerChestSpots(seed: number): readonly BankerChestSpot[] {
+  return bankerChestSpotsByGrid.get(gridFor(seed)) ?? [];
 }
 
 /** Test-only visibility into the authored static set so world-layout tests can
@@ -986,6 +1159,9 @@ function gridFor(seed: number): ColliderGrid {
   // buffer (a collider spanning cells appears in each of them).
   for (let i = 0; i < built.length; i++) built[i].gridIndex = i;
   grid = { cells: new Map(), stamps: new Uint32Array(built.length), gen: 0 };
+  // Bind the chest spots this build resolved to this grid, so a later build
+  // for another world/seed can never leak its spots into this one's readers.
+  bankerChestSpotsByGrid.set(grid, lastBuiltBankerChestSpots);
   for (const c of built) {
     const b = colliderBounds(c);
     const x0 = Math.floor((b.minX - MAX_BODY_RADIUS) / GRID_CELL);

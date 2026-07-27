@@ -1,8 +1,9 @@
 // Pure placement core for the crafting-station scenery (Professions 2.0).
 // Maps each station record supplied through the active IWorld seam to the
 // world-space prop cluster the Three half
-// (stations.ts) places at it: one thematic anchor prop on the station pos
-// plus a little fixed clutter beside it. Hand-authored offsets, not
+// (stations.ts) places at it: one thematic anchor prop BESIDE the station
+// pos (the point itself is an interaction target routes end on, and the
+// props are solid) plus a little fixed clutter. Hand-authored offsets, not
 // procedural scatter, so exact spots matter more than variety; offsets keep
 // clear of each resident master
 // NPC (1 to 3 units beside the station, see the STATIONS placement notes).

@@ -215,3 +215,79 @@ export const BENCH_NATIVE_DEPTH_PER_WIDTH = 0.42851;
 export function benchDrawnHeight(w: number, d: number): number {
   return BENCH_NATIVE_HEIGHT_PER_WIDTH * Math.min(w, d / BENCH_NATIVE_DEPTH_PER_WIDTH);
 }
+
+// ---------------------------------------------------------------------------
+// Interactable landmarks (v0.31 walk-through sweep): the solid bodies the
+// renderer draws for doors, delve portals, gather nodes, and the Ravenpost
+// mailbox, measured from the shipped GLBs at their placed scales. One owner:
+// the renderer reads these back where it places the meshes, so the drawn
+// silhouette and the collider cannot drift apart.
+// ---------------------------------------------------------------------------
+
+/**
+ * The overworld dungeon door arch (dungeon_door_arch.glb, drawn at world
+ * scale, opening rotated to face +-z). Only the two stone JAMBS collide: the
+ * mouth stays open because walking INTO the door is the enter trigger
+ * (DOOR_TRIGGER_RADIUS), and the 5yd crown is out of climb reach, so the
+ * jambs are plain full-height walls.
+ */
+export const DOOR_ARCH_JAMB_X = 1.5; // jamb centreline (|local x|)
+export const DOOR_ARCH_JAMB_HW = 0.35;
+export const DOOR_ARCH_JAMB_HD = 0.56;
+export const DOOR_ARCH_HEIGHT = 5;
+
+/**
+ * The delve entrance portal (delve_entrance_2.glb, native 1.584 x 2.01 x 0.42,
+ * drawn at scale 3.6, base rebased to the ground). It reads as a solid
+ * one-way threshold (players enter by talking to the warden, never by
+ * walking in), so the WHOLE slab collides, backing plane included. The mouth
+ * sign mirrors the renderer: the drowned shrine faces -z, every other delve
+ * faces +z, and the arch stands mouth-side of the marker by ARCH_OFFSET.
+ */
+export const DELVE_ARCH_SCALE = 3.6;
+export const DELVE_ARCH_OFFSET = 4;
+export const DELVE_ARCH_HW = (1.584 * DELVE_ARCH_SCALE) / 2;
+export const DELVE_ARCH_HD = (0.42 * DELVE_ARCH_SCALE) / 2;
+export const DELVE_ARCH_HEIGHT = 2.01 * DELVE_ARCH_SCALE;
+
+/** The renderer's mouth-facing sign for a delve door (see render/props.ts). */
+export function delveArchMouthSign(delveId: string): number {
+  return delveId === 'drowned_litany' ? -1 : 1;
+}
+
+/** World z of a delve's arch slab centre (the marker sits mouth-side of it). */
+export function delveArchZ(markerZ: number, delveId: string): number {
+  return markerZ - delveArchMouthSign(delveId) * DELVE_ARCH_OFFSET;
+}
+
+/**
+ * Gather nodes (render/gather_nodes.ts draws the GLB at native scale plus a
+ * per-type Y offset). Ore veins and wood piles are solid standable rocks and
+ * stacks; herb clusters are soft vegetation and deliberately keep no
+ * collider, the same exception as marsh reeds. Radii are the mean horizontal
+ * half-extent, lightly trimmed; tops are offset + native max y.
+ */
+export const GATHER_NODE_BODIES: Readonly<Record<string, { r: number; top: number } | null>> = {
+  ore: { r: 0.44, top: 0.45 + 0.39 },
+  wood: { r: 0.42, top: 0.9 + 0.31 },
+  herb: null,
+};
+
+/**
+ * The Ravenpost mailbox pillar (mailbox_pillar.glb, drawn based at ground,
+ * 2.9 tall). The lower body measures 1.36 x 0.9; the raven crown overhangs
+ * wider up top, and a sculpture is not a platform, so the shaft is a
+ * full-height OBB (the wells rule again).
+ */
+export const MAILBOX_HW = 0.66;
+export const MAILBOX_HD = 0.44;
+
+/**
+ * Where leaving a delve seats the body: mouth-side of the arch slab, just
+ * clear of its collider, on the warden's side. Shared by delves/runs.ts (the
+ * exit and spirit-release drops) so the drop can never land inside the
+ * arch's solid slab.
+ */
+export function delveExitDropZ(markerZ: number, delveId: string): number {
+  return delveArchZ(markerZ, delveId) + delveArchMouthSign(delveId) * (DELVE_ARCH_HD + 1.2);
+}

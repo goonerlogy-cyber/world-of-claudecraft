@@ -62,37 +62,43 @@ export interface StationClusterProp {
   rot: number;
 }
 
-// Per-type clusters: the anchor prop sits ON the station pos (dx/dz 0) so
-// the spot the proximity gate measures from is the spot the player sees.
-// Clutter offsets stay within ~1.5 yd and avoid each master NPC's side.
+// Per-type clusters. The anchor prop stands BESIDE the station point rather
+// than on it: the station point is a gameplay interaction target (service
+// routes end on it, bodies up to r 0.8 must be able to stand there), and the
+// anchor props are SOLID now, so a prop parked on the point would wall off
+// the very spot it exists to serve. Each anchor offset clears the point by
+// more than ANCHOR_CLEARANCE plus the prop's radius while staying clear of
+// the cluster's clutter and the master NPC's side (forge master at station
+// -2,-1.5; kitchens -1.5,-1.5; loom -2,-1; toolworks -1.5,-2; tannery
+// +2,+1.5; apothecary +1.5,-2).
 export const STATION_PROP_CLUSTERS: Readonly<Record<StationType, readonly StationClusterProp[]>> = {
   forge: [
-    { kind: 'anvil', dx: 0, dz: 0, rot: 0.9 },
+    { kind: 'anvil', dx: 1.4, dz: 0.6, rot: 0.9 },
     { kind: 'barrel', dx: -1.1, dz: 1.0, rot: 0.3 },
     { kind: 'crate', dx: 1.0, dz: -1.2, rot: -0.5 },
   ],
   kitchens: [
-    { kind: 'campfire', dx: 0, dz: 0, rot: 0 },
+    { kind: 'campfire', dx: -1.7, dz: 0.9, rot: 0 },
     { kind: 'crate', dx: 1.2, dz: 0.5, rot: 0.7 },
     { kind: 'barrel', dx: -0.5, dz: 1.4, rot: -0.2 },
   ],
   apothecary: [
-    { kind: 'cauldron', dx: 0, dz: 0, rot: -0.4 },
+    { kind: 'cauldron', dx: 1.5, dz: -0.9, rot: -0.4 },
     { kind: 'crate', dx: -1.3, dz: 0.5, rot: 0.4 },
     { kind: 'barrel', dx: 0.9, dz: 1.2, rot: 0.9 },
   ],
   tannery: [
-    { kind: 'tanningRack', dx: 0, dz: 0, rot: 0.3 },
+    { kind: 'tanningRack', dx: -1.0, dz: -1.6, rot: 0.3 },
     { kind: 'barrel', dx: -1.3, dz: 0.7, rot: -0.6 },
     { kind: 'crate', dx: 0.5, dz: -1.4, rot: 1.1 },
   ],
   loom: [
-    { kind: 'loom', dx: 0, dz: 0, rot: 0.6 },
+    { kind: 'loom', dx: 0.2, dz: -1.8, rot: 0.6 },
     { kind: 'crate', dx: 1.3, dz: 0.6, rot: -0.3 },
     { kind: 'barrel', dx: 0.4, dz: 1.5, rot: 0.5 },
   ],
   toolworks: [
-    { kind: 'workbench', dx: 0, dz: 0, rot: -0.4 },
+    { kind: 'workbench', dx: 1.5, dz: 0.6, rot: -0.4 },
     { kind: 'crate', dx: -0.9, dz: 0.4, rot: 0.2 },
     { kind: 'barrel', dx: -1.0, dz: 1.1, rot: -0.8 },
   ],
