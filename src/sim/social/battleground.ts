@@ -34,6 +34,7 @@ import type { SimContext } from '../sim_context';
 import { releasePlayerSpirit } from '../spirit';
 import { type Aura, DT, type Entity, type Vec3 } from '../types';
 import { eloDelta, snapshotArenaReturnPools } from './arena';
+import { formBgTeamParty, unwindBgAutoPartyFor, unwindBgTeamParties } from './battleground_party';
 
 // --- Ravenrift tuning consts (rating reuses the arena's exported eloDelta) ---
 export const BG_BASE_RATING = 1500; // every character starts here on the ladder
@@ -119,6 +120,9 @@ export interface BgMatch {
   // a deserter's row drops with their team entry).
   stats: Map<number, { kills: number; deaths: number; captures: number }>;
   ratingAvg: [number, number]; // team average rating at start, for Elo
+  // Per team: pids auto-added to the team party at start (never the surviving
+  // base premade), unwound at match end or on desertion (battleground_party.ts).
+  autoPartyPids: [number[], number[]];
   resultRecorded: boolean;
   // per-tick memo of the viewer-identical match view (server hot-path rule:
   // build shared things once per tick, never per viewer)
@@ -470,6 +474,7 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
     pendingFlagPress: new Set(),
     honorTeamKeys: [honorTeamIdentity(ctx, teamA), honorTeamIdentity(ctx, teamB)],
     ratingAvg: [bgTeamAvg(ctx, teamA), bgTeamAvg(ctx, teamB)],
+    autoPartyPids: [[], []],
     resultRecorded: false,
     viewTick: -1,
     viewShared: null,
@@ -482,6 +487,9 @@ export function startBgMatch(ctx: SimContext, teamA: number[], teamB: number[]):
       placeInBg(ctx, match, pid, team, i);
     });
   }
+  // Weld each team into one party for the match (party chat + party frames);
+  // only the auto-added links are remembered, so they can be unwound later.
+  match.autoPartyPids = [formBgTeamParty(ctx, teamA), formBgTeamParty(ctx, teamB)];
   for (const team of [0, 1] as BgTeam[]) {
     for (const pid of match.teams[team]) {
       ctx.emit({ type: 'bgFound', team, pid });
@@ -972,6 +980,9 @@ export function bgResolveDesertion(ctx: SimContext, pid: number): void {
   match.stats.delete(pid);
   match.pendingFlagPress.delete(pid);
   ctx.bgMatches.delete(pid);
+  // A deserter auto-added to the team party leaves it too; a premade member
+  // keeps their own group (they deserted the match, not their friends).
+  unwindBgAutoPartyFor(ctx, match.autoPartyPids, pid);
   if (match.teams[0].length === 0 || match.teams[1].length === 0) {
     const winner: BgTeam | null =
       match.teams[0].length === 0 && match.teams[1].length === 0
@@ -995,6 +1006,9 @@ export function endBgMatch(
   match.resultRecorded = true;
   for (const pid of bgAllPids(match)) ctx.bgMatches.delete(pid);
   ctx.bgBusySlots.delete(match.slot);
+  // Unwind the match-formed party links FIRST, so the disband/leave notices
+  // land before the fighters are teleported home (premades stay intact).
+  unwindBgTeamParties(ctx, match.autoPartyPids);
   for (const flag of match.flags) {
     clearCarrierVuln(ctx, flag);
     if (flag.entityId >= 0 && ctx.entities.has(flag.entityId)) ctx.dropEntity(flag.entityId);

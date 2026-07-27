@@ -14,6 +14,7 @@ import {
   BG_POWER_RUNE_VALUE,
   BG_WAVE_OFFSET,
   BG_WAVE_PERIOD,
+  bgResolveDesertion,
   endBgMatch,
   updateBattleground,
 } from '../src/sim/social/battleground';
@@ -158,6 +159,76 @@ describe('Ravenrift: queue + matchmaking', () => {
     expect(sim.bgInfoFor(b)!.queueSize).toBe(1);
     sim.bgQueueLeave(b);
     expect(sim.bgInfoFor(b)!.queued).toBe(false);
+  });
+});
+
+describe('Ravenrift: team parties for the match', () => {
+  it('welds each all-solo team into one party at start and disbands both at the end', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    for (const team of [0, 1] as const) {
+      const roster = match.teams[team];
+      const party = sim.partyOf(roster[0])!;
+      expect(party).toBeTruthy();
+      expect([...party.members].sort((a, b) => a - b)).toEqual([...roster].sort((a, b) => a - b));
+      for (const pid of roster) expect(sim.partyOf(pid)?.id).toBe(party.id);
+    }
+    // two teams, two DIFFERENT parties: party chat can never leak cross-team
+    expect(sim.partyOf(match.teams[0][0])!.id).not.toBe(sim.partyOf(match.teams[1][0])!.id);
+    endBgMatch(sim.ctx, match, 0, 'caps');
+    for (const pid of pids) expect(sim.partyOf(pid)).toBe(null);
+  });
+
+  it('a queued premade keeps its party id and leader; merged solos drop out at the end', () => {
+    const sim = makeWorld();
+    const leader = sim.addPlayer('warrior', 'Leader');
+    tp(sim, leader, 0, -40);
+    sim.entities.get(leader)!.level = BG_MIN_LEVEL;
+    const premade = [leader];
+    for (let i = 0; i < 2; i++) {
+      const m = sim.addPlayer('priest', `Mate${i}`);
+      tp(sim, m, 0, -40);
+      sim.entities.get(m)!.level = BG_MIN_LEVEL;
+      sim.partyInvite(m, leader);
+      sim.partyAccept(m);
+      premade.push(m);
+    }
+    const beforeId = sim.partyOf(leader)!.id;
+    for (let i = 0; i < 7; i++) {
+      const s = sim.addPlayer('rogue', `Solo${i}`);
+      tp(sim, s, 0, -40);
+      sim.entities.get(s)!.level = BG_MIN_LEVEL;
+      sim.bgQueueJoin(s);
+    }
+    sim.bgQueueJoin(leader); // queues the whole premade as one group
+    sim.tick();
+    const match = sim.bgMatchFor(leader)!;
+    const team = match.teams[0].includes(leader) ? 0 : 1;
+    const party = sim.partyOf(leader)!;
+    expect(party.id).toBe(beforeId); // the premade's party object survived
+    expect(party.leader).toBe(leader);
+    expect([...party.members].sort((a, b) => a - b)).toEqual(
+      [...match.teams[team]].sort((a, b) => a - b),
+    );
+    endBgMatch(sim.ctx, match, null, 'timeout');
+    const after = sim.partyOf(leader)!;
+    expect(after.id).toBe(beforeId);
+    expect([...after.members].sort((a, b) => a - b)).toEqual([...premade].sort((a, b) => a - b));
+    for (const pid of match.teams[team]) {
+      if (!premade.includes(pid)) expect(sim.partyOf(pid)).toBe(null);
+    }
+  });
+
+  it('an auto-added deserter leaves the team party; the rest stay grouped', () => {
+    const { sim, pids } = tenInQueue();
+    const match = sim.bgMatchFor(pids[0])!;
+    const roster = [...match.teams[0]];
+    const deserter = roster[1]; // never the base solo the fresh party formed on
+    bgResolveDesertion(sim.ctx, deserter);
+    expect(sim.partyOf(deserter)).toBe(null);
+    const party = sim.partyOf(roster[0])!;
+    expect(party.members).toHaveLength(4);
+    expect(party.members).not.toContain(deserter);
   });
 });
 
