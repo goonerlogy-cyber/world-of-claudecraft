@@ -8029,8 +8029,8 @@ export class Hud {
 
   private endLockpick(
     outcome: 'success' | 'fail' | 'abandoned',
-    tier?: 'premium' | 'medium' | 'low',
-    sessionId?: string,
+    tier: 'premium' | 'medium' | 'low' | undefined,
+    sessionId: string,
   ): void {
     this.lockpickController.end(outcome, tier, sessionId);
   }

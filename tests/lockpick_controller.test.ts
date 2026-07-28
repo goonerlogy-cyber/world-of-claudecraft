@@ -131,7 +131,7 @@ describe('LockpickController', () => {
     const test = harness(liveView);
     test.controller.openBoard();
 
-    test.controller.end('success', 'premium');
+    test.controller.end('success', 'premium', liveView.sessionId);
 
     expect(test.showBanner).toHaveBeenCalledTimes(1);
     expect(test.log).toHaveBeenCalledWith(expect.any(String), '#7fdc4f');
@@ -156,7 +156,11 @@ describe('LockpickController', () => {
     test.controller.end('abandoned', undefined, 'lp_1'); // the withdrawn session's late answer
 
     expect(test.panel.style.display, 'the fresh board survives the stale end').toBe('block');
-    expect(test.log, 'no summary line for a session no longer on screen').not.toHaveBeenCalled();
+    // The summary still lands (that attempt really was withdrawn); only the
+    // CLOSE is session-scoped. A same-message [end(old), session(new)] batch
+    // leaves the mirror on the new id before this arm runs, and a success in
+    // that shape must not lose its banner and green line.
+    expect(test.log).toHaveBeenCalledWith(t('lockpickUi.summary.abandoned'), '#ccc');
     expect(test.release).not.toHaveBeenCalled();
   });
 
@@ -188,7 +192,7 @@ describe('LockpickController', () => {
     const test = harness(liveView);
     test.controller.openBoard();
 
-    test.controller.end('abandoned');
+    test.controller.end('abandoned', undefined, liveView.sessionId);
 
     expect(test.showBanner, 'a withdrawal is not an achievement').not.toHaveBeenCalled();
     // The KEY, not just the colour: swapping the abandoned and fail summaries (or wiring

@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { computeBackoffDelay } from '../src/net/backoff';
+import { RECONNECT_BASE_DELAY_MS, RECONNECT_MAX_DELAY_MS } from '../src/net/online';
 import {
   hideReconnectOverlay,
   RECONNECT_OVERLAY_SHOW_GRACE_MS,
@@ -44,14 +46,37 @@ describe('reconnect overlay stateful half (show/show/hide)', () => {
     const now = Date.now();
     vi.setSystemTime(now);
     showReconnectOverlay(1, 40, now + 1_000);
+    // DECISIVE against an un-graced overlay: nothing may be mounted while the
+    // grace is still pending, including right after the refresh below (the
+    // pre-grace overlay mounted on the first show and this stayed green by
+    // updating the mounted element to attempt 2 anyway).
+    vi.advanceTimersByTime(500);
+    expect(document.getElementById(OVERLAY_ID)).toBeNull();
     // A second retry is scheduled while the mount is still pending: the
     // eventual mount must render attempt 2's payload, not attempt 1's.
-    vi.advanceTimersByTime(500);
     showReconnectOverlay(2, 40, now + 20_000);
+    expect(document.getElementById(OVERLAY_ID)).toBeNull();
     vi.advanceTimersByTime(RECONNECT_OVERLAY_SHOW_GRACE_MS - 500);
     const el = document.getElementById(OVERLAY_ID);
     expect(el).not.toBeNull();
     expect(el?.textContent).toContain('2');
+  });
+
+  it('the grace clears the whole attempt-1 jitter band plus a handshake margin', () => {
+    // A quick resume completes at attempt 1's retry delay plus the socket
+    // reopen and auth handshake. The band is full-jitter (0.5x to 1.5x of
+    // RECONNECT_BASE_DELAY_MS), so a grace below its CEILING still flashes on
+    // a top-of-band draw: the veil mounts, then the resume tears it down
+    // moments later. Pin the grace against the live constants so widening the
+    // band cannot quietly reintroduce the blink.
+    const bandCeiling = computeBackoffDelay(
+      1,
+      RECONNECT_BASE_DELAY_MS,
+      RECONNECT_MAX_DELAY_MS,
+      () => 1,
+    );
+    const handshakeMarginMs = 1000;
+    expect(RECONNECT_OVERLAY_SHOW_GRACE_MS).toBeGreaterThanOrEqual(bandCeiling + handshakeMarginMs);
   });
 
   it('a second showReconnectOverlay replaces the message in place, not a duplicate element', () => {

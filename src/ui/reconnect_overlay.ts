@@ -25,7 +25,15 @@ import { secondsUntilRetry } from './reconnect_status_core';
 
 const OVERLAY_ID = 'reconnect-overlay';
 const TICK_MS = 1000;
-export const RECONNECT_OVERLAY_SHOW_GRACE_MS = 1500;
+// Sized to clear attempt 1's ENTIRE retry window, not just its typical draw:
+// the first retry fires at computeBackoffDelay(1, RECONNECT_BASE_DELAY_MS,
+// ...) = 500 to 1500ms (src/net/backoff.ts full-jitter band), and the socket
+// reopen plus auth handshake lands on top of that. A grace inside the band
+// (the first cut used 1500ms) still let a top-of-band draw resume around
+// 1.8s, mounting the veil at 1.5s and tearing it down moments later: the same
+// flash, shorter. 1500ms band ceiling + 1000ms handshake margin = 2500ms,
+// pinned against the live constants in tests/reconnect_overlay.test.ts.
+export const RECONNECT_OVERLAY_SHOW_GRACE_MS = 2500;
 
 let tickTimer: number | null = null;
 let graceTimer: number | null = null;
