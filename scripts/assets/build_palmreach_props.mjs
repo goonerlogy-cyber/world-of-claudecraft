@@ -14,7 +14,11 @@ import { dedup, meshopt, prune, simplify, textureCompress, weld } from '@gltf-tr
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
-const ITEMS = [{ src: 'coconut+3d+model.glb', out: 'fallen_coconuts.glb', target: 25000 }];
+// Scatter-tier target (2026-07): the pile is bulk-instanced (335 spots in the
+// Palmreach alone, plus the Farshore strand), so the flower-bed budget put
+// 8.4M triangles on beach clutter. The shipped GLB was re-tiered via the
+// second pass above; verified indistinguishable at 8 yards before landing.
+const ITEMS = [{ src: 'coconut+3d+model.glb', out: 'fallen_coconuts.glb', target: 3000 }];
 const SRC_DIR = '/Users/demihenderson/Downloads/palmreach';
 const OUT_DIR = 'public/models/props';
 

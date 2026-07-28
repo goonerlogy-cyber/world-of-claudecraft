@@ -130,6 +130,9 @@ export function despawnMobs(sim: Sim) {
 }
 
 export function forwardDistance(sim: Sim, ticks = 60): number {
+  // Speed comparisons run on empty ground: the starting town is furnished
+  // (see src/sim/town_props.ts), so a run from spawn would measure a
+  // collision with a workbench rather than a movement multiplier.
   placePlayerInOpenField(sim);
   const start = { ...sim.player.pos };
   sim.moveInput.forward = true;

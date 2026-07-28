@@ -511,7 +511,11 @@ describe('swimming', () => {
     wolf.spawnPos = { ...wolf.pos };
     wolf.prevPos = { ...wolf.pos };
     const hpBefore = p.hp;
-    for (let i = 0; i < 160; i++) sim.tick();
+    // 12s of chase, not 8s: the swim-out is the same but the run to the water
+    // now detours around the town furniture and gather nodes that sit between
+    // the wolf's camp and the shore, so the first swing lands around tick 190.
+    // The claim under test is that it arrives and keeps swinging, not how fast.
+    for (let i = 0; i < 240; i++) sim.tick();
     expect(groundHeight(wolf.pos.x, wolf.pos.z, SEED)).toBeLessThan(WATER_LEVEL - 0.8);
     expect(wolf.pos.y).toBeGreaterThan(WATER_LEVEL - 1.0);
     expect(p.hp).toBeLessThan(hpBefore);
@@ -1283,6 +1287,56 @@ describe('boss loot and encounter resets', () => {
     expect(vael.aiState).toBe('idle');
     expect(vael.firedSummons).toBe(0);
     expect(thralls()).toBe(0);
+  });
+
+  it('does not summon more Varkas Boneguards after Marrowlord Varkas dies', () => {
+    const sim = makeSim();
+    const internals = sim as unknown as {
+      addEntity(e: Entity): void;
+      dealDamage(
+        source: Entity,
+        target: Entity,
+        amount: number,
+        crit: boolean,
+        school: string,
+        ability: string | null,
+        kind: 'hit',
+        noRage?: boolean,
+      ): void;
+      updateBossMechanics(mob: Entity): void;
+    };
+    const varkas = createMob(990103, MOBS.marrowlord_varkas, 19, { x: 0, y: 0, z: 0 });
+    internals.addEntity(varkas);
+    teleportTo(sim, 2, 0);
+    sim.player.maxHp = 100000;
+    sim.player.hp = sim.player.maxHp;
+    varkas.inCombat = true;
+    varkas.aggroTargetId = sim.player.id;
+    varkas.hp = Math.floor(varkas.maxHp * 0.65);
+    internals.updateBossMechanics(varkas);
+
+    const boneguards = () =>
+      [...sim.entities.values()].filter((e) => e.templateId === 'varkas_boneguard');
+    expect(boneguards()).toHaveLength(2);
+    expect(varkas.firedSummons).toBe(1);
+
+    internals.dealDamage(
+      sim.player,
+      varkas,
+      varkas.hp + 1,
+      false,
+      'physical',
+      'Test Strike',
+      'hit',
+      true,
+    );
+    expect(varkas.dead).toBe(true);
+
+    internals.updateBossMechanics(varkas);
+    for (let i = 0; i < 5; i++) sim.tick();
+
+    expect(boneguards()).toHaveLength(2);
+    expect(varkas.firedSummons).toBe(1);
   });
 
   it('leaveDungeon outdoors is a no-op (no crypt-door fallback teleport)', () => {

@@ -288,22 +288,22 @@
       "tick": 120,
       "time": 6,
       "nextId": 842,
-      "state": "944e6268",
-      "events": "6bb8153d",
+      "state": "56ec6f01",
+      "events": "31feb0e3",
       "rng": {
-        "draws": 816,
-        "digest": "5f3ab052"
+        "draws": 815,
+        "digest": "ab93b480"
       }
     },
     {
       "tick": 120,
       "time": 6,
       "nextId": 842,
-      "state": "944e6268",
+      "state": "56ec6f01",
       "events": "741638a5",
       "rng": {
-        "draws": 816,
-        "digest": "5f3ab052"
+        "draws": 815,
+        "digest": "ab93b480"
       },
       "label": "swings",
       "players": [
@@ -643,14 +643,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageDealt": 20
+            "damageDealt": 17
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
-              "crits": 1,
-              "damageDealt": 20
+              "damageDealt": 17
             },
             "dungeonClears": {},
             "itemsDiscovered": [
@@ -1255,7 +1254,7 @@
           "fallStartY": 2.551396,
           "fiveSecondRule": 99,
           "hostile": true,
-          "hp": 499980,
+          "hp": 499983,
           "id": 841,
           "inCombat": true,
           "kind": "mob",
@@ -1290,7 +1289,7 @@
           "threat": [
             [
               836,
-              21
+              18
             ]
           ],
           "wanderTarget": {
@@ -1311,8 +1310,8 @@
       "tick": 125,
       "time": 6.25,
       "nextId": 842,
-      "state": "b17c993b",
-      "events": "10f75b2b",
+      "state": "19dec841",
+      "events": "2adaa98a",
       "rng": {
         "draws": 867,
         "digest": "af6f9067"
@@ -1322,7 +1321,7 @@
       "tick": 126,
       "time": 6.3,
       "nextId": 842,
-      "state": "d6eb523b",
+      "state": "228cd824",
       "events": "741638a5",
       "rng": {
         "draws": 878,
@@ -1345,14 +1344,14 @@
           "cls": "warrior",
           "companionUpgrades": {},
           "counters": {
-            "damageDealt": 199,
+            "damageDealt": 200,
             "damageTaken": 17
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
-              "damageDealt": 199
+              "damageDealt": 200
             },
             "dungeonClears": {},
             "itemsDiscovered": [
@@ -1666,14 +1665,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageDealt": 20
+            "damageDealt": 17
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
-              "crits": 1,
-              "damageDealt": 20
+              "damageDealt": 17
             },
             "dungeonClears": {},
             "itemsDiscovered": [
@@ -1744,6 +1742,15 @@
               "kind": "battle_stance",
               "name": "Battle Stance",
               "remaining": 3593.7,
+              "school": "physical",
+              "sourceId": 832
+            },
+            {
+              "duration": 10,
+              "id": "battle_trance",
+              "kind": "battle_trance",
+              "name": "Battle Trance",
+              "remaining": 9.7,
               "school": "physical",
               "sourceId": 832
             }
@@ -2040,7 +2047,7 @@
           "fallStartY": -1.689975,
           "fiveSecondRule": 99,
           "hostile": true,
-          "hp": 499801,
+          "hp": 499800,
           "id": 837,
           "inCombat": true,
           "kind": "mob",
@@ -2076,7 +2083,7 @@
           "threat": [
             [
               832,
-              437
+              438
             ]
           ],
           "weapon": {
@@ -2270,7 +2277,7 @@
           "fallStartY": 2.551396,
           "fiveSecondRule": 99,
           "hostile": true,
-          "hp": 499980,
+          "hp": 499983,
           "id": 841,
           "inCombat": true,
           "kind": "mob",
@@ -2305,7 +2312,7 @@
           "threat": [
             [
               836,
-              21
+              18
             ]
           ],
           "wanderTarget": {
@@ -2326,7 +2333,7 @@
       "tick": 126,
       "time": 6.3,
       "nextId": 842,
-      "state": "d6eb523b",
+      "state": "228cd824",
       "events": "741638a5",
       "rng": {
         "draws": 878,
@@ -2349,14 +2356,14 @@
           "cls": "warrior",
           "companionUpgrades": {},
           "counters": {
-            "damageDealt": 199,
+            "damageDealt": 200,
             "damageTaken": 17
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
-              "damageDealt": 199
+              "damageDealt": 200
             },
             "dungeonClears": {},
             "itemsDiscovered": [
@@ -2670,14 +2677,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageDealt": 20
+            "damageDealt": 17
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
-              "crits": 1,
-              "damageDealt": 20
+              "damageDealt": 17
             },
             "dungeonClears": {},
             "itemsDiscovered": [
@@ -2748,6 +2754,15 @@
               "kind": "battle_stance",
               "name": "Battle Stance",
               "remaining": 3593.7,
+              "school": "physical",
+              "sourceId": 832
+            },
+            {
+              "duration": 10,
+              "id": "battle_trance",
+              "kind": "battle_trance",
+              "name": "Battle Trance",
+              "remaining": 9.7,
               "school": "physical",
               "sourceId": 832
             }
@@ -3044,7 +3059,7 @@
           "fallStartY": -1.689975,
           "fiveSecondRule": 99,
           "hostile": true,
-          "hp": 499801,
+          "hp": 499800,
           "id": 837,
           "inCombat": true,
           "kind": "mob",
@@ -3080,7 +3095,7 @@
           "threat": [
             [
               832,
-              437
+              438
             ]
           ],
           "weapon": {
@@ -3274,7 +3289,7 @@
           "fallStartY": 2.551396,
           "fiveSecondRule": 99,
           "hostile": true,
-          "hp": 499980,
+          "hp": 499983,
           "id": 841,
           "inCombat": true,
           "kind": "mob",
@@ -3309,7 +3324,7 @@
           "threat": [
             [
               836,
-              21
+              18
             ]
           ],
           "wanderTarget": {

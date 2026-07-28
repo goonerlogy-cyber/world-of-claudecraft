@@ -1192,8 +1192,8 @@
       "state": "460015c2",
       "events": "741638a5",
       "rng": {
-        "draws": 790,
-        "digest": "da82bd72"
+        "draws": 791,
+        "digest": "a09ba2a9"
       }
     },
     {
@@ -1203,8 +1203,8 @@
       "state": "7ecabcdc",
       "events": "741638a5",
       "rng": {
-        "draws": 837,
-        "digest": "20e348af"
+        "draws": 838,
+        "digest": "4db25306"
       }
     },
     {

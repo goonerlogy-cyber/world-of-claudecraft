@@ -249,7 +249,13 @@ import {
   gatherRareTierFor,
   gatherToolNoNodeKey,
 } from './gathering_view';
-import { craftedLineKey, gatherLineKey, grantItemToken, grantQtyText } from './grant_line_view';
+import {
+  craftedLineKey,
+  gatherLineKey,
+  grantItemToken,
+  grantQtyText,
+  harvestLineKey,
+} from './grant_line_view';
 import { isSelfOnlyAbility } from './hud/action_bar/ability_self_only';
 import {
   handleShiftClearContextMenu,
@@ -310,6 +316,7 @@ import {
 } from './hud/action_bar/hotbar';
 import {
   clampMobilePage,
+  mobileActionSourceSlotCount,
   mobilePageCount,
   nextMobilePage,
   sourceSlotForMobileButton,
@@ -519,7 +526,7 @@ import type { PresetId, ThemeKnob, ThemeState } from './theme';
 import { SharedTooltipOwner } from './tooltip_owner';
 import { TOOLTIP_PEEK_MS, TouchPeekGuard } from './touch_peek';
 import { bindTouchDoubleTap, bindTouchTap, CLICK_SUPPRESS_MS, TAP_SLOP_PX } from './touch_tap';
-import { buildTownFocusView, stepTownFocus } from './town_focus_view';
+import { buildTownFocusView, stepTownFocus, townFocusRenderSig } from './town_focus_view';
 import { renderTownFocusWindow } from './town_focus_window';
 import { TutorialOverlay } from './tutorial';
 import { svgIcon } from './ui_icons';
@@ -919,8 +926,6 @@ const DEFAULT_EMOTE_WHEEL: OverheadEmoteId[] = [
   'cry',
 ];
 
-// yards past a zone boundary before the crossing banner/welcome commits
-const ZONE_BANNER_DEADBAND = 5;
 // The OFFLINE ignore store. Online, the ignore list is server-persisted and
 // arrives on the `social` frame, so this set is not consulted at all (see the
 // chat event filter): keeping a second, name-keyed local list live online is
@@ -3891,8 +3896,8 @@ export class Hud {
     isTouchHud: () => document.body.classList.contains('mobile-touch'),
     markEquipDropTargets: (itemId) => this.charWindow.markDropTargets(itemId),
     dropOnEquipSlot: (itemId, slot) => this.charWindow.dropOnEquipSlot(itemId, slot),
-    openItemActionMenu: (def, itemId, x, y, runDefault) =>
-      this.bagItemActionMenu.open(def, itemId, x, y, runDefault),
+    openItemActionMenu: (def, itemId, slotIndex, x, y, runDefault) =>
+      this.bagItemActionMenu.open(def, itemId, slotIndex, x, y, runDefault),
   });
   // Bag-item action menu (Professions 2.0): the right-click / touch
   // menu that surfaces Disenchant / Salvage / Apply Enchant on a bag stack.
@@ -5262,6 +5267,10 @@ export class Hud {
     // The keyed-pool party rows reuse their DOM, so a rebuild never re-runs t() on
     // their badge tooltips / leave label; re-localize them in place on a switch.
     this.partyFramesPainter.relocalize();
+    // The world map rasterizes its labels into sprites keyed on the RESOLVED
+    // string, so a switch can never draw the old language; clearing is about not
+    // carrying dead rasters in the sprite budget.
+    this.mapPainter.relocalize();
     // The unit-frame move/lock buttons' labels are set once at construction + on
     // toggle, so re-localize them in place on a language switch (same reason as
     // the party rows above).
@@ -5278,6 +5287,12 @@ export class Hud {
       this.renderTrain();
     if (this.openUnbindNpcId !== null && $('#unbind-window').style.display === 'block')
       this.renderUnbind();
+    // The Town Focus signature is text-independent (the allocation, the budget
+    // and the in-town flag), so a language switch alone never moves it and the
+    // slow-band probe would leave the panel in the old locale until the player
+    // edited it. Force one rebuild with fresh t(), the arena / Vale Cup
+    // relocalize arm (#2500).
+    if (this.townFocusOpen) this.renderTownFocus();
     if (this.marketWindow.isOpen) this.marketWindow.render();
     if (this.bankWindow.isOpen) this.bankWindow.render();
     if (this.deedsWindow.isOpen) this.deedsWindow.render();
@@ -5447,12 +5462,12 @@ export class Hud {
     if (!this.actionBarController.syncActiveForm()) return;
     this.dragAction = null;
     this.clearMobileHotbarDrag();
-    this.mobileActionPage = clampMobilePage(this.mobileActionPage);
+    this.mobileActionPage = this.currentMobileActionPage();
   }
 
   private syncSlotMap(): void {
     this.actionBarController.syncKnownAbilities();
-    this.mobileActionPage = clampMobilePage(this.mobileActionPage);
+    this.mobileActionPage = this.currentMobileActionPage();
   }
 
   private attackSlotIsAttack(): boolean {
@@ -5844,6 +5859,27 @@ export class Hud {
     }
   }
 
+  private mobileActionSourceSlotCount(): number {
+    return mobileActionSourceSlotCount({
+      secondary: Boolean(this.optionsHooks?.settings.get('showSecondaryActionBar')),
+      third: Boolean(this.optionsHooks?.settings.get('showThirdActionBar')),
+    });
+  }
+
+  private mobileActionPageCount(): number {
+    return mobilePageCount(this.mobileActionSourceSlotCount());
+  }
+
+  private currentMobileActionPage(): number {
+    const page = clampMobilePage(this.mobileActionPage, this.mobileActionPageCount());
+    this.mobileActionPage = page;
+    return page;
+  }
+
+  private mobileSourceSlotForButton(buttonIndex: number): number {
+    return sourceSlotForMobileButton(this.currentMobileActionPage(), buttonIndex);
+  }
+
   // Advance the mobile action ring to its next page. Mutates mobileActionPage
   // ONLY: the ring descriptor's per-slot closures (built once in buildActionBar)
   // resolve sourceSlotForMobileButton(mobileActionPage, i) fresh every tick, so no
@@ -5851,7 +5887,7 @@ export class Hud {
   // state lives on hotbarActions + sim, not on the view). The next update() call
   // repaints the ring from the new page.
   private cycleMobileActionPage(): void {
-    this.mobileActionPage = nextMobilePage(this.mobileActionPage);
+    this.mobileActionPage = nextMobilePage(this.mobileActionPage, this.mobileActionPageCount());
   }
 
   private flashActionSlot(barSlot: number): void {
@@ -5866,7 +5902,7 @@ export class Hud {
       return;
     }
     for (let i = 0; i < this.mobileRingSlotBtns.length; i++) {
-      if (sourceSlotForMobileButton(this.mobileActionPage, i) === barSlot) {
+      if (this.mobileSourceSlotForButton(i) === barSlot) {
         this.flashActionButton(this.mobileRingSlotBtns[i]);
         return;
       }
@@ -6299,7 +6335,7 @@ export class Hud {
       attackBtn.blur();
     });
     slotBtns.forEach((btn, i) => {
-      this.bindEmpoweredActionHold(btn, () => sourceSlotForMobileButton(this.mobileActionPage, i));
+      this.bindEmpoweredActionHold(btn, () => this.mobileSourceSlotForButton(i));
       bindTouchTap(btn, () => {
         // A tap that ends a long-press drag (even one released back on its own
         // slot, a cancel) must not also cast: bindMobileRingDrag arms this flag
@@ -6312,7 +6348,7 @@ export class Hud {
         this.peekGuard.consume();
         this.hideTooltip();
         audio.click();
-        this.castSlot(sourceSlotForMobileButton(this.mobileActionPage, i));
+        this.castSlot(this.mobileSourceSlotForButton(i));
         btn.blur();
       });
       this.bindMobileRingDrag(btn, i);
@@ -6347,10 +6383,9 @@ export class Hud {
           ...Array.from({ length: 5 }, (_, i) => ({
             slotIndex: i + 1,
             isAttack: () => false,
-            hasAction: () =>
-              this.actionForSlot(sourceSlotForMobileButton(this.mobileActionPage, i)) !== null,
-            ability: () => this.abilityForSlot(sourceSlotForMobileButton(this.mobileActionPage, i)),
-            item: () => this.itemForSlot(sourceSlotForMobileButton(this.mobileActionPage, i)),
+            hasAction: () => this.actionForSlot(this.mobileSourceSlotForButton(i)) !== null,
+            ability: () => this.abilityForSlot(this.mobileSourceSlotForButton(i)),
+            item: () => this.itemForSlot(this.mobileSourceSlotForButton(i)),
             keybindLabel: () => '',
           })),
         ],
@@ -6662,7 +6697,7 @@ export class Hud {
   private bindMobileRingDrag(btn: HTMLButtonElement, ringIndex: number): void {
     btn.addEventListener('pointerdown', (e) => {
       if (!document.body.classList.contains('mobile-touch') || e.pointerType !== 'touch') return;
-      const sourceSlot = sourceSlotForMobileButton(this.mobileActionPage, ringIndex);
+      const sourceSlot = this.mobileSourceSlotForButton(ringIndex);
       if (this.empoweredAbilityIdForSlot(sourceSlot)) return;
       if (!this.actionForSlot(sourceSlot)) return;
       this.clearMobileHotbarDrag();
@@ -6705,9 +6740,7 @@ export class Hud {
       e.preventDefault();
       const targetRingIndex = this.mobileRingSlotFromPoint(e.clientX, e.clientY);
       const targetIndex =
-        targetRingIndex !== null
-          ? sourceSlotForMobileButton(this.mobileActionPage, targetRingIndex) - 1
-          : null;
+        targetRingIndex !== null ? this.mobileSourceSlotForButton(targetRingIndex) - 1 : null;
       drag.targetIndex = targetIndex;
       this.clearActionDropTargets();
       const targetBtn = targetRingIndex !== null ? this.mobileRingSlotBtns[targetRingIndex] : null;
@@ -7265,18 +7298,14 @@ export class Hud {
       this.mobileDailyRewardsButtonEl?.classList.remove('spin-ready');
   }
 
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: daily_rewards_window_chest_toggle.test.ts pins this Settings-side hook's source signature.
-  private setDailyRewardsChestButtonPreference(show: boolean): void {
-    if (this.optionsHooks) {
-      this.optionsHooks.onSettingChange('showDailyRewardsChest', show);
-      return;
-    }
-    this.setDailyRewardsChestButtonVisible(show);
-  }
-
   setDailyRewardsChestButtonVisible(show: boolean): void {
     this.applyDailyRewardsChestButtonVisibility(show);
     if (show) this.refreshDailyRewardsLauncher(true);
+  }
+
+  setDailyRewardsChestButtonPreference(show: boolean): void {
+    this.optionsHooks?.onSettingChange('showDailyRewardsChest', show);
+    this.setDailyRewardsChestButtonVisible(show);
   }
 
   private applyDailyRewardsLauncherStatus(status: DailyRewardStatus): void {
@@ -7373,7 +7402,11 @@ export class Hud {
       const inTown = this.isInTown();
       const townFocusBtn = document.getElementById('mm-town-focus');
       if (townFocusBtn) townFocusBtn.style.display = inTown ? '' : 'none';
-      if (this.townFocusOpen) this.renderTownFocus();
+      // An open panel converges on the same band, behind its own invalidation
+      // signature (#2500): the probe reads cheaply and rebuilds only when what
+      // the panel shows moves. Walking in or out of town is one of the inputs
+      // it carries, so the panel's disabled state follows the button above.
+      this.refreshOpenTownFocusIfChanged();
       // Crafting window staleness: the
       // window is a cold painter, so an open window repaints only when the
       // in-range station-type set changes (walking in/out of a station's
@@ -7732,14 +7765,17 @@ export class Hud {
     // stay undefined when the ring DOM never got built, e.g. an older cached
     // template). Reuses the exact same world snapshot as the desktop bar.
     if (this.isMobileLayout() && this.mobileActionRingView && this.mobileActionRingPainter) {
+      const mobileActionPage = this.currentMobileActionPage();
+      const mobileActionSourceSlotCount = this.mobileActionSourceSlotCount();
       this.mobileActionRingPainter.paint(
         this.mobileActionRingView.tick({
           player: abPlayer,
           target: target ?? null,
           inventory: sim.inventory,
         }),
-        this.mobileActionPage,
-        mobilePageCount(),
+        mobileActionPage,
+        mobilePageCount(mobileActionSourceSlotCount),
+        mobileActionSourceSlotCount,
         this.attackSlotIsAttack(),
       );
     }
@@ -7821,8 +7857,6 @@ export class Hud {
     const currentZone = zoneAt(p.pos.x, p.pos.z);
     if (mediumHud) {
       // zone transitions: banner + welcome hint when crossing into a new band.
-      // A ~5yd dead-band past the boundary stops a player straddling the border
-      // from re-triggering the banner/log (and the map canvas regen) every step.
       if (!inDungeon && currentZone.id !== this.lastZoneId) {
         // commit the moment zoneAt flips: the old 1D z deadband never fired
         // on an east-west crossing (the grid's column borders share the z
@@ -8045,6 +8079,10 @@ export class Hud {
     const el = $('#market-indicator') as HTMLButtonElement | null;
     if (!el) return;
     this.marketIndicatorEl = el;
+    this.attachTooltip(
+      el,
+      () => `<div class="tt-sub">${esc(t('hudChrome.marketIndicator.tip'))}</div>`,
+    );
     const activate = () => {
       // At the Merchant the coin opens the World Market (the same gate the
       // market window itself lives behind); anywhere else it is informational
@@ -9243,7 +9281,8 @@ export class Hud {
         if (swing && src) {
           this.combat(swing, src.pos.x, src.pos.y, src.pos.z, 1.0, { cooldown: 0.08 });
         }
-        if ((ev.absorbed ?? 0) > 0) this.combat('combat_block', tp.x, tp.y, tp.z, 0.55);
+        if ((ev.absorbed ?? 0) > 0 || ev.kind === 'block')
+          this.combat('combat_block', tp.x, tp.y, tp.z, 0.55);
         // The miss/dodge/resist/parry "avoid" cues are interface feedback (they report
         // an outcome, not a world impact), so the Interface & Feedback Sounds toggle
         // silences them. The early return stays either way, so a muted avoid never
@@ -9784,8 +9823,12 @@ export class Hud {
             this.lootRolls.closeForItem(ev.text);
           // silent: the audio half of the same idea, and independent of it (a
           // caller can own the cue without owning the line). A professions
-          // grant with its own dedicated cue sets this so the generic ding
-          // doesn't stack on top of it.
+          // grant sets this when it owns the cue for the same grant: it has a
+          // dedicated one and the generic ding would stack on top, or it
+          // replays that same ding itself exactly once for a whole multi-item
+          // command (the harvestResult arm below), or its result event is
+          // cue-free by contract and the ding would be the only sound at all
+          // (the Maker's Bond unbind, #2458).
           if (!ev.silent) {
             if (
               ev.text.includes('loot') ||
@@ -10010,6 +10053,41 @@ export class Hud {
           audio.gather(ev.nodeType);
           const gatherRareTier = gatherRareTierFor(ev.rarity, ev.rareEvent);
           if (gatherRareTier) audio.gatherRareTier(gatherRareTier);
+          break;
+        }
+        case 'harvestResult': {
+          // Corpse-harvest feedback (#2457): ONE line per distinct granted
+          // item and exactly ONE cue for the whole command. Corpse harvest is
+          // the only profession flow whose single command grants several
+          // distinct items, so the sim sends a LIST and this arm walks it;
+          // before the event existed each of the six internal grants printed
+          // its own hub "You receive:" line and its own generic ding, so a
+          // two-component harvest burst two of each and a specimen proc four.
+          // Every grant behind this event is emitted silent + callerLogs
+          // (src/sim/interaction.ts harvestCorpse), so these lines and the one
+          // cue below are the whole of the harvest's feedback. The list is
+          // never empty (the sim skips the emit on a harvest that landed
+          // nothing), so the cue never fires for a no-op.
+          //
+          // Line color is the ROLLED material rarity, the gatherResult rule:
+          // the item link inside paints from the item's own def quality,
+          // because the same Rough Hide is granted at every roll and the link
+          // must not claim the hide itself got rarer.
+          for (const y of ev.yields) {
+            this.log(
+              t(harvestLineKey(y), {
+                name: grantItemToken(y.itemId),
+                qty: grantQtyText(y.qty),
+              }),
+              QUALITY_COLOR[y.rarity],
+            );
+          }
+          // The generic pickup ding, played ONCE for the command rather than
+          // once per component. A node harvest has a dedicated per-node-type
+          // recording (audio.gather above); a corpse harvest has never had one
+          // of its own, so it keeps the sound it has always made and the fix
+          // here is purely that it stops stacking.
+          audio.lootItem();
           break;
         }
         case 'gatherDenied': {
@@ -12324,7 +12402,8 @@ export class Hud {
         ...this.presentationBag,
         hideTooltip: () => this.hideTooltip(),
         onBuy: (itemId) => buyAndRefresh(() => this.sim.buyItem(npc.id, itemId)),
-        onBuyBack: (itemId) => buyAndRefresh(() => this.sim.buyBackItem(itemId)),
+        onBuyBack: (itemId, index, instance, craftedRecipeId) =>
+          buyAndRefresh(() => this.sim.buyBackItem(itemId, index, instance, craftedRecipeId)),
         onSellJunk: () => buyAndRefresh(() => this.sim.sellAllJunk()),
         onClose: () => this.closeVendor(),
         sellJunk: {
@@ -12530,6 +12609,11 @@ export class Hud {
 
   private townFocusDraft: Record<string, number> | null = null;
 
+  /** The signature of what the panel currently shows (#2500). `''` until the
+   *  first paint arms it, which no real signature can spell (every one carries
+   *  the in-town flag, the budget and a row per component). */
+  private lastTownFocusSig = '';
+
   private isInTown(): boolean {
     const pos = this.sim.player.pos;
     return isInTownZone(pos, zoneAt(pos.x, pos.z));
@@ -12549,27 +12633,49 @@ export class Hud {
   private renderTownFocus(): void {
     const inTown = this.isInTown();
     const allocation = this.townFocusDraft ?? this.sim.townFocus;
-    renderTownFocusWindow(
-      $('#town-focus-window'),
-      buildTownFocusView(allocation, FOCUS_POINT_BUDGET, inTown),
-      {
-        onStep: (component, delta) => {
-          this.townFocusDraft = stepTownFocus(
-            this.townFocusDraft ?? this.sim.townFocus,
-            component,
-            delta,
-            FOCUS_POINT_BUDGET,
-          );
-          this.renderTownFocus();
-        },
-        onSave: () => {
-          this.sim.setTownFocus(this.townFocusDraft ?? {});
-          this.townFocusDraft = null;
-          this.closeTownFocus();
-        },
-        onClose: () => this.closeTownFocus(),
+    const view = buildTownFocusView(allocation, FOCUS_POINT_BUDGET, inTown);
+    // Re-arm the latch on EVERY paint, whatever caused it (the open, a step, a
+    // language switch), so the slow-band probe below elides against the state
+    // actually on screen rather than against the last thing the probe itself
+    // painted.
+    this.lastTownFocusSig = townFocusRenderSig(view);
+    renderTownFocusWindow($('#town-focus-window'), view, {
+      onStep: (component, delta) => {
+        this.townFocusDraft = stepTownFocus(
+          this.townFocusDraft ?? this.sim.townFocus,
+          component,
+          delta,
+          FOCUS_POINT_BUDGET,
+        );
+        this.renderTownFocus();
       },
+      onSave: () => {
+        this.sim.setTownFocus(this.townFocusDraft ?? {});
+        this.townFocusDraft = null;
+        this.closeTownFocus();
+      },
+      onClose: () => this.closeTownFocus(),
+    });
+  }
+
+  /** Slow-band staleness check for an OPEN panel (#2500). The panel used to
+   *  repaint on the open check alone, so an idle one discarded and rebuilt its
+   *  entire subtree twice a second: wasted work, and it destroyed the keyboard
+   *  user's focused control on a timer. Rebuild only when what the panel shows
+   *  actually moves (an edit to the draft, or walking in or out of town). The
+   *  open check comes FIRST so a closed panel costs nothing at all, and
+   *  renderTownFocus() owns the re-arm so every other paint cause arms it too. */
+  private refreshOpenTownFocusIfChanged(): void {
+    if (!this.townFocusOpen) return;
+    const sig = townFocusRenderSig(
+      buildTownFocusView(
+        this.townFocusDraft ?? this.sim.townFocus,
+        FOCUS_POINT_BUDGET,
+        this.isInTown(),
+      ),
     );
+    if (sig === this.lastTownFocusSig) return;
+    this.renderTownFocus();
   }
 
   closeTownFocus(): void {
@@ -13760,11 +13866,9 @@ export class Hud {
   // applyLoadoutBar back to back).
   private applyLoadoutBar(bar: (string | null)[], alloc: TalentAllocation): void {
     const known = loadoutKnownAbilityIds(this.sim.cfg.playerClass, alloc, this.sim.player.level);
-    this.hotbarActions = applyLoadoutBarActions(
-      this.hotbarActions,
-      bar,
-      Hud.BAR_ABILITY_SLOTS,
-      (id) => known.has(id),
+    this.actionBarController.replaceActionsForLoadout(
+      applyLoadoutBarActions(this.hotbarActions, bar, Hud.BAR_ABILITY_SLOTS, (id) => known.has(id)),
+      known,
     );
     this.saveSlotMap();
   }

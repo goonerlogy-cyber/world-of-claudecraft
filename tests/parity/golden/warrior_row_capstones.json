@@ -9,8 +9,8 @@
     "victory rush on-kill window + selfHealPctMax",
     "bladestorm self-centered channel ticks"
   ],
-  "draws": 844,
-  "drawDigest": "aa121170",
+  "draws": 849,
+  "drawDigest": "3a3f606f",
   "frames": [
     {
       "tick": 0,
@@ -1603,8 +1603,8 @@
       "state": "7986f42e",
       "events": "741638a5",
       "rng": {
-        "draws": 507,
-        "digest": "e4285c26"
+        "draws": 506,
+        "digest": "3421da05"
       }
     },
     {
@@ -1614,8 +1614,8 @@
       "state": "51f7663a",
       "events": "741638a5",
       "rng": {
-        "draws": 553,
-        "digest": "d763ca9a"
+        "draws": 552,
+        "digest": "8d50515a"
       }
     },
     {
@@ -1647,8 +1647,8 @@
       "state": "3af391a0",
       "events": "741638a5",
       "rng": {
-        "draws": 669,
-        "digest": "2b6b1136"
+        "draws": 670,
+        "digest": "88d3c829"
       }
     },
     {
@@ -1658,8 +1658,8 @@
       "state": "79863728",
       "events": "741638a5",
       "rng": {
-        "draws": 721,
-        "digest": "dc12afab"
+        "draws": 722,
+        "digest": "a312acdf"
       }
     },
     {
@@ -1669,8 +1669,8 @@
       "state": "070ffa85",
       "events": "741638a5",
       "rng": {
-        "draws": 753,
-        "digest": "72ca65ca"
+        "draws": 754,
+        "digest": "b0d5e0f7"
       }
     },
     {
@@ -1680,8 +1680,8 @@
       "state": "870cd58e",
       "events": "741638a5",
       "rng": {
-        "draws": 797,
-        "digest": "dceb9626"
+        "draws": 802,
+        "digest": "18e48567"
       }
     },
     {
@@ -1691,8 +1691,8 @@
       "state": "870cd58e",
       "events": "741638a5",
       "rng": {
-        "draws": 797,
-        "digest": "dceb9626"
+        "draws": 802,
+        "digest": "18e48567"
       },
       "label": "bladestorm-done",
       "players": [
@@ -2193,8 +2193,8 @@
       "state": "6cf8adca",
       "events": "741638a5",
       "rng": {
-        "draws": 844,
-        "digest": "aa121170"
+        "draws": 849,
+        "digest": "3a3f606f"
       }
     },
     {
@@ -2204,8 +2204,8 @@
       "state": "6cf8adca",
       "events": "741638a5",
       "rng": {
-        "draws": 844,
-        "digest": "aa121170"
+        "draws": 849,
+        "digest": "3a3f606f"
       },
       "label": "final",
       "players": [

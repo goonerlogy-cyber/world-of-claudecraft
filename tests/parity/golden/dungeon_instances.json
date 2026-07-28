@@ -31,7 +31,7 @@
       "tick": 2,
       "time": 0.1,
       "nextId": 848,
-      "state": "f41f14b0",
+      "state": "cf910c40",
       "events": "b587e8ca",
       "rng": {
         "draws": 39,
@@ -726,6 +726,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 0.701513,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 1191,
@@ -740,11 +741,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100300.158117,
+            "y": 0.6,
             "z": -1151.812853
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100300,
+            "y": 0.6,
             "z": -1152
           },
           "stats": {
@@ -753,6 +756,7 @@
           "templateId": "morthen",
           "wanderTarget": {
             "x": 100301.750282,
+            "y": 0.6,
             "z": -1149.92836
           },
           "wanderTimer": 29.95,
@@ -770,6 +774,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 0.380241,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 437,
@@ -784,11 +789,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100296.084435,
+            "y": 0.6,
             "z": -1153.788749
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100296,
+            "y": 0.6,
             "z": -1154
           },
           "stats": {
@@ -797,6 +804,7 @@
           "templateId": "crypt_shambler",
           "wanderTarget": {
             "x": 100297.16927,
+            "y": 0.6,
             "z": -1151.074573
           },
           "wanderTimer": 29.95,
@@ -814,6 +822,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 1.474241,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 391,
@@ -828,11 +837,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100304.22644,
+            "y": 0.6,
             "z": -1153.978068
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100304,
+            "y": 0.6,
             "z": -1154
           },
           "stats": {
@@ -893,7 +904,7 @@
       "tick": 4,
       "time": 0.2,
       "nextId": 848,
-      "state": "e6ed8ff7",
+      "state": "97b69c65",
       "events": "ff0dce02",
       "rng": {
         "draws": 43,
@@ -1591,6 +1602,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 0.701513,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 1191,
@@ -1605,11 +1617,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100300.316233,
+            "y": 0.6,
             "z": -1151.625705
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100300,
+            "y": 0.6,
             "z": -1152
           },
           "stats": {
@@ -1618,6 +1632,7 @@
           "templateId": "morthen",
           "wanderTarget": {
             "x": 100301.750282,
+            "y": 0.6,
             "z": -1149.92836
           },
           "wanderTimer": 29.85,
@@ -1635,6 +1650,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 0.380241,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 437,
@@ -1649,11 +1665,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100296.168871,
+            "y": 0.6,
             "z": -1153.577498
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100296,
+            "y": 0.6,
             "z": -1154
           },
           "stats": {
@@ -1662,6 +1680,7 @@
           "templateId": "crypt_shambler",
           "wanderTarget": {
             "x": 100297.16927,
+            "y": 0.6,
             "z": -1151.074573
           },
           "wanderTimer": 29.85,
@@ -1679,6 +1698,7 @@
           "detonateTimer": "Infinity",
           "dodgeChance": 0.05,
           "facing": 1.474241,
+          "fallStartY": 0.6,
           "fiveSecondRule": 99,
           "hostile": true,
           "hp": 391,
@@ -1693,11 +1713,13 @@
           "petMode": "defensive",
           "pos": {
             "x": 100304.452881,
+            "y": 0.6,
             "z": -1153.956136
           },
           "potionCooldownUntil": -1,
           "spawnPos": {
             "x": 100304,
+            "y": 0.6,
             "z": -1154
           },
           "stats": {
@@ -1758,7 +1780,7 @@
       "tick": 5,
       "time": 0.25,
       "nextId": 848,
-      "state": "e21330ce",
+      "state": "a6b5abec",
       "events": "a1a354b4",
       "rng": {
         "draws": 43,
@@ -1769,7 +1791,7 @@
       "tick": 10,
       "time": 0.5,
       "nextId": 848,
-      "state": "0b1eb708",
+      "state": "98ae7778",
       "events": "741638a5",
       "rng": {
         "draws": 43,
@@ -1780,7 +1802,7 @@
       "tick": 15,
       "time": 0.75,
       "nextId": 848,
-      "state": "60ef3514",
+      "state": "029b787a",
       "events": "741638a5",
       "rng": {
         "draws": 43,

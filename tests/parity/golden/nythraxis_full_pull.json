@@ -13,8 +13,8 @@
     "Final Stand enrage at 5% + grantNythraxisLockout (raidLockouts) + onBossDeath death dialogue",
     "class:warrior"
   ],
-  "draws": 6196,
-  "drawDigest": "3b79969a",
+  "draws": 6164,
+  "drawDigest": "72a44443",
   "frames": [
     {
       "tick": 0,
@@ -3044,8 +3044,8 @@
       "state": "7589b934",
       "events": "f0c46855",
       "rng": {
-        "draws": 981,
-        "digest": "209c35ad"
+        "draws": 980,
+        "digest": "699e7f95"
       }
     },
     {
@@ -3055,8 +3055,8 @@
       "state": "0968acf2",
       "events": "741638a5",
       "rng": {
-        "draws": 1073,
-        "digest": "d396e262"
+        "draws": 1074,
+        "digest": "cc5c5f83"
       }
     },
     {
@@ -3066,38 +3066,38 @@
       "state": "de6547e2",
       "events": "741638a5",
       "rng": {
-        "draws": 1190,
-        "digest": "27eacfba"
+        "draws": 1192,
+        "digest": "cac8d9f2"
       }
     },
     {
       "tick": 170,
       "time": 8.5,
       "nextId": 845,
-      "state": "ed80edfa",
-      "events": "55ad2c35",
+      "state": "61897afe",
+      "events": "a23aae35",
       "rng": {
-        "draws": 1322,
-        "digest": "1f338f0f"
+        "draws": 1326,
+        "digest": "a6579049"
       }
     },
     {
       "tick": 180,
       "time": 9,
       "nextId": 845,
-      "state": "1765d291",
-      "events": "ac8dfe8a",
+      "state": "a85bbf68",
+      "events": "d6071a97",
       "rng": {
-        "draws": 1474,
-        "digest": "8632f6ba"
+        "draws": 1476,
+        "digest": "82c57de5"
       }
     },
     {
       "tick": 190,
       "time": 9.5,
       "nextId": 845,
-      "state": "e3e6fbea",
-      "events": "431ef7f9",
+      "state": "4339109c",
+      "events": "089de9f4",
       "rng": {
         "draws": 1619,
         "digest": "8188c484"
@@ -3107,22 +3107,22 @@
       "tick": 200,
       "time": 10,
       "nextId": 845,
-      "state": "b876db34",
+      "state": "cc08ffe0",
       "events": "741638a5",
       "rng": {
-        "draws": 1744,
-        "digest": "a13a7d75"
+        "draws": 1737,
+        "digest": "89e4f5f0"
       }
     },
     {
       "tick": 203,
       "time": 10.15,
       "nextId": 845,
-      "state": "bbbb9878",
+      "state": "f51d2bd7",
       "events": "741638a5",
       "rng": {
-        "draws": 1757,
-        "digest": "4b97cdda"
+        "draws": 1752,
+        "digest": "e2219960"
       },
       "label": "phase2",
       "players": [
@@ -3141,7 +3141,7 @@
           "cls": "warrior",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 8361
+            "damageTaken": 6585
           },
           "craftSkills": {},
           "craftThrottle": {},
@@ -3601,7 +3601,7 @@
           ],
           "blockChance": 0.05,
           "blockValue": 6,
-          "combatTimer": 1.1,
+          "combatTimer": 1.35,
           "comboUntil": -1,
           "critChance": 0.0695,
           "detonateTimer": "Infinity",
@@ -3710,6 +3710,17 @@
         {
           "aiState": "idle",
           "attackPower": 10,
+          "auras": [
+            {
+              "duration": 8,
+              "id": "nythraxis_soul_rend",
+              "kind": "vulnerability",
+              "name": "Soul Rend",
+              "remaining": 6.05,
+              "school": "shadow",
+              "sourceId": 837
+            }
+          ],
           "combatTimer": 109.15,
           "comboUntil": -1,
           "critChance": 0.056,
@@ -3817,17 +3828,6 @@
         {
           "aiState": "idle",
           "attackPower": 10,
-          "auras": [
-            {
-              "duration": 8,
-              "id": "nythraxis_soul_rend",
-              "kind": "vulnerability",
-              "name": "Soul Rend",
-              "remaining": 6.05,
-              "school": "shadow",
-              "sourceId": 837
-            }
-          ],
           "combatTimer": 109.15,
           "comboUntil": -1,
           "critChance": 0.056,
@@ -3876,7 +3876,7 @@
         {
           "aggroTargetId": 832,
           "aiState": "attack",
-          "combatTimer": 1.1,
+          "combatTimer": 6.4,
           "comboUntil": -1,
           "critChance": 0.05,
           "detonateTimer": "Infinity",
@@ -3898,7 +3898,8 @@
             "deathlessTimer": 999,
             "dialogueBusyUntil": 10.8,
             "dialogueToken": 3,
-            "gravebreakerCasts": 2,
+            "gravebreakerCasts": 1,
+            "gravebreakerCharged": true,
             "gravebreakerTimer": 8.05,
             "introSpoken": true,
             "phase": 2,
@@ -3909,11 +3910,11 @@
                 "remaining": 6.05
               },
               {
-                "playerId": 833,
+                "playerId": 834,
                 "remaining": 6.05
               },
               {
-                "playerId": 836,
+                "playerId": 833,
                 "remaining": 6.05
               }
             ],
@@ -4253,11 +4254,11 @@
       "tick": 204,
       "time": 10.2,
       "nextId": 845,
-      "state": "c0923997",
-      "events": "b1466ccd",
+      "state": "c815e8d9",
+      "events": "5b338005",
       "rng": {
-        "draws": 1767,
-        "digest": "f806481e"
+        "draws": 1761,
+        "digest": "1f523784"
       },
       "label": "soulrend",
       "players": [
@@ -4276,7 +4277,7 @@
           "cls": "warrior",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 8361
+            "damageTaken": 6585
           },
           "craftSkills": {},
           "craftThrottle": {},
@@ -4736,7 +4737,7 @@
           ],
           "blockChance": 0.05,
           "blockValue": 6,
-          "combatTimer": 1.15,
+          "combatTimer": 1.4,
           "comboUntil": -1,
           "critChance": 0.0695,
           "detonateTimer": "Infinity",
@@ -4792,7 +4793,7 @@
               "id": "nythraxis_soul_rend",
               "kind": "vulnerability",
               "name": "Soul Rend",
-              "remaining": 8,
+              "remaining": 6,
               "school": "shadow",
               "sourceId": 837
             }
@@ -4910,7 +4911,7 @@
               "id": "nythraxis_soul_rend",
               "kind": "vulnerability",
               "name": "Soul Rend",
-              "remaining": 6,
+              "remaining": 8,
               "school": "shadow",
               "sourceId": 837
             }
@@ -5022,7 +5023,7 @@
         {
           "aggroTargetId": 832,
           "aiState": "attack",
-          "combatTimer": 1.15,
+          "combatTimer": 6.45,
           "comboUntil": -1,
           "critChance": 0.05,
           "detonateTimer": "Infinity",
@@ -5044,22 +5045,23 @@
             "deathlessTimer": 998.95,
             "dialogueBusyUntil": 12.8,
             "dialogueToken": 4,
-            "gravebreakerCasts": 2,
+            "gravebreakerCasts": 1,
+            "gravebreakerCharged": true,
             "gravebreakerTimer": 8,
             "introSpoken": true,
             "phase": 2,
             "raiseFallenTimer": 30,
             "soulRendMarks": [
               {
-                "playerId": 833,
+                "playerId": 834,
+                "remaining": 8
+              },
+              {
+                "playerId": 835,
                 "remaining": 8
               },
               {
                 "playerId": 836,
-                "remaining": 8
-              },
-              {
-                "playerId": 834,
                 "remaining": 8
               }
             ],
@@ -5399,29 +5401,29 @@
       "tick": 210,
       "time": 10.5,
       "nextId": 845,
-      "state": "70184142",
+      "state": "d334b476",
       "events": "741638a5",
       "rng": {
-        "draws": 1804,
-        "digest": "d19eac71"
+        "draws": 1799,
+        "digest": "cc449ff6"
       }
     },
     {
       "tick": 220,
       "time": 11,
       "nextId": 845,
-      "state": "5c35ea40",
-      "events": "ec29f8f5",
+      "state": "ad9a315f",
+      "events": "6cd43f36",
       "rng": {
-        "draws": 1895,
-        "digest": "e91584bb"
+        "draws": 1892,
+        "digest": "5e972419"
       }
     },
     {
       "tick": 230,
       "time": 11.5,
       "nextId": 845,
-      "state": "6dcb6309",
+      "state": "4a271d0c",
       "events": "741638a5",
       "rng": {
         "draws": 1972,
@@ -5432,117 +5434,117 @@
       "tick": 240,
       "time": 12,
       "nextId": 845,
-      "state": "5497a18c",
-      "events": "e11d481b",
+      "state": "11d62ccf",
+      "events": "7ac20a46",
       "rng": {
-        "draws": 2050,
-        "digest": "3df8aa5d"
+        "draws": 2052,
+        "digest": "fbedf009"
       }
     },
     {
       "tick": 250,
       "time": 12.5,
       "nextId": 845,
-      "state": "9c36329d",
+      "state": "acd13ecc",
       "events": "741638a5",
       "rng": {
-        "draws": 2132,
-        "digest": "9e2a5532"
+        "draws": 2141,
+        "digest": "c8060dfa"
       }
     },
     {
       "tick": 260,
       "time": 13,
       "nextId": 845,
-      "state": "82d1e991",
+      "state": "7756124c",
       "events": "741638a5",
       "rng": {
-        "draws": 2216,
-        "digest": "8bc775d0"
+        "draws": 2235,
+        "digest": "a2af2c92"
       }
     },
     {
       "tick": 270,
       "time": 13.5,
       "nextId": 845,
-      "state": "d042200f",
-      "events": "e2511e77",
+      "state": "972b9327",
+      "events": "673370f5",
       "rng": {
-        "draws": 2314,
-        "digest": "c1a63320"
+        "draws": 2331,
+        "digest": "6777431b"
       }
     },
     {
       "tick": 280,
       "time": 14,
       "nextId": 845,
-      "state": "a6dbb18a",
+      "state": "b1ef2e22",
       "events": "741638a5",
       "rng": {
-        "draws": 2413,
-        "digest": "475b0f43"
+        "draws": 2435,
+        "digest": "904d6a32"
       }
     },
     {
       "tick": 290,
       "time": 14.5,
       "nextId": 845,
-      "state": "c430a18c",
-      "events": "9812b134",
+      "state": "280ea68f",
+      "events": "99dd7160",
       "rng": {
-        "draws": 2528,
-        "digest": "7af3ec7f"
+        "draws": 2549,
+        "digest": "e05b9da4"
       }
     },
     {
       "tick": 300,
       "time": 15,
       "nextId": 845,
-      "state": "e46d12f3",
+      "state": "2d695a70",
       "events": "741638a5",
       "rng": {
-        "draws": 2623,
-        "digest": "384319b9"
+        "draws": 2637,
+        "digest": "1b0ce3cd"
       }
     },
     {
       "tick": 310,
       "time": 15.5,
       "nextId": 845,
-      "state": "a071e609",
-      "events": "53d56dd6",
+      "state": "63d920b0",
+      "events": "6acc2bbb",
       "rng": {
-        "draws": 2723,
-        "digest": "580dd37b"
+        "draws": 2737,
+        "digest": "d60789f8"
       }
     },
     {
       "tick": 320,
       "time": 16,
       "nextId": 845,
-      "state": "637639b0",
+      "state": "8d463151",
       "events": "741638a5",
       "rng": {
-        "draws": 2823,
-        "digest": "0407ecad"
+        "draws": 2836,
+        "digest": "9d5b1737"
       }
     },
     {
       "tick": 330,
       "time": 16.5,
       "nextId": 845,
-      "state": "3c758475",
-      "events": "4bb5dc9c",
+      "state": "330cd2fb",
+      "events": "70de715a",
       "rng": {
-        "draws": 2918,
-        "digest": "ca92ffec"
+        "draws": 2927,
+        "digest": "502bbfae"
       }
     },
     {
       "tick": 340,
       "time": 17,
       "nextId": 845,
-      "state": "29e6b850",
+      "state": "5ad38bc1",
       "events": "5b5edc29",
       "rng": {
         "draws": 3040,
@@ -5553,55 +5555,55 @@
       "tick": 350,
       "time": 17.5,
       "nextId": 845,
-      "state": "d54c90b0",
+      "state": "72aa0700",
       "events": "741638a5",
       "rng": {
-        "draws": 3123,
-        "digest": "a6552769"
+        "draws": 3129,
+        "digest": "391b9693"
       }
     },
     {
       "tick": 360,
       "time": 18,
       "nextId": 845,
-      "state": "d98fe452",
-      "events": "070ee34f",
+      "state": "8b83f2db",
+      "events": "1e0ae432",
       "rng": {
-        "draws": 3218,
-        "digest": "45929836"
+        "draws": 3226,
+        "digest": "44dc6b72"
       }
     },
     {
       "tick": 370,
       "time": 18.5,
       "nextId": 845,
-      "state": "0d1e9aad",
-      "events": "f055e318",
+      "state": "ba371b6c",
+      "events": "62b3ac08",
       "rng": {
-        "draws": 3314,
-        "digest": "c9edc65b"
+        "draws": 3310,
+        "digest": "78f97180"
       }
     },
     {
       "tick": 380,
       "time": 19,
       "nextId": 845,
-      "state": "fbc49010",
+      "state": "eaf92ce0",
       "events": "741638a5",
       "rng": {
-        "draws": 3400,
-        "digest": "aefd7bba"
+        "draws": 3408,
+        "digest": "4d21dffe"
       }
     },
     {
       "tick": 386,
       "time": 19.3,
       "nextId": 845,
-      "state": "39f0e6a8",
-      "events": "12c21cf7",
+      "state": "cf08c5ef",
+      "events": "3952bb5b",
       "rng": {
-        "draws": 3460,
-        "digest": "b56d63ab"
+        "draws": 3466,
+        "digest": "09cf4d3e"
       },
       "label": "deathless-start",
       "players": [
@@ -5621,7 +5623,7 @@
           "companionUpgrades": {},
           "counters": {
             "damageDealt": 6276,
-            "damageTaken": 16366,
+            "damageTaken": 18210,
             "kills": 2,
             "xpGained": 166
           },
@@ -5726,13 +5728,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -5744,6 +5746,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -5797,7 +5803,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -5826,6 +5832,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -5837,6 +5844,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -5890,7 +5901,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -5912,12 +5923,14 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
+            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -5929,6 +5942,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -5982,7 +5999,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -6011,6 +6028,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -6022,6 +6040,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -6075,7 +6097,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -6094,15 +6116,6 @@
               "kind": "battle_stance",
               "name": "Battle Stance",
               "remaining": 3580.7,
-              "school": "physical",
-              "sourceId": 832
-            },
-            {
-              "duration": 10,
-              "id": "revenge_free",
-              "kind": "revenge_free",
-              "name": "Revenge!",
-              "remaining": 8.3,
               "school": "physical",
               "sourceId": 832
             }
@@ -6159,7 +6172,7 @@
         {
           "aiState": "idle",
           "attackPower": 10,
-          "combatTimer": 1.05,
+          "combatTimer": 118.3,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -6167,7 +6180,6 @@
           "fiveSecondRule": 118.3,
           "hp": 50000,
           "id": 833,
-          "inCombat": true,
           "kind": "player",
           "level": 20,
           "lootFfaTimer": "Infinity",
@@ -6257,7 +6269,7 @@
         {
           "aiState": "idle",
           "attackPower": 10,
-          "combatTimer": 118.3,
+          "combatTimer": 1.05,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -6265,6 +6277,7 @@
           "fiveSecondRule": 118.3,
           "hp": 50000,
           "id": 835,
+          "inCombat": true,
           "kind": "player",
           "level": 20,
           "lootFfaTimer": "Infinity",
@@ -6741,143 +6754,143 @@
       "tick": 390,
       "time": 19.5,
       "nextId": 845,
-      "state": "5a10dfe0",
+      "state": "d8cc9383",
       "events": "e20965cd",
       "rng": {
-        "draws": 3499,
-        "digest": "cd9fa78b"
+        "draws": 3508,
+        "digest": "5b6c4bea"
       }
     },
     {
       "tick": 400,
       "time": 20,
       "nextId": 845,
-      "state": "0443d3ec",
+      "state": "0de7b7a5",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 3567,
-        "digest": "c86f9a75"
+        "draws": 3608,
+        "digest": "271f3e4d"
       }
     },
     {
       "tick": 410,
       "time": 20.5,
       "nextId": 845,
-      "state": "6dce06e4",
+      "state": "19302a2a",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 3655,
-        "digest": "05c3f8db"
+        "draws": 3709,
+        "digest": "bd82983c"
       }
     },
     {
       "tick": 420,
       "time": 21,
       "nextId": 845,
-      "state": "59111106",
+      "state": "aa2be81c",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 3737,
-        "digest": "7a2cb40e"
+        "draws": 3792,
+        "digest": "7e60c690"
       }
     },
     {
       "tick": 430,
       "time": 21.5,
       "nextId": 845,
-      "state": "d3c319b9",
+      "state": "778073de",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 3828,
-        "digest": "63ff156b"
+        "draws": 3876,
+        "digest": "5496446a"
       }
     },
     {
       "tick": 440,
       "time": 22,
       "nextId": 845,
-      "state": "d52a97f5",
+      "state": "e7d33e34",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 3908,
-        "digest": "4ac7ed6e"
+        "draws": 3956,
+        "digest": "d6b1be55"
       }
     },
     {
       "tick": 450,
       "time": 22.5,
       "nextId": 845,
-      "state": "bb9f898e",
+      "state": "64ab11f2",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 4004,
-        "digest": "7ffce1fc"
+        "draws": 4046,
+        "digest": "d07202fc"
       }
     },
     {
       "tick": 460,
       "time": 23,
       "nextId": 845,
-      "state": "5dcc483c",
+      "state": "35b77d8c",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 4097,
-        "digest": "ab396b14"
+        "draws": 4139,
+        "digest": "a138fce0"
       }
     },
     {
       "tick": 470,
       "time": 23.5,
       "nextId": 845,
-      "state": "a2c9bb98",
+      "state": "7454c5f5",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 4204,
-        "digest": "9926242b"
+        "draws": 4215,
+        "digest": "ff62431e"
       }
     },
     {
       "tick": 480,
       "time": 24,
       "nextId": 845,
-      "state": "9979d1cc",
+      "state": "9dd90da3",
       "events": "a3edfc1d",
       "rng": {
-        "draws": 4302,
-        "digest": "41278926"
+        "draws": 4313,
+        "digest": "31a29c54"
       }
     },
     {
       "tick": 490,
       "time": 24.5,
       "nextId": 845,
-      "state": "8502c3f2",
+      "state": "a14e9374",
       "events": "d8e0fec2",
       "rng": {
-        "draws": 4399,
-        "digest": "decdfd13"
+        "draws": 4413,
+        "digest": "e8570b86"
       }
     },
     {
       "tick": 500,
       "time": 25,
       "nextId": 845,
-      "state": "80a31679",
+      "state": "d867b73f",
       "events": "741638a5",
       "rng": {
-        "draws": 4492,
-        "digest": "bd8edee2"
+        "draws": 4497,
+        "digest": "fa8357ec"
       }
     },
     {
       "tick": 506,
       "time": 25.3,
       "nextId": 845,
-      "state": "3a82e217",
+      "state": "b0ed9f5e",
       "events": "741638a5",
       "rng": {
-        "draws": 4544,
-        "digest": "7ef2d82f"
+        "draws": 4548,
+        "digest": "f4dd920b"
       },
       "label": "deathless-interrupt",
       "players": [
@@ -6897,7 +6910,7 @@
           "companionUpgrades": {},
           "counters": {
             "damageDealt": 6276,
-            "damageTaken": 16366,
+            "damageTaken": 18210,
             "kills": 2,
             "xpGained": 166
           },
@@ -7002,13 +7015,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -7020,6 +7033,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -7073,7 +7090,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -7102,6 +7119,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -7113,6 +7131,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -7166,7 +7188,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -7188,12 +7210,14 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
+            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -7205,6 +7229,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -7258,7 +7286,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -7287,6 +7315,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -7298,6 +7327,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -7351,7 +7384,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -7370,15 +7403,6 @@
               "kind": "battle_stance",
               "name": "Battle Stance",
               "remaining": 3574.7,
-              "school": "physical",
-              "sourceId": 832
-            },
-            {
-              "duration": 10,
-              "id": "revenge_free",
-              "kind": "revenge_free",
-              "name": "Revenge!",
-              "remaining": 2.3,
               "school": "physical",
               "sourceId": 832
             }
@@ -7436,7 +7460,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 7.05,
+          "combatTimer": 124.3,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -7534,7 +7558,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 124.3,
+          "combatTimer": 7.05,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -8028,143 +8052,143 @@
       "tick": 510,
       "time": 25.5,
       "nextId": 845,
-      "state": "70703320",
+      "state": "00221e63",
       "events": "741638a5",
       "rng": {
-        "draws": 4581,
-        "digest": "27313264"
+        "draws": 4585,
+        "digest": "e162a351"
       }
     },
     {
       "tick": 520,
       "time": 26,
       "nextId": 845,
-      "state": "9b36b1a1",
+      "state": "e7e2d684",
       "events": "741638a5",
       "rng": {
-        "draws": 4688,
-        "digest": "eaf707d6"
+        "draws": 4696,
+        "digest": "a410e001"
       }
     },
     {
       "tick": 530,
       "time": 26.5,
       "nextId": 845,
-      "state": "165935e6",
+      "state": "9f31d906",
       "events": "741638a5",
       "rng": {
-        "draws": 4768,
-        "digest": "597c18e0"
+        "draws": 4780,
+        "digest": "f2929686"
       }
     },
     {
       "tick": 540,
       "time": 27,
       "nextId": 845,
-      "state": "04daec21",
+      "state": "c2a0adad",
       "events": "741638a5",
       "rng": {
-        "draws": 4873,
-        "digest": "271e6735"
+        "draws": 4868,
+        "digest": "b44da928"
       }
     },
     {
       "tick": 550,
       "time": 27.5,
       "nextId": 845,
-      "state": "8f60eea8",
+      "state": "1e29c0c5",
       "events": "741638a5",
       "rng": {
-        "draws": 4982,
-        "digest": "fdbd8721"
+        "draws": 4964,
+        "digest": "55679af2"
       }
     },
     {
       "tick": 560,
       "time": 28,
       "nextId": 845,
-      "state": "fee1a132",
-      "events": "4b3a38fc",
+      "state": "dafd5b9a",
+      "events": "741638a5",
       "rng": {
-        "draws": 5057,
-        "digest": "f8a9b440"
+        "draws": 5047,
+        "digest": "585dbbdb"
       }
     },
     {
       "tick": 570,
       "time": 28.5,
       "nextId": 845,
-      "state": "e517a1dc",
+      "state": "6e5aa1cc",
       "events": "741638a5",
       "rng": {
-        "draws": 5131,
-        "digest": "c22a5e7c"
+        "draws": 5143,
+        "digest": "821ef8a0"
       }
     },
     {
       "tick": 580,
       "time": 29,
       "nextId": 845,
-      "state": "65392765",
+      "state": "28cf3ec5",
       "events": "741638a5",
       "rng": {
-        "draws": 5224,
-        "digest": "d3ecd305"
+        "draws": 5212,
+        "digest": "036617b8"
       }
     },
     {
       "tick": 590,
       "time": 29.5,
       "nextId": 845,
-      "state": "53f2c99d",
+      "state": "7ee23251",
       "events": "bc08c738",
       "rng": {
-        "draws": 5317,
-        "digest": "246490b8"
+        "draws": 5313,
+        "digest": "ae91d965"
       }
     },
     {
       "tick": 600,
       "time": 30,
       "nextId": 845,
-      "state": "371bec1c",
-      "events": "bda3318e",
+      "state": "aa757d74",
+      "events": "368dbb60",
       "rng": {
-        "draws": 5428,
-        "digest": "9601e1c9"
+        "draws": 5395,
+        "digest": "ee0693f3"
       }
     },
     {
       "tick": 610,
       "time": 30.5,
       "nextId": 845,
-      "state": "5999ee8b",
+      "state": "f74e0cb7",
       "events": "741638a5",
       "rng": {
-        "draws": 5511,
-        "digest": "5d5b7c96"
+        "draws": 5502,
+        "digest": "5f70f552"
       }
     },
     {
       "tick": 620,
       "time": 31,
       "nextId": 845,
-      "state": "214603f4",
+      "state": "24a77b5e",
       "events": "741638a5",
       "rng": {
-        "draws": 5598,
-        "digest": "33095683"
+        "draws": 5587,
+        "digest": "ea2239e0"
       }
     },
     {
       "tick": 627,
       "time": 31.35,
       "nextId": 845,
-      "state": "abd7a46d",
-      "events": "4425d61b",
+      "state": "99e60464",
+      "events": "874c795c",
       "rng": {
-        "draws": 5662,
-        "digest": "d35fb554"
+        "draws": 5644,
+        "digest": "3c1c911f"
       },
       "label": "finalstand",
       "players": [
@@ -8184,7 +8208,7 @@
           "companionUpgrades": {},
           "counters": {
             "damageDealt": 6276,
-            "damageTaken": 17814,
+            "damageTaken": 18210,
             "kills": 2,
             "xpGained": 166
           },
@@ -8289,13 +8313,13 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -8307,6 +8331,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -8360,7 +8388,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -8389,6 +8417,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -8400,6 +8429,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -8453,7 +8486,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -8475,12 +8508,14 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
+            "damageTaken": 16667,
             "xpGained": 166
           },
           "craftSkills": {},
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -8492,6 +8527,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -8545,7 +8584,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -8574,6 +8613,7 @@
           "craftThrottle": {},
           "deedStats": {
             "counters": {
+              "kills": 2,
               "partiesJoined": 1
             },
             "dungeonClears": {},
@@ -8585,6 +8625,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "feat_era_cap",
               ""
@@ -8638,7 +8682,7 @@
           "mailWelcomed": true,
           "nodeHarvestReadyAt": {},
           "recipesGrandfathered": true,
-          "renown": 60,
+          "renown": 65,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -8663,7 +8707,7 @@
           ],
           "blockChance": 0.05,
           "blockValue": 6,
-          "combatTimer": 1.55,
+          "combatTimer": 12.15,
           "comboUntil": -1,
           "critChance": 0.0695,
           "detonateTimer": "Infinity",
@@ -8714,7 +8758,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 13.1,
+          "combatTimer": 130.35,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -8812,7 +8856,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 130.35,
+          "combatTimer": 13.1,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -8920,7 +8964,7 @@
               "value": 1.45
             }
           ],
-          "combatTimer": 1.55,
+          "combatTimer": 13.1,
           "comboUntil": -1,
           "critChance": 0.05,
           "detonateTimer": "Infinity",
@@ -8941,10 +8985,11 @@
           "moveSpeed": 10.5,
           "nythraxis": {
             "deathlessTimer": 43.05,
-            "dialogueBusyUntil": 32.4,
+            "dialogueBusyUntil": 36.55,
             "dialogueToken": 6,
             "finalStand": true,
-            "gravebreakerCasts": 3,
+            "gravebreakerCasts": 2,
+            "gravebreakerCharged": true,
             "gravebreakerTimer": 8.95,
             "introSpoken": true,
             "phase": 2,
@@ -9307,11 +9352,11 @@
       "tick": 628,
       "time": 31.4,
       "nextId": 845,
-      "state": "a8b48e03",
+      "state": "a3c1ed15",
       "events": "eaaada4d",
       "rng": {
-        "draws": 5673,
-        "digest": "58d4a3bc"
+        "draws": 5657,
+        "digest": "7aaa9cb3"
       },
       "label": "death",
       "players": [
@@ -9331,7 +9376,7 @@
           "companionUpgrades": {},
           "counters": {
             "damageDealt": 11076,
-            "damageTaken": 17814,
+            "damageTaken": 18210,
             "kills": 3,
             "xpGained": 249
           },
@@ -9457,7 +9502,6 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 16667,
             "xpGained": 249
           },
           "craftSkills": {},
@@ -9465,6 +9509,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -9478,6 +9523,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -9549,7 +9598,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -9579,6 +9628,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -9592,6 +9642,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -9663,7 +9717,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -9685,6 +9739,7 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
+            "damageTaken": 16667,
             "xpGained": 249
           },
           "craftSkills": {},
@@ -9692,6 +9747,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -9705,6 +9761,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -9776,7 +9836,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -9806,6 +9866,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -9819,6 +9880,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -9890,7 +9955,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -9966,7 +10031,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 13.15,
+          "combatTimer": 130.4,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -10064,7 +10129,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 130.4,
+          "combatTimer": 13.15,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -10178,15 +10243,11 @@
           },
           "level": 20,
           "loot": {
-            "copper": 165368,
+            "copper": 166566,
             "items": [
               {
                 "count": 1,
-                "itemId": "bonewrought_greatsword"
-              },
-              {
-                "count": 1,
-                "itemId": "soulflame_mantle"
+                "itemId": "soulflame_cowl"
               },
               {
                 "count": 1,
@@ -10194,11 +10255,11 @@
               },
               {
                 "count": 1,
-                "itemId": "stormcallers_spaulders"
+                "itemId": "wraithfire_orb"
               },
               {
                 "count": 1,
-                "itemId": "maul_of_the_scourged_wilds"
+                "itemId": "stormcallers_spaulders"
               }
             ]
           },
@@ -10221,7 +10282,8 @@
             "dialogueBusyUntil": 36.6,
             "dialogueToken": 7,
             "finalStand": true,
-            "gravebreakerCasts": 3,
+            "gravebreakerCasts": 2,
+            "gravebreakerCharged": true,
             "gravebreakerTimer": 8.95,
             "introSpoken": true,
             "phase": "dead",
@@ -10580,77 +10642,77 @@
       "tick": 630,
       "time": 31.5,
       "nextId": 845,
-      "state": "cfdee7d5",
+      "state": "35911ea9",
       "events": "741638a5",
       "rng": {
-        "draws": 5697,
-        "digest": "6f1daac2"
+        "draws": 5680,
+        "digest": "1df28f22"
       }
     },
     {
       "tick": 640,
       "time": 32,
       "nextId": 845,
-      "state": "c0798889",
+      "state": "404cf5ff",
       "events": "741638a5",
       "rng": {
-        "draws": 5767,
-        "digest": "d0912832"
+        "draws": 5789,
+        "digest": "39eefe89"
       }
     },
     {
       "tick": 650,
       "time": 32.5,
       "nextId": 845,
-      "state": "8f5a5cd1",
+      "state": "3e1e3d3f",
       "events": "741638a5",
       "rng": {
-        "draws": 5847,
-        "digest": "58516d9a"
+        "draws": 5857,
+        "digest": "5a356ad9"
       }
     },
     {
       "tick": 660,
       "time": 33,
       "nextId": 845,
-      "state": "0352ab01",
+      "state": "b6735875",
       "events": "741638a5",
       "rng": {
-        "draws": 5930,
-        "digest": "44434c2c"
+        "draws": 5924,
+        "digest": "108762aa"
       }
     },
     {
       "tick": 670,
       "time": 33.5,
       "nextId": 845,
-      "state": "8ce6f071",
+      "state": "c032f02d",
       "events": "741638a5",
       "rng": {
-        "draws": 6023,
-        "digest": "d4c14183"
+        "draws": 6008,
+        "digest": "1c2c3830"
       }
     },
     {
       "tick": 680,
       "time": 34,
       "nextId": 845,
-      "state": "adcdf681",
+      "state": "15335903",
       "events": "741638a5",
       "rng": {
-        "draws": 6115,
-        "digest": "ebf04889"
+        "draws": 6080,
+        "digest": "4474d8cc"
       }
     },
     {
       "tick": 688,
       "time": 34.4,
       "nextId": 845,
-      "state": "9941d687",
+      "state": "29985ad3",
       "events": "7df3b12e",
       "rng": {
-        "draws": 6196,
-        "digest": "3b79969a"
+        "draws": 6164,
+        "digest": "72a44443"
       },
       "label": "final",
       "players": [
@@ -10670,7 +10732,7 @@
           "companionUpgrades": {},
           "counters": {
             "damageDealt": 11076,
-            "damageTaken": 17814,
+            "damageTaken": 18210,
             "kills": 3,
             "xpGained": 249
           },
@@ -10796,7 +10858,6 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
-            "damageTaken": 16667,
             "xpGained": 249
           },
           "craftSkills": {},
@@ -10804,6 +10865,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -10817,6 +10879,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -10888,7 +10954,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -10918,6 +10984,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -10931,6 +10998,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -11002,7 +11073,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -11024,6 +11095,7 @@
           "cls": "mage",
           "companionUpgrades": {},
           "counters": {
+            "damageTaken": 16667,
             "xpGained": 249
           },
           "craftSkills": {},
@@ -11031,6 +11103,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -11044,6 +11117,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -11115,7 +11192,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -11145,6 +11222,7 @@
           "deedStats": {
             "counters": {
               "dungeonFinalBossKills": 1,
+              "kills": 3,
               "partiesJoined": 1
             },
             "dungeonClears": {
@@ -11158,6 +11236,10 @@
             ]
           },
           "deedsEarned": [
+            [
+              "cmb_first_blood",
+              ""
+            ],
             [
               "dgn_nythraxis",
               ""
@@ -11229,7 +11311,7 @@
             ]
           ],
           "recipesGrandfathered": true,
-          "renown": 120,
+          "renown": 125,
           "selectedMount": "valorsteed",
           "talents": {
             "rows": {}
@@ -11305,7 +11387,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 16.15,
+          "combatTimer": 133.4,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -11403,7 +11485,7 @@
           "aiState": "idle",
           "attackPower": 10,
           "channelTickTimer": -5.05,
-          "combatTimer": 133.4,
+          "combatTimer": 16.15,
           "comboUntil": -1,
           "critChance": 0.056,
           "detonateTimer": "Infinity",
@@ -11517,15 +11599,11 @@
           },
           "level": 20,
           "loot": {
-            "copper": 165368,
+            "copper": 166566,
             "items": [
               {
                 "count": 1,
-                "itemId": "bonewrought_greatsword"
-              },
-              {
-                "count": 1,
-                "itemId": "soulflame_mantle"
+                "itemId": "soulflame_cowl"
               },
               {
                 "count": 1,
@@ -11533,11 +11611,11 @@
               },
               {
                 "count": 1,
-                "itemId": "stormcallers_spaulders"
+                "itemId": "wraithfire_orb"
               },
               {
                 "count": 1,
-                "itemId": "maul_of_the_scourged_wilds"
+                "itemId": "stormcallers_spaulders"
               }
             ]
           },
@@ -11560,7 +11638,8 @@
             "dialogueBusyUntil": 36.6,
             "dialogueToken": 7,
             "finalStand": true,
-            "gravebreakerCasts": 3,
+            "gravebreakerCasts": 2,
+            "gravebreakerCharged": true,
             "gravebreakerTimer": 8.95,
             "introSpoken": true,
             "phase": "dead",

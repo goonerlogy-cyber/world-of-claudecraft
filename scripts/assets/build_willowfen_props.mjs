@@ -15,12 +15,18 @@ import { dedup, meshopt, prune, simplify, textureCompress, weld } from '@gltf-tr
 import { MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
+// Scatter-tier targets (2026-07): these props are BULK-instanced (fen floor,
+// every temperate lake via water_flora), so the old flower-bed budgets put
+// 17.2M triangles on one zone's dressing. The shipped GLBs were re-tiered via
+// the second-pass recipe above (sources live on the maintainer's machine);
+// verified indistinguishable in-game at 3x magnification before landing. A
+// source rebuild should use these targets, not the old 30-80k ones.
 const ITEMS = [
-  { src: 'willow-tree.glb', out: 'willow_tree.glb', target: 80000 },
-  { src: 'water-lilies.glb', out: 'fen_lilies.glb', target: 40000 },
-  { src: 'river-reeds.glb', out: 'fen_reeds.glb', target: 40000 },
-  { src: 'musroom-clusters.glb', out: 'fen_mushrooms.glb', target: 50000 },
-  { src: 'log.glb', out: 'fen_log.glb', target: 30000 },
+  { src: 'willow-tree.glb', out: 'willow_tree.glb', target: 11000 },
+  { src: 'water-lilies.glb', out: 'fen_lilies.glb', target: 6000 },
+  { src: 'river-reeds.glb', out: 'fen_reeds.glb', target: 6000 },
+  { src: 'musroom-clusters.glb', out: 'fen_mushrooms.glb', target: 7000 },
+  { src: 'log.glb', out: 'fen_log.glb', target: 5000 },
 ];
 const SRC_DIR = '/Users/demihenderson/Downloads/willowfen';
 const OUT_DIR = 'public/models/props';

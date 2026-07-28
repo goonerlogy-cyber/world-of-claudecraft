@@ -29,11 +29,14 @@ import {
 import * as bankMod from './bank';
 import { type BankState, clampBonusSlots, sanitizeBankState } from './bank';
 import { campSpawnOffset } from './camp_scatter';
+import { advanceClimb, tryStartClimb } from './climb';
 import {
   allocRiftCollisionToken,
   lineOfSightClear,
+  moverHeight,
   resolveMovement,
   resolvePosition,
+  seatGroundedAt,
 } from './colliders';
 import { auraAffectsStats, removeCancelableAura } from './combat/aura_cancel';
 import { auraReplacementConflicts } from './combat/aura_stacking';
@@ -259,8 +262,8 @@ import { Market, type MarketListing, type MarketSave } from './market';
 import { defaultMarketQuery, type MarketQuery } from './market_query';
 import {
   mobCombatProfile as mobCombatProfileFn,
-  mobEffectiveMeleeRange as mobEffectiveMeleeRangeFn,
-  tryMobMeleeSwingInRange as tryMobMeleeSwingInRangeFn,
+  mobEffectiveMeleeRange as mobEffectiveMeleeRangeImpl,
+  tryMobMeleeSwingInRange as tryMobMeleeSwingInRangeImpl,
 } from './mob/combat_profile';
 import { NYTHRAXIS_SPIRIT_MENDING_CAST_ID } from './mob/healer_channel';
 import * as lifecycle from './mob/lifecycle';
@@ -567,6 +570,7 @@ import {
   type CrowdControlDrState,
   cloneInvSlot,
   cloneItemInstancePayload,
+  type DamageEventKind,
   DELVE_COMPANION_HEAL_INTERVAL,
   type DeedStats,
   type DelveDef,
@@ -2001,11 +2005,18 @@ export class Sim {
       }
     }
 
-    // Ravenpost mailboxes: one interactable raven pillar per town (draws no
-    // rng; findSafePos is deterministic, so the camp draws above are unmoved).
+    // Ravenpost mailboxes: one interactable raven pillar per town, spawned at
+    // its exact authored spot (the noticeboard pattern): the pillar is solid
+    // civic furniture with a static collider at this position, so the spawn
+    // must never relocate away from it (findSafePos would, since the collider
+    // sits exactly here). Draws no rng.
     for (const boxDef of worldContent.services?.mailboxes ?? []) {
-      const safe = this.findSafePos(boxDef.x, boxDef.z, waterLevel() + 0.6);
-      const box = createGroundObject(this.nextId++, '', 'Mailbox', this.groundPos(safe.x, safe.z));
+      const box = createGroundObject(
+        this.nextId++,
+        '',
+        'Mailbox',
+        this.groundPos(boxDef.x, boxDef.z),
+      );
       box.templateId = 'mailbox';
       box.objectItemId = null;
       box.lootable = true; // interactable
@@ -2356,9 +2367,18 @@ export class Sim {
     // branch's `?? DUNGEON_LIST[0]` fallback would otherwise swallow a delve
     // position and eject the player to a dungeon door instead of the board door
     // (FR-1.6). The two bands are disjoint, so `else if` keeps dungeon handling intact.
+    // Saves from before the instance plane moved east (see data.ts). This
+    // resolves a legacy instance position all the way to its door, so it IS an
+    // instance exit and takes the same exemption the two branches below do:
+    // the collision migration must not walk it off a door the content author
+    // placed, exactly as it does not walk a current-band exit off one.
+    let legacyInstanceExit = false;
     if (savedPos) {
-      // saves from before the instance plane moved east (see data.ts)
-      savedPos = migrateLegacyInstancePos(savedPos) ?? savedPos;
+      const migrated = migrateLegacyInstancePos(savedPos);
+      if (migrated) {
+        savedPos = migrated;
+        legacyInstanceExit = true;
+      }
     }
     if (savedPos && isDelvePos(savedPos.x)) {
       const delve = delveAt(savedPos.x) ?? DELVE_LIST[0];
@@ -2366,7 +2386,7 @@ export class Sim {
     } else if (savedPos && savedPos.x > DUNGEON_X_THRESHOLD) {
       const dungeon = dungeonAt(savedPos.x) ?? DUNGEON_LIST[0];
       savedPos = { x: dungeon.doorPos.x, z: dungeon.doorPos.z - 4 };
-    } else if (savedPos) {
+    } else if (savedPos && !legacyInstanceExit) {
       // Authored towns can grow across release boundaries. A living character
       // saved on what used to be open overworld ground must not resume trapped
       // inside a newly added solid prop. Preserve valid shoreline and swimming
@@ -2701,7 +2721,11 @@ export class Sim {
       meta.delveMarks = s.delveMarks ?? 0;
       meta.delveClears = { ...(s.delveClears ?? {}) };
       meta.companionUpgrades = { ...(s.companionUpgrades ?? {}) };
-      meta.townFocus = { ...(s.townFocus ?? {}) };
+      // Known component families at positive integer points only: a save that
+      // predates the #2511 key check (or a corrupt one) self-heals here rather
+      // than riding back out through the panel into a request the command
+      // boundary now rejects.
+      meta.townFocus = professionsFocus.normalizeTownFocusOnLoad(s.townFocus);
       if (s.delveLoreUnlocked) for (const id of s.delveLoreUnlocked) meta.delveLoreUnlocked.add(id);
       if (s.delveDaily) {
         meta.delveDaily = {
@@ -3758,14 +3782,14 @@ export class Sim {
     return this.primaryId;
   }
   get player(): Entity {
-    const p = this.entities.get(this.primaryId);
-    if (!p) throw new Error('primary player entity missing');
-    return p;
+    const player = this.entities.get(this.primaryId);
+    if (!player) throw new Error(`Primary player entity ${this.primaryId} is missing`);
+    return player;
   }
   private get primary(): PlayerMeta {
-    const meta = this.players.get(this.primaryId);
-    if (!meta) throw new Error('primary player meta missing');
-    return meta;
+    const primary = this.players.get(this.primaryId);
+    if (!primary) throw new Error(`Primary player meta ${this.primaryId} is missing`);
+    return primary;
   }
   get moveInput(): MoveInput {
     return this.primary.moveInput;
@@ -4008,6 +4032,7 @@ export class Sim {
         pz,
         bodyRadius,
         false,
+        undefined,
         undefined,
         this.riftCollisionToken,
       );
@@ -5229,8 +5254,7 @@ export class Sim {
   // L1 loot distribution moved to loot/loot_roll.ts (behind SimContext). Sim keeps a
   // thin delegate for partyLootCandidatesForMob because dead_party_loot.test.ts reaches
   // it via cast; the strategy resolvers it used have no other caller and moved fully.
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: dead_party_loot.test.ts reaches this via cast (see above).
-  private partyLootCandidatesForMob(mob: Entity): PlayerMeta[] {
+  partyLootCandidatesForMob(mob: Entity): PlayerMeta[] {
     return partyLootCandidatesForMobImpl(this.ctx, mob);
   }
   // Body moved to player_motion.ts (MV1). The ghost/aura math is host-agnostic
@@ -5539,6 +5563,18 @@ export class Sim {
     // Hold every forced/manual locomotion mode until the authoritative GO tick.
     if (meta.mountRace?.phase === 'countdown') return;
     if (advanceHeroicLeap(this.ctx, p)) return;
+    // A ledge climb owns movement while it runs, and an airborne body that
+    // gets its hands on a reachable ledge starts one. Sits after the leap arc
+    // (a leap has its own landing contract) and before charge/follow/fear so
+    // those cannot fight a pull-up already in progress.
+    if (advanceClimb(p)) return;
+    // Grabbing is AUTOMATIC, not a second button. A player who jumps at a
+    // ledge has already expressed the intent; making them also hold a key at
+    // the exact frame their hands reach it is the difference between a move
+    // that feels like traversal and one that feels like a QTE. The grab is
+    // already gated on being airborne past the apex, moving toward the ledge,
+    // and the ledge being somewhere the body fits.
+    if (tryStartClimb(p, this.cfg.seed) && advanceClimb(p)) return;
     if (this.updateChargeMovement(p)) return;
     if (this.updateFollowMovement(p, meta)) return;
     if (this.updateFearMovement(p)) return;
@@ -5781,13 +5817,12 @@ export class Sim {
     return hexOutputMultImpl(this.ctx, source);
   }
 
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_heal_absorb.test.ts drives this via `(sim as any).consumeHealAbsorb`.
-  private consumeHealAbsorb(target: Entity, healed: number): number {
-    return consumeHealAbsorbImpl(this.ctx, target, healed);
-  }
-
   private critVulnBonus(target: Entity): number {
     return critVulnBonusImpl(this.ctx, target);
+  }
+
+  consumeHealAbsorb(target: Entity, healed: number): number {
+    return consumeHealAbsorbImpl(this.ctx, target, healed);
   }
 
   private applyHeal(
@@ -6005,9 +6040,13 @@ export class Sim {
       if (blocked) break; // hit a wall: stop the shove here
     }
     if (moved <= 0) return 0;
-    target.pos.x = cx;
-    target.pos.z = cz;
-    target.pos.y = groundHeight(cx, cz, this.cfg.seed);
+    // Support-aware seat: a victim shoved along crate tops stays on them, and
+    // one shoved through a passed-over prop footprint is nudged clear instead
+    // of being embedded at terrain height inside it.
+    const seat = seatGroundedAt(this.cfg.seed, cx, cz, BODY_RADIUS, target.pos.y);
+    target.pos.x = seat.x;
+    target.pos.z = seat.z;
+    target.pos.y = seat.y;
     target.vy = 0;
     target.onGround = true;
     target.fallStartY = target.pos.y;
@@ -6252,8 +6291,7 @@ export class Sim {
     updatePlayerAutoAttackImpl(this.ctx, p, meta);
   }
 
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: fixes.test.ts drives this via `(sim as any).rangedSwing`.
-  private rangedSwing(
+  rangedSwing(
     attacker: Entity,
     target: Entity,
     ranged: { min: number; max: number; speed: number; wand?: boolean; school?: string },
@@ -6290,7 +6328,7 @@ export class Sim {
     crit: boolean,
     school: string,
     ability: string | null,
-    kind: 'hit' | 'miss' | 'dodge',
+    kind: DamageEventKind,
     noRage = false,
     threatOpts?: { flat?: number; mult?: number },
     direct = true,
@@ -6424,6 +6462,14 @@ export class Sim {
   // Mob AI
   // -------------------------------------------------------------------------
 
+  mobEffectiveMeleeRange(mob: Entity): number {
+    return mobEffectiveMeleeRangeImpl(mob);
+  }
+
+  tryMobMeleeSwingInRange(mob: Entity, target: Entity): boolean {
+    return tryMobMeleeSwingInRangeImpl(this.ctx, mob, target);
+  }
+
   private refreshMobLeashFromAction(source: Entity | null, target: Entity): void {
     if (
       !source ||
@@ -6452,8 +6498,7 @@ export class Sim {
   // highestThreatTarget moved to mob/targeting.ts (M1); retargetMob/updateMobTarget
   // call it there. No Sim delegate: it had no caller outside those two methods.
 
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: parity scenarios drive this via `(sim as any).updateMobTarget`.
-  private updateMobTarget(mob: Entity): void {
+  updateMobTarget(mob: Entity): void {
     updateMobTargetFn(this.ctx, mob);
   }
 
@@ -6467,16 +6512,6 @@ export class Sim {
 
   private mobCombatProfile(mob: Entity): MobCombatProfile {
     return mobCombatProfileFn(mob);
-  }
-
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_melee_walk_past.test.ts reaches this on an untyped sim handle.
-  private mobEffectiveMeleeRange(mob: Entity): number {
-    return mobEffectiveMeleeRangeFn(mob);
-  }
-
-  // biome-ignore lint/correctness/noUnusedPrivateClassMembers: mob_melee_walk_past.test.ts reaches this on an untyped sim handle.
-  private tryMobMeleeSwingInRange(mob: Entity, target: Entity): boolean {
-    return tryMobMeleeSwingInRangeFn(this.ctx, mob, target);
   }
 
   aggroMob(mob: Entity, target: Entity, social: boolean): void {
@@ -6634,11 +6669,12 @@ export class Sim {
     dmg *= this.petDamageMult(mob);
     const rawDmg = dmg; // pre-armor, post-crit/enrage — basis for cleave splash
     dmg *= 1 - armorReduction(this.effectiveArmor(target), mob.level);
-    if (blockChance > 0 && roll < missChance + dodgeChance + parryChance + blockChance) {
+    const blocked = blockChance > 0 && roll < missChance + dodgeChance + parryChance + blockChance;
+    if (blocked) {
       dmg = Math.max(1, dmg - target.blockValue);
     }
     const dealt = Math.max(1, Math.round(dmg));
-    this.dealDamage(mob, target, dealt, crit, 'physical', null, 'hit');
+    this.dealDamage(mob, target, dealt, crit, 'physical', null, blocked ? 'block' : 'hit');
     runMobSwingAffixes(this.ctx, mob, target, { dealt, crit, rawDmg });
   }
 
@@ -6849,6 +6885,7 @@ export class Sim {
   // every tick while the boss is in combat; thresholds fire once per pull
   // and reset on evade/respawn.
   private updateBossMechanics(mob: Entity): void {
+    if (mob.dead || mob.hp <= 0) return;
     const tmpl = MOBS[mob.templateId];
     if (
       !tmpl ||
@@ -7341,14 +7378,21 @@ export class Sim {
   // the caller owns the player-visible line for this grant and renders a
   // richer one off its own result event, so the hub's "You receive:" line
   // stands down instead of printing a second line for the one grant (#2430).
-  // The two are independent by design, so set exactly the halves the caller
-  // owns: a profession grant whose result event carries BOTH its own cue and
-  // its own line sets both (gather/craft/disenchant/salvage/enchant/fishing),
-  // while a caller that owns only the line sets only callerLogs (the Maker's
-  // Bond unbind peel in professions/commission.ts, which has no cue of its
-  // own). A grant with no result event behind it sets NEITHER, or it goes
-  // invisible: the once-ever Codfather quest catch (professions/fishing.ts)
-  // returns before its emit, so the hub line and ding are its only feedback.
+  // The two stay independent by design, but no shipped caller sets exactly one
+  // (true repo-wide today; the enforced part is professions plus corpse
+  // harvest, which tests/professions_silent_loot.test.ts sweeps, and every
+  // other grant in the game passes no opts at all). A grant whose result event
+  // owns the line owns the cue too, in one of three ways: a dedicated cue of
+  // its own (gather/craft/disenchant/salvage/enchant/fishing), the SAME
+  // generic ding replayed by the result arm exactly once for the whole
+  // command (corpse harvest, which has never had a recording of its own, so
+  // it keeps the sound it always made and only stops stacking it: #2457), or
+  // deliberate SILENCE, which is still owning it (the Maker's Bond unbind
+  // peel in professions/commission.ts, whose contract above
+  // hudChrome.unbind.unbound is no toast and no cue at all: #2458). A grant
+  // with no result event behind it sets NEITHER, or it goes invisible: the
+  // once-ever Codfather quest catch (professions/fishing.ts) returns before
+  // its emit, so the hub line and ding are its only feedback.
   // Professions 2.0's later phases
   // add new grant sites here (Phase 4 rare-event jackpot yields, Phase 13's
   // disenchant UI wiring): pass the same opts from those too, or the new
@@ -7357,13 +7401,13 @@ export class Sim {
     itemId: string,
     count: number,
     pid?: number,
-    opts?: { silent?: boolean; callerLogs?: boolean },
+    opts?: { silent?: boolean; callerLogs?: boolean; craftedRecipeId?: string },
   ): void {
     const r = this.resolve(pid);
     if (!r) return;
     const { meta } = r;
     const def = ITEMS[itemId];
-    addStacked(meta.inventory, itemId, count);
+    addStacked(meta.inventory, itemId, count, undefined, opts?.craftedRecipeId);
     // Every grant that reaches the hub is an acquisition for the Book of
     // Deeds discovery ledger (loot, craft, quest reward, vendor, mail, trade).
     deedsMod.markItemDiscovered(this.ctx, meta, itemId);
@@ -7404,7 +7448,7 @@ export class Sim {
     instance: ItemInstancePayload,
     pid?: number,
     count = 1,
-    opts?: { silent?: boolean; callerLogs?: boolean },
+    opts?: { silent?: boolean; callerLogs?: boolean; craftedRecipeId?: string },
   ): void {
     const r = this.resolve(pid);
     if (!r) return;
@@ -7415,7 +7459,10 @@ export class Sim {
     for (let i = 0; i < count; i++) {
       const mergeTarget = meta.inventory.find(
         (s) =>
-          s.itemId === itemId && s.count < stack && canStackInstancePayloads(s.instance, instance),
+          s.itemId === itemId &&
+          s.count < stack &&
+          s.craftedRecipeId === opts?.craftedRecipeId &&
+          canStackInstancePayloads(s.instance, instance),
       );
       if (mergeTarget) mergeTarget.count += 1;
       // The first pushed slot holds the caller's payload object (the shipped
@@ -7427,6 +7474,7 @@ export class Sim {
           itemId,
           count: 1,
           instance: i === 0 ? instance : cloneItemInstancePayload(instance),
+          ...(opts?.craftedRecipeId === undefined ? {} : { craftedRecipeId: opts.craftedRecipeId }),
         });
     }
     // Discovery ledger: the instance's rolled quality (gathered rares) beats
@@ -7622,8 +7670,30 @@ export class Sim {
     items.sellAllJunk(this.ctx, pid);
   }
 
-  buyBackItem(itemId: string, pid?: number): void {
-    items.buyBackItem(this.ctx, itemId, pid);
+  buyBackItem(
+    itemId: string,
+    index?: number,
+    expectedInstance?: ItemInstancePayload,
+    expectedCraftedRecipeId?: string,
+  ): void;
+  buyBackItem(
+    itemId: string,
+    index?: number,
+    expectedInstance?: ItemInstancePayload,
+    pid?: number,
+    expectedCraftedRecipeId?: string,
+  ): void;
+  buyBackItem(
+    itemId: string,
+    index?: number,
+    expectedInstance?: ItemInstancePayload,
+    pidOrCraftedRecipeId?: number | string,
+    expectedCraftedRecipeId?: string,
+  ): void {
+    const pid = typeof pidOrCraftedRecipeId === 'number' ? pidOrCraftedRecipeId : undefined;
+    const craftedRecipeId =
+      typeof pidOrCraftedRecipeId === 'string' ? pidOrCraftedRecipeId : expectedCraftedRecipeId;
+    items.buyBackItem(this.ctx, itemId, index, pid, expectedInstance, craftedRecipeId);
   }
 
   // Gather-node harvest (#1121): a thin delegate onto
@@ -7855,8 +7925,14 @@ export class Sim {
 
   // Enchanting profession commands (IWorldProfessions): same thin-
   // delegate/stash-result/emit shape as salvageItem/craftItem above.
-  disenchantItem(itemId: string, pid?: number): void {
-    const result = disenchantItemImpl(this.ctx, itemId, pid);
+  disenchantItem(
+    itemId: string,
+    pidOrTarget?: number | { slotIndex: number },
+    slotIndex?: number,
+  ): void {
+    const pid = typeof pidOrTarget === 'number' ? pidOrTarget : undefined;
+    const targetSlotIndex = typeof pidOrTarget === 'object' ? pidOrTarget.slotIndex : slotIndex;
+    const result = disenchantItemImpl(this.ctx, itemId, pid, targetSlotIndex);
     const meta = this.players.get(pid ?? this.primaryId);
     if (meta) meta.lastDisenchantResult = result;
     this.emit({
@@ -8963,8 +9039,7 @@ export class Sim {
     team: 'A' | 'B',
   ): import('../world_api').FiestaMatchInfo {
     const f = match.fiesta;
-    // unreachable: the sole caller guards on match.fiesta before delegating here
-    if (!f) throw new Error('fiestaMatchInfo requires a Fiesta match');
+    if (!f) throw new Error(`Fiesta match ${match.id} is missing fiesta state`);
     const origin = arenaOrigin(match.slot);
     const meta = this.players.get(pid);
     const offer = f.offers.get(pid);
@@ -9633,6 +9708,11 @@ export class Sim {
     ignoreFences = false,
   ): { x: number; z: number } {
     const run = isDelvePos(nx) || isDelvePos(e.pos.x) ? this.delveRunForEntity(e) : undefined;
+    // Parkour heights are a PLAYER traversal mechanic: only players pass over
+    // low prop tops. Mobs/pets/NPCs keep full-height collision (their y rides
+    // the terrain every tick, so a height-gated pass would let them clip
+    // through protruding rock bodies and jitter at buried-rock rims).
+    const mover = e.kind === 'player' ? moverHeight(e) : undefined;
     const res = resolveMovement(
       this.cfg.seed,
       fromX,
@@ -9642,6 +9722,7 @@ export class Sim {
       r,
       ignoreFences,
       run?.modules,
+      mover,
       this.riftCollisionToken,
     );
     if (!run) return res;
@@ -9652,6 +9733,7 @@ export class Sim {
   // Point resolution for mob wander / blocked checks, with the same delve layering.
   private resolveMovePoint(nx: number, nz: number, r: number, e: Entity): { x: number; z: number } {
     const run = isDelvePos(nx) || isDelvePos(e.pos.x) ? this.delveRunForEntity(e) : undefined;
+    const mover = e.kind === 'player' ? moverHeight(e) : undefined;
     const res = resolvePosition(
       this.cfg.seed,
       nx,
@@ -9659,6 +9741,7 @@ export class Sim {
       r,
       false,
       run?.modules,
+      mover,
       this.riftCollisionToken,
     );
     if (!run) return res;

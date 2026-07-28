@@ -21,16 +21,21 @@ import {
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
+// Scatter-tier targets (2026-07): bulk-instanced zone dressing (the ember
+// fields alone place hundreds); the old flower-bed budgets cost 9.8M
+// triangles at the volcano field. Shipped GLBs were re-tiered via a second
+// simplify pass (error 0.05) over the outputs; a source rebuild should use
+// these targets.
 const ITEMS = [
-  { src: 'lava+pool+3d+model.glb', out: 'lava_pool.glb', target: 35000 },
-  { src: 'lava+river++v1+3d+model.glb', out: 'lava_river_a.glb', target: 30000 },
-  { src: 'lava+friver+v2+3d+model.glb', out: 'lava_river_b.glb', target: 30000 },
-  { src: 'lava+river+v3+3d+model.glb', out: 'lava_river_c.glb', target: 30000 },
-  { src: 'lava+river+end+3d+model.glb', out: 'lava_river_end.glb', target: 30000 },
-  { src: 'lava+terrace+3d+model.glb', out: 'lava_terrace.glb', target: 35000 },
-  { src: 'dragon+treasure+hoard+3d+model.glb', out: 'dragon_hoard.glb', target: 45000 },
-  { src: 'dragon+eggs+3d+model.glb', out: 'dragon_eggs.glb', target: 35000 },
-  { src: 'giant+red+crystal+flowers+3d+model.glb', out: 'ember_lily.glb', target: 60000 },
+  { src: 'lava+pool+3d+model.glb', out: 'lava_pool.glb', target: 4000 },
+  { src: 'lava+river++v1+3d+model.glb', out: 'lava_river_a.glb', target: 4000 },
+  { src: 'lava+friver+v2+3d+model.glb', out: 'lava_river_b.glb', target: 4000 },
+  { src: 'lava+river+v3+3d+model.glb', out: 'lava_river_c.glb', target: 4000 },
+  { src: 'lava+river+end+3d+model.glb', out: 'lava_river_end.glb', target: 4000 },
+  { src: 'lava+terrace+3d+model.glb', out: 'lava_terrace.glb', target: 4000 },
+  { src: 'dragon+treasure+hoard+3d+model.glb', out: 'dragon_hoard.glb', target: 8000 },
+  { src: 'dragon+eggs+3d+model.glb', out: 'dragon_eggs.glb', target: 5000 },
+  { src: 'giant+red+crystal+flowers+3d+model.glb', out: 'ember_lily.glb', target: 4000 },
 ];
 const SRC_DIR = '/Users/demihenderson/Downloads/drakelands';
 const OUT_DIR = 'public/models/props';

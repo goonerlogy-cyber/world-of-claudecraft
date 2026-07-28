@@ -692,7 +692,7 @@ export const en_XA: EnTranslations = {
       "railSol": "[ŠÓĻ]",
       "railUsdc": "[ÚŠÐÇ]",
       "railWoc": "[ŴÓÇ]",
-      "railWocDiscount": "[20% óƒƒ]",
+      "railWocDiscount": "[{percent}% óƒƒ]",
       "railWocUnavailable": "[ŴÓÇ þŕíçíñĝ íš úñáʋáíļáƀļé ŕíĝĥţ ñóŵ.]",
       "railNativeUnavailable": "[Çŕýþţó óƒƒ.]",
       "amountLabel": "[Áɱóúñţ]",
@@ -1381,10 +1381,10 @@ export const en_XA: EnTranslations = {
     },
     "plurals": {
       "guildMembers": {
-        "one": "[ýóú áŕé {rank}, {count} ɱéɱƀéŕ]",
-        "few": "[ýóú áŕé {rank}, {count} ɱéɱƀéŕš]",
-        "many": "[ýóú áŕé {rank}, {count} ɱéɱƀéŕš]",
-        "other": "[ýóú áŕé {rank}, {count} ɱéɱƀéŕš]"
+        "one": "[ýóúŕ ĝúíļð ŕáñķ íš {rank}; {count} ɱéɱƀéŕ]",
+        "few": "[ýóúŕ ĝúíļð ŕáñķ íš {rank}; {count} ɱéɱƀéŕš]",
+        "many": "[ýóúŕ ĝúíļð ŕáñķ íš {rank}; {count} ɱéɱƀéŕš]",
+        "other": "[ýóúŕ ĝúíļð ŕáñķ íš {rank}; {count} ɱéɱƀéŕš]"
       },
       "finderPartySize": {
         "one": "[{count} þļáýéŕ]",
@@ -1545,6 +1545,7 @@ export const en_XA: EnTranslations = {
       "harvestButton": "[Ĥáŕʋéšţ]",
       "harvestTooltip": "[Ĝáţĥéŕš ţĥé çĥéçķéð çóɱþóñéñţš. Éáçĥ çóŕþšé çáñ ƀé ĥáŕʋéšţéð óñçé, ƒíŕšţ çóɱé. Ðóéš ñóţ ţáķé ţĥé ļóóţ.]",
       "concentrateHint": "[Ƒéŵéŕ çĥóšéñ çóɱþóñéñţš ýíéļð á ĥíĝĥéŕ ţíéŕ éáçĥ.]",
+      "nothingSelectedYields": "[Ñóţĥíñĝ ýóú šéļéçţéð çáñ ƀé ĥáŕʋéšţéð ƒŕóɱ ţĥíš çóŕþšé.]",
       "alreadyHarvested": "[Ţĥíš çóŕþšé ĥáš áļŕéáðý ƀééñ ĥáŕʋéšţéð.]",
       "componentAria": "[Ĥáŕʋéšţ {component}]",
       "components": {
@@ -2108,8 +2109,8 @@ export const en_XA: EnTranslations = {
       }
     },
     "marketIndicator": {
-      "aria": "[Ŵóŕļð Ɱáŕķéţ çóļļéçţíóñ ŵáíţíñĝ]",
-      "tip": "[Ĝóļð óŕ íţéɱš áŕé ŵáíţíñĝ ƒóŕ ýóú áţ ţĥé Ɱéŕçĥáñţ.]"
+      "aria": "[Ŵóŕļð Ɱáŕķéţ þŕóçééðš óŕ íţéɱš ŵáíţíñĝ]",
+      "tip": "[Šáļé þŕóçééðš óŕ ŕéţúŕñéð íţéɱš áŕé ŵáíţíñĝ ƒóŕ ýóú áţ ţĥé Ɱéŕçĥáñţ.]"
     },
     "noticeboard": {
       "empty": "[Ñóţĥíñĝ šééɱš þóšţéð.]"
@@ -2253,6 +2254,9 @@ export const en_XA: EnTranslations = {
       "notReady": "[Ţĥíš ŕéšóúŕçé ñóðé ĥáš ñóţ ŕéšþáŵñéð ƒóŕ ýóú ýéţ.]",
       "gatherLine": "[Ýóú ĝáţĥéŕ: {name}.]",
       "gatherLineQty": "[Ýóú ĝáţĥéŕ: {name} ẋ{qty}.]",
+      "harvestLine": "[Ýóú ĥáŕʋéšţ: {name}.]",
+      "harvestLineQty": "[Ýóú ĥáŕʋéšţ: {name} ẋ{qty}.]",
+      "harvestSpecimenLine": "[Ýóú áļšó ŕéçóʋéŕ {name}.]",
       "catchLine": "[Ýóú ŕééļ íñ: {name}]",
       "biteLine": "[Šóɱéţĥíñĝ ţáķéš ţĥé ƀáíţ!]",
       "gotAwayLine": "[Íţ ĝóţ áŵáý.]",

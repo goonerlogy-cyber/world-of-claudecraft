@@ -794,6 +794,7 @@ export function updateRiftTriggers(ctx: SimContext, p: Entity): void {
           PLAYER_BODY_R,
           false,
           undefined,
+          undefined,
           ctx.riftCollisionToken,
         );
         const advanced = Math.hypot(dest.x - p.prevPos.x, dest.z - p.prevPos.z);
@@ -863,6 +864,7 @@ export function updateRiftTriggers(ctx: SimContext, p: Entity): void {
         b.pos.z + (dirz / dd) * 1.4,
         1.0,
         false,
+        undefined,
         undefined,
         ctx.riftCollisionToken,
       );
@@ -1359,6 +1361,7 @@ function tickRiftRollers(
         p.pos.z + ROLLER_KB_FWD,
         PLAYER_BODY_R,
         false,
+        undefined,
         undefined,
         ctx.riftCollisionToken,
       );

@@ -10,8 +10,8 @@
     "updatePet melee arm: close + auto-taunt + mobSwing (PET_COMBAT_LINGER owner inCombat)",
     "petFollow heel transition (pets return to a moved owner)"
   ],
-  "draws": 1463,
-  "drawDigest": "c5d3072c",
+  "draws": 1450,
+  "drawDigest": "73870588",
   "frames": [
     {
       "tick": 0,
@@ -199,8 +199,8 @@
       "state": "03ca0c66",
       "events": "741638a5",
       "rng": {
-        "draws": 751,
-        "digest": "e0821ea2"
+        "draws": 750,
+        "digest": "0a563e13"
       }
     },
     {
@@ -210,8 +210,8 @@
       "state": "dfc8d77d",
       "events": "741638a5",
       "rng": {
-        "draws": 751,
-        "digest": "e0821ea2"
+        "draws": 750,
+        "digest": "0a563e13"
       },
       "label": "heel",
       "players": [
@@ -573,8 +573,8 @@
       "state": "282f8acc",
       "events": "741638a5",
       "rng": {
-        "draws": 967,
-        "digest": "c34dbf25"
+        "draws": 969,
+        "digest": "b2e706b5"
       }
     },
     {
@@ -584,8 +584,8 @@
       "state": "9c89d240",
       "events": "741638a5",
       "rng": {
-        "draws": 1198,
-        "digest": "973d7860"
+        "draws": 1193,
+        "digest": "323b167b"
       }
     },
     {
@@ -595,8 +595,8 @@
       "state": "eed21223",
       "events": "741638a5",
       "rng": {
-        "draws": 1463,
-        "digest": "c5d3072c"
+        "draws": 1450,
+        "digest": "73870588"
       }
     },
     {
@@ -606,8 +606,8 @@
       "state": "eed21223",
       "events": "741638a5",
       "rng": {
-        "draws": 1463,
-        "digest": "c5d3072c"
+        "draws": 1450,
+        "digest": "73870588"
       },
       "label": "final",
       "players": [

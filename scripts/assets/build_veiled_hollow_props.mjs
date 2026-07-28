@@ -21,9 +21,12 @@ import {
 import { MeshoptDecoder, MeshoptEncoder, MeshoptSimplifier } from 'meshoptimizer';
 import sharp from 'sharp';
 
+// Scatter-tier targets (2026-07): landmark walk-throughs re-tiered via a
+// second simplify pass over the shipped outputs; a source rebuild should
+// use these targets.
 const ITEMS = [
-  { src: 'crystal+cave+3d+model.glb', out: 'hollow_gate_crystal.glb', target: 80000 },
-  { src: 'fantasy+tree+cave+3d+model.glb', out: 'hollow_gate_tree.glb', target: 80000 },
+  { src: 'crystal+cave+3d+model.glb', out: 'hollow_gate_crystal.glb', target: 12000 },
+  { src: 'fantasy+tree+cave+3d+model.glb', out: 'hollow_gate_tree.glb', target: 14000 },
 ];
 const SRC_DIR = '/Users/demihenderson/Downloads/veiled-hollow/dungeons';
 const OUT_DIR = 'public/models/props';

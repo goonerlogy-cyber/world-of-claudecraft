@@ -294,9 +294,9 @@ describe('scripted playthrough (one sim, live sites only)', () => {
         sawBiteOnKoiSession = bit;
       }
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded after
-    // reverting the Orkadia dungeon): the koi bites on session index 73.
-    expect(koiSession).toBe(73);
+    // Hunted literal (seed 4242, after every beat above, re-recorded at the
+    // origin/main base merge): the koi bites on session index 9.
+    expect(koiSession).toBe(9);
     expect(sawBiteOnKoiSession).toBe(true); // the celebration follows the bite moment
     expect(meta.deedsEarned.has('col_glimmerfin')).toBe(false); // grant sweeps at the tick tail
     const evs = sim.tick();
@@ -321,18 +321,18 @@ describe('scripted playthrough (one sim, live sites only)', () => {
     // Hunted literals (seed 4242, after every beat above): the harvest index
     // where each flavor's 1-in-90 event fires under the shared stream.
     const hunts: { nodeId: string; deedId: string; itemId: string; hitAt: number }[] = [
-      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 148 },
+      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 62 },
       {
         nodeId: 'wood_eastbrook_1',
         deedId: 'col_ancient_heartwood',
         itemId: 'ironbark_log',
-        hitAt: 152,
+        hitAt: 85,
       },
       {
         nodeId: 'herb_eastbrook_1',
         deedId: 'col_moonlit_bloom',
         itemId: 'silverleaf_herb',
-        hitAt: 156,
+        hitAt: 101,
       },
     ];
     for (const hunt of hunts) {
@@ -389,10 +389,10 @@ describe('scripted playthrough (one sim, live sites only)', () => {
       sim.harvestCorpse(mob.id, ['hide'], pid);
       if (sim.countItem('pristine_hide', pid) > 0) hitAt = i;
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded at The
-    // Last Keep's overworld door spawn): the rare-or-better rarity roll that
-    // mints the signed specimen lands on attempt index 18.
-    expect(hitAt).toBe(18);
+    // Hunted literal (seed 4242, after every beat above, re-recorded at the
+    // origin/main base merge): the rare-or-better rarity roll that mints the
+    // signed specimen lands on attempt index 0.
+    expect(hitAt).toBe(0);
     const specimen = meta.inventory.find((s) => s.itemId === 'pristine_hide');
     expect(specimen?.instance?.signer).toBe(meta.name);
     expect(meta.deedStats.visited.has('gather_event:perfect_specimen')).toBe(true);

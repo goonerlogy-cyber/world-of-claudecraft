@@ -504,7 +504,8 @@ export function meleeSwing(
     opts.forceCrit === true;
   if (crit) dmg *= 2 + attacker.critDmgPhysBonus;
   dmg *= 1 - armorReduction(ctx.effectiveArmor(target), attacker.level);
-  if (blockChance > 0 && roll < missChance + dodgeChance + parryChance + blockChance) {
+  const blocked = blockChance > 0 && roll < missChance + dodgeChance + parryChance + blockChance;
+  if (blocked) {
     dmg = Math.max(1, dmg - target.blockValue);
   }
   const dealtAmount = Math.max(1, Math.round(dmg));
@@ -515,7 +516,7 @@ export function meleeSwing(
     crit,
     'physical',
     abilityName,
-    'hit',
+    blocked ? 'block' : 'hit',
     false,
     {
       flat: opts.threatFlat ?? 0,

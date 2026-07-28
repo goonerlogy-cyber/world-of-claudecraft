@@ -25,6 +25,7 @@ import {
   ZONES,
 } from './data';
 import { dockLocalPoint, dockSectionAtLocal, dockSurfaceLine, dockSurfaceYAt } from './dock_layout';
+import { dungeonFloorLift } from './dungeon_floor';
 import { lastKeepLiftAt } from './dungeon_layout';
 import {
   EMBER_FLAT_POOLS,
@@ -35,7 +36,7 @@ import {
 import { galeDeckSurface } from './gale_harbor';
 import { reachDeckClear, reachDeckSurface } from './reach_decks';
 import { fbm2, hash2, noise2 } from './rng';
-import type { BiomeId, HeightStamp, ZoneDef } from './types';
+import type { BiomeId, HeightStamp, WorldContent, ZoneDef } from './types';
 import { isInSowfieldShell, SOWFIELD_FLAT, sowfieldStandLift } from './vale_cup_layout';
 import { wildheartFieldHeight } from './wildheart_field';
 
@@ -3033,8 +3034,9 @@ function applyLakeShoreGrading(x: number, z: number, h: number): number {
   return gradeShoreBand(h, w);
 }
 
-// Ground height including instanced dungeon floors (flat, far off-world), the
-// walkable Vale Cup grandstand lift, raised docks, and custom-map sculpt edits.
+// Ground height including instanced dungeon floors (flat, far off-world, plus
+// the raised boss dais where the room stacks one), the walkable Vale Cup
+// grandstand lift, raised docks, and custom-map sculpt edits.
 export function groundHeight(x: number, z: number, seed: number): number {
   if (x > DUNGEON_X_THRESHOLD) {
     const dungeon = dungeonAt(x);
@@ -3049,7 +3051,9 @@ export function groundHeight(x: number, z: number, seed: number): number {
       const origin = instanceOrigin(dungeon.index, instanceSlotForZ(z));
       return DUNGEON_FLOOR_Y + lastKeepLiftAt(x - origin.x, z - origin.z);
     }
-    return DUNGEON_FLOOR_Y;
+    // Every other interior is the flat room floor plus the raised boss dais
+    // where its room plan stacks one (dungeon_floor.ts).
+    return DUNGEON_FLOOR_Y + dungeonFloorLift(x, z);
   }
   // The Vale Cup grandstands are walkable: the ground steps up in seated tiers so
   // players can climb the bleachers (raised WALKABLE ground is the heightfield).

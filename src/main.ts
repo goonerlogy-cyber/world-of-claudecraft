@@ -178,6 +178,7 @@ import {
   type SelfMotionFrame,
 } from './render/self_motion';
 import { ensureSkyAssetsAt, navigatorSaveData } from './render/sky';
+import { ARRIVAL_NEIGHBOR_STREAM_RADIUS } from './render/zone_streaming';
 import { desktopBridge } from './runtime';
 import { pathCrossesFence } from './sim/colliders';
 import { isStunned } from './sim/combat/cc';
@@ -235,7 +236,7 @@ import { deleteCharButtonHtml } from './ui/char_delete_button';
 import { loadCharselectNews } from './ui/charselect_news';
 import { ChatCommandMenu } from './ui/chat_command_menu';
 import { CLASS_DETAILS, SIGNATURE_ABILITIES } from './ui/class_details_data';
-import { claudiumBalanceAddress } from './ui/claudium_view';
+import { claudiumBalanceAddress, currentWocDiscountBps } from './ui/claudium_view';
 import { ensureDeedLocalesLoaded } from './ui/deed_i18n';
 import { isDevGuiCommand } from './ui/dev_command_view';
 import { devTierByIndex, devTierDisplayName } from './ui/dev_tier';
@@ -2479,6 +2480,7 @@ async function startGame(
             balance,
             skus,
             nativeRails,
+            wocDiscountBps: null,
             walletBalances: {
               solLamports: null,
               usdcBaseUnits: null,
@@ -2524,14 +2526,17 @@ async function startGame(
               solAmountBase: nativeAmountBase('sol', row.sku, sol?.amountBase),
               usdcAmountBase: nativeAmountBase('usdc', row.sku, usdc?.amountBase),
               wocAmountBase: nativeAmountBase('woc', row.sku, woc?.amountBase),
+              wocDiscountBps: woc?.discountBps ?? null,
             };
           }),
         );
+        const wocDiscountBps = currentWocDiscountBps(nativePrices);
         return {
           available: true,
           balance,
           skus,
           nativeRails,
+          wocDiscountBps,
           walletBalances: {
             solLamports: solBalance.lamports,
             usdcBaseUnits: usdcBalance.amountBase,
@@ -3016,8 +3021,11 @@ async function startGame(
   // would skip the loading screen entirely and drop the player inside the
   // residency fog clamp while the surrounding zones stream back in: a tight
   // teal fog wall easing open over seconds that reads as "standing in water".
-  // A rift exit therefore always takes the blocking path and streams the
-  // arrival NEIGHBORHOOD before the screen lifts.
+  // A rift exit therefore always takes the blocking path, and it streams a
+  // WIDER arrival neighbourhood than an ordinary teleport: the rift band sits
+  // outside the overworld entirely, so the whole ring around the exit point
+  // may have been evicted rather than just the border the player lands next
+  // to (ARRIVAL_NEIGHBOR_STREAM_RADIUS covers that ordinary case).
   let lastWarmInRiftBand = false;
   const RIFT_EXIT_STREAM_RADIUS = 240;
   const maybeWarmCurrentZone = (): void => {
@@ -3058,23 +3066,32 @@ async function startGame(
     }
     // A teleport-sized jump (rift exit, dungeon door, hearthstone) can land
     // anywhere: keep the classic blocking loading screen instead of dropping
-    // the player into a not-yet-built void.
+    // the player into a not-yet-built void. The destination rectangle is only
+    // half of it, so the arrival NEIGHBOURHOOD streams behind the same screen
+    // on every such jump, not just a rift exit: landing near a zone border
+    // with the neighbour unprepared leaves the residency clamp holding the
+    // view at MIN_OUTDOOR_FOG_FAR long after the screen lifts.
     const resumeInput = gameInputReady;
     gameInputReady = false;
     showLoadingScreen(t('loading.world'));
     zoneWarmup = nextPaint()
       .then(() =>
         renderer.prepareZoneAt(zoneX, zoneZ, (done, total) =>
-          setLoadingProgressRange(done, total, 0, riftExit ? 55 : 94),
+          setLoadingProgressRange(done, total, 0, 55),
         ),
       )
       .then(() =>
-        riftExit
-          ? renderer.prepareZonesAround(zoneX, zoneZ, RIFT_EXIT_STREAM_RADIUS, (done, total) =>
-              setLoadingProgressRange(done, total, 55, 94),
-            )
-          : undefined,
+        renderer.prepareZonesAround(
+          zoneX,
+          zoneZ,
+          riftExit ? RIFT_EXIT_STREAM_RADIUS : ARRIVAL_NEIGHBOR_STREAM_RADIUS,
+          (done, total) => setLoadingProgressRange(done, total, 55, 94),
+        ),
       )
+      // An arrival with no overworld neighbourhood at all (a dungeon or rift
+      // interior, 99k yards off the strip) reports no progress above, so fill
+      // the band explicitly rather than letting the bar sit at 55.
+      .then(() => setLoadingProgressRange(1, 1, 55, 94))
       .then(async () => {
         setLoadingPercent(96, t('loading.enteringWorld'));
         try {
@@ -3669,7 +3686,11 @@ async function startGame(
             // their raised sanctum tiers lift the player's Y server-side. The local
             // kernel predicts a flat floor, so keep prediction off here and render
             // the authoritative interpolated Y (no vertical jitter on the stairs).
-            !isRiftPos(pe.pos.x),
+            !isRiftPos(pe.pos.x) &&
+            // A ledge climb is a server-owned scripted move the client does
+            // not re-simulate: predicting a fall through it would fight the
+            // authoritative pull-up and show the correction as a stutter.
+            pe.climbing !== true,
           moveInput: resolved.mi,
           displayFacing: netFacing ?? interpServerFacing,
           echoMs: onlineInputEchoMs,
@@ -3853,7 +3874,20 @@ async function startGame(
   });
   try {
     await renderer.prepareZoneAt(world.player.pos.x, world.player.pos.z, (done, total) =>
-      setLoadingProgressRange(done, total, 40, 88),
+      setLoadingProgressRange(done, total, 40, 70),
+    );
+    // A character logged out near a zone border (Thornpeak's south edge sits
+    // 40 yd from the Mirefen rectangle) would otherwise enter the world inside
+    // the residency clamp: fog pinned at MIN_OUTDOOR_FOG_FAR until the
+    // idle-paced background lane finishes the neighbour, which is a wall of
+    // haze for the first minute of every session. Stream the same arrival
+    // neighbourhood a teleport gets, behind the loading screen that is already
+    // up. Costs nothing when the logout spot is mid-rectangle.
+    await renderer.prepareZonesAround(
+      world.player.pos.x,
+      world.player.pos.z,
+      ARRIVAL_NEIGHBOR_STREAM_RADIUS,
+      (done, total) => setLoadingProgressRange(done, total, 70, 88),
     );
   } catch (err) {
     fatalOverlay(t('loading.rendererFailed', { error: technicalErrorMessage(err) }));

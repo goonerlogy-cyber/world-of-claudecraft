@@ -415,6 +415,91 @@ export const TARGETS = [
     },
   },
   {
+    key: 'corpse-harvest-lines',
+    label: 'Chat log: one line and one cue per corpse harvest (#2457)',
+    when: ['sim/interaction', 'professions/harvest_yields', 'ui/grant_line_view'],
+    // Corpse harvest is the sibling of the profession-grant-lines target above:
+    // it was the last flow still logging through the grant hub, so it printed a
+    // flat "You receive:" line and a generic ding PER COMPONENT. It is a
+    // separate entry rather than a variant of that one because the bring-up is
+    // completely different (a dead corpse underfoot, not four bag commands).
+    //
+    // Two forest_wolf corpses are harvested back to back: that template carries
+    // hide and fang, the two-component everyday case, so the pair shows four
+    // grant lines from two keypresses. The shared rng stream is pinned to a
+    // fixed value immediately before the harvests, so the before and after
+    // shots differ ONLY by this change; without it the tier and rarity rolls
+    // land differently in each run and the quantities would not line up.
+    variants: [{ key: 'desktop' }, { key: 'mobile', mobile: true }],
+    async capture(page, variant) {
+      await page.evaluate(() => {
+        document.querySelector('.camera-prompt-confirm')?.click();
+        document.querySelector('.tut-skip')?.click();
+        document.querySelector('.gpu-notice-dismiss')?.click();
+      });
+      const staged = await page.evaluate(() => {
+        const sim = window.__game?.sim;
+        const player = sim?.player;
+        const pid = sim?.playerId;
+        if (!sim || !player || pid === undefined) {
+          return { ok: false, reason: 'offline world is unavailable' };
+        }
+        const wolves = [...sim.entities.values()]
+          .filter((e) => e.kind === 'mob' && e.templateId === 'forest_wolf')
+          .slice(0, 2);
+        if (wolves.length < 2) return { ok: false, reason: 'fewer than two forest_wolf spawns' };
+        for (const wolf of wolves) {
+          wolf.pos.x = player.pos.x;
+          wolf.pos.y = player.pos.y;
+          wolf.pos.z = player.pos.z;
+          wolf.dead = true;
+          wolf.aiState = 'dead';
+          wolf.corpseTimer = 9999;
+          wolf.respawnTimer = 9999;
+          wolf.harvestClaimedBy = null;
+          // Harvest only: corpse LOOT is a different flow with its own lines,
+          // and leaving it on would put unrelated "You receive:" lines in the
+          // shot that look like the bug this change fixes.
+          wolf.lootable = false;
+          wolf.loot = null;
+        }
+        return { ok: true, ids: wolves.map((wolf) => wolf.id) };
+      });
+      if (!staged.ok) throw new Error(staged.reason);
+      await wait(400);
+      const harvested = await page.evaluate((ids) => {
+        const sim = window.__game?.sim;
+        const pid = sim?.playerId;
+        if (!sim || pid === undefined) return { ok: false, reason: 'world went away' };
+        // Clear first so the shot holds only these two harvests.
+        document.querySelector('#chatlog')?.replaceChildren();
+        // Pin the shared stream. `s` is TypeScript-private, which is compile
+        // time only, and both harvests run inside this one evaluate so no tick
+        // draws between them: the two commands consume the same draws in the
+        // same order on either branch.
+        sim.rng.s = 20457;
+        for (const id of ids) sim.harvestCorpse(id, undefined, pid);
+        return { ok: true };
+      }, staged.ids);
+      if (!harvested.ok) throw new Error(harvested.reason);
+      // The commands resolve on arrival but the events reach the HUD through
+      // the live 20 Hz drain, so give the loop real time.
+      await wait(1500);
+      if (variant?.mobile) {
+        // The touch layout parks the chat panel behind its own button; without
+        // this the clip target is not visible and the shot silently falls back
+        // to the whole HUD.
+        await page.evaluate(() => {
+          document
+            .getElementById('mobile-chat')
+            ?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true }));
+        });
+        await wait(700);
+      }
+      return { clip: '#chatlog-wrap' };
+    },
+  },
+  {
     key: 'world-map',
     label: 'World map / zone',
     when: [
@@ -426,6 +511,11 @@ export const TARGETS = [
       'render/terrain',
       'render/world',
     ],
+    // Desktop and mobile variants: the touch layout downscales the fixed 560px
+    // map canvas (hud.mobile.css --mobile-map-size), so every on-canvas label is
+    // resampled on the way to the screen. Label legibility therefore has to be
+    // checked on both, not just at the desktop 1:1.
+    variants: [{ key: 'desktop' }, { key: 'mobile', mobile: true }],
     // Teleport to a known landmark (offline, no dev command), open the world-map window,
     // and clip to it; fall back to the full frame if the window did not open.
     async capture(page) {
@@ -1008,7 +1098,7 @@ export const TARGETS = [
   {
     key: 'char-window',
     label: 'Character window',
-    when: ['ui/char_window', 'ui/char_view'],
+    when: ['ui/char_window', 'ui/char_view', 'ui/stat_tooltip_view'],
     // Desktop and mobile, each in two framings: the default top framing, plus
     // the gathering panel scrolled into view (it sits below the fold and is
     // per-player progression info a player reads on both form factors,
@@ -1159,7 +1249,7 @@ export const TARGETS = [
     async capture(page, variant) {
       const staged = await page.evaluate(() => {
         const sim = window.__game?.sim;
-        if (!sim || !sim.player) return { ok: false, reason: 'offline world is unavailable' };
+        if (!sim?.player) return { ok: false, reason: 'offline world is unavailable' };
         const me = sim.player.name;
         const m = (over) => ({
           id: over.id,
@@ -1280,7 +1370,7 @@ export const TARGETS = [
     async capture(page, variant) {
       const staged = await page.evaluate((rank) => {
         const sim = window.__game?.sim;
-        if (!sim || !sim.player) return { ok: false, reason: 'offline world is unavailable' };
+        if (!sim?.player) return { ok: false, reason: 'offline world is unavailable' };
         const me = sim.player.name;
         const m = (over) => ({
           id: over.id,
@@ -2143,7 +2233,7 @@ export const TARGETS = [
     // command, because offline the sim answers synchronously and the very next
     // event drain would resolve the row back out of pending; online this state
     // is what the window shows for the whole round trip.
-    async capture(page, variant) {
+    async capture(page, _variant) {
       await page.evaluate(() => {
         document.querySelector('.camera-prompt-confirm')?.click();
         document.querySelector('.tut-skip')?.click();

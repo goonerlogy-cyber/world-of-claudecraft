@@ -37,7 +37,6 @@ const MAIL_EXPIRY_SECONDS = 14 * 24 * 3600; // sim-seconds a read/plain letter l
 // sender, and the returned letter's second window before the sweep deletes it.
 export const MAIL_ATTACHMENT_EXPIRY_SECONDS = 30 * 24 * 3600;
 const MAIL_MAX_PER_RECIPIENT = 100; // stored letters per mailbox (full = refuse new)
-const MAIL_WIRE_LIMIT = 50; // most letters shipped to one client at a time
 export const MAIL_SUBJECT_MAX = 64;
 export const MAIL_BODY_MAX = 600;
 
@@ -605,9 +604,8 @@ export class PostOffice {
     // pillar, which also bounds the per-snapshot wire cost.
     if (!this.nearMailbox(e)) return null;
     const mine = this.deliveredFor(meta).sort((a, b) => b.deliverAt - a.deliverAt || b.id - a.id);
-    const wired = mine.slice(0, MAIL_WIRE_LIMIT);
     return {
-      messages: wired.map((m) => ({
+      messages: mine.map((m) => ({
         id: m.id,
         senderName: m.senderName,
         kind: m.kind,

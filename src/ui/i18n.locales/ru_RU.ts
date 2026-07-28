@@ -421,7 +421,7 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.claudium.railSol': 'SOL',
   'hudChrome.claudium.railStripe': 'Карта',
   'hudChrome.claudium.railWoc': 'WOC',
-  'hudChrome.claudium.railWocDiscount': 'Скидка 20%',
+  'hudChrome.claudium.railWocDiscount': 'Скидка {percent}%',
   'hudChrome.claudium.solBalance': 'SOL: {amount}',
   'hudChrome.claudium.wocBalance': 'WOC: {amount}',
   'hudChrome.claudium.railWocUnavailable': 'Цена WOC сейчас недоступна.',
@@ -777,6 +777,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.corpseHarvest.concentrateHint':
     'Чем меньше выбрано компонентов, тем выше их качество.',
   'hudChrome.corpseHarvest.alreadyHarvested': 'Этот труп уже был собран.',
+  'hudChrome.corpseHarvest.nothingSelectedYields':
+    'С этого трупа нельзя собрать ничего из выбранного.',
   'hudChrome.corpseHarvest.harvestTooltip':
     'Собирает отмеченные компоненты. Каждый труп можно обработать только один раз, кто успел первым. Добычу при этом не забирает.',
   'hudChrome.corpseHarvest.componentAria': 'Собрать {component}',
@@ -8269,8 +8271,9 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.mailbox.indicatorAria': 'Непрочитанных писем: {count}',
   'hudChrome.mailbox.indicatorTip':
     'У вас {count} непрочитанных писем. Загляните в почтовый ящик, чтобы прочитать их.',
-  'hudChrome.marketIndicator.aria': 'Ожидает получения на Мировом рынке',
-  'hudChrome.marketIndicator.tip': 'Золото или предметы ждут вас у Торговца.',
+  'hudChrome.marketIndicator.aria': 'Выручка или предметы с Мирового рынка ожидают',
+  'hudChrome.marketIndicator.tip':
+    'Выручка от продаж или возвращенные предметы ждут вас у Торговца.',
   'hudChrome.mailbox.clickAttach': 'Нажмите, чтобы приложить к письму.',
   'hudChrome.mailbox.cannotMail': 'Это нельзя отправить почтой.',
   'hudChrome.mailbox.result.sent': 'Ворон унёс ваше письмо для {name} (сбор {postage}).',
@@ -8414,6 +8417,9 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.gathering.notReady': 'Этот ресурсный узел еще не восстановился для вас.',
   'hudChrome.gathering.gatherLine': 'Вы добываете: {name}.',
   'hudChrome.gathering.gatherLineQty': 'Вы добываете: {name} x{qty}.',
+  'hudChrome.gathering.harvestLine': 'Вы собираете: {name}.',
+  'hudChrome.gathering.harvestLineQty': 'Вы собираете: {name} x{qty}.',
+  'hudChrome.gathering.harvestSpecimenLine': 'Вы также получаете {name}.',
   'hudChrome.gathering.catchLine': 'Вы выуживаете: {name}',
   'hudChrome.gathering.biteLine': 'Что-то клюнуло!',
   'hudChrome.gathering.gotAwayLine': 'Добыча сорвалась.',

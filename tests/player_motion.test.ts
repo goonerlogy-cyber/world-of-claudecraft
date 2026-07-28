@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isBlocked, resolveMovement } from '../src/sim/colliders';
+import { isBlocked, moverHeight, resolveMovement } from '../src/sim/colliders';
 import { BUILTIN_WORLD } from '../src/sim/data';
 import { PLAYER_BODY_RADIUS, PLAYER_MAX_CLIMB_SLOPE } from '../src/sim/pathfind';
 import { moveSpeedMult, type PlayerMotionDeps, stepPlayerMotion } from '../src/sim/player_motion';
@@ -64,8 +64,8 @@ function clientDeps(seed: number): PlayerMotionDeps {
   return {
     seed,
     moveSpeedMult: (e) => moveSpeedMult(e, 0),
-    resolveMove: (fromX, fromZ, nx, nz, r, _e, ignoreFences) =>
-      resolveMovement(seed, fromX, fromZ, nx, nz, r, ignoreFences),
+    resolveMove: (fromX, fromZ, nx, nz, r, e, ignoreFences) =>
+      resolveMovement(seed, fromX, fromZ, nx, nz, r, ignoreFences, undefined, moverHeight(e)),
     resolvedAbility: () => null,
     cancelCast: () => {},
     standUp: () => {},
@@ -318,18 +318,18 @@ describe('stepPlayerMotion wall-standoff acceptance gate', () => {
 
     // Drive the real gate via stepPlayerMotion. The player's own position is
     // steep enough here to also trigger the downhill-slide movement earlier in
-    // the same tick (a separate code path from the standoff gate under test),
-    // so the first resolveMove call (the slide) is stubbed to a no-op; the
-    // second call is the real standoff resolveMove the gate under test drives.
-    let resolveMoveCalls = 0;
+    // the same tick (a separate code path from the standoff gate under test).
+    // That slide no longer routes through this dep: the open-world horizontal
+    // step resolves inside the physics kernel (src/sim/physics/character.ts),
+    // and PlayerMotionDeps.resolveMove now serves the instanced path and the
+    // standoff pass only. So there is nothing left to stub out by call order,
+    // and the assertions below measure the standoff FROM the slid position
+    // rather than from the pin.
     const deps: PlayerMotionDeps = {
       seed: GATE_SEED,
       moveSpeedMult: (e) => moveSpeedMult(e, 0),
-      resolveMove: (fromX, fromZ, nx, nz, r, _e, ignoreFences) => {
-        resolveMoveCalls++;
-        if (resolveMoveCalls === 1) return { x: fromX, z: fromZ };
-        return resolveMovement(GATE_SEED, fromX, fromZ, nx, nz, r, ignoreFences);
-      },
+      resolveMove: (fromX, fromZ, nx, nz, r, _e, ignoreFences) =>
+        resolveMovement(GATE_SEED, fromX, fromZ, nx, nz, r, ignoreFences),
       resolvedAbility: () => null,
       cancelCast: () => {},
       standUp: () => {},
@@ -352,10 +352,21 @@ describe('stepPlayerMotion wall-standoff acceptance gate', () => {
 
     stepPlayerMotion(deps, p, mi());
 
-    // The gate committed: the player ends up exactly at the (iterated)
-    // standoff point, not frozen at the pin.
-    expect(p.pos.x).toBeCloseTo(standoff.x, 6);
-    expect(p.pos.z).toBeCloseTo(standoff.z, 6);
+    // The gate committed. Stated as three claims rather than one coordinate
+    // equality: the tick's downhill slide runs inside the physics kernel now
+    // and is allowed to move the body a little before the standoff pass sees
+    // it, so an exact-point pin would be measuring the slide, not the gate.
+    //
+    // The pin sits a full yard from the standoff point and the body radius is
+    // half that, so "within a body radius of the standoff" still fails outright
+    // if the push is discarded and the body is left wedged at the pin.
     expect(p.pos.x === PIN.x && p.pos.z === PIN.z).toBe(false);
+    expect(Math.hypot(p.pos.x - standoff.x, p.pos.z - standoff.z)).toBeLessThan(GATE_R);
+    // ...and the push really improved things, which is the acceptance rule
+    // under test: the OLD gate would have rejected this one for still being
+    // over the climb limit.
+    const steepEnd = terrainSteepnessAt(p.pos.x, p.pos.z, GATE_SEED);
+    expect(steepEnd).toBeLessThan(steepStart);
+    expect(steepEnd).toBeGreaterThan(GATE_SLOPE);
   });
 });

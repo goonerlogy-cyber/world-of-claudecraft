@@ -593,6 +593,14 @@ function blossomGeo(): { trunk: THREE.BufferGeometry; canopy: THREE.BufferGeomet
 export interface RealmFloraView {
   group: THREE.Group;
   glowLights: THREE.PointLight[];
+  /**
+   * Meshes update(time) moves via their OBJECT transform (foam rings, mist
+   * banks). The renderer freezes the whole group after attach, so it must
+   * re-enable matrixAutoUpdate on exactly these (the props.flames idiom), or
+   * the swell and drift are silently inert. The flock is absent on purpose:
+   * it animates through instanceMatrix, which the freeze never touches.
+   */
+  animated: THREE.Object3D[];
   update(time: number): void;
 }
 
@@ -1026,6 +1034,32 @@ export function buildRealmFlora(seed: number): RealmFloraView {
         new THREE.MeshBasicMaterial({ color: 0x4a3f55, side: THREE.DoubleSide }),
         FLOCK_SIZE,
       );
+      // Seed every instance on its time-zero orbit BEFORE the first update():
+      // fresh instance matrices are all-zero, which parks the bounding volume
+      // at the world origin and stretched the group's cull footprint by ~900u
+      // (374x1442 measured), keeping the whole realm's flora drawn from
+      // anywhere in the west column. The seed covers only the starting arc,
+      // not the full orbit the birds trace, so frustum culling is off for
+      // these 11 instances rather than trusting a sphere they leave.
+      flock.frustumCulled = false;
+      {
+        const sm = new THREE.Matrix4();
+        const sq = new THREE.Quaternion();
+        const sup = new THREE.Vector3(0, 1, 0);
+        const sv = new THREE.Vector3();
+        const ssc = new THREE.Vector3(1.4, 1, 1.4);
+        for (let i = 0; i < FLOCK_SIZE; i++) {
+          const ang = -i * 0.18;
+          sv.set(
+            FLOCK_CENTER.x + Math.sin(ang) * (FLOCK_CENTER.r + (i % 3) * 4),
+            FLOCK_CENTER.y,
+            FLOCK_CENTER.z + Math.cos(ang) * (FLOCK_CENTER.r + (i % 3) * 4),
+          );
+          sq.setFromAxisAngle(sup, ang + Math.PI / 2);
+          flock.setMatrixAt(i, sm.compose(sv, sq, ssc));
+        }
+        flock.instanceMatrix.needsUpdate = true;
+      }
       group.add(flock);
     }
   }
@@ -1070,6 +1104,7 @@ export function buildRealmFlora(seed: number): RealmFloraView {
   return {
     group,
     glowLights,
+    animated: [...seaFoam.map((f) => f.mesh), ...seaDrift.map((b) => b.mesh)],
     update(time: number): void {
       // one gentle shared breath across the glowing materials
       const breathe = 1 + Math.sin(time * 0.9) * 0.16;
