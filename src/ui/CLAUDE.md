@@ -51,6 +51,14 @@ mobile portrait *and* landscape before calling UI work done.
     `Hud` drives through `windowFocus(rootSel)`. The trap intercepts Tab ONLY when focus is
     already inside (Tab is the game's target-nearest key; an unconditional trap would hijack
     it). Esc stays with the single `closeAll` dispatcher, not the manager.
+  - **Focus across a REBUILD is the other half, and a different module:** a painter that wipes
+    its own subtree carries the focused control's identity across with `captureFocusKey` /
+    `restoreFirstEnabled` (`src/ui/focus_restore.ts`), never a hand-rolled `activeElement`
+    read. The helper owns the narrowing, the containment check (the `data-focus-key` namespace
+    is shared across windows, so an unguarded read steals focus from another one) and the
+    disabled skip; the caller owns only its own degradation ladder. A guard in
+    `tests/focus_restore.test.ts` refuses any `src/ui` module that touches the attribute
+    without importing it.
   - **Visible focus that never animates away:** every outline-based `:focus-visible` ring is
     steady and drawn from a token / system color, never a raw hex, never transitioned off.
   - **Skip links** ("Skip to Main HUD" / "Skip to Chat") are the first focusable elements;
