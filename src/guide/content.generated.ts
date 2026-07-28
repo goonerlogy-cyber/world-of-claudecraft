@@ -8911,8 +8911,8 @@ export const GUIDE_MODELS: Record<string, GuideModelSpec> = {
     "tintStrength": 0.35
   },
   "form_travel": {
-    "url": "models/creatures/chicken_cow.glb",
-    "idle": "Idle",
+    "url": "models/creatures/dragonevolved.glb",
+    "idle": "Flying_Idle",
     "height": 2.3
   },
   "mob_demon": {
