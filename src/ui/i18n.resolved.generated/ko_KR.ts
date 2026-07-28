@@ -344,6 +344,7 @@ export const ko_KR: EnTranslations = {
       "countdown": "갇힘 탈출: {seconds}",
       "completed": "도달할 수 있는 가장 가까운 안전한 위치로 이동했습니다.",
       "completedAtGraveyard": "영혼이 가장 가까운 묘지로 돌아왔습니다. 영혼 치유사에게 말을 걸어 수호자의 대가를 받으세요.",
+      "revivedAtGraveyard": "가장 가까운 묘지로 옮겨져 부활했습니다. 수호자의 대가가 당신을 짓누릅니다.",
       "cancelledMoved": "이동해서 갇힘 탈출이 취소되었습니다.",
       "cancelledDamaged": "피해를 받아 갇힘 탈출이 취소되었습니다.",
       "cancelledCombat": "전투에 진입해 갇힘 탈출이 취소되었습니다.",

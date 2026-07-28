@@ -9295,6 +9295,8 @@ export const ru_RU: Partial<Record<TranslationKey, string>> = {
   'hudChrome.unstuck.completed': 'Вы перемещены в ближайшее доступное безопасное место.',
   'hudChrome.unstuck.completedAtGraveyard':
     'Ваш дух вернулся на ближайшее кладбище. Поговорите с Целителем душ и примите Подать Хранителя.',
+  'hudChrome.unstuck.revivedAtGraveyard':
+    'Вас вернули на ближайшее кладбище и воскресили. Подать Хранителя тяготит вас.',
   'hudChrome.unstuck.cancelledMoved': 'Перемещение отменено, потому что вы сдвинулись с места.',
   'hudChrome.unstuck.cancelledDamaged': 'Перемещение отменено, потому что вы получили урон.',
   'hudChrome.unstuck.cancelledCombat': 'Перемещение отменено, потому что вы вступили в бой.',

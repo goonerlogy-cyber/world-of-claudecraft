@@ -9139,6 +9139,8 @@ export const ja_JP: Partial<Record<TranslationKey, string>> = {
   'hudChrome.unstuck.completed': '到達可能な最寄りの安全な場所へ移動しました。',
   'hudChrome.unstuck.completedAtGraveyard':
     '魂は最寄りの墓地へ戻りました。霊魂の癒し手に話しかけ、番人の代償を受けてください。',
+  'hudChrome.unstuck.revivedAtGraveyard':
+    '最寄りの墓地へ戻され、蘇生しました。番人の代償があなたにのしかかっています。',
   'hudChrome.unstuck.cancelledMoved': '移動したため、スタック解除をキャンセルしました。',
   'hudChrome.unstuck.cancelledDamaged': 'ダメージを受けたため、スタック解除をキャンセルしました。',
   'hudChrome.unstuck.cancelledCombat': '戦闘に入ったため、スタック解除をキャンセルしました。',

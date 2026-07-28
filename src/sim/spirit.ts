@@ -159,6 +159,24 @@ export function releasePlayerSpiritForUnstuck(ctx: SimContext, pid?: number): vo
   releaseAtNearestGraveyard(ctx, r.meta, r.e, false);
 }
 
+/**
+ * Finish Unstuck for a player who was ALREADY dead when they invoked it. The
+ * graveyard/Pale Keeper loop has nothing left to offer a body that cannot reach
+ * its corpse or an angel, so pull them to the graveyard and resurrect them there
+ * on exactly the Spirit Healer's terms: RES_HEALER_HP_FRACTION of their pools
+ * plus The Keeper's Toll. Unstuck only saves them the walk, never the toll, so it
+ * can never be the cheap way out of a death.
+ */
+export function reviveAtGraveyardForUnstuck(ctx: SimContext, pid?: number): void {
+  const r = ctx.resolve(pid);
+  if (!r?.e.dead) return;
+  const { meta, e: p } = r;
+  // Resolve the graveyard before the revive moves the body out of its instance band.
+  const gy = ghostGraveyard(ctx, p);
+  reviveAt(ctx, meta, p, { x: gy.x, y: p.pos.y, z: gy.z }, RES_HEALER_HP_FRACTION, true);
+  ctx.emit({ type: 'respawn', pid: meta.entityId });
+}
+
 function releaseAtNearestGraveyard(
   ctx: SimContext,
   meta: PlayerMeta,

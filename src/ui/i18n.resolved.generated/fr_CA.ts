@@ -344,6 +344,7 @@ export const fr_CA: EnTranslations = {
       "countdown": "Unstuck: {seconds}",
       "completed": "Moved to the nearest reachable safe spot.",
       "completedAtGraveyard": "Your spirit has returned to the nearest graveyard. Speak to the Pale Keeper to accept The Keeper's Toll.",
+      "revivedAtGraveyard": "You have been returned to the nearest graveyard and revived. The Keeper's Toll weighs on you.",
       "cancelledMoved": "Unstuck cancelled because you moved.",
       "cancelledDamaged": "Unstuck cancelled because you took damage.",
       "cancelledCombat": "Unstuck cancelled because you entered combat.",

@@ -7704,6 +7704,7 @@ export type TranslationKeyFlat =
   | 'hudChrome.unstuck.helpAtGraveyard'
   | 'hudChrome.unstuck.menuButton'
   | 'hudChrome.unstuck.noSafePosition'
+  | 'hudChrome.unstuck.revivedAtGraveyard'
   | 'hudChrome.unstuck.standStill'
   | 'hudChrome.unstuck.standStillAnywhere'
   | 'hudChrome.unstuck.started'

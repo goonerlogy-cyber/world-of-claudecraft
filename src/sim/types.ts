@@ -3749,7 +3749,10 @@ export type UnstuckEvent =
   | {
       type: 'unstuck';
       phase: 'completed';
-      reason: 'nearest_safe_position' | 'nearest_graveyard';
+      // 'nearest_graveyard': a living player died and rose as a ghost there.
+      // 'revived_at_graveyard': an already dead or released player was pulled to
+      // the graveyard and resurrected under The Keeper's Toll instead.
+      reason: 'nearest_safe_position' | 'nearest_graveyard' | 'revived_at_graveyard';
       area: UnstuckArea;
       origin: UnstuckPosition;
       destination: UnstuckPosition;

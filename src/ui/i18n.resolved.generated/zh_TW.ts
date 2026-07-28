@@ -344,6 +344,7 @@ export const zh_TW: EnTranslations = {
       "countdown": "脫困：{seconds}",
       "completed": "已移動到最近且可到達的安全位置。",
       "completedAtGraveyard": "你的靈魂已返回最近的墓地。與靈魂醫者交談並接受守護者的代價。",
+      "revivedAtGraveyard": "你已被送回最近的墓地並復活。守護者的代價正壓在你身上。",
       "cancelledMoved": "你進行了移動，脫困已取消。",
       "cancelledDamaged": "你受到了傷害，脫困已取消。",
       "cancelledCombat": "你進入了戰鬥，脫困已取消。",

@@ -344,6 +344,7 @@ export const ja_JP: EnTranslations = {
       "countdown": "スタック解除：{seconds}",
       "completed": "到達可能な最寄りの安全な場所へ移動しました。",
       "completedAtGraveyard": "魂は最寄りの墓地へ戻りました。霊魂の癒し手に話しかけ、番人の代償を受けてください。",
+      "revivedAtGraveyard": "最寄りの墓地へ戻され、蘇生しました。番人の代償があなたにのしかかっています。",
       "cancelledMoved": "移動したため、スタック解除をキャンセルしました。",
       "cancelledDamaged": "ダメージを受けたため、スタック解除をキャンセルしました。",
       "cancelledCombat": "戦闘に入ったため、スタック解除をキャンセルしました。",

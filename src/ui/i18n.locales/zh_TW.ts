@@ -8726,6 +8726,7 @@ export const zh_TW: Partial<Record<TranslationKey, string>> = {
   'hudChrome.unstuck.completed': '已移動到最近且可到達的安全位置。',
   'hudChrome.unstuck.completedAtGraveyard':
     '你的靈魂已返回最近的墓地。與靈魂醫者交談並接受守護者的代價。',
+  'hudChrome.unstuck.revivedAtGraveyard': '你已被送回最近的墓地並復活。守護者的代價正壓在你身上。',
   'hudChrome.unstuck.cancelledMoved': '你進行了移動，脫困已取消。',
   'hudChrome.unstuck.cancelledDamaged': '你受到了傷害，脫困已取消。',
   'hudChrome.unstuck.cancelledCombat': '你進入了戰鬥，脫困已取消。',

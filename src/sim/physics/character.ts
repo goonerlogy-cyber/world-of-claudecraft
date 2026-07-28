@@ -472,8 +472,7 @@ export function moveCharacter(
           // step's own slope AND the gradient of the ground it lands on.
           const contourOk =
             (contourRise <= 0 || contourRise / contourRun <= params.maxSlope) &&
-            (contourRaw < contourWls ||
-              rideSteepnessAt(cx, cz, params.seed) <= params.maxSlope);
+            (contourRaw < contourWls || rideSteepnessAt(cx, cz, params.seed) <= params.maxSlope);
           if (contourOk && isClear(cx, cz, feetY, params)) {
             px = cx;
             pz = cz;
