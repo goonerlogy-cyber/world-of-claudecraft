@@ -4344,8 +4344,11 @@ function cardDuel(): Scenario {
 // masterwork chance and the proc fires inside the recorded run; only the found
 // literal is pinned here. Re-hunted after the new-realm quest pass shifted the
 // construction-time draw stream (quest camps + escort NPC spawns across the new
-// realms). Spare seeds 7 and 11 were also verified to fire the proc for this drive.
-function professionsCraft(seed = 1): Scenario {
+// realms), and again after the Eastbrook camp respacing thinned the zone-1 camp
+// counts (fewer camp mobs means fewer construction-time draws, which moves every
+// later draw). Spare seeds 36 and 39 were also verified to fire the proc for this
+// drive.
+function professionsCraft(seed = 10): Scenario {
   return {
     name: 'professions_craft',
     coverage: [

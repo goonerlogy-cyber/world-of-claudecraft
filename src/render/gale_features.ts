@@ -2,7 +2,8 @@
 // head (a body of stacked crenellated KayKit tower drums under the blue
 // cap, with a slowly turning light, the realm's landmark from anywhere on
 // the downs, plus the grey stone stair the sim's beaconSpiralLift makes
-// walkable, hugging the column up to the C balcony), the stilt piers and
+// walkable, hugging the column up to the C balcony, on the masonry plinth
+// that fills the volume the same lift field walls off), the stilt piers and
 // boardwalk of Wickharbor's harbor (drawn from the SAME sim/gale_harbor.ts
 // decks the player walks, with steep ramps drawn as stepped stairs), and
 // the ribs of old hulls half-buried on the Wreckfields. Same contract as the sibling
@@ -116,8 +117,10 @@ export function buildGaleFeatures(seed: number): GaleFeaturesView {
     {
       const s = BEACON_SPIRAL;
       const stone = mat(0x8f959c, 0.95);
+      const baseStone = mat(0x7c828a, 0.95); // a shade darker so the treads read on it
       const iron = mat(0x4b4f56, 0.8);
       const slabs: THREE.BufferGeometry[] = [];
+      const piers: THREE.BufferGeometry[] = [];
       const rails: THREE.BufferGeometry[] = [];
       const deckAt = (x: number, z: number): number =>
         terrainHeight(x, z, seed) + beaconSpiralLift(x, z);
@@ -127,6 +130,29 @@ export function buildGaleFeatures(seed: number): GaleFeaturesView {
         g.rotateY(yaw);
         g.translate(x, h - 0.18, z);
         slabs.push(g.toNonIndexed());
+      };
+      // The masonry the climb rides on. beaconSpiralLift is a single-valued
+      // heightfield, so the ground under an elevated tread IS that tread's
+      // height: the whole column of air below a balcony is walled off by the
+      // climb gate. Left undrawn it is an invisible wall (a player on the lawn
+      // beside the tower is stopped by the upper balcony's rim 19yd overhead).
+      // Fill that volume with stone, lawn up into the tread above, so the
+      // blocked mass reads as the tower's plinth. Purely additive geometry:
+      // nothing walkable changes, and it is built unconditionally because this
+      // is the SHAPE OF THE COLLISION, never a graphics tier's richness.
+      const pier = (a: number, outR: number, w: number): void => {
+        const innerR = s.coreR - 0.4; // bite into the column face, never a hairline gap
+        const midR = (innerR + outR) / 2;
+        const x = s.x + Math.sin(a) * midR;
+        const z = s.z + Math.cos(a) * midR;
+        const top = deckAt(x, z) - 0.3; // up INTO the tread, so no faces are coplanar
+        const bot = terrainHeight(x, z, seed) - 0.6; // sunk under the lawn
+        const height = top - bot;
+        if (height < 0.5) return; // the stair foot: the treads already meet the lawn
+        const g = new THREE.BoxGeometry(w, height, outR - innerR);
+        g.rotateY(a);
+        g.translate(x, bot + height / 2, z);
+        piers.push(g.toNonIndexed());
       };
       // whether an unwrapped angle sits on a balcony (wide band) or a flight
       const onBalcony = (a: number): boolean =>
@@ -141,13 +167,9 @@ export function buildGaleFeatures(seed: number): GaleFeaturesView {
         const outR = balc ? s.balconyOut : s.stairOut;
         const midR = (s.coreR + outR) / 2;
         const a = s.a0 + rel;
-        slab(
-          s.x + Math.sin(a) * midR,
-          s.z + Math.cos(a) * midR,
-          balc ? 0.95 : 0.62,
-          outR - s.coreR,
-          a,
-        );
+        const w = balc ? 0.95 : 0.62;
+        slab(s.x + Math.sin(a) * midR, s.z + Math.cos(a) * midR, w, outR - s.coreR, a);
+        pier(a, outR, w);
       }
       // the handrail: posts along the outer edge, and a continuous helical
       // double rail sampled finely so it runs DIAGONALLY up the flights and
@@ -202,6 +224,7 @@ export function buildGaleFeatures(seed: number): GaleFeaturesView {
           );
         }
       }
+      group.add(mergeBoxes(piers, baseStone));
       group.add(mergeBoxes(slabs, stone));
       group.add(mergeBoxes(rails, iron));
     }

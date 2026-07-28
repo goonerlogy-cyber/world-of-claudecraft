@@ -20,23 +20,21 @@ export const ZONE_STREAM_URLS: Record<MusicZone, string | null> = {
   vale_legacy: '/audio/music/vale.mp3',
   marsh: '/audio/music/marsh.mp3',
   peaks: '/audio/music/peaks.mp3',
-  // STAND-INS (same precedent as vale_legacy): the nineteen new-environment
-  // cues below are composed and registered in buildMusicThemes(), but their
-  // remastered renders have not landed yet. Until each one is rendered and
-  // remastered to public/audio/music/<zone>.mp3, it streams the
-  // nearest-mood existing render so the zone is never silent. Replace each
-  // URL with its dedicated file as the remasters land.
+  // STAND-INS (same precedent as vale_legacy): Veiled Hollow, Drakelands, and
+  // Wraithwood do not have supplied remasters yet, so they stream the nearest
+  // existing render instead of falling silent. Replace these three URLs when
+  // their dedicated public/audio/music/<zone>.mp3 files land.
   dusk: '/audio/music/marsh.mp3',
   ember: '/audio/music/peaks.mp3',
-  frost: '/audio/music/peaks.mp3',
-  amber: '/audio/music/vale.mp3',
-  fen: '/audio/music/marsh.mp3',
-  night: '/audio/music/marsh.mp3',
+  frost: '/audio/music/frost.mp3',
+  amber: '/audio/music/amber.mp3',
+  fen: '/audio/music/fen.mp3',
+  night: '/audio/music/night.mp3',
   haunt: '/audio/music/marsh.mp3',
-  jungle: '/audio/music/vale.mp3',
-  garden: '/audio/music/vale.mp3',
-  gale: '/audio/music/peaks.mp3',
-  farshore: '/audio/music/vale.mp3',
+  jungle: '/audio/music/jungle.mp3',
+  garden: '/audio/music/garden.mp3',
+  gale: '/audio/music/gale.mp3',
+  farshore: '/audio/music/farshore.mp3',
   vale_cup: null,
   dungeon_hollow_crypt: '/audio/music/dungeon_hollow_crypt.mp3',
   dungeon_sunken_bastion: '/audio/music/dungeon_sunken_bastion.mp3',

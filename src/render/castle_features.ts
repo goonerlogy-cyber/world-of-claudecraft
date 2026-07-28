@@ -160,6 +160,10 @@ export function buildCastleFeatures(): CastleFeaturesView {
 
   // stone slab helper: the visible floor caps and stair masses
   const slabMat = surfaceMat({ color: 0x8a7568, roughness: 0.95 });
+  // the solid wedge masses (the wall flights and the ward's stair cuts) are
+  // hand-wound triangle soups, so they draw both faces
+  const wedgeMat = surfaceMat({ color: 0x8a7568, roughness: 0.95 });
+  wedgeMat.side = THREE.DoubleSide;
   const capMat = surfaceMat({ color: 0x97826f, roughness: 0.9 });
   const slab = (
     cx: number,
@@ -334,16 +338,44 @@ export function buildCastleFeatures(): CastleFeaturesView {
     }
   }
 
-  // ---- the ward: a foundation-block retaining edge with two stone stair
-  // cuts, so the keep terrace reads as built masonry, not a dirt shelf ----
+  // ---- the ward: a SOLID PLINTH from the bailey floor to the terrace, faced
+  // with foundation blocks and cut by two stone stairs, so the keep terrace
+  // reads as built masonry, not a dirt shelf ----
+  //
+  // The plinth is load-bearing, not dressing. The terrain mesh deliberately
+  // leaves the terrace out (render/terrain_mesh_height.ts: its 0.7yd retaining
+  // blend is far narrower than the vertex lattice, so a meshed terrace smeared
+  // its faces out over the bailey and buried anyone walking along them). This
+  // mass IS the terrace the player stands on, exactly like the wall-walk cap
+  // slabs are the walk: its top sits at the ward height groundHeight reports.
   {
     const w = CASTLE.ward;
     const rise = w.h - padY;
     const fScale = rise / 2; // foundation piece is 2 units tall
-    const edges: { x0: number; z0: number; x1: number; z1: number }[] = [
-      { x0: w.x0, z0: w.z0, x1: w.x0, z1: w.z1 }, // west edge
-      { x0: w.x0, z0: w.z1, x1: w.x1, z1: w.z1 }, // south edge (stair cuts)
-      { x0: w.x1, z0: w.z0, x1: w.x1, z1: w.z1 }, // east edge
+    /** kcas_foundation is 2.2 units square in plan */
+    const fHalf = (2.2 * fScale) / 2;
+    // the terrace mass. Sunk below the flat mesh at its foot so the two never
+    // z-fight, and pulled a hair inside the rect so the block facing wins.
+    {
+      const inset = 0.05;
+      const mesh = new THREE.Mesh(
+        new THREE.BoxGeometry(w.x1 - w.x0 - inset * 2, rise + 0.4, w.z1 - w.z0 - inset * 2),
+        slabMat,
+      );
+      mesh.position.set((w.x0 + w.x1) / 2, w.h - (rise + 0.4) / 2, (w.z0 + w.z1) / 2);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      group.add(mesh);
+    }
+    // The retaining facing, on all four sides. Each block is offset INWARD by
+    // its own half depth so its outer face lands on the rect line: the sim's
+    // cliff. Straddling the line (the old placement) put 1.4yd of stonework
+    // over bailey floor the player walks on, and they walked into it.
+    const edges: { x0: number; z0: number; x1: number; z1: number; cuts?: boolean }[] = [
+      { x0: w.x0 + fHalf, z0: w.z0, x1: w.x0 + fHalf, z1: w.z1 }, // west edge
+      { x0: w.x1 - fHalf, z0: w.z0, x1: w.x1 - fHalf, z1: w.z1 }, // east edge
+      { x0: w.x0, z0: w.z0 + fHalf, x1: w.x1, z1: w.z0 + fHalf }, // north edge
+      { x0: w.x0, z0: w.z1 - fHalf, x1: w.x1, z1: w.z1 - fHalf, cuts: true }, // south
     ];
     const stepGap = (v: number): boolean =>
       WARD_STEPS.some((cut) => v > cut.x0 - 1.4 && v < cut.x1 + 1.4);
@@ -354,7 +386,7 @@ export function buildCastleFeatures(): CastleFeaturesView {
         const t = i / n;
         const x = e.x0 + (e.x1 - e.x0) * t;
         const z = e.z0 + (e.z1 - e.z0) * t;
-        if (e.z0 === e.z1 && stepGap(x)) continue; // part at the stair cuts
+        if (e.cuts && stepGap(x)) continue; // part at the stair cuts
         put('kcasFoundation', {
           x,
           y: padY,
@@ -364,7 +396,9 @@ export function buildCastleFeatures(): CastleFeaturesView {
         });
       }
     }
-    // the stair cuts: wide stone steps down from the terrace
+    // the stair cuts: wide stone steps down from the terrace, over a solid
+    // wedge whose TOP is the ramp surface castlePadTarget authors (the mesh
+    // leaves the cuts out with the rest of the ward, so this carries them)
     for (const cut of WARD_STEPS) {
       const cx = (cut.x0 + cut.x1) / 2;
       put('kcasStairsWide', {
@@ -374,20 +408,48 @@ export function buildCastleFeatures(): CastleFeaturesView {
         rot: Math.PI,
         s: 0.62,
       });
-      // sloped mass under the walk surface so the cut reads solid
-      const mesh = new THREE.Mesh(
-        new THREE.BoxGeometry(cut.x1 - cut.x0, 1.0, WARD_STEP_RUN + 0.8),
-        slabMat,
-      );
-      mesh.position.set(cx, padY + rise / 2 - 0.2, w.z1 + WARD_STEP_RUN / 2);
-      mesh.rotation.x = Math.atan2(rise, WARD_STEP_RUN);
+      const z0 = w.z1;
+      const z1 = w.z1 + WARD_STEP_RUN;
+      const base = padY - 0.4;
+      const v: number[] = [];
+      const quad = (
+        p0: [number, number, number],
+        p1: [number, number, number],
+        p2: [number, number, number],
+        p3: [number, number, number],
+      ): void => {
+        v.push(...p0, ...p1, ...p2, ...p0, ...p2, ...p3);
+      };
+      // top (the ramp: w.h at the terrace edge down to padY at the run's end)
+      quad([cut.x0, w.h, z0], [cut.x1, w.h, z0], [cut.x1, padY, z1], [cut.x0, padY, z1]);
+      for (const [sx, dir] of [
+        [cut.x0, -1],
+        [cut.x1, 1],
+      ] as const) {
+        const side: [number, number, number][] = [
+          [sx, w.h, z0],
+          [sx, base, z0],
+          [sx, base, z1],
+          [sx, padY, z1],
+        ];
+        if (dir < 0) quad(side[0], side[1], side[2], side[3]);
+        else quad(side[3], side[2], side[1], side[0]);
+      }
+      quad([cut.x0, w.h, z0], [cut.x0, base, z0], [cut.x1, base, z0], [cut.x1, w.h, z0]);
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(v), 3));
+      geo.computeVertexNormals();
+      const mesh = new THREE.Mesh(geo, wedgeMat);
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       group.add(mesh);
     }
-    // terrace floor trim: large tiles along the ward's south rim
+    // terrace paving: the same large tiles the bailey court is laid with, so
+    // the plinth top reads as the keep's paved yard rather than bare stone
     for (let x = w.x0 + 3.5; x < w.x1 - 1; x += M) {
-      put('kcasFloorLarge', { x, y: w.h + 0.02, z: w.z1 - 3, rot: 0 });
+      for (let z = w.z0 + 3.5; z < w.z1 - 1; z += M) {
+        put('kcasFloorLarge', { x, y: w.h + 0.02, z, rot: 0 });
+      }
     }
   }
 
@@ -563,8 +625,6 @@ export function buildCastleFeatures(): CastleFeaturesView {
   // ---- the stair flights: SOLID wedge piers from their footing to the
   // sloped surface (the lift terrain is invisible, so the mass itself must
   // read as built masonry), with a stone tread at each bailey foot ----
-  const wedgeMat = slabMat.clone();
-  wedgeMat.side = THREE.DoubleSide;
   for (const rmp of CASTLE_RAMPS) {
     const baseY = rmp.h0 <= padY + 0.1 || rmp.h1 <= padY + 0.1 ? padY - 0.4 : CASTLE.walkAbs - 0.6;
     // 8 corners: along the run a0 -> a1, surface h0 -> h1, flat base

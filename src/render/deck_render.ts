@@ -3,6 +3,8 @@
 // post geometry: level runs as long plank courses on stilts, steep
 // two-anchor ramps as stepped stair treads, handrails on the stairs (and,
 // when railAll is set, along every deck edge: the bridge-and-pier look).
+// Rails stop short where two decks of the batch join (deckRailRuns), so a
+// walkway the decks share never ends up fenced off across its mouth.
 // Callers merge the returned arrays with their own materials, so the
 // harbor and the jungle walkways each keep their own wood tones. Extracted
 // from render/gale_features.ts when the Palmreach walkways became the
@@ -34,6 +36,70 @@ export function beamBetween(
 export interface DeckWood {
   planks: THREE.BufferGeometry[];
   posts: THREE.BufferGeometry[];
+}
+
+/** One rail post position along a deck edge (`along` re-samples its height). */
+export interface DeckRailPoint {
+  x: number;
+  z: number;
+  along: number;
+}
+
+/**
+ * A rail point this close to another deck's walkable rectangle counts as
+ * standing in the junction. Decks that join share an anchor and overlap only
+ * roughly, so the neighbour's rail can sit a little OUTSIDE the rectangle and
+ * still fence its mouth (at the Palmreach lagoon T the boardwalk's far-side
+ * rail misses the pier rect by 0.38).
+ */
+const RAIL_JUNCTION_MARGIN = 0.55;
+
+/** Point inside a deck's walkable rectangle (rotated rect), grown by `margin`. */
+function deckContains(deck: GaleDeckDef, x: number, z: number, margin: number): boolean {
+  const dx = x - deck.x;
+  const dz = z - deck.z;
+  const dirx = Math.sin(deck.rot);
+  const dirz = Math.cos(deck.rot);
+  const along = dx * dirx + dz * dirz;
+  const across = dx * dirz - dz * dirx;
+  return Math.abs(along) <= deck.hl + margin && Math.abs(across) <= deck.hw + margin;
+}
+
+/**
+ * The rail post positions along one edge of `deck`, split into runs.
+ *
+ * Decks meet flush by design (a pier off a boardwalk, a stair into the deck it
+ * climbs to), so an edge run laid over the deck's whole length walls off the
+ * walkway they share. A point standing on ANOTHER deck of the same batch is
+ * dropped and ENDS its run, so the rail bars stop at the junction instead of
+ * stretching across the gap. Pure and cheap: batches are a handful of decks.
+ */
+export function deckRailRuns(
+  deck: GaleDeckDef,
+  side: number,
+  batch: readonly GaleDeckDef[],
+): DeckRailPoint[][] {
+  const dirx = Math.sin(deck.rot);
+  const dirz = Math.cos(deck.rot);
+  const pxu = dirz; // unit across (perp) axis
+  const pzu = -dirx;
+  const runs: DeckRailPoint[][] = [];
+  let run: DeckRailPoint[] = [];
+  for (let along = -deck.hl + 0.4; along <= deck.hl - 0.2; along += 1.4) {
+    const x = deck.x + dirx * along + pxu * (deck.hw - 0.12) * side;
+    const z = deck.z + dirz * along + pzu * (deck.hw - 0.12) * side;
+    const junction = batch.some(
+      (other) => other !== deck && deckContains(other, x, z, RAIL_JUNCTION_MARGIN),
+    );
+    if (junction) {
+      if (run.length > 0) runs.push(run);
+      run = [];
+      continue;
+    }
+    run.push({ x, z, along });
+  }
+  if (run.length > 0) runs.push(run);
+  return runs;
 }
 
 export function buildDeckWood(
@@ -84,27 +150,27 @@ export function buildDeckWood(
         g.translate(px, (top + bed - 0.4) / 2 + 0.2, pz);
         posts.push(g.toNonIndexed());
       }
-      // stairs always get a handrail; railAll rails the level runs too
+      // stairs always get a handrail; railAll rails the level runs too. Runs
+      // break where another deck of the batch joins, so no rail fences off a
+      // shared walkway (the lagoon T, the pool stair, the harbor stair feet).
       if (stair || opts.railAll) {
-        const railPts: THREE.Vector3[] = [];
-        for (let along = -d.hl + 0.4; along <= d.hl - 0.2; along += 1.4) {
-          const px = d.x + dirx * along + pxu * (d.hw - 0.12) * side;
-          const pz = d.z + dirz * along + pzu * (d.hw - 0.12) * side;
-          const y = yAt(along);
-          railPts.push(new THREE.Vector3(px, y, pz));
-          const g = new THREE.BoxGeometry(0.14, 1.06, 0.14);
-          g.translate(px, y + 0.5, pz);
-          posts.push(g.toNonIndexed());
-        }
-        for (let i = 0; i + 1 < railPts.length; i++) {
-          for (const lift of [0.98, 0.54]) {
-            beamBetween(
-              posts,
-              new THREE.Vector3(railPts[i].x, railPts[i].y + lift, railPts[i].z),
-              new THREE.Vector3(railPts[i + 1].x, railPts[i + 1].y + lift, railPts[i + 1].z),
-              0.08,
-              0.1,
-            );
+        for (const run of deckRailRuns(d, side, decks)) {
+          const railPts = run.map((p) => new THREE.Vector3(p.x, yAt(p.along), p.z));
+          for (const pt of railPts) {
+            const g = new THREE.BoxGeometry(0.14, 1.06, 0.14);
+            g.translate(pt.x, pt.y + 0.5, pt.z);
+            posts.push(g.toNonIndexed());
+          }
+          for (let i = 0; i + 1 < railPts.length; i++) {
+            for (const lift of [0.98, 0.54]) {
+              beamBetween(
+                posts,
+                new THREE.Vector3(railPts[i].x, railPts[i].y + lift, railPts[i].z),
+                new THREE.Vector3(railPts[i + 1].x, railPts[i + 1].y + lift, railPts[i + 1].z),
+                0.08,
+                0.1,
+              );
+            }
           }
         }
       }

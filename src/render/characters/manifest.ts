@@ -989,7 +989,10 @@ export const VISUALS: Record<string, VisualDef> = {
   mob_stag: {
     url: `${CREATURES}/stag.glb`,
     height: 1.9,
-    clips: animal(['Attack_Headbutt', 'Attack']),
+    // Attack_Kick, not 'Attack': the rig ships no clip by that name, so every
+    // second swing in the rotation resolved to nothing and played no animation
+    // at all (the repainted siblings below always had it right).
+    clips: animal(['Attack_Headbutt', 'Attack_Kick']),
     tint: 'entity',
     tintStrength: 0.35,
   },

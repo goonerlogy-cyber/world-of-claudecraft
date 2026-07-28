@@ -33,7 +33,7 @@ import {
   emberLinkDistanceNorm,
   emberNearestOnLink,
 } from './ember_lava_layout';
-import { galeDeckSurface } from './gale_harbor';
+import { GALE_DECK_FREEBOARD, galeDeckSurface } from './gale_harbor';
 import { reachDeckClear, reachDeckSurface } from './reach_decks';
 import { fbm2, hash2, noise2 } from './rng';
 import type { BiomeId, HeightStamp, WorldContent, ZoneDef } from './types';
@@ -2121,6 +2121,66 @@ function applyEastConeBreach(x: number, z: number, h: number): number {
   return h + (ramp - h) * wedge;
 }
 
+// The Glacier Tarn's shore ramp: the one authored way in and out of the tarn
+// bowl on foot. The tarn is the merged carve of two declared lakes (the tarn
+// and its northern finger, src/sim/content/frostveil.ts), and the frost
+// benches terrace the rim 10 to 25yd above the pond, so a player who jumped
+// in was stranded on the sandy floor with the Rime Elementals' beach camp for
+// company (the player report, world (42, 1642)). The tarn's WEST flank is the
+// shallowest and is already the designed approach: the Icemantle road comes
+// down to the "Glacier Tarn shore" waypoint at (42, 1626) and runs north past
+// the rim, so the terracing is suppressed there and the natural flank was
+// already close to walkable. It failed on a two-yard band at the waterline,
+// where the carve's organic shore wobble spiked the gradient past the climb
+// gate. This grades that flank into one straight slipway from the tarn's
+// shallows up onto the road bench: the target height is linear along the
+// segment (a constant rise/run well under the gate), it starts BELOW the
+// waterline so a swimmer meets it, and it cuts at most about 1.7yd into the
+// shoulder, so the terraced bowl keeps its shape and the elemental camp on
+// the far shore is untouched.
+//
+// It runs LAST, after applyLakeShoreGrading, so the heights below are the
+// FINISHED ones a player stands on (the shore grading rescales the waterline
+// band and drops everything above it by about 1.4yd, so a ramp authored
+// upstream of it would land well below the bench it is supposed to meet).
+// tests/frostveil_pit_escape.test.ts walks a real player out of the reported
+// stranding spot and back down again.
+export const GLACIER_TARN_RAMP = {
+  ax: 48.5, // the foot, out in the tarn's shallows...
+  az: 1640.5,
+  ah: -7, // ...below the waterline, on the natural bed height
+  bx: 34, // the top, on the road bench above the rim...
+  bz: 1640,
+  bh: 3, // ...at the bench's own height, so the tie-in has no seam
+  wIn: 3, // the walkable channel's half-width...
+  wOut: 8.5, // ...easing back to the untouched flank here
+} as const;
+// The capsule's bounding box, derived so it can never drift from the record:
+// this applier is on the hot path for EVERY height sample in the world.
+const TARN_RAMP_BOUNDS = {
+  x0: Math.min(GLACIER_TARN_RAMP.ax, GLACIER_TARN_RAMP.bx) - GLACIER_TARN_RAMP.wOut,
+  x1: Math.max(GLACIER_TARN_RAMP.ax, GLACIER_TARN_RAMP.bx) + GLACIER_TARN_RAMP.wOut,
+  z0: Math.min(GLACIER_TARN_RAMP.az, GLACIER_TARN_RAMP.bz) - GLACIER_TARN_RAMP.wOut,
+  z1: Math.max(GLACIER_TARN_RAMP.az, GLACIER_TARN_RAMP.bz) + GLACIER_TARN_RAMP.wOut,
+} as const;
+
+// The ramp itself: a capsule stamp (the cove-apron idiom used on the Hollow's
+// northeast shore walk). The target height runs linearly along the segment,
+// full strength inside the channel half-width and easing back to the natural
+// flank by wOut, so the cut has no lip at either end and no lateral step.
+function applyGlacierTarnRamp(x: number, z: number, h: number): number {
+  const b = TARN_RAMP_BOUNDS;
+  if (x < b.x0 || x > b.x1 || z < b.z0 || z > b.z1) return h;
+  const r = GLACIER_TARN_RAMP;
+  const dx = r.bx - r.ax;
+  const dz = r.bz - r.az;
+  const t = Math.max(0, Math.min(1, ((x - r.ax) * dx + (z - r.az) * dz) / (dx * dx + dz * dz)));
+  const d = Math.hypot(x - (r.ax + dx * t), z - (r.az + dz * t));
+  if (d >= r.wOut) return h;
+  const natural = smoothstep(r.wIn, r.wOut, d); // 0 on the channel floor, 1 off it
+  return h * natural + lerp(r.ah, r.bh, t) * (1 - natural);
+}
+
 // The modeled lava network's ground (render/ember_features.ts): the pool
 // records, link topology, and meander curves live in the shared leaf
 // src/sim/ember_lava_layout.ts, and this applier grades terrain to them:
@@ -3034,6 +3094,119 @@ function applyLakeShoreGrading(x: number, z: number, h: number): number {
   return gradeShoreBand(h, w);
 }
 
+// ---------------------------------------------------------------------------
+// The Palmreach jungle-pool walkway's bed: the two places the terrain under
+// the viewing platform (sim/reach_decks.ts) has to be shaped for the walkway
+// to behave, the rim it crosses and the sand it lands on.
+// ---------------------------------------------------------------------------
+
+// The Palmreach jungle pool's east rim, where the viewing platform and the
+// stair that lands on it cross it (sim/reach_decks.ts). The rim climbs at
+// almost exactly the movement climb limit (PLAYER_MAX_CLIMB_SLOPE, 1.5), and
+// the platform's LEVEL plank plane covers the handful of 1-yard cells that tip
+// over it. That pairing is not a slow spot, it is a permanent freeze: the
+// movement kernel takes the player's own steepness from the TERRAIN under the
+// planks (rideSteepnessAt defers to the memoized terrain view on dry ground),
+// so a player standing there counts as standing on unwalkable ground and loses
+// all steering; but BOTH escapes from unwalkable ground read groundHeight,
+// which over a level deck is a dead-flat plane, so terrainDownhill finds no
+// downhill to slide along and terrainWallStandoff finds no wall to be pushed
+// off. Nothing ever moves the player again (reported stuck at -373, 1003).
+//
+// Ease the rim's face where the walkway crosses it so no cell the planks cover
+// reaches the limit, with margin. Only the face moves: everything at or above
+// `top` is untouched (including both deck anchors, so every plank plane stays
+// exactly where it was), and the pool floor below the face simply lifts by the
+// rise the face gives up. Bbox-guarded, so the rest of the world never pays.
+const REACH_POOL_RIM_EASE = {
+  // the early-out box around the crossing
+  x1: -379,
+  x2: -367,
+  z1: 993,
+  z2: 1012,
+  // the crest line the walkway crosses, as a capsule (the rim runs as an arc
+  // of the declared jungle pool at -380, 1000)
+  ax: -371.5,
+  az: 998.4,
+  bx: -374.9,
+  bz: 1006.2,
+  full: 3.4, // full weight within this far of the crest line
+  fade: 7.0, // and none past this
+  // the rim face itself, in finished heights: `drop` yards below `top`
+  top: -5.35,
+  drop: 1.6,
+  // the face keeps this much of its rise, so this much of its gradient
+  scale: 0.62,
+};
+
+function applyReachPoolRimEase(x: number, z: number, h: number): number {
+  const e = REACH_POOL_RIM_EASE;
+  if (x < e.x1 || x > e.x2 || z < e.z1 || z > e.z2) return h;
+  const y = h - e.top;
+  if (y >= 0) return h; // the shelf above the rim, and both deck anchors, never move
+  const sx = e.bx - e.ax;
+  const sz = e.bz - e.az;
+  const t = Math.min(1, Math.max(0, ((x - e.ax) * sx + (z - e.az) * sz) / (sx * sx + sz * sz)));
+  const d = Math.hypot(x - (e.ax + sx * t), z - (e.az + sz * t));
+  const w = 1 - smoothstep(e.full, e.fade, d);
+  if (w === 0) return h;
+  // monotone and continuous at both ends of the face (y = 0 maps to 0, and the
+  // ground below the face rides up by exactly the rise the face gave up), so
+  // wet stays wet, dry stays dry, and no step opens anywhere along the blend
+  const eased = y < -e.drop ? y + e.drop * (1 - e.scale) : y * e.scale;
+  return h + (eased - y) * w;
+}
+
+// The sand tie-in at the platform's landward end. The plank plane is set by the
+// deck freeboard (GALE_DECK_FREEBOARD over the waterline), not by the shore, so
+// it rides about a yard proud of the flat beach behind it: the whole landward
+// end reads as a knee-high plinth the climb gate refuses, and a player who
+// walks off the deck onto the strand can never step back on. Drift the sand up
+// against the deck's end so the walkway is a path in BOTH directions, one deck
+// lift below the planks (the height the deck's own bed sits at, so the boards
+// meet the sand instead of hanging over it). Raises only, so the beach is never
+// carved, and its reach stops well short of the shared deck anchor at
+// (-368, 1000): both plank planes are anchored there and must not move.
+const REACH_POOL_DECK_TIE_IN = {
+  x1: -377,
+  x2: -363,
+  z1: 1002,
+  z2: 1015,
+  x: -369.5,
+  z: 1008.6,
+  full: 2.6, // sand at the tie-in height within this far of the end
+  fade: 6.0, // easing back to the natural strand by here
+};
+
+function applyReachPoolDeckTieIn(x: number, z: number, h: number): number {
+  const t = REACH_POOL_DECK_TIE_IN;
+  if (x < t.x1 || x > t.x2 || z < t.z1 || z > t.z2) return h;
+  // the platform is freeboard-seated, so its planks (and this tie-in with them)
+  // sit a fixed height over the waterline wherever the shore happens to be.
+  // WATER_LEVEL, not waterLevel(): dockSurfaceHeight seats every deck on the
+  // constant, so the sand has to answer to the same line the planks do.
+  const target = WATER_LEVEL + GALE_DECK_FREEBOARD;
+  if (h >= target) return h;
+  const w = 1 - smoothstep(t.full, t.fade, Math.hypot(x - t.x, z - t.z));
+  if (w === 0) return h;
+  return h + (target - h) * w;
+}
+
+// One shared early-out over both shapers' boxes: this runs for every terrain
+// sample in the world, so the rest of it never pays for more than four compares.
+const REACH_POOL_BED_BOX = {
+  x1: Math.min(REACH_POOL_RIM_EASE.x1, REACH_POOL_DECK_TIE_IN.x1),
+  x2: Math.max(REACH_POOL_RIM_EASE.x2, REACH_POOL_DECK_TIE_IN.x2),
+  z1: Math.min(REACH_POOL_RIM_EASE.z1, REACH_POOL_DECK_TIE_IN.z1),
+  z2: Math.max(REACH_POOL_RIM_EASE.z2, REACH_POOL_DECK_TIE_IN.z2),
+};
+
+function applyReachPoolWalkwayBed(x: number, z: number, h: number): number {
+  const b = REACH_POOL_BED_BOX;
+  if (x < b.x1 || x > b.x2 || z < b.z1 || z > b.z2) return h;
+  return applyReachPoolDeckTieIn(x, z, applyReachPoolRimEase(x, z, h));
+}
+
 // Ground height including instanced dungeon floors (flat, far off-world, plus
 // the raised boss dais where the room stacks one), the walkable Vale Cup
 // grandstand lift, raised docks, and custom-map sculpt edits.
@@ -3079,6 +3252,12 @@ export function terrainHeight(x: number, z: number, seed: number): number {
   // sea shave runs late in the unpadded chain and was clipping the castle's
   // seaward corner; the castle plateau must win everywhere inside its walls).
   h = applyCastlePad(x, z, h);
+  // The Palmreach jungle-pool walkway's bed, over the FINISHED height: the
+  // deck surfaces the movement kernel walks are anchored to this function, so
+  // the rim the planks cover and the sand they land on have to be shaped here,
+  // after the shore grading that forms them (see REACH_POOL_RIM_EASE for the freeze
+  // it closes and REACH_POOL_DECK_TIE_IN for the one-way edge it closes).
+  h = applyReachPoolWalkwayBed(x, z, h);
   // Level pads under the Evergarden's modeled flower beds, applied over the
   // FINISHED height (the garden seam reshapes the lawn per position, so an
   // early flatten would drift apart again): each bed ensemble sits flush on
@@ -3516,6 +3695,10 @@ function terrainHeightUnpadded(x: number, z: number, seed: number): number {
   // stand lift and the editor's stamps, so nothing above can re-steepen a
   // shore a player must wade out of.
   h = applyLakeShoreGrading(x, z, h);
+  // The Glacier Tarn's shore ramp, after that grading: the bowl's one authored
+  // way in and out, authored in FINISHED height space so its foot meets the
+  // pond and its top meets the road bench with no seam at either end.
+  h = applyGlacierTarnRamp(x, z, h);
   const sow = sowfieldFlattenWeight(x, z);
   if (sow > 0) h = lerp(h, SOWFIELD_FLAT.height, sow);
   // The Highwatch paddock is another authored level pull. It sits deep inside

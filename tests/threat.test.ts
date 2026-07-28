@@ -1910,7 +1910,14 @@ describe('shaman travel and shock mechanics', () => {
   });
 
   it('Shadewolf drops before casting shaman spells from the same button press', () => {
-    const sim = makeSim('shaman');
+    // Seed hunted (re-hunted 42 -> 43 after the Eastbrook camp respacing thinned the
+    // zone-1 camp counts, which shifts every seed's stream because world-gen draws 5
+    // rng values per camp mob). The final beat needs Cinder Jolt to LAND: at seed 42
+    // the shifted stream now rolls the 1% full resist (spellHitChance caps at 0.99),
+    // so the shock deals no damage and applies no dot, and the beat asserts nothing.
+    // Seed 43 puts the cast back on an ordinary hit; 42 is the only seed in 1..60 that
+    // resists here.
+    const sim = makeSim('shaman', 43);
     sim.setPlayerLevel(16);
     // This test checks that *casting a spell* auto-cancels Shadewolf form.
     // Taking any damage also breaks the form, so a stray wolf swing landing

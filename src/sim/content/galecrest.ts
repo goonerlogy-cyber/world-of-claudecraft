@@ -287,8 +287,12 @@ export const GALECREST_NPCS: Record<string, NpcDef> = {
     id: 'keeper_bram',
     name: 'Keeper Bram',
     title: 'Keeper of the Old Beacon',
-    pos: { x: 496, z: 310 },
-    facing: 2.6,
+    // on the Beacon's upper balcony (BEACON_SPIRAL deck2, +19), a couple of
+    // paces along the deck from where the second flight tops out, looking back
+    // at the stair head. Keep him clear of the tower column: inside coreR the
+    // ground snap hands out the plug height and he ends up on the roof cap.
+    pos: { x: 503, z: 309 },
+    facing: -0.46,
     color: 0xc8b06a,
     questIds: [
       'q_gc_keeper_of_the_flame',
@@ -641,7 +645,14 @@ export const GALECREST_PROPS: ZonePropsDef = {
     [432, 361], // the square's fire, in the lee of the market hall
     [196, 434], // the Windway's waycamp
     [455, 363], // the dockers' brazier behind the boardwalk
-    [498, 313], // Keeper Bram's brazier at the Beacon's foot
+    // Keeper Bram's brazier at the Beacon's foot: out on the lawn at d 8.5
+    // from the tower axis, clear of the spiral stair's footprint. Anywhere
+    // inside beaconSpiralLift's reach the brazier would sit UNDER the raised
+    // stair (props seat on terrainHeight, the stair on groundHeight), buried
+    // in the plinth masonry, and its collider (which has no height) would
+    // pinch the flight it stands beneath. It also stays off the stair-foot
+    // approach, which comes in around bearing 116 to 138 degrees.
+    [498, 316.5],
     [362, 633], // Salvager Edda's camp above the Wreckfields
   ],
   tents: [

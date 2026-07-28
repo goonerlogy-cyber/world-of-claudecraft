@@ -34,8 +34,9 @@ import {
 } from '../sim/data';
 import { fbm2 } from '../sim/rng';
 import type { BiomeId } from '../sim/types';
-import { roadDistance, terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
+import { roadDistance, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import { impactCraterTerrainBlend } from './impact_terrain';
+import { meshTerrainHeight } from './terrain_mesh_height';
 
 const SKIRT_DROP = 0.3;
 const SLOPE_EPS = 1.5; // matches the legacy color pass so tints don't shift
@@ -309,9 +310,9 @@ function lerpSplat(w: [number, number, number, number], layer: 0 | 1 | 2 | 3, t:
 // One terrain sample: height, analytic normal, legacy tint color and splat
 // weights. Both tiers use the color; only the splat tier consumes weights.
 function sampleVertex(x: number, z: number, seed: number, lowShade: boolean): VertexSample {
-  const h = terrainHeight(x, z, seed);
-  const hx = terrainHeight(x + SLOPE_EPS, z, seed) - terrainHeight(x - SLOPE_EPS, z, seed);
-  const hz = terrainHeight(x, z + SLOPE_EPS, seed) - terrainHeight(x, z - SLOPE_EPS, seed);
+  const h = meshTerrainHeight(x, z, seed);
+  const hx = meshTerrainHeight(x + SLOPE_EPS, z, seed) - meshTerrainHeight(x - SLOPE_EPS, z, seed);
+  const hz = meshTerrainHeight(x, z + SLOPE_EPS, seed) - meshTerrainHeight(x, z - SLOPE_EPS, seed);
   const slope = Math.sqrt(hx * hx + hz * hz) / (2 * SLOPE_EPS);
   const invLen = 1 / Math.hypot(hx / (2 * SLOPE_EPS), 1, hz / (2 * SLOPE_EPS));
   const normal: [number, number, number] = [

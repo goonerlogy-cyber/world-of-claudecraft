@@ -12,7 +12,7 @@ import {
 } from '../sim/data';
 import { fbm2 } from '../sim/rng';
 import type { BiomeId, ZoneDef } from '../sim/types';
-import { roadDistance, terrainHeight, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
+import { roadDistance, WATER_LEVEL, zoneBiomeAt } from '../sim/world';
 import { loadTexture } from './assets/loader';
 import { registerPreload } from './assets/preload';
 import { type ChunkGrid, type GroundPendingAt, orderCellsForEntry } from './chunk_residency_core';
@@ -27,6 +27,7 @@ import {
   fillChunkVertexRow,
 } from './terrain_chunk_build';
 import { terrainChunkPool } from './terrain_chunk_pool';
+import { meshTerrainHeight } from './terrain_mesh_height';
 import {
   chunkIntersectsRegion,
   normalTexelBounds,
@@ -53,7 +54,7 @@ import { groundDetailTexture, groundSplatMaps, macroNoiseTexture } from './textu
 // - High tier: MeshStandardMaterial + splat shading (grass/dirt/rock/sand
 //   weights precomputed per vertex from slope/height/roadDistance into a vec4
 //   attribute) over the biome vertex-color tint, plus a world-space macro
-//   normal map baked from terrainHeight.
+//   normal map baked from the mesh height view (terrain_mesh_height.ts).
 // - Low tier: the legacy vertex-color Lambert look, still chunked for culling.
 
 const CHUNK_SIZE = 60;
@@ -145,7 +146,7 @@ const WALL_LOD_RIM_MARGIN = 40;
 // Macro relief only needs to carry broad slopes: vertex normals and the four
 // tiled material normals own close detail. The atlas spans the whole expanded
 // world but is baked sparsely by zone, so keep it compact enough that entering
-// a new region never turns tens of thousands of terrainHeight samples into a
+// a new region never turns tens of thousands of height samples into a
 // second boot. At the current bounds this is roughly 3yd/texel.
 const NORMAL_TEX_W = 320;
 const NORMAL_TEX_H = 960;
@@ -216,13 +217,13 @@ async function buildChunkGeometryIdle(
 }
 
 // ---------------------------------------------------------------------------
-// Macro relief: a DataTexture normal map baked from terrainHeight in
+// Macro relief: a DataTexture normal map baked from the mesh height view in
 // strip-planar UV space — cliffs and ridges get per-pixel light response far
 // beyond the vertex density.
 // ---------------------------------------------------------------------------
 
 // Bake the normal texels [i0..i1] x [j0..j1] (inclusive) into `data`, sampling
-// the CURRENT terrainHeight. The full build and the editor's partial rebake
+// the CURRENT mesh height. The full build and the editor's partial rebake
 // share this one path so a partial rebake is byte-identical to a full one:
 // heights are sampled one texel beyond the baked rect (clamped at the texture
 // border, exactly like the full bake's clamped derivative stencil).
@@ -250,7 +251,7 @@ function bakeNormalRegion(
   for (let j = hj0; j <= hj1; j++) {
     const z = WORLD_MIN_Z + (j + 0.5) * stepZ;
     for (let i = hi0; i <= hi1; i++) {
-      heights[(j - hj0) * hw + (i - hi0)] = terrainHeight(
+      heights[(j - hj0) * hw + (i - hi0)] = meshTerrainHeight(
         -WORLD_MAX_X + (i + 0.5) * stepX,
         z,
         seed,
@@ -583,7 +584,7 @@ export interface TerrainView {
   rebuildRegion(minX: number, minZ: number, maxX: number, maxZ: number): void;
   /**
    * Editor-only: rebake the region's texels of the macro normal DataTexture
-   * from the current terrainHeight and flag it for re-upload. Byte-identical
+   * from the current mesh height and flag it for re-upload. Byte-identical
    * to a full bake over those texels. Call at stroke end, never per drag
    * sample. No-op on the Lambert tier (it has no normal map).
    */

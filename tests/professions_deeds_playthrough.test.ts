@@ -166,9 +166,10 @@ describe('scripted playthrough (one sim, live sites only)', () => {
       if (sim.lastCraftResult.masterwork === true) procAt = i;
       else purgeItem('eastbrook_ritual_vestments'); // keep the bags clear between attempts
     }
-    // Hunted literal (seed 4242, this exact beat order, re-recorded at The
-    // Last Keep's overworld door spawn): the proc lands on attempt index 0.
-    expect(procAt).toBe(0);
+    // Hunted literal (seed 4242, this exact beat order, re-recorded after the
+    // Eastbrook camp respacing thinned the zone-1 camp counts, which shifts every
+    // world-gen draw downstream): the proc lands on attempt index 3.
+    expect(procAt).toBe(3);
     expect(meta.deedStats.counters.masterworksCrafted).toBe(1);
     const evs = sim.tick();
     const ev = deedEvents(evs).find((e) => e.deedId === 'prog_masterwright');
@@ -294,9 +295,11 @@ describe('scripted playthrough (one sim, live sites only)', () => {
         sawBiteOnKoiSession = bit;
       }
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded at the
-    // origin/main base merge): the koi bites on session index 9.
-    expect(koiSession).toBe(9);
+    // Hunted literal (seed 4242, after every beat above, re-recorded after the
+    // Eastbrook camp respacing merged into this branch, which thins the zone-1
+    // camp counts and shifts every world-gen draw downstream, so neither
+    // parent's recording holds): the koi bites on session index 29.
+    expect(koiSession).toBe(29);
     expect(sawBiteOnKoiSession).toBe(true); // the celebration follows the bite moment
     expect(meta.deedsEarned.has('col_glimmerfin')).toBe(false); // grant sweeps at the tick tail
     const evs = sim.tick();
@@ -309,9 +312,10 @@ describe('scripted playthrough (one sim, live sites only)', () => {
     // Bank the run's loot: the hunts need free bags for the x5 windfalls, and
     // no later beat reads the inventory. Pure state cleanup, zero draws.
     meta.inventory.length = 0;
-    // Hunted literals (seed 4242, after every beat above, re-recorded at The
-    // Last Keep's overworld door spawn): the harvest index where each
-    // flavor's 1-in-90 event fires under the shared stream.
+    // Hunted literals (seed 4242, after every beat above, re-recorded after the
+    // Eastbrook camp respacing merged into this branch, which shifts every
+    // world-gen draw downstream): the harvest index where each flavor's 1-in-90
+    // event fires under the shared stream.
     // #2343: each hunt's harvest needs its profession's tool in bags. The
     // tier-1 tools ride the whole beat (purgeItem never touches them) and
     // addItem draws no rng, so the hunted hitAt literals hold.
@@ -321,18 +325,18 @@ describe('scripted playthrough (one sim, live sites only)', () => {
     // Hunted literals (seed 4242, after every beat above): the harvest index
     // where each flavor's 1-in-90 event fires under the shared stream.
     const hunts: { nodeId: string; deedId: string; itemId: string; hitAt: number }[] = [
-      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 62 },
+      { nodeId: 'ore_eastbrook_1', deedId: 'col_pristine_vein', itemId: 'copper_ore', hitAt: 122 },
       {
         nodeId: 'wood_eastbrook_1',
         deedId: 'col_ancient_heartwood',
         itemId: 'ironbark_log',
-        hitAt: 85,
+        hitAt: 7,
       },
       {
         nodeId: 'herb_eastbrook_1',
         deedId: 'col_moonlit_bloom',
         itemId: 'silverleaf_herb',
-        hitAt: 101,
+        hitAt: 159,
       },
     ];
     for (const hunt of hunts) {
@@ -389,10 +393,10 @@ describe('scripted playthrough (one sim, live sites only)', () => {
       sim.harvestCorpse(mob.id, ['hide'], pid);
       if (sim.countItem('pristine_hide', pid) > 0) hitAt = i;
     }
-    // Hunted literal (seed 4242, after every beat above, re-recorded at the
-    // origin/main base merge): the rare-or-better rarity roll that mints the
-    // signed specimen lands on attempt index 0.
-    expect(hitAt).toBe(0);
+    // Hunted literal (seed 4242, after every beat above, re-recorded after the
+    // Eastbrook camp respacing merged into this branch): the rare-or-better
+    // rarity roll that mints the signed specimen lands on attempt index 7.
+    expect(hitAt).toBe(7);
     const specimen = meta.inventory.find((s) => s.itemId === 'pristine_hide');
     expect(specimen?.instance?.signer).toBe(meta.name);
     expect(meta.deedStats.visited.has('gather_event:perfect_specimen')).toBe(true);
