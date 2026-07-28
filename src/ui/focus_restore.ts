@@ -105,10 +105,29 @@ export interface FocusRestoreCandidate {
  * rather than inherit whichever its guard happens to be.
  */
 export function captureFocusKey(root: HTMLElement): string | null {
+  return focusedWithin(root)?.dataset.focusKey ?? null;
+}
+
+/**
+ * The focused element, if it is inside `root`, else null.
+ *
+ * This is the narrowing-plus-containment half of {@link captureFocusKey} with the
+ * `data-focus-key` read left off, for a caller that carries a DIFFERENT identity and so
+ * cannot use the key: `form_draft.ts` keys on the field's own `id` / `data-*` because it
+ * has to find that element again to write a captured VALUE back into it, not only to
+ * focus it, and the same key has to serve both. That is the "different identity entirely"
+ * case the header above describes, and the reason it is exported here rather than
+ * re-derived there is the other half of the same sentence: the containment check and the
+ * `instanceof` narrowing are the two lines a copy gets wrong, and `data-focus-key` is not
+ * what makes them worth centralizing.
+ *
+ * Note the containment check subsumes the `<body>` case a caller might otherwise special
+ * case: `root` is a descendant of `<body>`, so `root.contains(document.body)` is false.
+ */
+export function focusedWithin(root: HTMLElement): HTMLElement | null {
   const active = document.activeElement;
   if (!(active instanceof HTMLElement)) return null;
-  if (!root.contains(active)) return null;
-  return active.dataset.focusKey ?? null;
+  return root.contains(active) ? active : null;
 }
 
 /**

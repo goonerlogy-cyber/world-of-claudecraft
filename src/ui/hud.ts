@@ -5033,7 +5033,10 @@ export class Hud {
     });
     this.refreshKeybindLabels();
     this.updateQuestTracker();
-    this.updateDelveTracker();
+    // NOT updateDelveTracker(): the tracker's own signature is ids + numbers, so
+    // a plain update() early-returns here and re-emits nothing. relocalize()
+    // clears it for exactly one rebuild (#2529).
+    this.delveTracker.relocalize();
     // The keyed-pool party rows reuse their DOM, so a rebuild never re-runs t() on
     // their badge tooltips / leave label; re-localize them in place on a switch.
     this.partyFramesPainter.relocalize();
@@ -5086,6 +5089,20 @@ export class Hud {
     this.vcupBriefing.relocalize();
     this.vcupCharge.relocalize();
     this.questDialog.relocalize();
+    // Same text-independent-sig contract, one surface at a time (#2529). Every
+    // one of these was rebuilding only when its own data moved, so an open one
+    // kept the previous locale until the player happened to change something.
+    // Each relocalize() is self-gated on its own window being open.
+    this.calendarWindow.relocalize();
+    this.mailboxWindow.relocalize();
+    this.socialWindow.relocalize();
+    this.cardDuelWindow.relocalize();
+    this.spellbookWindow.relocalize();
+    this.lockpickController.relocalize();
+    this.tutorial.relocalize(this.sim, this.keybinds);
+    // The ring latches its page indicator on the page/count pair; dropping the
+    // latch relabels it on the next paint (mobile layouts only build the ring).
+    this.mobileActionRingPainter?.relocalize();
   }
 
   // Prefers the live resolved entry when the player already knows it (rank +

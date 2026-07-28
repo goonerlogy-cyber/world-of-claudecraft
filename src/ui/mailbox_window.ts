@@ -19,6 +19,7 @@ import { markDialogRoot } from './dialog_root';
 import { itemDisplayName, tEntity } from './entity_i18n';
 import { esc } from './esc';
 import { captureFocusKey, restoreFirstEnabled } from './focus_restore';
+import { captureFormDraft, restoreFormDraft } from './form_draft';
 import { formatMoney, formatNumber, t } from './i18n';
 import { QUALITY_COLOR } from './icons';
 import {
@@ -221,10 +222,46 @@ export class MailboxWindow {
       return;
     }
     if (this.tab === 'send') return; // typed inputs: rebuilt only on actions
-    const sig = JSON.stringify([this.tab, this.openedId, info.messages, info.unread]);
+    const sig = this.sig(info);
     if (sig === this.lastSig) return;
     this.lastSig = sig;
     this.render();
+  }
+
+  // The inbox repaint signature: the tab, the open letter, and the mail mirror.
+  // Ids and counts only, so a language switch alone can never move it, which is
+  // why relocalize() exists below.
+  private sig(info: NonNullable<IWorld['mailInfo']>): string {
+    return JSON.stringify([this.tab, this.openedId, info.messages, info.unread]);
+  }
+
+  /**
+   * Re-localize after an in-game language switch (the Hud's woc:languagechange
+   * fan-out). Self-gated on the open flag so the fan-out can call it
+   * unconditionally.
+   *
+   * The Send tab is the reason this cannot be a bare render(): renderSend
+   * rebuilds the form via innerHTML with an empty recipient, subject, body and
+   * zeroed coin fields, so the repaint that fixes the language would wipe a
+   * half-written letter. That is the same loss #1695 fixed for the parcel path,
+   * where the answer was to repaint less; a language switch cannot narrow that
+   * way, since every label in the window is what moved, so the draft is carried
+   * across the rebuild instead. The suggestion list needs no extra handling:
+   * renderSend clears the pending search and its timer itself.
+   *
+   * The signature is RE-LATCHED, not cleared, so the next slow tick early-returns
+   * instead of rebuilding a second time over the restored draft. It is skipped
+   * when the mail mirror is absent, since the sig is built from it and
+   * refreshIfChanged returns before reading it in that state.
+   */
+  relocalize(): void {
+    if (!this.opened) return;
+    const root = this.deps.root();
+    const draft = captureFormDraft(root);
+    this.render({ revealBags: false });
+    restoreFormDraft(root, draft);
+    const info = this.deps.world().mailInfo;
+    if (info) this.lastSig = this.sig(info);
   }
 
   private senderLabel(row: MailInboxRow): string {
@@ -237,7 +274,17 @@ export class MailboxWindow {
     return row.subject.length > 0 ? row.subject : t('hudChrome.mailbox.noSubject');
   }
 
-  render(): void {
+  /**
+   * Full rebuild of the window chrome plus its current tab.
+   *
+   * `revealBags` exists for the language fan-out and is the one thing a caller
+   * ever needs to turn off: the Send tab's paint normally REVEALS the bags
+   * window so parcels can be clicked straight onto the letter, and a language
+   * switch must not re-open a bags window the player deliberately closed. It is
+   * an argument rather than a mode flag on the instance so the decision is
+   * visible at the call site that makes it.
+   */
+  render({ revealBags = true }: { revealBags?: boolean } = {}): void {
     const el = this.deps.root();
     this.deps.hideTooltip();
     markDialogRoot(el, { label: t('hudChrome.mailbox.title') });
@@ -268,10 +315,10 @@ export class MailboxWindow {
         (this.deps.root().querySelector(`[data-tab="${next}"]`) as HTMLElement | null)?.focus();
       });
     });
-    this.renderContent();
+    this.renderContent(revealBags);
   }
 
-  private renderContent(): void {
+  private renderContent(revealBags: boolean): void {
     const body = this.deps.root().querySelector<HTMLElement>('#mailbox-body');
     if (!body) return;
     const view = buildMailboxView({
@@ -288,7 +335,7 @@ export class MailboxWindow {
       this.renderInbox(body, view.body);
       return;
     }
-    this.renderSend(body, view.body);
+    this.renderSend(body, view.body, revealBags);
   }
 
   private renderInbox(body: HTMLElement, view: MailInboxBody): void {
@@ -415,7 +462,7 @@ export class MailboxWindow {
     }
   }
 
-  private renderSend(body: HTMLElement, view: MailSendBody): void {
+  private renderSend(body: HTMLElement, view: MailSendBody, revealBags: boolean): void {
     window.clearTimeout(this.recipientSuggestTimer);
     this.recipientSuggest = { items: [], index: -1 };
     body.innerHTML =
@@ -444,7 +491,11 @@ export class MailboxWindow {
       `</div>`;
     this.renderParcels();
     // Bags ride alongside so parcels can be clicked straight onto the letter.
-    this.deps.syncBags(true);
+    // NOT on the relocalize path (revealBags false): syncBags(true) REVEALS the
+    // bags window, and a language switch must not re-open one the player closed.
+    // The fan-out re-renders an open bags window on its own arm, so an open one
+    // still lands in the new locale.
+    if (revealBags) this.deps.syncBags(true);
     // The coin inputs seed "0": select it on focus so typing replaces the value
     // (clicking into gold and typing 1 must mean 1g, not the 10 you get by
     // appending). The once-only mouseup swallow keeps the click-to-focus gesture

@@ -1041,6 +1041,7 @@ const UI_DOM_MODULES = [
   'src/ui/entry_guard_banner.ts',
   'src/ui/focus_manager.ts',
   'src/ui/focus_restore.ts',
+  'src/ui/form_draft.ts',
   'src/ui/gather_node_tooltip.ts',
   'src/ui/gpu_notice_toast.ts',
   'src/ui/hud.ts',
