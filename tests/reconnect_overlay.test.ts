@@ -1,9 +1,18 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { hideReconnectOverlay, showReconnectOverlay } from '../src/ui/reconnect_overlay';
+import {
+  hideReconnectOverlay,
+  RECONNECT_OVERLAY_SHOW_GRACE_MS,
+  showReconnectOverlay,
+} from '../src/ui/reconnect_overlay';
 
 const OVERLAY_ID = 'reconnect-overlay';
+
+// The overlay mounts only after the show grace: a drop that resumes inside it
+// paints nothing. Most cases below first advance past the grace to reach the
+// mounted state the pre-grace suite pinned.
+const pastGrace = () => vi.advanceTimersByTime(RECONNECT_OVERLAY_SHOW_GRACE_MS);
 
 describe('reconnect overlay stateful half (show/show/hide)', () => {
   beforeEach(() => {
@@ -17,8 +26,37 @@ describe('reconnect overlay stateful half (show/show/hide)', () => {
     document.body.replaceChildren();
   });
 
+  it('a drop that resumes inside the show grace never paints the overlay', () => {
+    showReconnectOverlay(1, 40, Date.now() + 1_000);
+    // The socket blip resolves before the grace elapses (the measured quick
+    // reconnect is well under it): the overlay must never have mounted.
+    vi.advanceTimersByTime(RECONNECT_OVERLAY_SHOW_GRACE_MS - 200);
+    expect(document.getElementById(OVERLAY_ID)).toBeNull();
+    hideReconnectOverlay();
+    // Decisive: nothing pending either; the cancelled grace timer cannot mount
+    // a veil after the world has already resumed.
+    vi.advanceTimersByTime(60_000);
+    expect(document.getElementById(OVERLAY_ID)).toBeNull();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('a sustained drop mounts once the grace elapses, with the LATEST retry payload', () => {
+    const now = Date.now();
+    vi.setSystemTime(now);
+    showReconnectOverlay(1, 40, now + 1_000);
+    // A second retry is scheduled while the mount is still pending: the
+    // eventual mount must render attempt 2's payload, not attempt 1's.
+    vi.advanceTimersByTime(500);
+    showReconnectOverlay(2, 40, now + 20_000);
+    vi.advanceTimersByTime(RECONNECT_OVERLAY_SHOW_GRACE_MS - 500);
+    const el = document.getElementById(OVERLAY_ID);
+    expect(el).not.toBeNull();
+    expect(el?.textContent).toContain('2');
+  });
+
   it('a second showReconnectOverlay replaces the message in place, not a duplicate element', () => {
     showReconnectOverlay(1, 40, Date.now() + 15_000);
+    pastGrace();
     expect(document.querySelectorAll(`#${OVERLAY_ID}`).length).toBe(1);
     const firstText = document.getElementById(OVERLAY_ID)?.textContent;
 
@@ -29,6 +67,7 @@ describe('reconnect overlay stateful half (show/show/hide)', () => {
 
   it('a second showReconnectOverlay replaces the tick interval rather than stacking a duplicate', () => {
     showReconnectOverlay(1, 40, Date.now() + 5_000);
+    pastGrace();
     showReconnectOverlay(2, 40, Date.now() + 5_000);
     // Decisive: if the first interval were still alive alongside the second,
     // there would be two live timers here, not one. Both intervals share the
@@ -40,6 +79,7 @@ describe('reconnect overlay stateful half (show/show/hide)', () => {
 
   it('hideReconnectOverlay removes the element and clears the interval so no leaked timer keeps firing', () => {
     showReconnectOverlay(1, 40, Date.now() + 15_000);
+    pastGrace();
     hideReconnectOverlay();
     expect(document.getElementById(OVERLAY_ID)).toBeNull();
     // Decisive: proves the interval itself is gone, not merely that the
@@ -55,11 +95,12 @@ describe('reconnect overlay stateful half (show/show/hide)', () => {
   it('switches to the "reconnecting now" message once the countdown reaches zero', () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    showReconnectOverlay(3, 40, now + 2_000);
+    showReconnectOverlay(3, 40, now + RECONNECT_OVERLAY_SHOW_GRACE_MS + 2_000);
+    pastGrace();
     const before = document.getElementById(OVERLAY_ID)?.textContent ?? '';
     expect(before).toMatch(/2s|1s/);
 
-    vi.setSystemTime(now + 2_000);
+    vi.setSystemTime(now + RECONNECT_OVERLAY_SHOW_GRACE_MS + 2_000);
     vi.advanceTimersByTime(2_000);
     const after = document.getElementById(OVERLAY_ID)?.textContent ?? '';
     expect(after).not.toBe(before);

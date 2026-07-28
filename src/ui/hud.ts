@@ -8013,8 +8013,9 @@ export class Hud {
   private endLockpick(
     outcome: 'success' | 'fail' | 'abandoned',
     tier?: 'premium' | 'medium' | 'low',
+    sessionId?: string,
   ): void {
-    this.lockpickController.end(outcome, tier);
+    this.lockpickController.end(outcome, tier, sessionId);
   }
 
   private openDelveLoot(chestId: number, items: { itemId: string; count: number }[]): void {
@@ -9984,6 +9985,15 @@ export class Hud {
           );
           break;
         case 'resurrectionOffer':
+          // An offer completing against a player who is no longer dead (they
+          // released, respawned, or accepted another healer's rez while this
+          // cast was in flight, all ordinary in online group play) is
+          // unanswerable: the sim keeps offers only for dead players. Showing
+          // it anyway painted the centred prompt for exactly one frame before
+          // the per-frame `!p.dead` closer below removed it, a split-second
+          // dark-panel flash. The guard reads the same mirror the closer does,
+          // so the two can never disagree.
+          if (!sim.player.dead) break;
           // Same "someone is asking you to respond to a prompt" vocabulary as
           // party/guild invite; questAccept() was retired, see invitePrompt().
           audio.invitePrompt();
@@ -10441,7 +10451,7 @@ export class Hud {
           break;
         }
         case 'lockpickEnd':
-          this.endLockpick(ev.outcome, ev.lootTier);
+          this.endLockpick(ev.outcome, ev.lootTier, ev.sessionId);
           if (ev.outcome === 'success') sfx.playUi('lockpick_end');
           break;
         case 'lockpickBonus': {

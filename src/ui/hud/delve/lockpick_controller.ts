@@ -64,7 +64,20 @@ export class LockpickController {
     this.window.repaintIfChanged();
   }
 
-  end(outcome: 'success' | 'fail' | 'abandoned', tier?: LootTier): void {
+  end(outcome: 'success' | 'fail' | 'abandoned', tier?: LootTier, sessionId?: string): void {
+    // Session-scope the close, the way ClientWorld.applyLockpickEvent already
+    // scopes the mirror clear. ONLINE the answer to a withdrawal is a wire
+    // frame away, and the dismissal's own drain can legitimately re-open a
+    // FRESH session's board in the meantime (the repeat arm closes before it
+    // re-sends for exactly that reason). Without this guard the late
+    // lockpickEnd for the WITHDRAWN session tore that fresh board down: a
+    // split-second dark 420px dead-centre flash for the player, and a live
+    // server-side session left running headless until its step clock burned
+    // the tries and forfeited the chest (#2517's forfeiture by another road).
+    // A caller with no sessionId (offline drains predate the field on some
+    // paths) keeps the old close-whatever-is-up behavior.
+    const live = this.deps.getState();
+    if (sessionId !== undefined && live !== null && live.sessionId !== sessionId) return;
     const summary =
       outcome === 'success'
         ? tier

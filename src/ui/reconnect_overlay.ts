@@ -8,20 +8,51 @@
 // than a static string: on a lossy/throttled connection a single retry cycle
 // can run up to RECONNECT_MAX_DELAY_MS (src/net/online.ts), and a frozen
 // message with no feedback is indistinguishable from a hung client.
+//
+// SHOW GRACE: the overlay mounts only once the drop has persisted for
+// SHOW_GRACE_MS. A transient blip (a server restart mid-deploy, a wifi
+// hiccup, a load-balancer idle close) reconnects on the first retry, and
+// mounting instantly painted a full-screen near-black veil for well under a
+// second (measured 0.8-0.9s from socket close to resume in an instrumented
+// client): the intermittent "black flash" players reported in online modes.
+// A quick resume now shows nothing at all; a real outage still surfaces the
+// overlay, just SHOW_GRACE_MS later, which the frozen world already implies.
+// hideReconnectOverlay cancels a pending mount, and repeat show calls while
+// one is pending only refresh the attempt/retry payload it will mount with.
 
 import { t } from './i18n';
 import { secondsUntilRetry } from './reconnect_status_core';
 
 const OVERLAY_ID = 'reconnect-overlay';
 const TICK_MS = 1000;
+export const RECONNECT_OVERLAY_SHOW_GRACE_MS = 1500;
 
 let tickTimer: number | null = null;
+let graceTimer: number | null = null;
+let pendingShow: { attempt: number; maxAttempts: number; nextRetryAtMs: number } | null = null;
 
 export function showReconnectOverlay(
   attempt: number,
   maxAttempts: number,
   nextRetryAtMs: number,
 ): void {
+  // Already mounted (the drop outlived the grace): update in place, no re-grace.
+  if (document.getElementById(OVERLAY_ID)) {
+    mountOrUpdateOverlay(attempt, maxAttempts, nextRetryAtMs);
+    return;
+  }
+  pendingShow = { attempt, maxAttempts, nextRetryAtMs };
+  if (graceTimer === null) {
+    graceTimer = window.setTimeout(() => {
+      graceTimer = null;
+      const p = pendingShow;
+      pendingShow = null;
+      if (p) mountOrUpdateOverlay(p.attempt, p.maxAttempts, p.nextRetryAtMs);
+    }, RECONNECT_OVERLAY_SHOW_GRACE_MS);
+  }
+}
+
+function mountOrUpdateOverlay(attempt: number, maxAttempts: number, nextRetryAtMs: number): void {
   let el = document.getElementById(OVERLAY_ID);
   let messageEl: HTMLElement;
   if (el) {
@@ -54,6 +85,11 @@ export function showReconnectOverlay(
 }
 
 export function hideReconnectOverlay(): void {
+  if (graceTimer !== null) {
+    window.clearTimeout(graceTimer);
+    graceTimer = null;
+  }
+  pendingShow = null;
   document.getElementById(OVERLAY_ID)?.remove();
   if (tickTimer !== null) {
     window.clearInterval(tickTimer);

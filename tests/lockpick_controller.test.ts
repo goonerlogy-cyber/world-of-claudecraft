@@ -139,6 +139,48 @@ describe('LockpickController', () => {
     expect(test.release).toHaveBeenCalledWith(true);
   });
 
+  it('a stale lockpickEnd cannot tear down a fresh session board (the online flash)', () => {
+    // The online shape: withdraw session lp_1 (the panel stays up waiting on
+    // the wire answer), re-engage, and the FRESH session lp_9's board is on
+    // screen when lp_1's late lockpickEnd finally lands. The end arm used to
+    // close whatever was up: the fresh 420px dead-centre board vanished for
+    // the player (a split-second dark-panel flash at best) while its session
+    // stayed live server-side, burning tries toward a forfeited chest.
+    // ClientWorld.applyLockpickEvent already id-scopes the mirror clear; this
+    // pins the SAME scoping on the HUD arm's close.
+    const fresh: LockpickView = { ...liveView, sessionId: 'lp_9' };
+    const test = harness(fresh);
+    test.controller.openBoard();
+    expect(test.panel.style.display).toBe('block');
+
+    test.controller.end('abandoned', undefined, 'lp_1'); // the withdrawn session's late answer
+
+    expect(test.panel.style.display, 'the fresh board survives the stale end').toBe('block');
+    expect(test.log, 'no summary line for a session no longer on screen').not.toHaveBeenCalled();
+    expect(test.release).not.toHaveBeenCalled();
+  });
+
+  it('a session-scoped end for the LIVE session still closes and summarizes', () => {
+    // The guard must scope, not suppress: an end naming the on-screen session
+    // (and any end with no live mirror left, the normal online order, where
+    // applyLockpickEvent cleared the state before the HUD drained) closes.
+    const test = harness(liveView);
+    test.controller.openBoard();
+
+    test.controller.end('abandoned', undefined, liveView.sessionId);
+
+    expect(test.panel.style.display).toBe('none');
+    expect(test.log).toHaveBeenCalledWith(t('lockpickUi.summary.abandoned'), '#ccc');
+
+    // And the mirror-already-cleared shape closes too.
+    const second = harness(null);
+    second.controller.openBoard();
+    second.panel.style.display = 'block';
+    second.controller.end('success', 'premium', 'lp_1');
+    expect(second.panel.style.display).toBe('none');
+    expect(second.showBanner).toHaveBeenCalledTimes(1);
+  });
+
   it('logs a withdrawal without a banner before closing the panel', () => {
     // end() branches three ways on outcome and only 'success' was pinned, so the colour and
     // the no-banner half of the arm that a withdrawal actually takes were free to change.
