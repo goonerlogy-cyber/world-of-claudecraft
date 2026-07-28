@@ -1408,14 +1408,11 @@ describe('Eastbrook polish performance and contact evidence', () => {
       fingerprint.update('\0');
     }
     expect(acceptedFiles).toHaveLength(4);
-    // Deliberately re-pinned for the origin/main base merge: build_assets.mjs is
-    // in every Eastbrook source inventory, and #1584 added a mesh-island prune
-    // to it, so all three source fingerprints moved and the assets were
-    // re-stamped from the merged source. Geometry is byte-identical (same
-    // bytes, same triangle counts); only the embedded seal changed, and no
-    // capture was retaken.
+    // Deliberately re-pinned for the 0.31.0 version sync: package-lock.json is
+    // in every Eastbrook source inventory, so the release version bump moved
+    // the composite provenance these records carry. No capture was retaken.
     expect(fingerprint.digest('hex')).toBe(
-      '23ba16bca27b83e7298d194df67213c2e04cb625f580e1bbbab0fb1d5049ed28',
+      '7788632bc148bef7d9bc8aa0f44289096c1ae661bb877aadb86d20af06ef2ff6',
     );
   });
 
