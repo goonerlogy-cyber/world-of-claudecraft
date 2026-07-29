@@ -703,9 +703,9 @@ export const VISUALS: Record<string, VisualDef> = {
   // Druid Travel Form: a daft chicken-cow hybrid (custom GLB). No tint — its
   // authored cow-spots/comb/beak colours carry the look.
   form_travel: {
-    url: `${CREATURES}/chicken_cow.glb`,
+    url: `${CREATURES}/dragonevolved.glb`,
     height: 2.3,
-    clips: CHICKEN_COW,
+    clips: FLOATING,
   },
 
   // -- mob families --------------------------------------------------------
